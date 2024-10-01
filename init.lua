@@ -21,23 +21,11 @@ end)
 local isOverlayVisible = false
 
 -- define selection boxes point 
-local boxOrigin = {
-    x = 0,       -- X-coordinate
-    y = 0,       -- Y-coordinate
-    z = 0,       -- Z-coordinate
-    yaw = 0,     -- Rotation around the vertical axis
-    tilt = 0,    -- Tilt angle 
-    roll = 0     -- Roll angle
-}
+local boxPos1 = {0.000, 0.000, 0.000}
 
-local boxSupport = {
-    x = 0,       -- X-coordinate
-    y = 0,       -- Y-coordinate
-    z = 0       -- Z-coordinate
-}
+local boxPos2 = {0.000, 0.000, 0.000}
 
 -- For Testing
-local InputTextTest = tostring(boxOrigin.x)
 
 -- onOverlayOpen
 registerForEvent('onOverlayOpen', function()
@@ -49,25 +37,30 @@ registerForEvent('onOverlayClose', function()
     isOverlayVisible = false
 end)
 
--- Sets either the Origin or the Support Point to current Player Position
-function BoxPointToPos(Origin)
+-- Sets either the Pos1 or the Pos2 Point to current Player Position
+function BoxPointToPos(Pos1)
     local currentPos = Game.GetPlayer():GetWorldPosition()
-    if Origin == true then
-        boxOrigin.x = currentPos.x
-        boxOrigin.y = currentPos.y
-        boxOrigin.z = currentPos.z
+    if Pos1 == true then
+        boxPos1[1] = tonumber(string.format("%.3f", currentPos.x))
+        boxPos1[2] = tonumber(string.format("%.3f", currentPos.y))
+        boxPos1[3] = tonumber(string.format("%.3f", currentPos.z))
     else
-        boxSupport.x = currentPos.x
-        boxSupport.y = currentPos.y
-        boxSupport.z = currentPos.z
+        boxPos2[1] = tonumber(string.format("%.3f", currentPos.x))
+        boxPos2[2]= tonumber(string.format("%.3f", currentPos.y))
+        boxPos2[3] = tonumber(string.format("%.3f", currentPos.z))
     end
 end
+
+-- Sets default File name
+local SaveFileName = ""
 -- For Debug: Prints value of Box Points
 function BoxPrintValue()
-    print("Updated Box Origin:")
-    print("X:", boxOrigin.x, "Y:", boxOrigin.y, "Z:", boxOrigin.z, "Yaw:", boxOrigin.yaw, "Tilt:", boxOrigin.tilt, "Roll:", boxOrigin.roll)
-    print("Updated Box Support:")
-    print("X:", boxSupport.x, "Y:", boxSupport.y, "Z:", boxSupport.z)
+    print("Updated Box Pos1:")
+    print("X:", boxPos1[1], "Y:", boxPos1[2], "Z:", boxPos1[3])
+    print("Updated Box Pos2:")
+    print("X:", boxPos2[1], "Y:", boxPos2[2], "Z:", boxPos2[3])
+    print("SaveFileName:")
+    print(SaveFileName)
 end
 
 -- onDraw
@@ -84,26 +77,34 @@ registerForEvent('onDraw', function()
         if ImGui.BeginTabBar("TabList1") then
             -- Defines Main Tab Group 
             if ImGui.BeginTabItem("Selector Box") then
-                -- Button For Setting Origin Point X Y Z to Current Player X Y Z 
-                if ImGui.Button("Set Origin Point to Current Position", 250, 50) then
+                ImGui.Text("Selector Box Position 1")
+                -- Button For Setting BoxPos1 to PlayerPos 
+                if ImGui.Button("Set Pos1 Point to Current Position") then
                     BoxPointToPos(true)
                 end
-                -- Doesn't work as expected
-                if ImGui.InputText("Pos X", InputTextTest, 100) then
-                    if ImGui.Button("Confirm") then
-                        boxOrigin.x = tonumber(InputTextTest)
-                    end
-                end
-                -- Button For Setting Support Point X Y Z to Current Player X Y Z 
-                if ImGui.Button("Set Support Point to Current Position", 250, 50) then
+                -- Change Coord of Pos1
+                boxPos1, change = ImGui.DragFloat3("Selector Box Pos1", boxPos1)
+                ImGui.Text("Selector Box Position 2")
+                -- Button For Setting Pos2 to PlayerPos
+                if ImGui.Button("Set Pos2 Point to Current Position") then
                     BoxPointToPos(false)
+                end
+                -- Change Cord of Pos2
+                boxPos2, change = ImGui.DragFloat3("Selector Box Pos2", boxPos2)
+                ImGui.EndTabItem()
+            end
+            -- Defines File Tab
+            if ImGui.BeginTabItem("Output") then
+                SaveFileName, change = ImGui.InputText("Project File Name", SaveFileName, 50)
+                if ImGui.Button("Save to File") then
+                    -- Add File Saving Mechanism Here
                 end
                 ImGui.EndTabItem()
             end
             -- Defines Debug Tab
             if ImGui.BeginTabItem("Debug") then
                 -- Button that Prints all Box Values
-                if ImGui.Button("Print Box Values", 175, 50) then
+                if ImGui.Button("Print Box Values") then
                     BoxPrintValue()
                 end
                 ImGui.EndTabItem()
