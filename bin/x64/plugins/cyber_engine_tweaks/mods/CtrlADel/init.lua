@@ -1,3 +1,4 @@
+
 -- mod info
 mod = {
     ready = false
@@ -31,6 +32,13 @@ local SaveFileName = ""
 -- For Testing
 local everything = false
 local roundThis = ""
+-- array of entities to spawn for testing
+local entTestArray = {"base\\fx\\quest\\q112\\q112_fly.ent", 
+"base\\gameplay\\devices\\advertising\\billboard_devices\\billboard_16x9.ent", 
+"base\\gameplay\\devices\\advertising\\digital\\billboards\\digital_billboard_3_4.ent", 
+"base\\items\\interactive\\industrial\\int_industrial_002__robotic_arm_delamain.ent"}
+
+
 
 -- onOverlayOpen
 registerForEvent('onOverlayOpen', function()
@@ -78,25 +86,53 @@ function BoxPrintValue()
     print(boxPos1)
 end
 
--- Supposed to spawn cube based on boxPos1 but crashes game instead
-function SpawnCube() 
-    print("db1")
-    spdlog.error("Debug1")
+-- spawns cube entity
+function SpawnCube()
     local worldTransform1 = WorldTransform.new()
-    print("db2")
-    spdlog.error("debug2")
-    worldTransform1:SetPosition(Vector4.new(-1325.501,1225.301,135.335,1.000))
-    print("db3")
-    spdlog.error("debug3")
+    local temppos = {x = boxPos1[1], y = boxPos1[2], z = boxPos1[3], w = boxPos1[4]}
+    worldTransform1:SetPosition(ToVector4(temppos)) -- Vector4.new(-1325.501,1225.301,135.335,1.000)
     worldTransform1:SetOrientation(Quaternion.new(1.00,1.00,1.00,1.00))
-    spdlog.error(tostring(WorldTransform.GetWorldPosition(worldTransform1)))
-    print("db4")
-    spdlog.error("Debug4")
     -- Do NOT try to spawn a mesh directly, this causes a game crash 
-    local EntityId = exEntitySpawner.Spawn("base\\fx\\meshes\\cube_debug.mesh", worldTransform1) -- old path: base\\fx\\meshes\\cube_debug.mesh base\\gameplay\\devices\\advertising\\billboard_devices\\billboard_16x9.ent base\\gameplay\\devices\\advertising\\digital\\billboards\\digital_billboard_3_4.ent base\\items\\interactive\\industrial\\int_industrial_002__robotic_arm_delamain.ent
-    spdlog.error("debug5")
-    print("debug5")
-    spdlog.error(tostring(EntityId))
+    local EntityId = exEntitySpawner.Spawn(entTestArray[1], worldTransform1) 
+    print(EntityId)
+    return EntityId
+end
+
+-- Highlights Cube
+function CubeHighlight(EntityId)
+    AddForceHighlightTargetEvent(EntityId)
+
+end
+
+function getCMesh() 
+    -- Get player position
+local player = Game.GetPlayer()
+local playerPos = player:GetWorldPosition()
+
+-- Define a radius for the area of interest
+local radius = 50.0  -- Adjust this as needed
+
+-- Get nearby entities
+local entities = Game.FindEntityInSphere(playerPos, radius)
+
+-- Iterate over entities
+for _, entity in ipairs(entities) do
+    -- Accessing entity information
+    local entityName = entity:GetDisplayName()
+    local entityType = entity:GetType().name
+    print("Entity Name: " .. entityName .. ", Type: " .. entityType)
+    
+    -- Access mesh (if available)
+    local meshComponent = entity:GetComponentByName("CMeshComponent")
+    if meshComponent then
+        -- Get the mesh information (CMesh)
+        local mesh = meshComponent.mesh
+        if mesh then
+            print("Mesh found for entity: " .. entityName)
+        end
+    end
+end
+
 end
 
 -- Draws and deals with the Ui
@@ -153,7 +189,10 @@ function CETUi()
                 end
                 -- for spawning the visualizing cube
                 if ImGui.Button("Spawn Cube") then
-                    SpawnCube()
+                    c2ubeId = SpawnCube()
+                end
+                if ImGui.Button("Get CMesh Test") then
+                    getCMesh()
                 end
                 ImGui.EndTabItem()
             end
