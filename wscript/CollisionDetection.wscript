@@ -2,7 +2,7 @@
 // @setting AxlFile:booL:true
 // @setting Everything:booL:true
 // @author spirit
-// @version 0.0.0
+// @version 0.0.1
 // @description
 // Main Processing Script for the CtrlADel project
 
@@ -12,9 +12,9 @@ import * as TypeHelper from 'TypeHelper.wscript';
 // Issue with undefined settings
 // Logger.Info(settings.InputString);
 
-let InputString = '{"selectionBox": {"min": [x:0, y:0, z:0, w:0], "max": [x:1, y:1, z:1, w:1], "quat": [x:0, y:0, z:0, w:0]}, "sectors": ["base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-6_4_0_3.streamingsector", "base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-43_37_3_0.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-42_37_3_0.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-22_18_2_1.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-22_18_1_1.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-21_18_2_1.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-21_18_1_1.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-11_9_0_2.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\exterior_-22_16_1_0.streamingsector"]}';
-
-let InputJson = JSON.parse(InputString);
+const InputString = '{"selectionBox": {"min": {"x":0, "y":0, "z":0, "w":0}, "max": {"x":1, "y":1, "z":1, "w":1}, "quat": {"x":0, "y":0, "z":0, "w":0}}, "sectors": ["base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-6_4_0_3.streamingsector", "base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-43_37_3_0.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-42_37_3_0.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-22_18_2_1.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-22_18_1_1.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-21_18_2_1.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-21_18_1_1.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-11_9_0_2.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\exterior_-22_16_1_0.streamingsector"]}';
+const SelectVariable = "";
+const InputJson = JSON.parse(InputString);
 
 // Function to calculate the 3D vector connecting two points
 function vectorBetweenPoints(pointA, pointB) {
@@ -65,16 +65,42 @@ class Cube {
 }
 
 
-let SelectionBox = new Cube(InputJson.selectionBox.min, InputJson.selectionBox.max, InputJson.selectionBox.quat);
+const SelectionBox = new Cube(InputJson.selectionBox.min, InputJson.selectionBox.max, InputJson.selectionBox.quat);
+
+// How the output json should look like
+// let OutputJson = {"sector": {"name": "", "nodes": {"index": 0, "type": "", "actors": []}}};
+let OutputJson = {};
 
 // Main Loop
-for (let sector of InputJson.sectors) {
-    // Logger.Info(sector);
+for (const sectorPath of InputJson.sectors) {
+    // Defines constants
+    const sectorJson = wkit.GetFileFromArchive(sectorPath, OpenAs.Json);
+    // for some reason complains about undefined
+    const nodeData = sectorJson["Data"]["RootChunk"]["nodeData"]["Data"];
+    const nodes = sectorJson["Data"]["RootChunk"]["nodes"];
+    let LightNodeCon = [];
+    let MeshNodeCon = [];
+
+    let i = 0;
+    for (let nodeInstance of nodes) {
+        let nodeType = nodeInstance["Data"]["$type"];
+        i += 1;
+        if (nodeType !== null) {
+            if (nodeType.includes(SelectVariable)) {
+                switch (true) {
+                    case nodeType.includes("Light"):
+                        LightNodeCon.push({"index":i, "type": nodeInstance["Data"]["$type"]});
+                        break;
+                    case nodeType.includes("Mesh"):
+                        MeshNodeCon.push({"index":i, "type": nodeInstance["Data"]["$type"], "mesh": nodeInstance["Data"]["mesh"]["$value"]});
+                        break;
+                }
+            }
+        }
+    }
+    Logger.Info(LightNodeCon);
+    Logger.Info(MeshNodeCon);
 }
-// Logger.Info(SelectionBox);
-Logger.Info(InputJson.selectionBox.min);
-Logger.Info(InputJson.selectionBox.max);
-Logger.Info(InputJson.selectionBox.quat);
 
 
 
@@ -110,7 +136,7 @@ Logger.Info(InputJson.selectionBox.quat);
 /*
 Will Requqire a section that gets the corner points and meshes from the game given the sector names
 Base64 encoded data from mesh json
-let vert_base64 = "PXYkPYTbyz0py3NAAACAPzKsPL/FFb+7t+4eQAAAgD89diQ9xRW/u7fuHkAAAIA/Mqw8v4Tbyz0py3NAAACAP2QuEcCE28s9KctzQAAAgD9kLhHAxRW/u7fuHkAAAIA/UOtCwITbyz0py3NAAACAP1DrQsDFFb+7t+4eQAAAgD8yrDy/xRW/uzR+Vb4AAIA/PXYkPcUVv7s0flW+AACAP1DrQsDFFb+7NH5VvgAAgD9kLhHAxRW/uzR+Vb4AAIA/T+tCwIC1TL4py3NAAACAP2suEcAinsG9t+4eQAAAgD9P60LAIp7BvbfuHkAAAIA/ay4RwIK1TL4py3NAAACAP0+sPL99tUy+KctzQAAAgD9NrDy/NJ7BvbfuHkAAAIA/FHYkPYW1TL4py3NAAACAPxR2JD05nsG9t+4eQAAAgD9rLhHAIp7BvTR+Vb4AAIA/T+tCwCKewb00flW+AACAPxR2JD05nsG9NH5VvgAAgD9NrDy/NJ7BvTR+Vb4AAIA/KXYkPWkjoj5Vio8+AACAP1J2JD3BXU6+EthzQAAAgD8pdiQ9aSOiPhLYc0AAAIA/UnYkPcFdTr5Vio8+AACAP1LrQsDCXU6+VYqPPgAAgD9O60LAZyOiPhLYc0AAAIA/UutCwMJdTr4S2HNAAACAP07rQsBnI6I+VYqPPgAAgD8=";
+let vert_base64 = "PXYkPYTbyz0py3NAAACAPzKsPL/FFb+7t+4eQAAAgD89diQ9xRW/u7fuHkAAAIA/Mqw8v4Tbyz0py3NAAACAP2QuEcCE28s9KctzQAAAgD9kLhHAxRW/u7fuHkAAAIA/UOtCwITbyz0py3NAAACAP1DrQsDFFb+7t+4eQAAAgD8yrDy/xRW/uzR+Vb4AAIA/PXYkPcUVv7s0flW+AACAP1DrQsDFFb+7NH5VvgAAgD9kLhHAxRW/uzR+Vb4AAIA/T+tCwCKewb00flW+AACAPxR2JD05nsG9t+4eQAAAgD9rLhHAIp7BvTR+Vb4AAIA/T+tCwIC1TL4py3NAAACAP2suEcAinsG9t+4eQAAAgD9P60LAIp7BvbfuHkAAAIA/ay4RwIK1TL4py3NAAACAP0+sPL99tUy+KctzQAAAgD9NrDy/NJ7BvbfuHkAAAIA/FHYkPYW1TL4py3NAAACAPxR2JD05nsG9t+4eQAAAgD9rLhHAIp7BvTR+Vb4AAIA/T+tCwCKewb00flW+AACAPxR2JD05nsG9NH5VvgAAgD9NrDy/NJ7BvTR+Vb4AAIA/KXYkPWkjoj5Vio8+AACAP1J2JD3BXU6+EthzQAAAgD8pdiQ9aSOiPhLYc0AAAIA/UnYkPcFdTr5Vio8+AACAP1LrQsDCXU6+VYqPPgAAgD9O60LAZyOiPhLYc0AAAIA/UutCwMJdTr4S2HNAAACAP07rQsBnI6I+VYqPPgAAgD8=";
 
 let indi_base64 = "AAABAAIAAwABAAAABAABAAMABQABAAQABgAFAAQABwAFAAYAAgAIAAkAAQAIAAIACgAFAAcACwAFAAoADAANAA4ADwANAAwAEAANAA8AEQANABAAEgARABAAEwARABIADgAUABUADQAUAA4AFgARABMAFwARABYAGAAZABoAGwAZABgAHAAdAB4AHwAdABwA";
 
