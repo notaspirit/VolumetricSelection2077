@@ -47,6 +47,10 @@ let testRot = {roll: 0, pitch: 0, yaw: -4.9};
 let testQuat = rpyToQuat(testRot.roll, testRot.pitch, testRot.yaw);
 Logger.Info(testQuat)
 
+let globalMeshBuilds = 0;
+const maxMeshBuilds = 100;
+
+
 // -------------------------------------------------------------------------
 
 
@@ -84,6 +88,34 @@ function parseInputString() {
 }
 const InputJson = parseInputString();
 
+// build bounding box from mesh
+function buildBoundingBoxFromVertices(vertices) {
+    let minPoint = { x: Infinity, y: Infinity, z: Infinity };
+    let maxPoint = { x: -Infinity, y: -Infinity, z: -Infinity };
+    for (let vertex of vertices) {
+        if (vertex.x < minPoint.x) minPoint.x = vertex.x;
+        if (vertex.y < minPoint.y) minPoint.y = vertex.y;
+        if (vertex.z < minPoint.z) minPoint.z = vertex.z;
+        if (vertex.x > maxPoint.x) maxPoint.x = vertex.x;
+        if (vertex.y > maxPoint.y) maxPoint.y = vertex.y;
+        if (vertex.z > maxPoint.z) maxPoint.z = vertex.z;
+    }
+    return new box(minPoint, maxPoint, mesh.quat);
+}
+
+
+// Todo: add triangles
+// mesh class
+class mesh {
+    constructor(vertices, indices) {
+        this.vertices = vertices;
+        this.indices = indices;
+        this.boundingBox = buildBoundingBoxFromVertices(this.vertices);
+    }
+}
+
+
+// Todo: add triangles
 // Defines a box with a min and max point and a quaternion rotation
 class box {
     constructor(uncheckedMinPoint, uncheckedMaxPoint, quat) {
@@ -91,8 +123,24 @@ class box {
         this.minPoint = minPoint;
         this.maxPoint = maxPoint;
         this.quat = quat;
+        this.vertices = this.buildVertices(minPoint, maxPoint);
+    }
+
+    buildVertices(minPoint, maxPoint) {
+        return [
+            {x:minPoint.x, y:minPoint.y, z:minPoint.z},
+            {x:minPoint.x, y:minPoint.y, z:maxPoint.z},
+            {x:minPoint.x, y:maxPoint.y, z:minPoint.z},
+            {x:minPoint.x, y:maxPoint.y, z:maxPoint.z},
+            {x:maxPoint.x, y:minPoint.y, z:minPoint.z},
+            {x:maxPoint.x, y:minPoint.y, z:maxPoint.z},
+            {x:maxPoint.x, y:maxPoint.y, z:minPoint.z},
+            {x:maxPoint.x, y:maxPoint.y, z:maxPoint.z}
+        ];
     }
 }
+
+
 // builds selection box, uses inputjson and testquat (testquat will be replaced with the actual selection box rotation later)
 const selectionBox = new box(InputJson["selectionBox"]["minPoint"], InputJson["selectionBox"]["maxPoint"], testQuat);
 Logger.Info("Selection Box: ");
@@ -206,6 +254,43 @@ function getNodeInfo(nodeInstance, nodeIndex) {
     return nodeInfo;
 }
 
+// Loads the mesh as JSON from the depot path
+function loadMeshJson(depotPath) {
+    //Logger.Info("Started Loading Mesh JSON");
+    const meshGameFile = wkit.GetFileFromArchive(depotPath, OpenAs.GameFile);
+    const meshJson = TypeHelper.JsonParse(wkit.GameFileToJson(meshGameFile));
+    //Logger.Info("Finished Loading Mesh JSON");
+    return meshJson;
+}
+
+// Generates the mesh from the mesh object
+function buildMesh(depotPath) {
+    // for testing to reduce time
+    globalMeshBuilds++;
+    if (globalMeshBuilds > maxMeshBuilds) {
+        Logger.Info("Max Mesh Builds Reached");
+        return;
+    }
+    const meshJson = loadMeshJson(depotPath);
+    const encodedRenderBuffer = meshJson.Data.RootChunk.renderResourceBlob.Data.renderBuffer.Bytes;
+    const renderChunkInfos = meshJson.Data.RootChunk.renderResourceBlob.Data.header.renderChunkInfos;
+
+    let maxLod = 0;
+    for (let lod of renderChunkInfos) {
+        if (lod.lodMask > maxLod) {
+            maxLod = lod.lodMask;
+        }
+    }
+
+
+
+    let vertices = [];
+    let indices = [];
+    
+    return new mesh(vertices, indices);
+}
+
+
 // generates the AXL file and saves it to resources
 function buildAXLFileOutput(InputJson) {
     let outputString = "streaming:\n  sectors:\n";
@@ -258,15 +343,18 @@ for (const sectorPath of InputJson.sectors) {
         for (let nodeIndex of matchingNodes) {
             if (nodeData[nodeDataIndex]["NodeIndex"] == nodeIndex["index"]) {
                 let nodePosition = {x: nodeData[nodeDataIndex]["Position"]["X"], y: nodeData[nodeDataIndex]["Position"]["Y"], z: nodeData[nodeDataIndex]["Position"]["Z"]};
-                Logger.Info("Node Position: ");
-                Logger.Info(nodePosition);
                 let adjustedPosition = transformAndRevertVertex(nodePosition, selectionBox);
-                Logger.Info("Adjusted Position: ");
-                Logger.Info(adjustedPosition);
-                // Checks if the vertex is inside the selection box
+                // Checks if the position vertex is inside the selection box
                 if (isVertexInsideBox(adjustedPosition.worldSpace, selectionBox)) {
                     nodeDataIndexes.push({"AXLindex": nodeDataIndex, "type": nodeIndex["type"]});
-                    Logger.Success("Node is inside the selection box");
+                }
+                // If the node has a mesh, build it
+                if (nodeIndex["mesh"] !== null) {
+                    if (globalMeshBuilds < maxMeshBuilds) {
+//                        Logger.Info(`Building Mesh ${nodeIndex["mesh"]}`);
+                        let mesh = buildMesh(nodeIndex["mesh"]);
+
+                    }
                 }
             }
         }
@@ -280,22 +368,5 @@ for (const sectorPath of InputJson.sectors) {
 // Logger.Info(outputJson);
 buildAXLFileOutput(outputJson);
 
-Logger.Info("Selection Box: ");
-Logger.Info(selectionBox);
 
 
-/*
-// Test rotation
-let testVertex = {x: 1, y: 0, z: 0};
-let testRotation = {roll: 0, pitch: 0, yaw: 90}; // 90 degree rotation around Z-axis
-let testQuat2 = rpyToQuat(testRotation.roll, testRotation.pitch, testRotation.yaw);
-let rotatedVertex2 = rotateVertexByQuaternion(testVertex, testQuat2);
-
-Logger.Info("Original vertex: ");
-Logger.Info(testVertex);
-Logger.Info("Rotation quaternion: ");
-Logger.Info(testQuat2);
-Logger.Info("Rotated vertex: ");
-Logger.Info(rotatedVertex2);
-// Expected output should be close to {x: 0, y: 1, z: 0}
-*/
