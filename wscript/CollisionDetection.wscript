@@ -8,7 +8,7 @@
 // User Settings
 
 // Input String from CET Mod
-const InputString = '{"selectionBox": {"min": {"x":-1325.4757, "y":1232.7316, "z":111.0202, "w":1}, "max": {"x":-1357.3151, "y":1196.6312, "z":137.29634, "w":0}, "quat": {"i":0, "j":0, "k":0, "r":0}}, "sectors": ["base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-6_4_0_3.streamingsector", "base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-43_37_3_0.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-42_37_3_0.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-22_18_2_1.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-22_18_1_1.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-21_18_2_1.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-21_18_1_1.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-11_9_0_2.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\exterior_-22_16_1_0.streamingsector"]}';
+const InputString = '{"selectionBox": {"min": {"x":-1325.4757, "y":1232.7316, "z":111.0202, "w":1}, "max": {"x":-1357.3151, "y":1196.6312, "z":137.29634, "w":1}, "quat": {"i":0, "j":0, "k":0, "r":0}}, "sectors": ["base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-6_4_0_3.streamingsector", "base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-43_37_3_0.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-42_37_3_0.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-22_18_2_1.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-22_18_1_1.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-21_18_2_1.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-21_18_1_1.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-11_9_0_2.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\exterior_-22_16_1_0.streamingsector"]}';
 
 // Search variable for node type, leave blank for all, supports partial string matching, seperation by spaces
 // Note: This is case sensitive
@@ -21,6 +21,11 @@ const SelectVariable = "";
 
 // turns roll pitch yaw into a quaternion
 function rpyToQuat(roll, pitch, yaw) {
+    // Convert degrees to radians
+    roll = roll * Math.PI / 180;
+    pitch = pitch * Math.PI / 180;
+    yaw = yaw * Math.PI / 180;
+
     const cy = Math.cos(yaw * 0.5);
     const sy = Math.sin(yaw * 0.5);
     const cp = Math.cos(pitch * 0.5);
@@ -28,17 +33,17 @@ function rpyToQuat(roll, pitch, yaw) {
     const cr = Math.cos(roll * 0.5);
     const sr = Math.sin(roll * 0.5);
 
-    const quat = {
+    return {
         i: sr * cp * cy - cr * sp * sy,
         j: cr * sp * cy + sr * cp * sy,
         k: cr * cp * sy - sr * sp * cy,
         r: cr * cp * cy + sr * sp * sy
     };
-
-    return quat;
 }
 // Defines selection box rotation and converts it to a quaternion
-let testRot = {roll: 0, pitch: 0, yaw: -4};
+let testRot = {roll: 0, pitch: 0, yaw: -4.9};
+// let testRot = {roll: 0, pitch: 0, yaw: 0};
+// let testRot = {roll: 0, pitch: 0, yaw: -180};
 let testQuat = rpyToQuat(testRot.roll, testRot.pitch, testRot.yaw);
 Logger.Info(testQuat)
 
@@ -117,45 +122,36 @@ function adjustVertexToBoxCoordinateSpace(vertex, box) {
 }
 
 // Helper function to rotate a vertex by a quaternion
-function rotateVertexByQuaternion(vertex, quat) {
-    let num = quat.i * 2.0;
-    let num2 = quat.j * 2.0;
-    let num3 = quat.k * 2.0;
-    let num4 = quat.i * num;
-    let num5 = quat.j * num2;
-    let num6 = quat.k * num3;
-    let num7 = quat.i * num2;
-    let num8 = quat.i * num3;
-    let num9 = quat.j * num3;
-    let num10 = quat.r * num;
-    let num11 = quat.r * num2;
-    let num12 = quat.r * num3;
+function rotateVertexByQuaternion(vertex, q) {
+    let x = vertex.x, y = vertex.y, z = vertex.z;
+    let ix = q.r * x + q.j * z - q.k * y;
+    let iy = q.r * y + q.k * x - q.i * z;
+    let iz = q.r * z + q.i * y - q.j * x;
+    let iw = -q.i * x - q.j * y - q.k * z;
 
     return {
-        x: (1.0 - (num5 + num6)) * vertex.x + (num7 - num12) * vertex.y + (num8 + num11) * vertex.z,
-        y: (num7 + num12) * vertex.x + (1.0 - (num4 + num6)) * vertex.y + (num9 - num10) * vertex.z,
-        z: (num8 - num11) * vertex.x + (num9 + num10) * vertex.y + (1.0 - (num4 + num5)) * vertex.z
+        x: ix * q.r + iw * -q.i + iy * -q.k - iz * -q.j,
+        y: iy * q.r + iw * -q.j + iz * -q.i - ix * -q.k,
+        z: iz * q.r + iw * -q.k + ix * -q.j - iy * -q.i
     };
 }
 // Helper function to convert a vertex from local space to world space
 function convertToWorldSpace(localVertex, box) {
-    // First, rotate the vertex
-    let rotatedVertex = rotateVertexByQuaternion(localVertex, box.quat);
-    
     // Then translate it back
     return {
-        x: rotatedVertex.x + box.minPoint.x,
-        y: rotatedVertex.y + box.minPoint.y,
-        z: rotatedVertex.z + box.minPoint.z
+        x: localVertex.x + box.minPoint.x,
+        y: localVertex.y + box.minPoint.y,
+        z: localVertex.z + box.minPoint.z
     };
 }
 
 // Function to transform to local space and back to world space
 function transformAndRevertVertex(vertex, box) {
-    // First, transform to local space
+    
+    // Transform to local space
     let localVertex = adjustVertexToBoxCoordinateSpace(vertex, box);
     
-    // Then, convert back to world space
+    // Convert back to world space
     let worldVertex = convertToWorldSpace(localVertex, box);
     
     return {
@@ -262,17 +258,44 @@ for (const sectorPath of InputJson.sectors) {
         for (let nodeIndex of matchingNodes) {
             if (nodeData[nodeDataIndex]["NodeIndex"] == nodeIndex["index"]) {
                 let nodePosition = {x: nodeData[nodeDataIndex]["Position"]["X"], y: nodeData[nodeDataIndex]["Position"]["Y"], z: nodeData[nodeDataIndex]["Position"]["Z"]};
-                let PositionVertex = transformAndRevertVertex(nodePosition, selectionBox);
+                Logger.Info("Node Position: ");
+                Logger.Info(nodePosition);
+                let adjustedPosition = transformAndRevertVertex(nodePosition, selectionBox);
+                Logger.Info("Adjusted Position: ");
+                Logger.Info(adjustedPosition);
                 // Checks if the vertex is inside the selection box
-                if (isVertexInsideBox(PositionVertex.worldSpace, selectionBox)) {
+                if (isVertexInsideBox(adjustedPosition.worldSpace, selectionBox)) {
                     nodeDataIndexes.push({"AXLindex": nodeDataIndex, "type": nodeIndex["type"]});
+                    Logger.Success("Node is inside the selection box");
                 }
             }
         }
     }
-    outputJson.push({"sector": {"name": sectorPath, "expectedNodes": nodeData.length, "nodes": nodeDataIndexes}});
+    if (nodeDataIndexes.length > 0) {
+        outputJson.push({"sector": {"name": sectorPath, "expectedNodes": nodeData.length, "nodes": nodeDataIndexes}});
+    }
     // Logger.Info(matchingNodes);
 
 }
-Logger.Info(outputJson);
+// Logger.Info(outputJson);
 buildAXLFileOutput(outputJson);
+
+Logger.Info("Selection Box: ");
+Logger.Info(selectionBox);
+
+
+/*
+// Test rotation
+let testVertex = {x: 1, y: 0, z: 0};
+let testRotation = {roll: 0, pitch: 0, yaw: 90}; // 90 degree rotation around Z-axis
+let testQuat2 = rpyToQuat(testRotation.roll, testRotation.pitch, testRotation.yaw);
+let rotatedVertex2 = rotateVertexByQuaternion(testVertex, testQuat2);
+
+Logger.Info("Original vertex: ");
+Logger.Info(testVertex);
+Logger.Info("Rotation quaternion: ");
+Logger.Info(testQuat2);
+Logger.Info("Rotated vertex: ");
+Logger.Info(rotatedVertex2);
+// Expected output should be close to {x: 0, y: 1, z: 0}
+*/
