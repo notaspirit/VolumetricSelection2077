@@ -10,6 +10,9 @@
 // Input String from CET Mod
 const InputString = '{"selectionBox": {"min": {"x":-1325.4757, "y":1232.7316, "z":111.0202, "w":1}, "max": {"x":-1357.3151, "y":1196.6312, "z":137.29634, "w":1}, "quat": {"i":0, "j":0, "k":0, "r":0}}, "sectors": ["base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-6_4_0_3.streamingsector", "base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-43_37_3_0.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-42_37_3_0.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-22_18_2_1.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-22_18_1_1.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-21_18_2_1.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-21_18_1_1.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\interior_-11_9_0_2.streamingsector","base\\\\worlds\\\\03_night_city\\\\_compiled\\\\default\\\\exterior_-22_16_1_0.streamingsector"]}';
 
+// Wolvenkit Project Path
+const wkitProjectPath = "E:\\Games\\WolvenKit Projects\\CtrlADelDev\\";
+
 // Search variable for node type, leave blank for all, supports partial string matching, seperation by spaces
 // Note: This is case sensitive
 const SelectVariable = "";
@@ -26,6 +29,11 @@ const cacheMeshBuilds = true;
 const cleanCache = false;
 // If enabled, the cache will be cleaned after every use, otherwise cached meshes will be reused project wide
 
+// Clean GLB Files after every use
+const cleanGLBFiles = false;
+// If enabled, the GLB files will be deleted after every use, otherwise cached GLB files will be reused project wide
+// TODO: Implement this
+
 // Detailed Logging
 const detailedLogging = false;
 
@@ -33,13 +41,19 @@ const detailedLogging = false;
 
 // Imports
 import * as THREE from 'three.module.min.js';
+import { GLTFLoader } from 'GLTFLoader.js';
 import * as Logger from 'Logger.wscript';
 import * as TypeHelper from 'TypeHelper.wscript';
+import * as fs from 'fs';
 
 // Global Variables
 let meshCache = [];
 const modName = "CollisionDetection";
 let outputJson = [];
+let totalNodes = 0;
+let maxMeshBuilds = 10;
+let globalMeshBuilds = 0;
+let rawPath = wkitProjectPath + "source\\raw\\";
 
 // Functions
 
@@ -114,6 +128,9 @@ function buildSelectionBox() {
 }
 
 const selectionBox = buildSelectionBox();
+if (detailedLogging) {
+    Logger.Info(selectionBox);
+}
 
 
 // Gets all relevant node info out of "node"
@@ -152,6 +169,53 @@ function getNodeInfo(nodeInstance, nodeIndex) {
     return nodeInfo;
 }
 
+// Changes the mesh path to a glb path
+function meshPathToGLBPath(meshPath) {
+    if (typeof meshPath === 'string' && meshPath.endsWith('.mesh')) {
+        return meshPath.slice(0, -5) + '.glb';
+    }
+    return meshPath;
+}
+// Loads the glb mesh as a THREE.Mesh
+function loadGLBMesh(glbPath) {
+    const loader = new GLTFLoader();
+    let mesh = null;
+    let absolutePath = rawPath + glbPath;
+
+    // Assuming wkit.LoadFile returns an ArrayBuffer
+    const glbBuffer = fs.readFileSync(absolutePath);
+    const gltf = loader.parseSync(glbBuffer);
+
+    gltf.scene.traverse((child) => {
+        if (child.isMesh && !mesh) {
+            mesh = child;
+        }
+    });
+
+    if (!mesh) {
+        Logger.Error(`No mesh found in the GLB file: ${glbPath}`);
+    }
+
+    return mesh;
+}
+
+// .mesh path to glb file
+function meshPathToTHREEMesh(meshPath) {
+    let glbPath = meshPathToGLBPath(meshPath);
+    if (wkit.FileExistsInRaw(glbPath)) {
+        Logger.Info(`GLB File Already Exists: ${glbPath}`);
+        return glbPath;
+    }
+    Logger.Info(`Converting Mesh to GLB: ${meshPath}`);
+    let meshPathSet = new Set();
+    meshPathSet.add(meshPath);
+    let meshGameFile = wkit.GetFileFromArchive(meshPath, OpenAs.GameFile);
+    wkit.SaveToProject(meshPath, meshGameFile);
+    wkit.ExportFiles([...meshPathSet]);
+    Logger.Info(`GLB Path: ${glbPath}`);
+    return loadGLBMesh(glbPath);
+}
+
 // generates the AXL file and saves it to resources
 function buildAXLFileOutput(InputJson) {
     Logger.Info("Building AXL File Output");
@@ -170,6 +234,8 @@ function buildAXLFileOutput(InputJson) {
 Logger.Info("Starting Main Loop");
 for (const sectorPath of InputJson.sectors) {
     Logger.Info(`Processing Sector: ${sectorPath}`);
+
+    let sectorOutputCount = 0;
 
     // Getting the sector file and parsing it into a json object
     const sectorGameFile = wkit.GetFileFromArchive(sectorPath, OpenAs.GameFile);
@@ -195,14 +261,30 @@ for (const sectorPath of InputJson.sectors) {
     for (let nodeDataIndex in nodeData) {
         for (let nodeIndex of matchingNodes) {
             if (nodeData[nodeDataIndex]["NodeIndex"] == nodeIndex["index"]) {
-                // Implement collision detection here
+                // 
+                if (nodeIndex["mesh"] !== null && globalMeshBuilds < maxMeshBuilds) {
+                    loadGLBMesh(nodeIndex["mesh"])
+                    .then(mesh => {
+                        Logger.Info(`Mesh: ${mesh}`);
+                    })
+                    .catch(error => {
+                        Logger.Error(`Error loading GLB: ${error.message}`);
+                    });
+                    globalMeshBuilds++;
+
                 }
             }
         }
+    }
     if (nodeDataIndexes.length > 0) {
         outputJson.push({"sector": {"name": sectorPath, "expectedNodes": nodeData.length, "nodes": nodeDataIndexes}});
-    }   
+    }
+    Logger.Info(`${sectorOutputCount} nodes found that intersect with the selection box`);
+    totalNodes += sectorOutputCount;
 }
+
+// Finishing up
+Logger.Info(`Total Nodes: ${totalNodes}`);
 
 // Saves the mesh cache to resources or resets it
 if (cleanCache) {
@@ -214,8 +296,4 @@ if (cleanCache) {
 }
 
 buildAXLFileOutput(outputJson);
-
-
-
-
 
