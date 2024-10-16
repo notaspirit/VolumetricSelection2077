@@ -44,7 +44,6 @@ import * as THREE from 'three.module.min.js';
 import { GLTFLoader } from 'GLTFLoader.js';
 import * as Logger from 'Logger.wscript';
 import * as TypeHelper from 'TypeHelper.wscript';
-import * as fs from 'fs';
 
 // Global Variables
 let meshCache = [];
@@ -57,6 +56,7 @@ let rawPath = wkitProjectPath + "source\\raw\\";
 
 // Functions
 
+let textDecoder = new TextDecoder();
 // Validating input box min max
 function validateInputBoxMinMax(minPoint, maxPoint) {
     if (detailedLogging) {
@@ -183,8 +183,8 @@ function loadGLBMesh(glbPath) {
     let absolutePath = rawPath + glbPath;
 
     // Assuming wkit.LoadFile returns an ArrayBuffer
-    const glbBuffer = fs.readFileSync(absolutePath);
-    const gltf = loader.parseSync(glbBuffer);
+    const glbBuffer = wkit.GetFileFromProject(absolutePath, OpenAs.Json);
+    const gltf = loader.parse(glbBuffer);
 
     gltf.scene.traverse((child) => {
         if (child.isMesh && !mesh) {
