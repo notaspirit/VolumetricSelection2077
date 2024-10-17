@@ -1,6 +1,17 @@
-body {
+body, html {
+  height: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
   color: white; /* Set text color to white */
   background-color: #171c26; /* Optional: Set background color */
+}
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 .console {
   font-family: 'Courier New', Courier, monospace; /* Use a monospaced font */
@@ -8,9 +19,12 @@ body {
   height: 300px; /* Adjust height as needed */
   overflow-y: auto;
   border: 1px solid #ccc;
-  padding: 10px;
+  padding: 1px;
   width: 100%;
   box-sizing: border-box;
+  margin-top: auto;
+  line-height: 1;
+  font-size: 14px;
 }
 .info-message {
   color: #ffffff; /* Change to your preferred color */
@@ -21,5 +35,5 @@ body {
 }
 
 .success-message {
-  color: green; /* Change to your preferred color */
+  color: rgb(0, 194, 0); /* Change to your preferred color */
 }
