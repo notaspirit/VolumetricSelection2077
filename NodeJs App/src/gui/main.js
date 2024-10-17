@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const fs = require('fs');
 const path = require('path');
-const { logMessage, intializeLogFile } = require('../core/logger');
+const { LoggerMain, intializeLogFile, getLogFilePath } = require('../core/logger');
 
 let mainWindow;
 
@@ -49,6 +49,10 @@ ipcMain.on('save-settings', (event, settings) => {
   saveSettings(settings);
 });
 
+ipcMain.handle('get-log-file-path', () => {
+  return getLogFilePath();
+});
+
 const menuTemplate = [
   {
     label: 'Settings',
@@ -59,15 +63,44 @@ const menuTemplate = [
 ];
 
 const menu = Menu.buildFromTemplate(menuTemplate);
-Menu.setApplicationMenu(menu);
+//Menu.setApplicationMenu(menu);
 
 app.whenReady().then(() => {
   intializeLogFile();
-  logMessage('Application started');
-  createWindow();
-  Menu.setApplicationMenu(menu);
+  LoggerMain.info('Application started');
+  LoggerMain.info(getLogFilePath());
+
+  if (getLogFilePath() !== '') {
+    createWindow();
+    // Notify the renderer process that the log file path is ready
+    mainWindow.webContents.on('did-finish-load', () => {
+      mainWindow.webContents.send('log-file-ready');
+    });
+  }
+  //Menu.setApplicationMenu(menu);
 });
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
+});
+
+// Logging Messages through ipcMain because some shit is retarded
+ipcMain.on('log-info', (event, message) => {
+  const logEntry = LoggerMain.info(message);
+  mainWindow.webContents.send('append-to-console', logEntry);
+});
+
+ipcMain.on('log-error', (event, message) => {
+  const logEntry = LoggerMain.error(message);
+  mainWindow.webContents.send('append-to-console', logEntry);
+});
+
+ipcMain.on('log-success', (event, message) => {
+  const logEntry = LoggerMain.success(message);
+  mainWindow.webContents.send('append-to-console', logEntry);
+});
+
+ipcMain.on('get-log-file-path', (event) => {
+  const logFilePath = getLogFilePath();
+  event.reply(logFilePath);
 });
