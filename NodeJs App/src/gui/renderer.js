@@ -1,6 +1,16 @@
 const { ipcRenderer } = require('electron');
 const { Log } = require('../core/logger');
 const { loadSettings } = require('./settings');
+const { validator } = require('../core/validator');
+
+async function getSettings() {
+  try {
+      return await loadSettings();
+  } catch (error) {
+      Log.error('Failed to load settings: ' + error.message);
+      return null;
+  }
+}
 
 function appendToConsoleInternal(message) {
   const consoleElement = document.getElementById('console1');
@@ -17,25 +27,40 @@ function appendToConsoleInternal(message) {
   consoleElement.appendChild(messageElement);
   consoleElement.scrollTop = consoleElement.scrollHeight;
 }
-document.addEventListener('DOMContentLoaded', () => {
+
+function cleanConsole() {
+  const consoleElement = document.getElementById('console1');
+  consoleElement.innerHTML = '';
+}
+
+async function checkSelection() {
+  Log.info('Checking selection');
+  await validator.validateGamePath();
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const settings = await getSettings();
   ipcRenderer.on('append-to-console', (event, message) => {
     appendToConsoleInternal(message);
   });
   document.getElementById('open-settings-btn').addEventListener('click', () => {
         ipcRenderer.send('open-settings');
   });
+  document.getElementById('clean-console-btn').addEventListener('click', () => {
+    cleanConsole();
+  });
   const checkSelectionButton = document.getElementById('check-selection-btn');
   checkSelectionButton.addEventListener('click', () => {
     checkSelectionButton.classList.add('loading');
+    if (settings.detailedLogging) {
+      Log.info('Checking selection button clicked');
+    }
     performAsyncOperation().then(() => {
       checkSelectionButton.classList.remove('loading');
     });
   });
-  function performAsyncOperation() {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve();
-      }, 2000);
-    });
+
+  async function performAsyncOperation() {
+    await checkSelection();
   }
 });
