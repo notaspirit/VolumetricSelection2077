@@ -12,5 +12,8 @@
   "description": "",
   "devDependencies": {
     "electron": "^33.0.0"
+  },
+  "dependencies": {
+    "spectre.css": "^0.5.9"
   }
 }
