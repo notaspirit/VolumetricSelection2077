@@ -11,7 +11,7 @@
       http-equiv="X-Content-Security-Policy"
       content="default-src 'self'; script-src 'self'"
     />
-    <title>Hello from Electron renderer!</title>
+    <title>VolumetricSelection2077</title>
     <link rel="stylesheet" href="../styles/spectre.css">
     <link rel="stylesheet" href="../styles/spectre-exp.css">
     <link rel="stylesheet" href="../styles/spectre-icons.css">
@@ -20,9 +20,14 @@
   <body>
     <div class="content">
       <h1>VolumetricSelection2077</h1>
-      <button class="btn" id="open-settings-btn">default button</button>
-      <button class="btn btn-primary">primary button</button>
-      <button class="btn btn-link">link button</button>
+      <div class="form-group">
+        <label class="form-label" for="transfer-string"></label>
+        <input class="form-input" type="text" id="transfer-string" placeholder="Transfer String">
+      </div>
+      <div class="button-container">
+        <button class="btn" id="open-settings-btn">Settings</button>
+        <button class="btn btn-primary" id="check-selection-btn">Check Selection</button>
+      </div>
     </div>
     <div id="console1" class="console"></div>
     <script src="renderer.js"></script>

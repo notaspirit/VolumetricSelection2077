@@ -14,6 +14,7 @@
     "electron": "^33.0.0"
   },
   "dependencies": {
+    "@electron/remote": "^2.1.2",
     "spectre.css": "^0.5.9"
   }
 }

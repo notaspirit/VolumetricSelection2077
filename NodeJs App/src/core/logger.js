@@ -61,16 +61,32 @@ class LoggerMainOnly {
 
 class LogAnywhere {
     info(message) {
-        ipcRenderer.send('log-info', message);
+        try {
+            ipcRenderer.send('log-info', message);
+        } catch (error) {
+            console.log('Error sending log message:', error);
+        }
     }
     error(message) {
-        ipcRenderer.send('log-error', message);
+        try {
+            ipcRenderer.send('log-error', message);
+        } catch (error) {
+            console.log('Error sending log message:', error);
+        }
     }
     success(message) {
-        ipcRenderer.send('log-success', message);
-    }
+        try {
+            ipcRenderer.send('log-success', message);
+        } catch (error) {
+            console.log('Error sending log message:', error);
+        }
+        }
     getLogFilePath() {
-        return ipcRenderer.invoke('get-log-file-path');
+        try {
+            return ipcRenderer.invoke('get-log-file-path');
+        } catch (error) {
+            console.log('Error getting log file path:', error);
+        }
     }
 }
 

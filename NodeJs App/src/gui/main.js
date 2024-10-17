@@ -9,21 +9,23 @@ const createWindow = () => {
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
+    icon: path.join(__dirname, '../assets/redCube.ico'),
     color: '#fdfdfd',
     backgroundColor: '#171c26',
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false
+      contextIsolation: false,
+      enableRemoteModule: true // Enable remote module
     }
   });
-
+  mainWindow.setMenu(null);
   mainWindow.loadFile('src/gui/index.html');
 };
 
 const createSettingsWindow = () => {
   const settingsWin = new BrowserWindow({
-    width: 400,
-    height: 300,
+    width: 600,
+    height: 250,
     backgroundColor: '#171c26',
     parent: mainWindow,
     modal: true,
@@ -103,4 +105,12 @@ ipcMain.on('log-success', (event, message) => {
 ipcMain.on('get-log-file-path', (event) => {
   const logFilePath = getLogFilePath();
   event.reply(logFilePath);
+});
+
+ipcMain.on('open-settings', (event) => {
+  createSettingsWindow();
+});
+
+ipcMain.handle('getAppPath', () => {
+  return app.getPath('appData');
 });

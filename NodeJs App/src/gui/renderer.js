@@ -1,6 +1,6 @@
 const { ipcRenderer } = require('electron');
-const fs = require('fs');
 const { Log } = require('../core/logger');
+const { loadSettings } = require('./settings');
 
 function appendToConsoleInternal(message) {
   const consoleElement = document.getElementById('console1');
@@ -18,14 +18,24 @@ function appendToConsoleInternal(message) {
   consoleElement.scrollTop = consoleElement.scrollHeight;
 }
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('DOMContentLoaded');
   ipcRenderer.on('append-to-console', (event, message) => {
     appendToConsoleInternal(message);
   });
   document.getElementById('open-settings-btn').addEventListener('click', () => {
-    console.log('Settings button clicked');
-        Log.info('Settings button clicked');
-        Log.error('Settings button clicked');
-        Log.success('Settings button clicked');
+        ipcRenderer.send('open-settings');
   });
+  const checkSelectionButton = document.getElementById('check-selection-btn');
+  checkSelectionButton.addEventListener('click', () => {
+    checkSelectionButton.classList.add('loading');
+    performAsyncOperation().then(() => {
+      checkSelectionButton.classList.remove('loading');
+    });
+  });
+  function performAsyncOperation() {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve();
+      }, 2000);
+    });
+  }
 });

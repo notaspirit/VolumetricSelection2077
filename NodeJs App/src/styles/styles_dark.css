@@ -6,26 +6,50 @@ body, html {
   color: white; /* Set text color to white */
   background-color: #171c26; /* Optional: Set background color */
 }
+
 .content {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  justify-content: flex-start; /* Align items to the top */
+  align-items: stretch; /* Ensure full width */
+  width: 100%; /* Ensure full width */
+  padding: 5px; /* Optional: Add padding for spacing */
 }
+
 .console {
+  flex: 1; /* Allow the console to grow and fill available space */
   font-family: 'Courier New', Courier, monospace; /* Use a monospaced font */
   white-space: pre; /* Preserve whitespace */
-  height: 300px; /* Adjust height as needed */
   overflow-y: auto;
-  border: 1px solid #ccc;
+  border: 1px solid #505050;
   padding: 1px;
   width: 100%;
   box-sizing: border-box;
-  margin-top: auto;
   line-height: 1;
   font-size: 14px;
 }
+
+/* Custom scrollbar styles for WebKit browsers */
+.console::-webkit-scrollbar {
+  width: 12px;
+}
+
+.console::-webkit-scrollbar-track {
+  background: #2a2f3a; /* Dark background for scrollbar track */
+}
+
+.console::-webkit-scrollbar-thumb {
+  background-color: #505050; /* Darker color for scrollbar thumb */
+  border-radius: 10px;
+  border: 3px solid #2a2f3a; /* Matches the track background */
+}
+
+/* Custom scrollbar styles for Firefox */
+.console {
+  scrollbar-color: #505050 #2a2f3a; /* thumb color, track color */
+  scrollbar-width: thin;
+}
+
 .info-message {
   color: #ffffff; /* Change to your preferred color */
 }
@@ -36,4 +60,71 @@ body, html {
 
 .success-message {
   color: rgb(0, 194, 0); /* Change to your preferred color */
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  text-align: left;
+}
+
+/* Ensure the first column is only as wide as its content */
+td:first-child {
+  white-space: nowrap; /* Prevents text from wrapping */
+  width: 1%; /* Allows the column to shrink to fit content */
+}
+
+/* Allow the second column to take up remaining space */
+td:nth-child(2) {
+  width: auto;
+}
+
+input[type="text"], input[type="checkbox"], select {
+  background-color: #2a2f3a; /* Dark background for inputs */
+  color: white; /* Text color for inputs */
+  border: 1px solid #444; /* Border color for inputs */
+  padding: 5px; /* Padding for inputs */
+  border-radius: 3px; /* Rounded corners for inputs */
+}
+
+.form-select {
+  background: #2a2f3a; 
+  color: inherit;
+}
+
+.form-select:not([multiple]):not([size]) {
+  background: #2a2f3a;
+  padding-right: 1.2rem;
+}
+
+.button-container {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 0; /* Ensure no margin at the bottom */
+}
+
+#open-settings-btn,
+#check-selection-btn {
+  margin-left: 10px; /* Add space between buttons */
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* Distribute space between elements */
+  align-items: stretch; /* Ensure full width */
+  width: 100%; /* Ensure full width */
+  padding: 5px; /* Optional: Add padding for spacing */
+}
+
+h1 {
+  margin-left: 5px; /* Offset header by the same amount as the text box */
+}
+
+td {
+  padding: 5px;
 }
