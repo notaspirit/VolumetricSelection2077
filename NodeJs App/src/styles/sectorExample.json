@@ -1,0 +1,22 @@
+{
+    "name": "exterior_-62_39_0_1",
+    "nodeData": {
+        {
+            "index": 0,
+            "type": "worldCollisionNode",
+            "meshPath": "relative/path/to/mesh.mesh",
+            "position": {"x": 0, "y": 0, "z": 0, "w": 1},
+            "rotation": {"i": 0, "j": 0, "k": 0, "r": 1},
+            "pivot": {"x": 0, "y": 0, "z": 0, "w": 1},
+            "actors": [
+                {
+                    "index": 0,
+                    "meshPath": "relative/path/to/mesh.mesh",
+                    "position": {"x": 0, "y": 0, "z": 0, "w": 1},
+                    "rotation": {"i": 0, "j": 0, "k": 0, "r": 1},
+                    "pivot": {"x": 0, "y": 0, "z": 0, "w": 1}
+                }
+            ]
+        }
+    }
+}
