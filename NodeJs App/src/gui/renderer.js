@@ -66,7 +66,6 @@ async function checkSelection() {
     Log.error('Aborting operation');
     return;
   }
-/*
   const filePaths = await gfm.getArchiveContentJSON();
   if (filePaths != null && filePaths.length > 0) {
     Log.success('Found ' + filePaths.length + ' files');
@@ -74,7 +73,6 @@ async function checkSelection() {
       Log.info('Found file: ' + filePath);
     }
   }
-  */
   await gfm.outputToOnlyArchiveName();
 
 }

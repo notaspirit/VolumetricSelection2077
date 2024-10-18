@@ -4,14 +4,15 @@
         {
             "index": 0,
             "type": "worldCollisionNode",
-            "meshPath": "relative/path/to/mesh.mesh",
+            "meshPath": "relative/path/to/mesh.mesh|null",
             "position": {"x": 0, "y": 0, "z": 0, "w": 1},
             "rotation": {"i": 0, "j": 0, "k": 0, "r": 1},
             "pivot": {"x": 0, "y": 0, "z": 0, "w": 1},
             "actors": [
                 {
                     "index": 0,
-                    "meshPath": "relative/path/to/mesh.mesh",
+                    "actorType": "box|sphere|mesh",
+                    "actorMeshIndex": 0|null,
                     "position": {"x": 0, "y": 0, "z": 0, "w": 1},
                     "rotation": {"i": 0, "j": 0, "k": 0, "r": 1},
                     "pivot": {"x": 0, "y": 0, "z": 0, "w": 1}

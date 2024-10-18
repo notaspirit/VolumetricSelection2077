@@ -59,6 +59,8 @@ async function getArchiveContentJSONInternal() {
     } catch (error) {
         Log.error('Failed to read archive ep1 content in gameFileManager: ' + error.message);
     }
+    let sectorCount = 0;
+    let meshCount = 0;
     let archiveContainsStreamingSectors = [];
     let archiveContainsMeshes = [];
     const archiveKeywords = ['basegame_2_mainmenu.archive', 'basegame_3_nightcity.archive', 'ep1_1_nightcity.archive', 'ep1_2_gamedata.archive', 'basegame_1_engine.archive', 'basegame_3_nightcity.archive', 'basegame_3_nightcity_terrain.archive', 'basegame_4_appearance.archive','basegame_4_gamedata.archive','ep1_1_nightcity.archive','ep1_1_nightcity_terrain.archive','ep1_2_gamedata.archive'];
@@ -74,11 +76,13 @@ async function getArchiveContentJSONInternal() {
             let outputsStreamingSectors = []
             let outputsMeshes = []
             for (const key in fileJson.Files) {
-                if (fileJson.Files[key].Name.endsWith('.streamingsector')) {
+                if (fileJson.Files[key].Name.endsWith('.streamingsector') && (fileJson.Files[key].Name.includes('exterior') || fileJson.Files[key].Name.includes('interior'))) {
                     outputsStreamingSectors.push({name: fileJson.Files[key].Name, hash: fileJson.Files[key].Key});
+                    sectorCount++;
                 }
                 if (fileJson.Files[key].Name.endsWith('.mesh')) {
                     outputsMeshes.push({name: fileJson.Files[key].Name, hash: fileJson.Files[key].Key});
+                    meshCount++;
                 }
             }
             if (outputsStreamingSectors.length > 0) {
@@ -96,6 +100,8 @@ async function getArchiveContentJSONInternal() {
         await fs.writeFile(path.join(outputPath, 'archiveContainsStreamingSectors.json'), JSON.stringify(archiveContainsStreamingSectors, null, 2));
         await fs.writeFile(path.join(outputPath, 'archiveContainsMeshes.json'), JSON.stringify(archiveContainsMeshes, null, 2));
         Log.info('Saved archiveContainsStreamingSectors.json and archiveContainsMeshes.json', true);
+        Log.info('Sector count: ' + sectorCount);
+        Log.info('Mesh count: ' + meshCount);
     } catch (error) {
         Log.error('Failed to write JSON files: ' + error.message);
     }
@@ -120,6 +126,9 @@ async function outputToOnlyArchiveNameInternal() {
     fs.writeFile(path.join(outputPath, 'meshArchiveFiles.json'), JSON.stringify(meshArchiveFiles, null, 2));
     Log.success('Saved sectorArchiveFiles.json and meshArchiveFiles.json');
 }
+// Sector count: 37226
+// Mesh count: 103752
+// Will be fun to preprocess 140k files . . . 
 class GameFileManager {
     async getArchiveContentJSON() {
         return await getArchiveContentJSONInternal();
