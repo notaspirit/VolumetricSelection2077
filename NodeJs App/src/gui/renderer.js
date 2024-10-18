@@ -49,6 +49,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('clear-console-btn').addEventListener('click', () => {
     cleanConsole();
   });
+  document.getElementById('merge-files-btn').addEventListener('click', () => {
+    Log.info('Merge files feature not implemented yet');
+  });
   const checkSelectionButton = document.getElementById('check-selection-btn');
   const settingsButton = document.getElementById('open-settings-btn');
   checkSelectionButton.addEventListener('click', () => {

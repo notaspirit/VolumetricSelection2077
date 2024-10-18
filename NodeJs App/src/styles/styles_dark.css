@@ -118,7 +118,8 @@ input[type="text"], input[type="checkbox"], select {
 }
 
 #open-settings-btn,
-#check-selection-btn {
+#check-selection-btn, 
+#merge-files-btn {
   margin-left: 10px; /* Add space between buttons */
 }
 
