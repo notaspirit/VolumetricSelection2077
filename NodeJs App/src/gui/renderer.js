@@ -2,6 +2,7 @@ const { ipcRenderer } = require('electron');
 const { Log } = require('../core/logger');
 const { loadSettings } = require('../core/loadSettings');
 const { validator } = require('../core/validator');
+const { gfm } = require('../core/gameFileManager');
 const fs = require('fs');
 const path = require('path');
 
@@ -21,16 +22,22 @@ async function saveSettings(settings) {
 }
 
 function appendToConsoleInternal(message) {
+  if (typeof message !== 'string') {
+    Log.error('Received an undefined or non-string message');
+    return;
+  }
   const consoleElement = document.getElementById('console1');
   const messageElement = document.createElement('div');
-    // Determine the message type and assign a class
-    if (message.includes('[INFO')) {
-      messageElement.classList.add('info-message');
-    } else if (message.includes('[ERROR')) {
-      messageElement.classList.add('error-message');
-    } else if (message.includes('[SUCCESS')) {
-      messageElement.classList.add('success-message');
+  
+  // Determine the message type and assign a class
+  if (message.includes('[INFO')) {
+    messageElement.classList.add('info-message');
+  } else if (message.includes('[ERROR')) {
+    messageElement.classList.add('error-message');
+  } else if (message.includes('[SUCCESS')) {
+    messageElement.classList.add('success-message');
   }
+  
   messageElement.textContent = message;
   consoleElement.appendChild(messageElement);
   consoleElement.scrollTop = consoleElement.scrollHeight;
@@ -59,6 +66,17 @@ async function checkSelection() {
     Log.error('Aborting operation');
     return;
   }
+/*
+  const filePaths = await gfm.getArchiveContentJSON();
+  if (filePaths != null && filePaths.length > 0) {
+    Log.success('Found ' + filePaths.length + ' files');
+    for (const filePath of filePaths) {
+      Log.info('Found file: ' + filePath);
+    }
+  }
+  */
+  await gfm.outputToOnlyArchiveName();
+
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

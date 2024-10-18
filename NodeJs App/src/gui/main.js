@@ -89,17 +89,23 @@ app.on('window-all-closed', () => {
 // Logging Messages through ipcMain because some shit is retarded
 ipcMain.on('log-info', async (event, message, reqDetailed) => {
   const logEntry = await LoggerMain.info(message, reqDetailed);
-  mainWindow.webContents.send('append-to-console', logEntry);
+  if (typeof logEntry !== 'undefined') {
+    mainWindow.webContents.send('append-to-console', logEntry);
+  }
 });
 
 ipcMain.on('log-error', async (event, message, reqDetailed) => {
   const logEntry = await LoggerMain.error(message, reqDetailed);
-  mainWindow.webContents.send('append-to-console', logEntry);
+  if (typeof logEntry !== 'undefined') {
+    mainWindow.webContents.send('append-to-console', logEntry);
+  }
 });
 
 ipcMain.on('log-success', async (event, message, reqDetailed) => {
   const logEntry = await LoggerMain.success(message, reqDetailed);
-  mainWindow.webContents.send('append-to-console', logEntry);
+  if (typeof logEntry !== 'undefined') {
+    mainWindow.webContents.send('append-to-console', logEntry);
+  }
 });
 
 ipcMain.on('get-log-file-path', (event) => {

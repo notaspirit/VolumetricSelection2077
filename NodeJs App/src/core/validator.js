@@ -3,6 +3,8 @@ const { loadSettings } = require('./loadSettings');
 const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const util = require('util');
+const execPromise = util.promisify(exec);
 
 async function getSettings() {
     try {
@@ -119,17 +121,18 @@ async function validateTransferStringInternal() {
     }
 }
 
-function validateWolvenkitCLIInternal() {
+async function validateWolvenkitCLIInternal() {
     Log.info('Validating Wolvenkit CLI', true);
-    exec('cp77tools --version', (error, stdout, stderr) => {
-        if (error) {
-            Log.error('Wolvenkit CLI is not installed');
-            return false;
-        }
+    try {
+        const { stdout } = await execPromise('cp77tools --version');
         Log.success('Wolvenkit CLI version: ' + stdout);
         return true;
-    });
+    } catch (error) {
+        Log.error('Wolvenkit CLI is not installed');
+        return false;
+    }
 }
+
 class ValidatorInterface {
     async validateGamePath() {
         return await validateGamePathInternal();
@@ -143,8 +146,8 @@ class ValidatorInterface {
         return await validateTransferStringInternal();
     }
 
-    async validateWolvenkitCLI() {
-        return await validateWolvenkitCLIInternal();
+    validateWolvenkitCLI() {
+        return validateWolvenkitCLIInternal();
     }
 }
 
