@@ -75,6 +75,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('merge-files-btn').addEventListener('click', () => {
     Log.info('Merge files feature not implemented yet', true);
   });
+  document.getElementById('cache-all-btn').addEventListener('click', () => {
+    Log.info('Cache all feature not implemented yet', true);
+  });
   document.getElementById('output-filename').value = settings.outputFilename;
   document.getElementById('output-filename').addEventListener('input', async (event) => {
     const settingslocal = await getSettings();
