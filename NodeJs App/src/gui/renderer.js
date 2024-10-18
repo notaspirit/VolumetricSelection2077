@@ -1,13 +1,13 @@
 const { ipcRenderer } = require('electron');
 const { Log } = require('../core/logger');
-const { loadSettings } = require('./settings');
+const { loadSettings } = require('../core/loadSettings');
 const { validator } = require('../core/validator');
 
 async function getSettings() {
   try {
       return await loadSettings();
   } catch (error) {
-      Log.error('Failed to load settings: ' + error.message);
+      Log.error('Failed to load settings in renderer: ' + error.message);
       return null;
   }
 }
@@ -50,16 +50,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     cleanConsole();
   });
   document.getElementById('merge-files-btn').addEventListener('click', () => {
-    Log.info('Merge files feature not implemented yet');
+    Log.info('Merge files feature not implemented yet', true);
   });
   const checkSelectionButton = document.getElementById('check-selection-btn');
   const settingsButton = document.getElementById('open-settings-btn');
   checkSelectionButton.addEventListener('click', () => {
     checkSelectionButton.classList.add('loading');
     settingsButton.classList.add('disabled');
-    if (settings.detailedLogging) {
-      Log.info('Checking selection button clicked');
-    }
+    Log.info('Checking selection button clicked', true);
     performAsyncOperation().then(() => {
       checkSelectionButton.classList.remove('loading');
       settingsButton.classList.remove('disabled');

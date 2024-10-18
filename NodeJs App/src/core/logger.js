@@ -1,8 +1,18 @@
 const fs = require('fs');
 const path = require('path');
 const { app } = require('electron');
-
+const { loadSettings } = require('./loadSettings');
+const { ipcRenderer } = require('electron');
 let logFilePath = '';
+
+async function getSettings() {
+    try {
+        return await loadSettings();
+    } catch (error) {
+        console.log('Failed to load settings in logger: ' + error.message);
+        return null;
+    }
+}
 
 // Returns formatted date and time for log file name
 function logFileName() {
@@ -42,48 +52,97 @@ function logEntryDateTime() {
 }
 
 class LoggerMainOnly {
-    info(message) {
-        const logEntry = `${logEntryDateTime()} [INFO   ] ${message}`;
-        fs.appendFileSync(logFilePath, logEntry + '\n');
-        return logEntry;
+    async info(message, reqDetailed = false) {
+        const settings = await getSettings();
+        if (reqDetailed) {
+            if (settings.detailedLogging) {
+                const logEntry = `${logEntryDateTime()} [INFO   ] ${message}`;
+                fs.appendFileSync(logFilePath, logEntry + '\n');
+                return logEntry;
+            }
+        } else {
+            const logEntry = `${logEntryDateTime()} [INFO   ] ${message}`;
+            fs.appendFileSync(logFilePath, logEntry + '\n');
+            return logEntry;
+        }
     }
-    error(message) {
-        const logEntry = `${logEntryDateTime()} [ERROR  ] ${message}`;
-        fs.appendFileSync(logFilePath, logEntry + '\n');
-        return logEntry;
+    async error(message, reqDetailed = false) {
+        const settings = await getSettings();
+        if (reqDetailed) {
+            if (settings.detailedLogging) {
+                const logEntry = `${logEntryDateTime()} [ERROR  ] ${message}`;
+                fs.appendFileSync(logFilePath, logEntry + '\n');
+                return logEntry;
+            }
+        } else {
+            const logEntry = `${logEntryDateTime()} [ERROR  ] ${message}`;
+            fs.appendFileSync(logFilePath, logEntry + '\n');
+            return logEntry;
+        }
     }
-    success(message) {
-        const logEntry = `${logEntryDateTime()} [SUCCESS] ${message}`;
-        fs.appendFileSync(logFilePath, logEntry + '\n');
-        return logEntry;
+    async success(message, reqDetailed = false) {
+        const settings = await getSettings();
+        if (reqDetailed) {
+            if (settings.detailedLogging) {
+                const logEntry = `${logEntryDateTime()} [SUCCESS] ${message}`;
+                fs.appendFileSync(logFilePath, logEntry + '\n');
+                return logEntry;
+            }
+        } else {
+            const logEntry = `${logEntryDateTime()} [SUCCESS] ${message}`;
+            fs.appendFileSync(logFilePath, logEntry + '\n');
+            return logEntry;
+        }
+    }
+    async getLogFilePath() {
+        return logFilePath;
     }
 }
 
 class LogAnywhere {
-    info(message) {
+    info(message, reqDetailed = false) {
         try {
-            ipcRenderer.send('log-info', message);
+            if (typeof ipcRenderer !== 'undefined') {
+                ipcRenderer.send('log-info', message, reqDetailed);
+            } else {
+                console.log('ipcRenderer is not available');
+            }
         } catch (error) {
             console.log('Error sending log message:', error);
         }
     }
-    error(message) {
+
+    error(message, reqDetailed = false) {
         try {
-            ipcRenderer.send('log-error', message);
+            if (typeof ipcRenderer !== 'undefined') {
+                ipcRenderer.send('log-error', message, reqDetailed);
+            } else {
+                console.log('ipcRenderer is not available');
+            }
         } catch (error) {
             console.log('Error sending log message:', error);
         }
     }
-    success(message) {
+
+    success(message, reqDetailed = false) {
         try {
-            ipcRenderer.send('log-success', message);
+            if (typeof ipcRenderer !== 'undefined') {
+                ipcRenderer.send('log-success', message, reqDetailed);
+            } else {
+                console.log('ipcRenderer is not available');
+            }
         } catch (error) {
             console.log('Error sending log message:', error);
         }
-        }
+    }
+
     getLogFilePath() {
         try {
-            return ipcRenderer.invoke('get-log-file-path');
+            if (typeof ipcRenderer !== 'undefined') {
+                return ipcRenderer.invoke('get-log-file-path');
+            } else {
+                console.log('ipcRenderer is not available');
+            }
         } catch (error) {
             console.log('Error getting log file path:', error);
         }

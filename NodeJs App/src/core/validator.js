@@ -1,5 +1,5 @@
 const { Log } = require('./logger');
-const { loadSettings } = require('../gui/settings');
+const { loadSettings } = require('./loadSettings');
 const fs = require('fs');
 const path = require('path');
 
@@ -7,7 +7,7 @@ async function getSettings() {
     try {
         return await loadSettings();
     } catch (error) {
-        Log.error('Failed to load settings: ' + error.message);
+        Log.error('Failed to load settings in validator: ' + error.message);
         return null;
     }
 }

@@ -46,6 +46,3 @@ window.addEventListener('beforeunload', () => {
   saveSettings();
 });
 
-module.exports = {
-  loadSettings
-};

@@ -16,12 +16,33 @@
     <link rel="stylesheet" href="../styles/spectre-exp.css">
     <link rel="stylesheet" href="../styles/spectre-icons.css">
     <link rel="stylesheet" href="../styles/styles_dark.css">
+    <link rel="stylesheet" href="../styles/index_specifics.css">
   </head>
   <body>
     <div class="content">
       <h1>VolumetricSelection2077</h1>
       <div class="form-group">
-        <label class="form-label" for="transfer-string"></label>
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <input class="form-input" type="text" id="output-filename" placeholder="Output Filename">
+              </td>
+              <td>
+                <select class="form-select" id="output-format">
+                  <option value="archivexl">ArchiveXL</option>
+                  <option value="json">JSON</option>
+                </select>
+              </td>
+            </tr>
+          </tbody>
+        </table>
         <input class="form-input" type="text" id="transfer-string" placeholder="Transfer String">
       </div>
       <div class="button-container">

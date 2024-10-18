@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, ipcRenderer } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const { LoggerMain, intializeLogFile, getLogFilePath } = require('../core/logger');
@@ -18,7 +18,7 @@ const createWindow = () => {
       enableRemoteModule: true // Enable remote module
     }
   });
-  mainWindow.setMenu(null);
+  //mainWindow.setMenu(null);
   mainWindow.loadFile('src/gui/index.html');
 };
 
@@ -87,18 +87,18 @@ app.on('window-all-closed', () => {
 });
 
 // Logging Messages through ipcMain because some shit is retarded
-ipcMain.on('log-info', (event, message) => {
-  const logEntry = LoggerMain.info(message);
+ipcMain.on('log-info', async (event, message, reqDetailed) => {
+  const logEntry = await LoggerMain.info(message, reqDetailed);
   mainWindow.webContents.send('append-to-console', logEntry);
 });
 
-ipcMain.on('log-error', (event, message) => {
-  const logEntry = LoggerMain.error(message);
+ipcMain.on('log-error', async (event, message, reqDetailed) => {
+  const logEntry = await LoggerMain.error(message, reqDetailed);
   mainWindow.webContents.send('append-to-console', logEntry);
 });
 
-ipcMain.on('log-success', (event, message) => {
-  const logEntry = LoggerMain.success(message);
+ipcMain.on('log-success', async (event, message, reqDetailed) => {
+  const logEntry = await LoggerMain.success(message, reqDetailed);
   mainWindow.webContents.send('append-to-console', logEntry);
 });
 
