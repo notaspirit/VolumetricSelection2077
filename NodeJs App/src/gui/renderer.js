@@ -46,17 +46,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('open-settings-btn').addEventListener('click', () => {
         ipcRenderer.send('open-settings');
   });
-  document.getElementById('clean-console-btn').addEventListener('click', () => {
+  document.getElementById('clear-console-btn').addEventListener('click', () => {
     cleanConsole();
   });
   const checkSelectionButton = document.getElementById('check-selection-btn');
+  const settingsButton = document.getElementById('open-settings-btn');
   checkSelectionButton.addEventListener('click', () => {
     checkSelectionButton.classList.add('loading');
+    settingsButton.classList.add('disabled');
     if (settings.detailedLogging) {
       Log.info('Checking selection button clicked');
     }
     performAsyncOperation().then(() => {
       checkSelectionButton.classList.remove('loading');
+      settingsButton.classList.remove('disabled');
     });
   });
 

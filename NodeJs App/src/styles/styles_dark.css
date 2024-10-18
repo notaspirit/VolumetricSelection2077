@@ -102,14 +102,28 @@ input[type="text"], input[type="checkbox"], select {
 
 .button-container {
   display: flex;
-  justify-content: flex-end;
-  align-items: center;
+  justify-content: space-between; /* Distribute space between left and right buttons */
+  align-items: flex-end;
   margin-bottom: 0; /* Ensure no margin at the bottom */
+}
+
+.left-buttons {
+  display: flex;
+  justify-content: flex-start; /* Align buttons to the left */
+}
+
+.right-buttons {
+  display: flex;
+  justify-content: flex-end; /* Align buttons to the right */
 }
 
 #open-settings-btn,
 #check-selection-btn {
   margin-left: 10px; /* Add space between buttons */
+}
+
+#clear-console-btn {
+  margin-right: 10px; /* Add space from the left edge */
 }
 
 .form-group {
@@ -127,4 +141,27 @@ h1 {
 
 td {
   padding: 5px;
+}
+
+#clear-console-btn {
+  width: 80px; /* Set the width to 100px */
+  height: 20px; /* Set the height to 100px */
+  max-width: 100px; /* Optional: Set a maximum width */
+  padding: 5px 10px; /* Adjust padding for smaller size */
+  font-size: 0.7em; /* Scale down the font size */
+  line-height: 1.2; /* Adjust line height for better text alignment */
+  display: flex; /* Use flexbox to center text */
+  justify-content: center; /* Center text horizontally */
+  align-items: center; /* Center text vertically */
+}
+
+#clear-console-btn.btn-primary {
+  background-color: rgb(160, 0, 0); /* Set the background color to red */
+  border-color: rgb(99, 0, 0); /* Set the border color to red */
+  color: white; /* Ensure the text color is white for contrast */
+}
+
+#clear-console-btn.btn-primary:hover {
+  background-color: rgb(116, 0, 0); /* Darken the button on hover */
+  border-color: rgb(99, 0, 0); /* Match the border color on hover */
 }
