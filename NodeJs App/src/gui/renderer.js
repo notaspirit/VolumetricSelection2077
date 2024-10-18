@@ -2,6 +2,8 @@ const { ipcRenderer } = require('electron');
 const { Log } = require('../core/logger');
 const { loadSettings } = require('../core/loadSettings');
 const { validator } = require('../core/validator');
+const fs = require('fs');
+const path = require('path');
 
 async function getSettings() {
   try {
@@ -10,6 +12,12 @@ async function getSettings() {
       Log.error('Failed to load settings in renderer: ' + error.message);
       return null;
   }
+}
+
+async function saveSettings(settings) {
+  const appPath = await ipcRenderer.invoke('getAppPath');
+  const settingsPath = path.join(appPath, 'VolumetricSelection2077', 'settings.json');
+  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
 }
 
 function appendToConsoleInternal(message) {
@@ -35,7 +43,10 @@ function cleanConsole() {
 
 async function checkSelection() {
   Log.info('Checking selection');
-  await validator.validateGamePath();
+  if (await validator.validateGamePath() == false) {
+    Log.error('Aborting operation');
+  } else {
+  }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -51,6 +62,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   document.getElementById('merge-files-btn').addEventListener('click', () => {
     Log.info('Merge files feature not implemented yet', true);
+  });
+  document.getElementById('output-filename').value = settings.outputFilename;
+  document.getElementById('output-filename').addEventListener('input', (event) => {
+    settings.outputFilename = event.target.value;
+    Log.info('Output filename changed to: ' + settings.outputFilename, true);
+    saveSettings(settings);
+  });
+  document.getElementById('transfer-string').value = settings.transferString;
+  document.getElementById('transfer-string').addEventListener('input', (event) => {
+    settings.transferString = event.target.value;
+    Log.info('Transfer string changed to: ' + settings.transferString, true);
+    saveSettings(settings);
+  });
+  document.getElementById('output-format').value = settings.outputFormat;
+  document.getElementById('output-format').addEventListener('change', (event) => {
+    settings.outputFormat = event.target.value;
+    Log.info('Output format changed to: ' + settings.outputFormat, true);
+    saveSettings(settings);
   });
   const checkSelectionButton = document.getElementById('check-selection-btn');
   const settingsButton = document.getElementById('open-settings-btn');
