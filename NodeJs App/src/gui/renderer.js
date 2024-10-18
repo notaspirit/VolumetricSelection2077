@@ -45,7 +45,19 @@ async function checkSelection() {
   Log.info('Checking selection');
   if (await validator.validateGamePath() == false) {
     Log.error('Aborting operation');
-  } else {
+    return;
+  } 
+  if (await validator.validateOutputFilename() == false) {
+    Log.error('Aborting operation');
+    return;
+  }
+  if (await validator.validateTransferString() == false) {
+    Log.error('Aborting operation');
+    return;
+  }
+  if (await validator.validateWolvenkitCLI() == false) {
+    Log.error('Aborting operation');
+    return;
   }
 }
 
@@ -64,22 +76,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     Log.info('Merge files feature not implemented yet', true);
   });
   document.getElementById('output-filename').value = settings.outputFilename;
-  document.getElementById('output-filename').addEventListener('input', (event) => {
-    settings.outputFilename = event.target.value;
-    Log.info('Output filename changed to: ' + settings.outputFilename, true);
-    saveSettings(settings);
+  document.getElementById('output-filename').addEventListener('input', async (event) => {
+    const settingslocal = await getSettings();
+    settingslocal.outputFilename = event.target.value;
+    Log.info('Output filename changed to: ' + settingslocal.outputFilename, true);
+    saveSettings(settingslocal);
   });
   document.getElementById('transfer-string').value = settings.transferString;
-  document.getElementById('transfer-string').addEventListener('input', (event) => {
-    settings.transferString = event.target.value;
-    Log.info('Transfer string changed to: ' + settings.transferString, true);
-    saveSettings(settings);
+  document.getElementById('transfer-string').addEventListener('input', async (event) => {
+    const settingslocal = await getSettings();
+    settingslocal.transferString = event.target.value;
+    Log.info('Transfer string changed to: ' + settingslocal.transferString, true);
+    saveSettings(settingslocal);
   });
   document.getElementById('output-format').value = settings.outputFormat;
-  document.getElementById('output-format').addEventListener('change', (event) => {
-    settings.outputFormat = event.target.value;
-    Log.info('Output format changed to: ' + settings.outputFormat, true);
-    saveSettings(settings);
+  document.getElementById('output-format').addEventListener('change', async (event) => {
+    const settingslocal = await getSettings();
+    settingslocal.outputFormat = event.target.value;
+    Log.info('Output format changed to: ' + settingslocal.outputFormat, true);
+    saveSettings(settingslocal);
   });
   const checkSelectionButton = document.getElementById('check-selection-btn');
   const settingsButton = document.getElementById('open-settings-btn');
