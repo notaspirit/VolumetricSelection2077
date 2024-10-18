@@ -25,13 +25,11 @@ async function saveSettings() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  if (settings.detailedLogging) {
-    Log.success('DOMContentLoaded event fired'); // Log when DOMContentLoaded fires
-  }
+  Log.success('DOMContentLoaded event fired', true); // Log when DOMContentLoaded fires
+  
   settings = await loadSettings();
-  if (settings.detailedLogging) {
-    Log.info('Loaded settings: ' + JSON.stringify(settings));
-  }
+  Log.info('Loaded settings: ' + JSON.stringify(settings), true);
+  
   document.getElementById('game-path').value = settings.gamePath;
   document.getElementById('detailed-logging').checked = settings.detailedLogging;
   document.getElementById('output-format').value = settings.outputFormat;
@@ -40,9 +38,7 @@ window.addEventListener('beforeunload', () => {
   settings.gamePath = document.getElementById('game-path').value;
   settings.detailedLogging = document.getElementById('detailed-logging').checked;
   settings.outputFormat = document.getElementById('output-format').value;
-  if (settings.detailedLogging) {
-    Log.info('Saving settings: ' + JSON.stringify(settings));
-  }
+  Log.info('Saving settings: ' + JSON.stringify(settings), true);
   saveSettings();
 });
 

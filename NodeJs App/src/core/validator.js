@@ -23,15 +23,11 @@ async function validateGamePathInternal() {
         Log.error('Game path is not set in settings');
         return false;
     }
-    if (settings.detailedLogging) {
-        Log.info('Validating game path: ' + gamePath);
-    }
+    Log.info('Validating game path: ' + gamePath, true);
     let archiveContentPath = path.join(gamePath, 'archive', 'pc', 'content');
     let archiveEp1Path = path.join(gamePath, 'archive', 'pc', 'ep1');
 
-    if (settings.detailedLogging) {
-        Log.info('Checking if ' + archiveContentPath + ' and ' + archiveEp1Path + ' exist');
-    }
+    Log.info('Checking if ' + archiveContentPath + ' and ' + archiveEp1Path + ' exist', true);
 
     if (fs.existsSync(archiveContentPath) && fs.existsSync(archiveEp1Path)) {
         Log.success('Game path is valid');
