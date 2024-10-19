@@ -1,0 +1,34 @@
+Sector Example
+    - Name: exterior_-22_16_1_0
+    - Nodes:
+        - AXLindex: 0
+        - Type: worldCollisionNode | worldMeshNode | etc.
+        - MeshPath: \base\vehicles\car_sedan_01\car_sedan_01.mesh | null
+        - MeshGroup: | null
+            - Component:
+                - MeshPath: \base\vehicles\car_sedan_01\car_sedan_01.mesh
+                - Transform: 
+                    - Position: [x, y, z]
+                    - Rotation: [i, j, k, r]
+
+        - Transform: 
+            - Position: [x, y, z]
+            - Rotation: [i, j, k, r]
+            - Scale: [x, y, z]
+        - Actors: | null
+            - ActorIndex: 0
+            - Type: mesh | box | sphere | etc.
+            - MeshId: 0 | null
+            - Box: [[minX, minY, minZ], [maxX, maxY, maxZ]] | null
+            - Sphere: [centerX, centerY, centerZ, radius] | null
+            - Transform: 
+                - Position: [x, y, z]
+                - Rotation: [i, j, k, r]
+                - Scale: [x, y, z]
+
+Mesh Example
+    - id: 0 | null (only necessary if it's an actor mesh)
+    - Path: \base\vehicles\car_sedan_01\car_sedan_01.mesh | null
+    - Vertices: [[x, y, z], [x, y, z], [x, y, z], ...]
+    - Triangles: [[a, b, c], [a, b, c], [a, b, c], ...]
+    - Bounding Box: [[minX, minY, minZ], [maxX, maxY, maxZ]]
