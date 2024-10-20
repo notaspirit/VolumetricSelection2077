@@ -17,14 +17,15 @@ Sector Example
             - Scale: [x, y, z]
         - Actors: | null
             - ActorIndex: 0
-            - Type: mesh | box | sphere | etc.
-            - MeshId: 0 | null
-            - Box: [[minX, minY, minZ], [maxX, maxY, maxZ]] | null
-            - Sphere: [centerX, centerY, centerZ, radius] | null
-            - Transform: 
-                - Position: [x, y, z]
-                - Rotation: [i, j, k, r]
-                - Scale: [x, y, z]
+            - Shapes: 
+                - Type: mesh | box | sphere | etc.
+                - MeshId: 0 | null
+                - Box: [[minX, minY, minZ], [maxX, maxY, maxZ]] | null
+                - Sphere: [centerX, centerY, centerZ, radius] | null
+                - Transform: 
+                    - Position: [x, y, z]
+                    - Rotation: [i, j, k, r]
+                    - Scale: [x, y, z]
 
 Mesh Example
     - id: 0 | null (only necessary if it's an actor mesh)
