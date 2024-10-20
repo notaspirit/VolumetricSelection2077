@@ -139,10 +139,6 @@ async function outputToOnlyArchiveNameInternal() {
 // .w2mesh files exist?? wth do they do? -> do more testing
 // Seems like I can just process them the same way as .mesh files
 
-// IMPORTANT:
-// For performance reasons, if for the transformation of a mesh both quat and pos are 0 it is emmited
-// If only one is all 0 then that value is emmited
-// So account for that on the receiving end
 
 class GameFileManager {
     async getArchiveContentJSON() {

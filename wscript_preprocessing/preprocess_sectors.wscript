@@ -108,25 +108,29 @@ function getMeshPath(entPath, appearanceInput) {
         let shortAppearanceName = '';
         let appearanceResource = '';
         for (let appearance of appearances) {
-            if (shortAppearanceName.length > 0) {
-                Logger.Error("Appearance already found");
-                break;
-            }
             if (appearance.name == appearanceInput) {
                 shortAppearanceName = appearance.appearanceName;
                 appearanceResource = appearance.appearanceResource.DepotPath.value;
+                break;
             }
         }
-        Logger.Success(`Short appearance name: ${shortAppearanceName}`);
-        Logger.Success(`Appearance resource: ${appearanceResource}`);
-
-        let appearanceGameFile = wkit.GetFileFromArchive(appearanceResource, OpenAs.GameFile);
-        let appearanceData = TypeHelper.JsonParse(wkit.GameFileToJson(appearanceGameFile));
-
+        Logger.Info(`Short appearance name: ${shortAppearanceName}`);
+        Logger.Info(`Appearance resource: ${appearanceResource}`);
+        let appearanceData = null;
+        try {
+            let appearanceGameFile = wkit.GetFileFromArchive(appearanceResource, OpenAs.GameFile);
+            appearanceData = TypeHelper.JsonParse(wkit.GameFileToJson(appearanceGameFile));
+        } catch (error) {
+            Logger.Error(`Failed to get appearance data for ${entPath} ${appearanceInput}: ${error.message}`);
+        }
         let appAppearances = appearanceData.Data.RootChunk.appearances;
         for (let appAppearance of appAppearances) {
-            let components = appAppearance.Data.components;
-            meshGroup.push(...getMeshSetFromComponents(components));
+            if (appAppearance.Data.name.value == shortAppearanceName) {
+                Logger.Success(`Found appearance: ${appAppearance.Data.name.value}`);
+                let components = appAppearance.Data.components;
+                meshGroup.push(...getMeshSetFromComponents(components));
+                break;
+            }
         }
     }
 
