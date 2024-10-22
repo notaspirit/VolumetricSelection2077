@@ -139,6 +139,9 @@ async function outputToOnlyArchiveNameInternal() {
 // .w2mesh files exist?? wth do they do? -> do more testing
 // Seems like I can just process them the same way as .mesh files
 
+// IMPORTANT:
+// Some sectors can't be loaded see: https://discord.com/channels/717692382849663036/717720094196760760/1157428674509938698
+// So they need to be skipped, but when they are skipped we need to inform the user so they can manually check them
 
 class GameFileManager {
     async getArchiveContentJSON() {

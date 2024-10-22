@@ -101,6 +101,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     Log.info('Output filename changed to: ' + settingslocal.outputFilename, true);
     saveSettings(settingslocal);
   });
+  // UX Improvemnt:
+  // Instead of using a transferstring, get the data from the CET mod directory
   document.getElementById('transfer-string').value = settings.transferString;
   document.getElementById('transfer-string').addEventListener('input', async (event) => {
     const settingslocal = await getSettings();
