@@ -2,7 +2,7 @@
 // This extracts all relevent sector data and gets all actor meshes, bounding boxes and positions
 
 // For testing
-const testMode = false;
+const testMode = true;
 
 // Imports 
 import * as Logger from 'Logger.wscript';
@@ -10,15 +10,12 @@ import * as TypeHelper from 'TypeHelper.wscript';
 
 // Global variables
 // See sectorExample.txt for template of data
-let actorMeshes = [];
-
-let sphereData = null;
-let capsuleData = null;
-
 let failedSectors = [];
+let actorMeshes = [];
+let settings = null;
 
-let batchSize = 1000;
-let defaultSettings = {batchSize: batchSize, totalBatches: 0, lastBatch: 0};
+let batchSize = 100;
+let defaultSettings = {batchSize: batchSize, totalBatches: 0, lastBatch: 0, actorMeshId: 0};
 // ------------------------------------------------------------------------------------------------
 // Functions
 
@@ -118,20 +115,25 @@ let possibleActorShapeTypes = [];
 let affectsOnlyXY = 0;
 
 // Raw actor data to cleaned and with mesh data
-function getCleanedActorData(actors) {
+function getCleanedActorData(actors, sectorHash) {
+    /*
+    Actor scale is weird, not sure how I would apply it so it goes into the database too,
+    even if I could reduce db size, but I do not want to have to recompile all of the sector data if I am wrong.
+    Especially spheres are weird, since if you scale it differently on x y and z you get an ellipsoid, not a sphere.
+    Wolvenkit sector preview doesn't display them at all :kek:
+    So yeah just play around with it in the postprocessing when you can actually compare it to the expected result.
+    */
     let cleanedActors = [];
     for (let actor of actors) {
-        // Logger.Info('Actor:');
-        let pos = {x: actor.Position.x, y: actor.Position.y, z: actor.Position.z};
+        // Position and scale need to be decoded first using decodeFixedPoint
+        let pos = {x: decodeFixedPoint(actor.Position.x.Bits, 16), y: decodeFixedPoint(actor.Position.y.Bits, 16), z: decodeFixedPoint(actor.Position.z.Bits, 16)};
         let quat = {i: actor.Orientation.i, j: actor.Orientation.j, k: actor.Orientation.k, r: actor.Orientation.r};
-        let scale = {x: actor.Scale.x, y: actor.Scale.y, z: actor.Scale.z};
+        let scale = {x: actor.Scale["X"], y: actor.Scale["Y"], z: actor.Scale["Z"]};
         let transform = {pos: pos, quat: quat, scale: scale};
         let shapes = [];
+        let actorIndex = 0;
         for (let shape of actor.Shapes) {
-            // Logger.Info('Shape:');
-            // Logger.Info(shape.ShapeType);
             let shapeType = shape.ShapeType;
-            let shapeLocal = [];
             // Possible actor shape types
             //     "TriangleMesh",
             //     "Capsule",
@@ -140,39 +142,71 @@ function getCleanedActorData(actors) {
             //     "Sphere"
             if (shapeType.includes("Mesh")) {
                 // Get mesh from geometry cache hash here
+                let currentActorMeshId = settings.actorMeshId;
+                let meshDataRAW = wkit.ExportGeometryCacheEntry(sectorHash, shape.Hash);
+                let meshData = TypeHelper.JsonParse(meshDataRAW);
+                let meshVertices = [];
+                for (let vertex of meshData["Vertices"]) {
+                    meshVertices.push({x: vertex["X"], y: vertex["Y"], z: vertex["Z"]});
+                }
+                let meshTriangles = meshData["Triangles"];
+                let meshBoundingBoxMinRAW = meshData["AABB"]["Minimum"];
+                let meshBoundingBoxMin = {x: meshBoundingBoxMinRAW["X"], y: meshBoundingBoxMinRAW["Y"], z: meshBoundingBoxMinRAW["Z"]};
+                let meshBoundingBoxMaxRAW = meshData["AABB"]["Maximum"];
+                let meshBoundingBoxMax = {x: meshBoundingBoxMaxRAW["X"], y: meshBoundingBoxMaxRAW["Y"], z: meshBoundingBoxMaxRAW["Z"]};
+                let meshBoundingBox = {min: meshBoundingBoxMin, max: meshBoundingBoxMax};
+                let shapePosition = {x: shape["Position"]["X"], y: shape["Position"]["Y"], z: shape["Position"]["Z"]};
+                let shapeRotation = {i: shape.Rotation.i, j: shape.Rotation.j, k: shape.Rotation.k, r: shape.Rotation.r};
+                let shapeTransform = {pos: shapePosition, quat: shapeRotation};
+                settings.actorMeshId++;
+                actorMeshes.push({
+                    id: currentActorMeshId,
+                    vertices: meshVertices,
+                    triangles: meshTriangles,
+                    boundingBox: meshBoundingBox
+                });
+                shapes.push({
+                    type: shapeType,
+                    MeshId: currentActorMeshId,
+                    transform: shapeTransform
+                });
+                actorIndex++;
                 break;
             }
             if (shapeType.includes("Box")) {
                 // Get bounding box here from size 
+                /*
+                Box might look weird as in the same shape appears in lots of actors,
+                but that seems to be intended since they are in different actors which have their own modifiers.
+                */
+                let shapePos = {x: shape.Position["X"], y: shape.Position["Y"], z: shape.Position["Z"]};
+                let shapeSize = {x: shape.Size["X"], y: shape.Size["Y"], z: shape.Size["Z"]};
+                let shapeQuat = {i: shape.Rotation.i, j: shape.Rotation.j, k: shape.Rotation.k, r: shape.Rotation.r};
+                shapes.push({
+                    type: shapeType,
+                    transform: {pos: shapePos, quat: shapeQuat, size: shapeSize},
+                });
+                actorIndex++;
                 break;
             }
             if (shapeType.includes("Sphere")) {
                 // Get sphere here
-                // Logger.Success('Sphere found');
-                if (sphereData == null) {
-                    sphereData = shape;
-                }
+                // Logger.Info(shape);
+                actorIndex++;
                 break;
             }
             if (shapeType.includes("Capsule")) {
-                // Logger.Success('Capsule found');
-                let shapeSize = shape.Size;
-                // Logger.Info(shapeSize);
-                if (shapeSize.Z == 0 && (shapeSize.X != 0 || shapeSize.Y != 0)) {
-                    affectsOnlyXY++;
-                }
                 // Get capsule here from size
-                if (capsuleData == null) {
-                    capsuleData = shape;
-                }
+                actorIndex++;
                 break;
             }
+            
         }
         cleanedActors.push({transform: transform, shapes: shapes});
     }
+    // Logger.Info(cleanedActors);
     return cleanedActors;
 }
-
 
 // Gets all relevant node info out of "node"
 function getNodeInfo(nodeInstance, nodeIndex) {
@@ -218,8 +252,9 @@ function getNodeInfo(nodeInstance, nodeIndex) {
     }
     // Getting the actors is work in progress
     try {
+        let sectorHash = nodeInstance["Data"]["sectorHash"];
         let rawActors = nodeInstance["Data"]["compiledData"]["Data"]["Actors"];
-        nodeInfo["actors"] = getCleanedActorData(rawActors);
+        nodeInfo["actors"] = getCleanedActorData(rawActors, sectorHash);
     } catch (error) {
         nodeInfo["actors"] = null;
     }
@@ -230,8 +265,8 @@ function processBatch(batchJson) {
     let matchingNodes = [];
     // Processes a single sector for testing
     if (testMode === true) {
-        // let testSector = 'base\\worlds\\03_night_city\\_compiled\\default\\exterior_0_-34_0_0.streamingsector';
-        let testSector = 'base\\worlds\\03_night_city\\_compiled\\default\\exterior_0_18_0_1.streamingsector';
+        let testSector = 'base\\worlds\\03_night_city\\_compiled\\default\\exterior_0_-34_0_0.streamingsector';
+        // let testSector = 'base\\worlds\\03_night_city\\_compiled\\default\\exterior_0_18_0_1.streamingsector';
         let testSectorGameFile = wkit.GetFileFromArchive(testSector, OpenAs.GameFile);
         let testSectorData = TypeHelper.JsonParse(wkit.GameFileToJson(testSectorGameFile));
         let testNodes = testSectorData["Data"]["RootChunk"]["nodes"];
@@ -260,15 +295,8 @@ function processBatch(batchJson) {
                 for (let nodeIndex in nodes) {
                     matchingNodes.push(getNodeInfo(nodes[nodeIndex], nodeIndex));
                 }
-                // Logger.Info(matchingNodes);
             }
-            Logger.Info('Possible actor shape types:');
-            Logger.Info(possibleActorShapeTypes);
     }
-    Logger.Info('Sphere data:');
-    Logger.Info(sphereData);
-    Logger.Info('Capsule data:');
-    Logger.Info(capsuleData);
     return matchingNodes;
 }
 
@@ -276,7 +304,6 @@ function processBatch(batchJson) {
 
 // Main Logic
 function main() {
-    let settings = null;
     try {
         let settingsRaw = wkit.LoadFromResources('SPP/batchMetadata.json');
         settings = JSON.parse(settingsRaw);
@@ -339,6 +366,8 @@ function main() {
         settings.lastBatch++;
         wkit.SaveToResources('SPP/batchMetadata.json', JSON.stringify(settings, null, 2));
         Logger.Success(`SPP/batchMetadata.json updated`);
+        wkit.SaveToResources(`SPP/output/actorMeshes${settings.lastBatch}.json`, JSON.stringify(actorMeshes, null, 2));
+        Logger.Success(`SPP/output/actorMeshes${settings.lastBatch}.json saved`);
         wkit.SaveToResources(`SPP/output/batch${settings.lastBatch}.json`, JSON.stringify(sectorMatchesOutput, null, 2));
         Logger.Success(`SPP/output/batch${settings.lastBatch}.json saved`);
         Logger.Info('For better stability, clear wolvenkit logs');
@@ -362,4 +391,3 @@ function main() {
 }
 
 main();
-Logger.Info(`Affects only XY: ${affectsOnlyXY}`);
