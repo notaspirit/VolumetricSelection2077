@@ -171,7 +171,7 @@ function getCleanedActorData(actors, sectorHash) {
                     transform: shapeTransform
                 });
                 actorIndex++;
-                break;
+                continue;
             }
             if (shapeType.includes("Box")) {
                 // Get bounding box here from size 
@@ -187,18 +187,31 @@ function getCleanedActorData(actors, sectorHash) {
                     transform: {pos: shapePos, quat: shapeQuat, size: shapeSize},
                 });
                 actorIndex++;
-                break;
+                continue;
             }
             if (shapeType.includes("Sphere")) {
                 // Get sphere here
-                // Logger.Info(shape);
+                let shapePos = {x: shape.Position["X"], y: shape.Position["Y"], z: shape.Position["Z"]};
+                let shapeRadius = shape.Size["X"];
+                let shapeQuat = {i: shape.Rotation.i, j: shape.Rotation.j, k: shape.Rotation.k, r: shape.Rotation.r};
+                shapes.push({
+                    type: shapeType,
+                    transform: {pos: shapePos, quat: shapeQuat, radius: shapeRadius},
+                });
                 actorIndex++;
-                break;
+                continue;
             }
             if (shapeType.includes("Capsule")) {
                 // Get capsule here from size
+                let shapePos = {x: shape.Position["X"], y: shape.Position["Y"], z: shape.Position["Z"]};
+                let shapeSize = {r: shape.Size["X"], h: shape.Size["Y"]};
+                let shapeQuat = {i: shape.Rotation.i, j: shape.Rotation.j, k: shape.Rotation.k, r: shape.Rotation.r};
+                shapes.push({
+                    type: shapeType,
+                    transform: {pos: shapePos, quat: shapeQuat, size: shapeSize},
+                });
                 actorIndex++;
-                break;
+                continue;
             }
             
         }
@@ -263,6 +276,7 @@ function getNodeInfo(nodeInstance, nodeIndex) {
 
 function processBatch(batchJson) {  
     let matchingNodes = [];
+    let finalNodes = [];
     // Processes a single sector for testing
     if (testMode === true) {
         let testSector = 'base\\worlds\\03_night_city\\_compiled\\default\\exterior_0_-34_0_0.streamingsector';
@@ -274,11 +288,24 @@ function processBatch(batchJson) {
 
 
         for (let nodeIndex in testNodes) {
-            if (testNodes[nodeIndex].Data.$type.includes("Collision")) {
-                matchingNodes.push(getNodeInfo(testNodes[nodeIndex], nodeIndex));
+            matchingNodes.push(getNodeInfo(testNodes[nodeIndex], nodeIndex));
+        }
+        for (let nodeDataIndex in testNodeData) {
+            for (let nodeIndex in testNodes) {
+                if (testNodeData[nodeDataIndex]['NodeIndex'] == nodeIndex) {
+                    let matchingNodesInstance = matchingNodes[nodeIndex];
+                    Logger.Info("Got matching node in nodeData");
+                    let nodeDataInstance = testNodeData[nodeDataIndex];
+                    let nodeDataPos = {x: nodeDataInstance['Position']['X'], y: nodeDataInstance['Position']['Y'], z: nodeDataInstance['Position']['Z'], w: nodeDataInstance['Position']['W']};
+                    let nodeDataQuat = {i: nodeDataInstance.Orientation.i, j: nodeDataInstance.Orientation.j, k: nodeDataInstance.Orientation.k, r: nodeDataInstance.Orientation.r};
+                    let nodeDataScale = {x: nodeDataInstance["Scale"]["X"], y: nodeDataInstance["Scale"]["Y"], z: nodeDataInstance["Scale"]["Z"]};
+                    let nodeDataTransform = {pos: nodeDataPos, quat: nodeDataQuat, scale: nodeDataScale};
+                    matchingNodesInstance['nodeTransform'] = nodeDataTransform;
+                    matchingNodesInstance['index'] = nodeDataIndex;
+                    finalNodes.push(matchingNodesInstance);
+                }
             }
         }
-
         wkit.SaveToResources('testMatchingNodes.json', JSON.stringify(matchingNodes, null, 2));
         Logger.Success('Saved testMatchingNodes.json');
     }
@@ -288,16 +315,37 @@ function processBatch(batchJson) {
             for (let sectorIndex in batchJson) {
                 let sectorName = batchJson[sectorIndex].name;
                 Logger.Info(`Processing sector: ${sectorName}`);
-                let sectorGameFile = wkit.GetFileFromArchive(sectorName, OpenAs.GameFile);
-                let sectorData = TypeHelper.JsonParse(wkit.GameFileToJson(sectorGameFile));
+                try {
+                    let sectorGameFile = wkit.GetFileFromArchive(sectorName, OpenAs.GameFile);
+                    let sectorData = TypeHelper.JsonParse(wkit.GameFileToJson(sectorGameFile));
+                } catch (error) {
+                    Logger.Error(`Failed to get sector data for ${sectorName}: ${error.message}`);
+                    failedSectors.push(sectorName);
+                    continue;
+                }
                 const nodeData = sectorData["Data"]["RootChunk"]["nodeData"]["Data"];
                 const nodes = sectorData["Data"]["RootChunk"]["nodes"]
                 for (let nodeIndex in nodes) {
                     matchingNodes.push(getNodeInfo(nodes[nodeIndex], nodeIndex));
                 }
+                Logger.Info(`Total matching nodes: ${matchingNodes.length}`);
+                for (let nodeDataIndex in nodeData) {
+                    for (let nodeIndex in nodes) {
+                        if (nodeData[nodeDataIndex]['NodeIndex'] == nodeIndex) {
+                            let matchingNodesInstance = matchingNodes[nodeIndex];
+                            Logger.Info("Got matching node in nodeData");
+                            let nodeDataInstance = nodeData[nodeDataIndex];
+                            let nodeDataPos = {x: nodeDataInstance['Position']['X'], y: nodeDataInstance['Position']['Y'], z: nodeDataInstance['Position']['Z'], w: nodeDataInstance['Position']['W']};
+                            let nodeDataQuat = {i: nodeDataInstance.Orientation.i, j: nodeDataInstance.Orientation.j, k: nodeDataInstance.Orientation.k, r: nodeDataInstance.Orientation.r};
+                            let nodeDataScale = {x: nodeDataInstance.Scale.x, y: nodeDataInstance.Scale.y, z: nodeDataInstance.Scale.z};
+                            let nodeDataTransform = {pos: nodeDataPos, quat: nodeDataQuat, scale: nodeDataScale};
+                            Logger.Info(nodeDataTransform);
+                        }
+                    }
+                }
             }
     }
-    return matchingNodes;
+    return finalNodes;
 }
 
 
