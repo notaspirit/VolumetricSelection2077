@@ -88,6 +88,11 @@ public class SettingsService
     public void SaveSettings()
     {
         Log.Information($"Saving settings to: {SettingsFilePath}");
+        Log.Error("Test");
+        Log.Information("Test");
+        Log.Debug("Test");
+        Log.Warning("Test");
+        Log.Fatal("Test");
         try
         {
             var options = new JsonSerializerOptions

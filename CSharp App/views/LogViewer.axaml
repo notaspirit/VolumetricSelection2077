@@ -3,11 +3,16 @@
              xmlns:views="clr-namespace:VolumetricSelection2077.Views"
              x:Class="VolumetricSelection2077.Views.LogViewer"
              x:DataType="views:LogViewer">
-    <ScrollViewer>
+    <ScrollViewer Name="LogScrollViewer" Background="#0a0c10">
         <ItemsControl ItemsSource="{Binding LogMessages}">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <TextBlock Text="{Binding}" />
+                    <SelectableTextBlock Text="{Binding Text}" 
+                                       FontFamily="Cascadia Code, Consolas, Courier New, Monospace">
+                        <SelectableTextBlock.Foreground>
+                            <Binding Path="Level" Converter="{StaticResource LogLevelColorConverter}"/>
+                        </SelectableTextBlock.Foreground>
+                    </SelectableTextBlock>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>

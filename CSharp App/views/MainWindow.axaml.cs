@@ -33,7 +33,7 @@ public partial class MainWindow : Window
             .MinimumLevel.Debug()
             .WriteTo.File(logFileName, outputTemplate: outputTemplate)
             .WriteTo.Console(outputTemplate: outputTemplate)
-            .WriteTo.Sink(new LogViewerSink(logViewer))
+            .WriteTo.Sink(new LogViewerSink(logViewer, outputTemplate))
             .CreateLogger();
 
         Log.Information("Application starting...");
@@ -43,5 +43,10 @@ public partial class MainWindow : Window
     {
         var settingsWindow = new SettingsWindow();
         settingsWindow.ShowDialog(this);
+    }
+    private void ClearLogButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        var logViewer = this.FindControl<LogViewer>("LogViewer");
+        logViewer?.ClearLog();
     }
 }

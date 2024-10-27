@@ -11,11 +11,14 @@
         Height="300"
         Background="#171c26">
     <Border Margin="5">
-        <StackPanel>
-            <TextBlock Text="VolumetricSelection2077" FontSize="32" FontWeight="Bold" Margin="5"/>
-            <Button Content="Settings" Click="SettingsButton_Click" Margin="5"/>
-            <ContentControl x:Name="SettingsContent" />
-            <views:LogViewer x:Name="LogViewer" Height="200" Margin="5"/>
-        </StackPanel>
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,*">
+            <TextBlock Grid.Row="0" Text="VolumetricSelection2077" FontSize="32" FontWeight="Bold" Margin="5"/>
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="5">
+                <Button Content="Settings" Click="SettingsButton_Click" Margin="0,0,5,0"/>
+                <Button Content="Clear Log" Click="ClearLogButton_Click"/>
+            </StackPanel>
+            <ContentControl Grid.Row="2" x:Name="SettingsContent" />
+            <views:LogViewer Grid.Row="4" x:Name="LogViewer" Margin="5"/>
+        </Grid>
     </Border>
 </Window>
