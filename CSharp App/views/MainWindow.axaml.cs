@@ -20,23 +20,16 @@ public partial class MainWindow : Window
         var logDirectory = Path.Combine(appDataPath, "VolumetricSelection2077", "Logs");
         Directory.CreateDirectory(logDirectory);
 
-        var logFileName = Path.Combine(logDirectory, $"log_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
-        string outputTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff}] [{Level:u3:FTL=SCS}] {Message:lj}{NewLine}{Exception}";
-
         var logViewer = this.FindControl<LogViewer>("LogViewer");
         if (logViewer == null)
         {
             throw new InvalidOperationException("LogViewer control not found");
         }
 
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .WriteTo.File(logFileName, outputTemplate: outputTemplate)
-            .WriteTo.Console(outputTemplate: outputTemplate)
-            .WriteTo.Sink(new LogViewerSink(logViewer, outputTemplate))
-            .CreateLogger();
-
-        Log.Information("Application starting...");
+        Logger.Initialize(logDirectory);
+        Logger.AddSink(new LogViewerSink(logViewer, "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff}] {Message:lj}{NewLine}{Exception}"));
+        
+        Logger.Info("Application starting...");
     }
 
     private void SettingsButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)

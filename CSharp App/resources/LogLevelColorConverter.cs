@@ -15,7 +15,7 @@ namespace VolumetricSelection2077
                 return level switch
                 {
                     LogEventLevel.Verbose => new SolidColorBrush(Colors.Gray),
-                    LogEventLevel.Debug => new SolidColorBrush(Colors.LightGray),
+                    LogEventLevel.Debug => new SolidColorBrush(Colors.Violet),
                     LogEventLevel.Information => new SolidColorBrush(Colors.White),
                     LogEventLevel.Warning => new SolidColorBrush(Colors.Yellow),
                     LogEventLevel.Error => new SolidColorBrush(Colors.Red),
