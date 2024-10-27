@@ -6,5 +6,8 @@
 
     <Application.Styles>
         <FluentTheme />
+        <Style Selector="ToggleSwitch:checked /template/ Border#SwitchKnobBounds">
+            <Setter Property="Background" Value="#d40000"></Setter>
+        </Style>
     </Application.Styles>
 </Application>

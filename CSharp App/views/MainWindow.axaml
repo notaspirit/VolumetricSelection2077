@@ -5,7 +5,15 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="VolumetricSelection2077.MainWindow"
         Title="VolumetricSelection2077"
-        Icon="assets/redCube.ico">
-
-    Welcome to Avalonia!
+        Icon="../assets/redCube.ico"
+        Width="500"
+        Height="300"
+        Background="#171c26">
+    <Border Margin="5">
+        <StackPanel>
+            <TextBlock Text="VolumetricSelection2077" FontSize="32" FontWeight="Bold" Margin="5"/>
+            <Button Content="Settings" Click="SettingsButton_Click" Margin="5"/>
+            <ContentControl x:Name="SettingsContent" />
+        </StackPanel>
+    </Border>
 </Window>
