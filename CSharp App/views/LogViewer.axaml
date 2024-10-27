@@ -1,0 +1,15 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:VolumetricSelection2077.Views"
+             x:Class="VolumetricSelection2077.Views.LogViewer"
+             x:DataType="views:LogViewer">
+    <ScrollViewer>
+        <ItemsControl ItemsSource="{Binding LogMessages}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding}" />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </ScrollViewer>
+</UserControl>
