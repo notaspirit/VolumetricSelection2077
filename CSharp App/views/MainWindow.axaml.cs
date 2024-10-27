@@ -21,7 +21,7 @@ public partial class MainWindow : Window
         Directory.CreateDirectory(logDirectory);
 
         var logFileName = Path.Combine(logDirectory, $"log_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
-        string outputTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff}] [{Level:u3}] {Message:lj}{NewLine}{Exception}";
+        string outputTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff}] [{Level:u3:FTL=SCS}] {Message:lj}{NewLine}{Exception}";
 
         var logViewer = this.FindControl<LogViewer>("LogViewer");
         if (logViewer == null)

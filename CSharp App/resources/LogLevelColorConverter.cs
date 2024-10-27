@@ -19,7 +19,7 @@ namespace VolumetricSelection2077
                     LogEventLevel.Information => new SolidColorBrush(Colors.White),
                     LogEventLevel.Warning => new SolidColorBrush(Colors.Yellow),
                     LogEventLevel.Error => new SolidColorBrush(Colors.Red),
-                    LogEventLevel.Fatal => new SolidColorBrush(Colors.DarkRed),
+                    LogEventLevel.Fatal => new SolidColorBrush(Colors.Green),
                     _ => new SolidColorBrush(Colors.White)
                 };
             }
