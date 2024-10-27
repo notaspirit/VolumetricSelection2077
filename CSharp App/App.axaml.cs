@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using VolumetricSelection2077.Services;
 
 namespace VolumetricSelection2077;
 
@@ -19,5 +20,6 @@ public partial class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
+        SettingsService.Instance.LoadSettings();
     }
 }

@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:VolumetricSelection2077"
         x:Class="VolumetricSelection2077.SettingsWindow"
-        x:DataType="local:Descriptions"
+        x:DataType="local:ViewModels.SettingsViewModel"
         Title="VolumetricSelection2077"
         Icon="../assets/redCube.ico"
         Width="500"
@@ -32,26 +32,26 @@
             <TextBlock Text="Settings" FontSize="32" FontWeight="Bold" Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Left" Margin="5" />
 
             <!-- First Row: Label -->
-            <TextBlock Text="Game Directory" ToolTip.Tip="{Binding GameDirectoryTooltip}" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
-            <TextBlock Text="Cache" ToolTip.Tip="{Binding CacheTooltip}" Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
-            <TextBlock Text="Cache Sector Data" ToolTip.Tip="{Binding CacheSectorDataTooltip}" Grid.Row="3" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
-            <TextBlock Text="Cache Mesh Data" ToolTip.Tip="{Binding CacheMeshDataTooltip}" Grid.Row="4" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
-            <TextBlock Text="Cache Geometry Cache" ToolTip.Tip="{Binding CacheGeometryCacheTooltip}" Grid.Row="5" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
-            <TextBlock Text="Clear Cache" ToolTip.Tip="{Binding ClearCacheTooltip}" Grid.Row="6" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
-            <TextBlock Text="Cache Directory" ToolTip.Tip="{Binding CacheDirectoryTooltip}" Grid.Row="7" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
-            <TextBlock Text="Save to archive mods" ToolTip.Tip="{Binding SaveToArchiveModsTooltip}" Grid.Row="8" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
-            <TextBlock Text="Output Directory" ToolTip.Tip="{Binding OutputDirectoryTooltip}" Grid.Row="9" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
+
+            <TextBlock Text="Game Directory" ToolTip.Tip="{Binding Descriptions.GameDirectoryTooltip}" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
+            <TextBlock Text="Cache" ToolTip.Tip="{Binding Descriptions.CacheTooltip}" Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
+            <TextBlock Text="Cache Sector Data" ToolTip.Tip="{Binding Descriptions.CacheSectorDataTooltip}" Grid.Row="3" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
+            <TextBlock Text="Cache Mesh Data" ToolTip.Tip="{Binding Descriptions.CacheMeshDataTooltip}" Grid.Row="4" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
+            <TextBlock Text="Cache Geometry Cache" ToolTip.Tip="{Binding Descriptions.CacheGeometryCacheTooltip}" Grid.Row="5" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
+            <TextBlock Text="Clear Cache" ToolTip.Tip="{Binding Descriptions.ClearCacheTooltip}" Grid.Row="6" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
+            <TextBlock Text="Cache Directory" ToolTip.Tip="{Binding Descriptions.CacheDirectoryTooltip}" Grid.Row="7" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
+            <TextBlock Text="Save to archive mods" ToolTip.Tip="{Binding Descriptions.SaveToArchiveModsTooltip}" Grid.Row="8" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
+            <TextBlock Text="Output Directory" ToolTip.Tip="{Binding Descriptions.OutputDirectoryTooltip}" Grid.Row="9" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
 
             <!-- Second Row: Setting Control (e.g., ToggleSwitch) -->
-            <TextBox x:Name="GameDirectoryTextBox" Watermark="Path to game directory" Grid.Row="1" Grid.Column="1" Margin="5" />
-            <ToggleSwitch x:Name="CacheToggleSwitch" Grid.Row="2" Grid.Column="1" Margin="5" />
-            <ToggleSwitch x:Name="CacheSectorDataToggleSwitch" Grid.Row="3" Grid.Column="1" Margin="5" />
-            <ToggleSwitch x:Name="CacheMeshDataToggleSwitch" Grid.Row="4" Grid.Column="1" Margin="5" />
-            <ToggleSwitch x:Name="CacheGeometryCacheToggleSwitch" Grid.Row="5" Grid.Column="1" Margin="5" />
-            <Button x:Name="ClearCacheButton" Grid.Row="6" Grid.Column="1" Margin="5" >Clear Cache</Button>
-            <TextBox x:Name="CacheDirectoryTextBox" Watermark="Path to custom cache folder" Grid.Row="7" Grid.Column="1" Margin="5" />
-            <ToggleSwitch x:Name="SaveToArchiveModsToggleSwitch" Grid.Row="8" Grid.Column="1" Margin="5" />
-            <TextBox x:Name="OutputDirectoryTextBox" Watermark="Path to custom output folder" Grid.Row="9" Grid.Column="1" Margin="5" />
+            <TextBox x:Name="GameDirectoryTextBox" Text="{Binding Settings.GameDirectory}" Watermark="Path to game directory" Grid.Row="1" Grid.Column="1" Margin="5" />
+            <ToggleSwitch x:Name="CacheToggleSwitch" IsChecked="{Binding Settings.CacheEnabled}" Grid.Row="2" Grid.Column="1" Margin="5" />
+            <ToggleSwitch x:Name="CacheSectorDataToggleSwitch" IsChecked="{Binding Settings.CacheSectorData}" Grid.Row="3" Grid.Column="1" Margin="5" />
+            <ToggleSwitch x:Name="CacheMeshDataToggleSwitch" IsChecked="{Binding Settings.CacheMeshData}" Grid.Row="4" Grid.Column="1" Margin="5" />
+            <ToggleSwitch x:Name="CacheGeometryCacheToggleSwitch" IsChecked="{Binding Settings.CacheGeometryCache}" Grid.Row="5" Grid.Column="1" Margin="5" />
+            <TextBox x:Name="CacheDirectoryTextBox" Text="{Binding Settings.CacheDirectory}" Watermark="Path to custom cache folder" Grid.Row="7" Grid.Column="1" Margin="5" />
+            <ToggleSwitch x:Name="SaveToArchiveModsToggleSwitch" IsChecked="{Binding Settings.SaveToArchiveMods}" Grid.Row="8" Grid.Column="1" Margin="5" />
+            <TextBox x:Name="OutputDirectoryTextBox" Text="{Binding Settings.OutputDirectory}" Watermark="Path to custom output folder" Grid.Row="9" Grid.Column="1" Margin="5" />
 
             <!-- Alternatively, for a TextBox instead of a ToggleSwitch -->
             <!-- <TextBox Grid.Row="1" Grid.Column="1" Margin="5" /> -->
