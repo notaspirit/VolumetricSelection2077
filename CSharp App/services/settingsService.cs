@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using Serilog;
 
 namespace VolumetricSelection2077.Services
 {
@@ -50,7 +51,7 @@ namespace VolumetricSelection2077.Services
 
         public void LoadSettings()
         {
-            Console.WriteLine($"Loading settings from: {SettingsFilePath}"); // Debug: Log the file path
+            Log.Information($"Loading settings from: {SettingsFilePath}"); // Debug: Log the file path
             if (!File.Exists(SettingsFilePath))
             {
                 // File doesn't exist, create it with default settings
@@ -61,7 +62,7 @@ namespace VolumetricSelection2077.Services
                 try
                 {
                     var json = File.ReadAllText(SettingsFilePath);
-                    Console.WriteLine($"Loaded JSON: {json}"); // Debug: Log the JSON content
+                    Log.Information($"Loaded JSON: {json}"); // Debug: Log the JSON content
                     var settings = JsonSerializer.Deserialize<SettingsService>(json);
                     if (settings != null)
                     {
@@ -78,14 +79,14 @@ namespace VolumetricSelection2077.Services
                 catch (Exception ex)
                 {
                     // Handle exceptions (e.g., log the error)
-                    Console.WriteLine($"Error loading settings: {ex.Message}");
+                    Log.Error($"Error loading settings: {ex.Message}");
                 }
             }
         }
 
         public void SaveSettings()
         {
-            Console.WriteLine($"Saving settings to: {SettingsFilePath}"); // Debug: Log the file path
+            Log.Information($"Saving settings to: {SettingsFilePath}"); // Debug: Log the file path
             try
             {
                 var options = new JsonSerializerOptions
@@ -103,7 +104,7 @@ namespace VolumetricSelection2077.Services
             catch (Exception ex)
             {
                 // Handle exceptions (e.g., log the error)
-                Console.WriteLine($"Error saving settings: {ex.Message}");
+                Log.Error($"Error saving settings: {ex.Message}");
             }
         }
     }
