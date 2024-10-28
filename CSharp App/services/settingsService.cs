@@ -22,6 +22,7 @@ public class SettingsService
         CacheDirectory = "";
         SaveToArchiveMods = false;
         OutputDirectory = "";
+        OutputFilename = "";
     }
 
     // Singleton instance
@@ -50,11 +51,10 @@ public class SettingsService
     public string CacheDirectory { get; set; }
     public bool SaveToArchiveMods { get; set; }
     public string OutputDirectory { get; set; }
-
+    public string OutputFilename { get; set; }
     // Methods for loading and saving settings
     public void LoadSettings()
     {
-        Log.Information($"Loading settings from: {SettingsFilePath}");
         if (!File.Exists(SettingsFilePath))
         {
             SaveSettings();
@@ -64,7 +64,6 @@ public class SettingsService
             try
             {
                 var json = File.ReadAllText(SettingsFilePath);
-                Log.Information($"Loaded JSON: {json}");
                 var settings = JsonSerializer.Deserialize<SettingsService>(json);
                 if (settings != null)
                 {
@@ -76,23 +75,18 @@ public class SettingsService
                     CacheDirectory = settings.CacheDirectory;
                     SaveToArchiveMods = settings.SaveToArchiveMods;
                     OutputDirectory = settings.OutputDirectory;
+                    OutputFilename = settings.OutputFilename;
                 }
             }
             catch (Exception ex)
             {
-                Log.Error($"Error loading settings: {ex.Message}");
+                Logger.Error($"Error loading settings: {ex.Message}");
             }
         }
     }
 
     public void SaveSettings()
     {
-        Logger.Info($"Saving settings to: {SettingsFilePath}");
-        Logger.Error("Test");
-        Logger.Info("Test");
-        Logger.Debug("Test");
-        Logger.Warning("Test");
-        Logger.Success("Test");
         try
         {
             var options = new JsonSerializerOptions
@@ -109,7 +103,7 @@ public class SettingsService
         }
         catch (Exception ex)
         {
-            Log.Error($"Error saving settings: {ex.Message}");
+            Logger.Error($"Error saving settings: {ex.Message}");
         }
     }
 }

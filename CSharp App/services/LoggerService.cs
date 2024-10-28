@@ -15,7 +15,7 @@ namespace VolumetricSelection2077.Services
         public static void Initialize(string logDirectory)
         {
             var logFileName = Path.Combine(logDirectory, $"log_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
-            string outputTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff}] {Message:lj}{NewLine}{Exception}";
+            string outputTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss}] {Message:lj}{NewLine}{Exception}";
 
             var loggerConfig = new LoggerConfiguration()
                 .MinimumLevel.Debug()
