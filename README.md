@@ -9,3 +9,5 @@ why:
 4. if the user has to run the scripts when needed and cache the data, it's not any easier than existing tools (e.g. exporting the sector into blender)
 
 (It wasn't even dead for 24h so it doesn't count) the 5s rule applies here
+
+Waiting on the new version of the wolvenkit.common package for the c# app

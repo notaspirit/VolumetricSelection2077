@@ -1,5 +1,5 @@
 .vscode/
 **/node_modules
 **/.stfolder/
-**/bin/
-**/obj/
+CSharp App/bin/
+CSharp App/obj/
