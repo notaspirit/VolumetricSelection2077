@@ -1,19 +1,31 @@
 local vector3 = require('classes/vector3')
+local RHTScan = require('modules/RHTIntegration')
+local box = require('classes/box')
 
 -- Initialize variables
-local pos1 = vector3:new(0, 0, 0)
-local scale = vector3:new(1, 1, 1)
-local rotation = vector3:new(0, 0, 0)
+-- 3d Objects
+local SelectionBox = box:new(vector3:new(0, 0, 0), vector3:new(1, 1, 1), vector3:new(0, 0, 0))
+local originPoint = vector3:new(0, 0, 0)
+local rotationPoint = vector3:new(0, 0, 0)
+local scalePoint = vector3:new(1, 1, 1)
 local relativeOffset = vector3:new(0, 0, 0)
+
+-- Sorta Settings
 local precisionBool = false
 local precision = 1
 local unprecisePrecision = 1
 local precisePrecision = 0.001
 local isHighlighted = false
 
+-- Ui Variables
 local typeWidth = 40
 local valueWidth = 100
 local totalWidth = typeWidth + valueWidth
+
+-- Status Text
+local statusMessage = ""
+local statusEndTime = 0
+local statusDuration = 10
 
 local function CenteredText(text, width)
     local textWidth = ImGui.CalcTextSize(text)
@@ -25,73 +37,40 @@ end
 
 local function setPlayerPosition()
     local currentPos = Game.GetPlayer():GetWorldPosition()
-    pos1.x = currentPos.x
-    pos1.y = currentPos.y
-    pos1.z = currentPos.z
+    originPoint = vector3:new(currentPos.x, currentPos.y, currentPos.z)
+    SelectionBox:setOrigin(originPoint)
 end
 
 local function resetRotation()
-    rotation.x = 0
-    rotation.y = 0
-    rotation.z = 0
+    SelectionBox:setRotation(vector3:new(0, 0, 0))
 end
 
 local function resetScale()
-    scale.x = 1
-    scale.y = 1
-    scale.z = 1
+    SelectionBox:setScale(vector3:new(1, 1, 1))
 end
 
 local function wrapRotation(rotation)
-    rotation.x = rotation.x % 360
-    rotation.y = rotation.y % 360
-    rotation.z = rotation.z % 360
-end
-
--- Function to convert degrees to radians
-local function degToRad(degrees)
-    return degrees * math.pi / 180
-end
-
--- Function to rotate a vector by given rotation angles
-local function rotateVector3(vector, rotation)
-    local radX = degToRad(rotation.x)
-    local radY = degToRad(rotation.y)
-    local radZ = degToRad(rotation.z)
-
-    -- Rotation around X-axis
-    local cosX = math.cos(radX)
-    local sinX = math.sin(radX)
-    local y1 = vector.y * cosX - vector.z * sinX
-    local z1 = vector.y * sinX + vector.z * cosX
-
-    -- Rotation around Y-axis
-    local cosY = math.cos(radY)
-    local sinY = math.sin(radY)
-    local x2 = vector.x * cosY + z1 * sinY
-    local z2 = -vector.x * sinY + z1 * cosY
-
-    -- Rotation around Z-axis
-    local cosZ = math.cos(radZ)
-    local sinZ = math.sin(radZ)
-    local x3 = x2 * cosZ - y1 * sinZ
-    local y3 = x2 * sinZ + y1 * cosZ
-
-    relativeOffset.x = 0
-    relativeOffset.y = 0
-    relativeOffset.z = 0
-
-    return {x = x3, y = y3, z = z2}
+    rotationPoint = vector3:new(rotation.x % 360, rotation.y % 360, rotation.z % 360)
+    SelectionBox:setRotation(rotationPoint)
 end
 
 -- Function to move a point by a distance considering rotation
 local function movePoint(point, rotation, distance)
-    local rotatedDistance = rotateVector3(distance, rotation)
-    return {
-        x = point.x + rotatedDistance.x,
-        y = point.y + rotatedDistance.y,
-        z = point.z + rotatedDistance.z
-    }
+    local modifiedVector = point:move(rotation, distance)
+    relativeOffset.x = 0
+    relativeOffset.y = 0
+    relativeOffset.z = 0
+    return modifiedVector
+end
+
+local function showStatusText(text, type)
+    statusMessage = text
+    statusEndTime = ImGui.GetTime() + statusDuration
+    statusType = type or "info"
+end
+
+local function handleRHTStatus(RHTResult)
+    showStatusText(RHTResult.text, RHTResult.type)
 end
 
 function CETGui()
@@ -135,16 +114,20 @@ function CETGui()
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            pos1.x = ImGui.DragFloat("##pos1x", pos1.x, precision)
+            originPoint.x, changedOriginX = ImGui.DragFloat("##pos1x", originPoint.x, precision)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            pos1.y = ImGui.DragFloat("##pos1y", pos1.y, precision)
+            originPoint.y, changedOriginY = ImGui.DragFloat("##pos1y", originPoint.y, precision)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            pos1.z = ImGui.DragFloat("##pos1z", pos1.z, precision)
+            originPoint.z, changedOriginZ = ImGui.DragFloat("##pos1z", originPoint.z, precision)
             
+            if changedOriginX or changedOriginY or changedOriginZ then
+                SelectionBox:setOrigin(originPoint)
+            end
+
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
             if ImGui.Button("Player Position##1") then
@@ -170,7 +153,8 @@ function CETGui()
             relativeOffset.z, changedRelativeRotationZ = ImGui.DragFloat("##pos1zrel", relativeOffset.z, precision)
 
             if changedRelativeRotationX or changedRelativeRotationY or changedRelativeRotationZ then
-                pos1 = movePoint(pos1, rotation, relativeOffset)
+                originPoint = movePoint(originPoint, rotationPoint, relativeOffset)
+                SelectionBox:setOrigin(originPoint)
             end
             ImGui.TableNextRow()
             ImGui.TableNextColumn()
@@ -186,16 +170,20 @@ function CETGui()
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            scale.x = ImGui.DragFloat("##scalex", scale.x, precision)
+            scalePoint.x, changedScaleX = ImGui.DragFloat("##scalex", scalePoint.x, precision)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            scale.y = ImGui.DragFloat("##scaley", scale.y, precision)
+            scalePoint.y, changedScaleY = ImGui.DragFloat("##scaley", scalePoint.y, precision)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            scale.z = ImGui.DragFloat("##scalez", scale.z, precision)
+            scalePoint.z, changedScaleZ = ImGui.DragFloat("##scalez", scalePoint.z, precision)
             
+            if changedScaleX or changedScaleY or changedScaleZ then
+                SelectionBox:setScale(scalePoint)
+            end
+
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
             if ImGui.Button("Reset Scale") then
@@ -216,18 +204,18 @@ function CETGui()
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            rotation.x, changedRotationX = ImGui.DragFloat("##rotx", rotation.x, precision)
+            rotationPoint.x, changedRotationX = ImGui.DragFloat("##rotx", rotationPoint.x, precision)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            rotation.y, changedRotationY = ImGui.DragFloat("##roty", rotation.y, precision)
+            rotationPoint.y, changedRotationY = ImGui.DragFloat("##roty", rotationPoint.y, precision)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            rotation.z, changedRotationZ = ImGui.DragFloat("##rotz", rotation.z, precision)
+            rotationPoint.z, changedRotationZ = ImGui.DragFloat("##rotz", rotationPoint.z, precision)
 
             if changedRotationX or changedRotationY or changedRotationZ then
-                wrapRotation(rotation)
+                wrapRotation(rotationPoint)
             end
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
@@ -240,7 +228,9 @@ function CETGui()
             ImGui.TableNextColumn()
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            if ImGui.Button("Scan with RHT") then
+            -- Potential point of confusion for unexperienced users, consider changing name
+            if ImGui.Button("Read RHT Scan") then
+                handleRHTStatus(RHTScan(SelectionBox))
             end
 
             ImGui.TableNextColumn()
@@ -262,8 +252,19 @@ function CETGui()
             ImGui.EndTable()
         end
         -- Todo: Add Scan RHT button
-        -- Add Relative movement logic (Don't understand shit :kek:)
         -- Fix button spacing
+        -- Update and display status message
+        if ImGui.GetTime() < statusEndTime then
+            if statusType == "error" then
+                ImGui.PushStyleColor(ImGuiCol.Text, 1, 0, 0, 1)  -- Red
+            elseif statusType == "success" then
+                ImGui.PushStyleColor(ImGuiCol.Text, 0, 1, 0, 1)  -- Green
+            else
+                ImGui.PushStyleColor(ImGuiCol.Text, 1, 1, 1, 1)  -- White
+            end
+            ImGui.Text(statusMessage)
+            ImGui.PopStyleColor()
+        end
     end
     ImGui.End()
 end

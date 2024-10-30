@@ -2,7 +2,7 @@ require("modules/VSGui")
 
 -- initial variables
 local isOverlayVisible = false
-local RHT = false
+local RHTBool = false
 
 -- mod info 
 mod = {
@@ -11,7 +11,12 @@ mod = {
 
 -- onInit event
 registerForEvent('onInit', function()
-    RHT = Game.GetWorldInspector() ~= nil
+    local RHT = GetMod("RedHotTools")
+    if not RHT then
+        RHTBool = false
+    else
+        RHTBool = true
+    end
 
     -- set as ready
     mod.ready = true
@@ -33,7 +38,7 @@ end)
 registerForEvent('onDraw', function()
     -- if overlay is visible, draw ImGui
     if isOverlayVisible then
-        if RHT then
+        if RHTBool then
             CETGui()
         else
             NoRHTGui()
