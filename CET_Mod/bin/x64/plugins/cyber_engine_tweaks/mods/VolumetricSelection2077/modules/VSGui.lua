@@ -2,8 +2,14 @@ local vector3 = require('classes/vector3')
 
 -- Initialize variables
 local pos1 = vector3:new(0, 0, 0)
-local pos2 = vector3:new(0, 0, 0)
+local scale = vector3:new(1, 1, 1)
 local rotation = vector3:new(0, 0, 0)
+local relativeOffset = vector3:new(0, 0, 0)
+local precisionBool = false
+local precision = 1
+local unprecisePrecision = 1
+local precisePrecision = 0.001
+local isHighlighted = false
 
 local typeWidth = 40
 local valueWidth = 100
@@ -17,6 +23,76 @@ local function CenteredText(text, width)
     ImGui.Text(text)
 end
 
+local function setPlayerPosition()
+    local currentPos = Game.GetPlayer():GetWorldPosition()
+    pos1.x = currentPos.x
+    pos1.y = currentPos.y
+    pos1.z = currentPos.z
+end
+
+local function resetRotation()
+    rotation.x = 0
+    rotation.y = 0
+    rotation.z = 0
+end
+
+local function resetScale()
+    scale.x = 1
+    scale.y = 1
+    scale.z = 1
+end
+
+local function wrapRotation(rotation)
+    rotation.x = rotation.x % 360
+    rotation.y = rotation.y % 360
+    rotation.z = rotation.z % 360
+end
+
+-- Function to convert degrees to radians
+local function degToRad(degrees)
+    return degrees * math.pi / 180
+end
+
+-- Function to rotate a vector by given rotation angles
+local function rotateVector3(vector, rotation)
+    local radX = degToRad(rotation.x)
+    local radY = degToRad(rotation.y)
+    local radZ = degToRad(rotation.z)
+
+    -- Rotation around X-axis
+    local cosX = math.cos(radX)
+    local sinX = math.sin(radX)
+    local y1 = vector.y * cosX - vector.z * sinX
+    local z1 = vector.y * sinX + vector.z * cosX
+
+    -- Rotation around Y-axis
+    local cosY = math.cos(radY)
+    local sinY = math.sin(radY)
+    local x2 = vector.x * cosY + z1 * sinY
+    local z2 = -vector.x * sinY + z1 * cosY
+
+    -- Rotation around Z-axis
+    local cosZ = math.cos(radZ)
+    local sinZ = math.sin(radZ)
+    local x3 = x2 * cosZ - y1 * sinZ
+    local y3 = x2 * sinZ + y1 * cosZ
+
+    relativeOffset.x = 0
+    relativeOffset.y = 0
+    relativeOffset.z = 0
+
+    return {x = x3, y = y3, z = z2}
+end
+
+-- Function to move a point by a distance considering rotation
+local function movePoint(point, rotation, distance)
+    local rotatedDistance = rotateVector3(distance, rotation)
+    return {
+        x = point.x + rotatedDistance.x,
+        y = point.y + rotatedDistance.y,
+        z = point.z + rotatedDistance.z
+    }
+end
 
 function CETGui()
     -- draw ImGui window
@@ -47,6 +123,8 @@ function CETGui()
 
             ImGui.TableNextRow()
             ImGui.TableNextColumn()
+            ImGui.TableNextColumn()
+            ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)  
             CenteredText("Box Point 1", valueWidth)
             -- Absolute Position Row
@@ -57,23 +135,20 @@ function CETGui()
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            pos1.x = ImGui.DragFloat("##pos1x", pos1.x, 0.004)
+            pos1.x = ImGui.DragFloat("##pos1x", pos1.x, precision)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            pos1.y = ImGui.DragFloat("##pos1y", pos1.y, 0.004)
+            pos1.y = ImGui.DragFloat("##pos1y", pos1.y, precision)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            pos1.z = ImGui.DragFloat("##pos1z", pos1.z, 0.004)
+            pos1.z = ImGui.DragFloat("##pos1z", pos1.z, precision)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
             if ImGui.Button("Player Position##1") then
-                local currentPos = Game.GetPlayer():GetWorldPosition()
-                pos1.x = currentPos.x
-                pos1.y = currentPos.y
-                pos1.z = currentPos.z
+                setPlayerPosition()
             end
 
             -- Relative Position Row
@@ -84,20 +159,25 @@ function CETGui()
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            pos1.x = ImGui.DragFloat("##pos1xrel", pos1.x, 0.004)
+            relativeOffset.x, changedRelativeRotationX = ImGui.DragFloat("##pos1xrel", relativeOffset.x, precision)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            pos1.y = ImGui.DragFloat("##pos1yrel", pos1.y, 0.004)
+            relativeOffset.y, changedRelativeRotationY = ImGui.DragFloat("##pos1yrel", relativeOffset.y, precision)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            pos1.z = ImGui.DragFloat("##pos1zrel", pos1.z, 0.004)
+            relativeOffset.z, changedRelativeRotationZ = ImGui.DragFloat("##pos1zrel", relativeOffset.z, precision)
 
+            if changedRelativeRotationX or changedRelativeRotationY or changedRelativeRotationZ then
+                pos1 = movePoint(pos1, rotation, relativeOffset)
+            end
             ImGui.TableNextRow()
             ImGui.TableNextColumn()
+            ImGui.TableNextColumn()
+            ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)  
-            CenteredText("Box Point 2", valueWidth)
+            CenteredText("Scale", valueWidth)
             -- Absolute Position Row
             ImGui.TableNextRow()
             ImGui.TableNextColumn()
@@ -106,44 +186,25 @@ function CETGui()
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            pos2.x = ImGui.DragFloat("##pos2x", pos2.x, 0.004)
+            scale.x = ImGui.DragFloat("##scalex", scale.x, precision)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            pos2.y = ImGui.DragFloat("##pos2y", pos2.y, 0.004)
+            scale.y = ImGui.DragFloat("##scaley", scale.y, precision)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            pos2.z = ImGui.DragFloat("##pos2z", pos2.z, 0.004)
+            scale.z = ImGui.DragFloat("##scalez", scale.z, precision)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            if ImGui.Button("Player Position##2") then
-                local currentPos = Game.GetPlayer():GetWorldPosition()
-                pos2.x = currentPos.x
-                pos2.y = currentPos.y
-                pos2.z = currentPos.z
+            if ImGui.Button("Reset Scale") then
+                resetScale()
             end
 
-            -- Relative Position Row
             ImGui.TableNextRow()
             ImGui.TableNextColumn()
-            ImGui.SetNextItemWidth(valueWidth) 
-            CenteredText("Relative", valueWidth)
-            
             ImGui.TableNextColumn()
-            ImGui.SetNextItemWidth(valueWidth)
-            pos2.x = ImGui.DragFloat("##pos2xrel", pos2.x, 0.004)
-            
-            ImGui.TableNextColumn()
-            ImGui.SetNextItemWidth(valueWidth)
-            pos2.y = ImGui.DragFloat("##pos2yrel", pos2.y, 0.004)
-            
-            ImGui.TableNextColumn()
-            ImGui.SetNextItemWidth(valueWidth)
-            pos2.z = ImGui.DragFloat("##pos2zrel", pos2.z, 0.004)
-
-            ImGui.TableNextRow()
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)  
             CenteredText("Rotation", valueWidth)
@@ -155,25 +216,64 @@ function CETGui()
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            rotation.x = ImGui.DragFloat("##rotx", rotation.x, 0.004)
+            rotation.x, changedRotationX = ImGui.DragFloat("##rotx", rotation.x, precision)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            rotation.y = ImGui.DragFloat("##roty", rotation.y, 0.004)
+            rotation.y, changedRotationY = ImGui.DragFloat("##roty", rotation.y, precision)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            rotation.z = ImGui.DragFloat("##rotz", rotation.z, 0.004)
+            rotation.z, changedRotationZ = ImGui.DragFloat("##rotz", rotation.z, precision)
 
+            if changedRotationX or changedRotationY or changedRotationZ then
+                wrapRotation(rotation)
+            end
+            ImGui.TableNextColumn()
+            ImGui.SetNextItemWidth(valueWidth)
+            if ImGui.Button("Reset Rotation") then
+                resetRotation()
+            end
+
+            ImGui.TableNextRow()
+            ImGui.TableNextRow()
+            ImGui.TableNextColumn()
+            ImGui.TableNextColumn()
+            ImGui.SetNextItemWidth(valueWidth)
+            if ImGui.Button("Scan with RHT") then
+            end
+
+            ImGui.TableNextColumn()
+            ImGui.SetNextItemWidth(valueWidth)
+            if ImGui.Button(string.format("Highlight [%s]", isHighlighted and "ON" or "OFF")) then
+                isHighlighted = not isHighlighted
+            end
+
+            ImGui.TableNextColumn()
+            ImGui.SetNextItemWidth(valueWidth)
+            if ImGui.Button(string.format("Precision [%s]", precisionBool and "ON" or "OFF")) then
+                precisionBool = not precisionBool
+                if precisionBool then
+                    precision = precisePrecision
+                else
+                    precision = unprecisePrecision
+                end
+            end
             ImGui.EndTable()
         end
         -- Todo: Add Scan RHT button
-        -- Add Overflow back into rotation
-        -- Add Relative movement logic
-        -- Add More visual distinction between rows
-        ImGui.End()
+        -- Add Relative movement logic (Don't understand shit :kek:)
+        -- Fix button spacing
     end
+    ImGui.End()
+end
+
+function NoRHTGui()
+    if ImGui.Begin('VolumetricSelection2077') then
+        ImGui.Text("RedHotTools is not installed.")
+    end
+    ImGui.End()
 end
 
 -- return function
-return CETGui
+return CETGui, NoRHTGui
