@@ -82,4 +82,21 @@ function box:setOrigin(newOrigin)
     self:updateVertices()
 end
 
+function box:toTable()
+    return {
+        origin = {x = self.origin.x, y = self.origin.y, z = self.origin.z},
+        min = {x = self.min.x, y = self.min.y, z = self.min.z},
+        max = {x = self.max.x, y = self.max.y, z = self.max.z},
+        vertices = (function()
+            local verts = {}
+            for i, v in ipairs(self.vertices) do
+                verts[i] = {x = v.x, y = v.y, z = v.z}
+            end
+            return verts
+        end)(),
+        scale = {x = self.scale.x, y = self.scale.y, z = self.scale.z},
+        rotation = {x = self.rotation.x, y = self.rotation.y, z = self.rotation.z}
+    }
+end
+
 return box

@@ -11,11 +11,11 @@ mod = {
 
 -- onInit event
 registerForEvent('onInit', function()
-    local RHT = GetMod("RedHotTools")
-    if not RHT then
-        RHTBool = false
-    else
+    local RHT = Game.GetWorldInspector()
+    if RHT ~= nil then
         RHTBool = true
+    else
+        RHTBool = false
     end
 
     -- set as ready
@@ -38,6 +38,7 @@ end)
 registerForEvent('onDraw', function()
     -- if overlay is visible, draw ImGui
     if isOverlayVisible then
+        -- draws main gui only if RHT is installed
         if RHTBool then
             CETGui()
         else
@@ -49,5 +50,3 @@ end)
 -- return mod info 
 -- for communication between mods
 return mod
-
--- yesm an hem

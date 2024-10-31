@@ -229,9 +229,14 @@ function CETGui()
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
             -- Potential point of confusion for unexperienced users, consider changing name
+            -- Change button color to green
+            ImGui.PushStyleColor(ImGuiCol.Button, 0, 180, 0, 0.8)  -- RGBA for green
+            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0, 180, 0, 0.6)  -- Slightly darker green when hovered
+            ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0, 180, 0, 0.4)  -- Even darker green when active
             if ImGui.Button("Read RHT Scan") then
                 handleRHTStatus(RHTScan(SelectionBox))
             end
+            ImGui.PopStyleColor(3)
 
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
@@ -265,6 +270,7 @@ function CETGui()
             ImGui.Text(statusMessage)
             ImGui.PopStyleColor()
         end
+        ImGui.Text("Make sure the entire selection is visible")
     end
     ImGui.End()
 end
