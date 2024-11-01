@@ -41,7 +41,7 @@ function DeprecatedRHTScan(box)
     local PlayerPos = vector3:new(GamePlayPos.x, GamePlayPos.y, GamePlayPos.z)
     local furtherPoint = getFurtherPoint(box, PlayerPos)
     local Distance = furtherPoint:distance(PlayerPos)
-    local distanceWithBuffer = Distance*1.2
+    local distanceWithBuffer = Distance*scaleBuffer
     -- TODO: Add check to make sure that the distance is less than what RHT can scan
     print("Distance:", tostring(Distance))
 

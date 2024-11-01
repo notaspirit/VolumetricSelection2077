@@ -1,6 +1,8 @@
 local vector3 = require('classes/vector3')
 local RHTScan = require('modules/RHTIntegration')
 local box = require('classes/box')
+local selectionUtils = require('modules/selectionUtils')
+local jsonUtils = require('modules/jsonUtils')
 
 -- Initialize variables
 -- 3d Objects
@@ -27,6 +29,10 @@ local statusMessage = ""
 local statusEndTime = 0
 local statusDuration = 10
 
+-- Entity
+local entity = nil
+local entityId = nil
+
 local function CenteredText(text, width)
     local textWidth = ImGui.CalcTextSize(text)
     local cellWidth = width
@@ -43,10 +49,12 @@ end
 
 local function resetRotation()
     SelectionBox:setRotation(vector3:new(0, 0, 0))
+    rotationPoint = vector3:new(0, 0, 0)
 end
 
 local function resetScale()
     SelectionBox:setScale(vector3:new(1, 1, 1))
+    scalePoint = vector3:new(1, 1, 1)
 end
 
 local function wrapRotation(rotation)
@@ -242,6 +250,18 @@ function CETGui()
             ImGui.SetNextItemWidth(valueWidth)
             if ImGui.Button(string.format("Highlight [%s]", isHighlighted and "ON" or "OFF")) then
                 isHighlighted = not isHighlighted
+                -- Todo: Add Highlight Function
+                if isHighlighted then
+                    local entityString = "base\\items\\interactive\\industrial\\int_industrial_002__robotic_arm_delamain.ent"
+                    entityId = selectionUtils.spawnEntity(entityString, originPoint, rotationPoint)
+                    -- Why does this not work here??? it literally works a couple of lines below??????
+                    selectionUtils.addMesh(Game.FindEntityByID(entityId), "Mesh", "base\\spawner\\cube.mesh", scalePoint, "red", true)
+                else
+                    -- Game.FindEntityByID(entityId) **HAS** to be used here, otherwise it returns nil?????????????????
+                    -- So just don't touch it and hope it continues to work
+                    exEntitySpawner.Despawn(Game.FindEntityByID(entityId))
+                end
+
             end
 
             ImGui.TableNextColumn()
@@ -256,9 +276,7 @@ function CETGui()
             end
             ImGui.EndTable()
         end
-        -- Todo: Add Scan RHT button
-        -- Fix button spacing
-        -- Update and display status message
+        -- Todo: Fix Button Spacing
         if ImGui.GetTime() < statusEndTime then
             if statusType == "error" then
                 ImGui.PushStyleColor(ImGuiCol.Text, 1, 0, 0, 1)  -- Red
