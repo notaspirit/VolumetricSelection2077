@@ -44,10 +44,7 @@ function visualizationBox:spawn()
     worldTransform:SetOrientation(ToQuaternion(self.rotation))
     self.entityID = exEntitySpawner.Spawn(entityPath, worldTransform)
     if not self.entityID then
-        print("Failed to spawn entity")
         return false
-    else
-        print("Entity spawned!")
     end
     return true
 end
@@ -55,10 +52,8 @@ end
 function visualizationBox:resolveEntity()
     self.entity = Game.FindEntityByID(self.entityID)
     if not self.entity then
-        print("Failed to resolve entity")
         return false
     end
-    print("Entity resolved!")
     return true
 end
 
@@ -72,11 +67,7 @@ function visualizationBox:updatePosition()
     if not self.entity then return end
     local EARotation = EulerAngles.new(self.rotation.x, self.rotation.y, self.rotation.z)
     local vector4Position = ToVector4({x = self.origin.x, y = self.origin.y, z = self.origin.z, w = 1})
-    print("Teleporting...")
     Game.GetTeleportationFacility():Teleport(self.entity, vector4Position, EARotation)
-    print("Teleported!")
-    local newPosition = self.entity:GetWorldPosition()
-    print("New position: " .. newPosition.x .. ", " .. newPosition.y .. ", " .. newPosition.z)
     local component = self.entity:FindComponentByName("Component")
     component:Toggle(false)
     component:Toggle(true)

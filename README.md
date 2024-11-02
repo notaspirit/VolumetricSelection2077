@@ -11,3 +11,5 @@ why:
 (It wasn't even dead for 24h so it doesn't count) the 5s rule applies here
 
 Waiting on the new version of the wolvenkit.common package for the c# app
+
+Credits to: keanuWheeze for the cube mesh and the material

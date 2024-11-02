@@ -12,9 +12,12 @@ local selectionBox = visualizationBox:new(originPoint, scalePoint, rotationPoint
 
 -- Sorta Settings
 local precisionBool = false
-local precision = 1
-local unprecisePrecision = 1
-local precisePrecision = 0.001
+local unprecisePrecisionMove = 0.5
+local precisePrecisionMove = 0.001
+local unprecisePrecisionRotation = 1
+local precisePrecisionRotation = 0.01
+local precisionMove = unprecisePrecisionMove
+local precisionRotation = unprecisePrecisionRotation
 local isHighlighted = false
 
 -- Ui Variables
@@ -96,6 +99,7 @@ local function checkEntityRequest()
     return false
 end
 
+-- Main gui function
 function CETGui()
     -- draw ImGui window
     if ImGui.Begin('VolumetricSelection2077') then
@@ -137,15 +141,15 @@ function CETGui()
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            originPoint.x, changedOriginX = ImGui.DragFloat("##pos1x", originPoint.x, precision)
+            originPoint.x, changedOriginX = ImGui.DragFloat("##pos1x", originPoint.x, precisionMove)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            originPoint.y, changedOriginY = ImGui.DragFloat("##pos1y", originPoint.y, precision)
+            originPoint.y, changedOriginY = ImGui.DragFloat("##pos1y", originPoint.y, precisionMove)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            originPoint.z, changedOriginZ = ImGui.DragFloat("##pos1z", originPoint.z, precision)
+            originPoint.z, changedOriginZ = ImGui.DragFloat("##pos1z", originPoint.z, precisionMove)
             
             if changedOriginX or changedOriginY or changedOriginZ then
                 selectionBox:setOrigin(originPoint)
@@ -167,15 +171,15 @@ function CETGui()
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            relativeOffset.x, changedRelativeRotationX = ImGui.DragFloat("##pos1xrel", relativeOffset.x, precision)
+            relativeOffset.x, changedRelativeRotationX = ImGui.DragFloat("##pos1xrel", relativeOffset.x, precisionMove)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            relativeOffset.y, changedRelativeRotationY = ImGui.DragFloat("##pos1yrel", relativeOffset.y, precision)
+            relativeOffset.y, changedRelativeRotationY = ImGui.DragFloat("##pos1yrel", relativeOffset.y, precisionMove)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            relativeOffset.z, changedRelativeRotationZ = ImGui.DragFloat("##pos1zrel", relativeOffset.z, precision)
+            relativeOffset.z, changedRelativeRotationZ = ImGui.DragFloat("##pos1zrel", relativeOffset.z, precisionMove)
 
             if changedRelativeRotationX or changedRelativeRotationY or changedRelativeRotationZ then
                 originPoint = movePoint(originPoint, rotationPoint, relativeOffset)
@@ -197,15 +201,15 @@ function CETGui()
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            scalePoint.x, changedScaleX = ImGui.DragFloat("##scalex", scalePoint.x, precision)
+            scalePoint.x, changedScaleX = ImGui.DragFloat("##scalex", scalePoint.x, precisionMove)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            scalePoint.y, changedScaleY = ImGui.DragFloat("##scaley", scalePoint.y, precision)
+            scalePoint.y, changedScaleY = ImGui.DragFloat("##scaley", scalePoint.y, precisionMove)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            scalePoint.z, changedScaleZ = ImGui.DragFloat("##scalez", scalePoint.z, precision)
+            scalePoint.z, changedScaleZ = ImGui.DragFloat("##scalez", scalePoint.z, precisionMove)
             
             if changedScaleX or changedScaleY or changedScaleZ then
                 selectionBox:setScale(scalePoint)
@@ -216,6 +220,7 @@ function CETGui()
             ImGui.SetNextItemWidth(valueWidth)
             if ImGui.Button("Reset Scale") then
                 resetScale()
+                selectionBox:updateScale()
             end
 
             ImGui.TableNextRow()
@@ -232,15 +237,15 @@ function CETGui()
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            rotationPoint.x, changedRotationX = ImGui.DragFloat("##rotx", rotationPoint.x, precision)
+            rotationPoint.x, changedRotationX = ImGui.DragFloat("##rotx", rotationPoint.x, precisionRotation)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            rotationPoint.y, changedRotationY = ImGui.DragFloat("##roty", rotationPoint.y, precision)
+            rotationPoint.y, changedRotationY = ImGui.DragFloat("##roty", rotationPoint.y, precisionRotation)
             
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
-            rotationPoint.z, changedRotationZ = ImGui.DragFloat("##rotz", rotationPoint.z, precision)
+            rotationPoint.z, changedRotationZ = ImGui.DragFloat("##rotz", rotationPoint.z, precisionRotation)
 
             if changedRotationX or changedRotationY or changedRotationZ then
                 wrapRotation(rotationPoint)
@@ -288,14 +293,16 @@ function CETGui()
             if ImGui.Button(string.format("Precision [%s]", precisionBool and "ON" or "OFF")) then
                 precisionBool = not precisionBool
                 if precisionBool then
-                    precision = precisePrecision
+                    precisionMove = precisePrecisionMove
+                    precisionRotation = precisePrecisionRotation
                 else
-                    precision = unprecisePrecision
+                    precisionMove = unprecisePrecisionMove
+                    precisionRotation = unprecisePrecisionRotation
                 end
             end
             ImGui.EndTable()
         end
-        -- Todo: Fix Button Spacing
+
         if ImGui.GetTime() < statusEndTime then
             if statusType == "error" then
                 ImGui.PushStyleColor(ImGuiCol.Text, 1, 0, 0, 1)  -- Red
