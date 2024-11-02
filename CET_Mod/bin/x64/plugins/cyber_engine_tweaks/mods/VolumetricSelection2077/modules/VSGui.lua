@@ -1,16 +1,14 @@
 local vector3 = require('classes/vector3')
 local RHTScan = require('modules/RHTIntegration')
-local box = require('classes/box')
-local selectionUtils = require('modules/selectionUtils')
-local jsonUtils = require('modules/jsonUtils')
+local visualizationBox = require('classes/visualizationBox')
 
 -- Initialize variables
 -- 3d Objects
-local SelectionBox = box:new(vector3:new(0, 0, 0), vector3:new(1, 1, 1), vector3:new(0, 0, 0))
 local originPoint = vector3:new(0, 0, 0)
 local rotationPoint = vector3:new(0, 0, 0)
 local scalePoint = vector3:new(1, 1, 1)
 local relativeOffset = vector3:new(0, 0, 0)
+local selectionBox = visualizationBox:new(originPoint, scalePoint, rotationPoint)
 
 -- Sorta Settings
 local precisionBool = false
@@ -30,8 +28,12 @@ local statusEndTime = 0
 local statusDuration = 10
 
 -- Entity
-local entity = nil
-local entityId = nil
+local entityState ={
+    requestedEntity = false,
+    addMesh = false,
+    requestEndTime = 0
+}
+
 
 local function CenteredText(text, width)
     local textWidth = ImGui.CalcTextSize(text)
@@ -44,22 +46,22 @@ end
 local function setPlayerPosition()
     local currentPos = Game.GetPlayer():GetWorldPosition()
     originPoint = vector3:new(currentPos.x, currentPos.y, currentPos.z)
-    SelectionBox:setOrigin(originPoint)
+    selectionBox:setOrigin(originPoint)
 end
 
 local function resetRotation()
-    SelectionBox:setRotation(vector3:new(0, 0, 0))
+    selectionBox:setRotation(vector3:new(0, 0, 0))
     rotationPoint = vector3:new(0, 0, 0)
 end
 
 local function resetScale()
-    SelectionBox:setScale(vector3:new(1, 1, 1))
+    selectionBox:setScale(vector3:new(1, 1, 1))
     scalePoint = vector3:new(1, 1, 1)
 end
 
 local function wrapRotation(rotation)
     rotationPoint = vector3:new(rotation.x % 360, rotation.y % 360, rotation.z % 360)
-    SelectionBox:setRotation(rotationPoint)
+    selectionBox:setRotation(rotationPoint)
 end
 
 -- Function to move a point by a distance considering rotation
@@ -79,6 +81,20 @@ end
 
 local function handleRHTStatus(RHTResult)
     showStatusText(RHTResult.text, RHTResult.type)
+end
+
+local function requestEntity()
+    entityState.requestedEntity = true
+    entityState.requestEndTime = ImGui.GetTime() + 2
+end
+
+local function checkEntityRequest()
+    if entityState.requestedEntity and ImGui.GetTime() > entityState.requestEndTime then
+        entity = Game.FindEntityByID(entityId)
+        entityState.requestedEntity = false
+        return true
+    end
+    return false
 end
 
 function CETGui()
@@ -133,13 +149,15 @@ function CETGui()
             originPoint.z, changedOriginZ = ImGui.DragFloat("##pos1z", originPoint.z, precision)
             
             if changedOriginX or changedOriginY or changedOriginZ then
-                SelectionBox:setOrigin(originPoint)
+                selectionBox:setOrigin(originPoint)
+                selectionBox:updatePosition()
             end
 
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
             if ImGui.Button("Player Position##1") then
                 setPlayerPosition()
+                selectionBox:updatePosition()
             end
 
             -- Relative Position Row
@@ -162,7 +180,7 @@ function CETGui()
 
             if changedRelativeRotationX or changedRelativeRotationY or changedRelativeRotationZ then
                 originPoint = movePoint(originPoint, rotationPoint, relativeOffset)
-                SelectionBox:setOrigin(originPoint)
+                selectionBox:setOrigin(originPoint)
             end
             ImGui.TableNextRow()
             ImGui.TableNextColumn()
@@ -189,7 +207,7 @@ function CETGui()
             scalePoint.z, changedScaleZ = ImGui.DragFloat("##scalez", scalePoint.z, precision)
             
             if changedScaleX or changedScaleY or changedScaleZ then
-                SelectionBox:setScale(scalePoint)
+                selectionBox:setScale(scalePoint)
             end
 
             ImGui.TableNextColumn()
@@ -242,7 +260,7 @@ function CETGui()
             ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0, 180, 0, 0.6)  -- Slightly darker green when hovered
             ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0, 180, 0, 0.4)  -- Even darker green when active
             if ImGui.Button("Read RHT Scan") then
-                handleRHTStatus(RHTScan(SelectionBox))
+                handleRHTStatus(RHTScan(selectionBox))
             end
             ImGui.PopStyleColor(3)
 
@@ -252,14 +270,11 @@ function CETGui()
                 isHighlighted = not isHighlighted
                 -- Todo: Add Highlight Function
                 if isHighlighted then
-                    local entityString = "base\\items\\interactive\\industrial\\int_industrial_002__robotic_arm_delamain.ent"
-                    entityId = selectionUtils.spawnEntity(entityString, originPoint, rotationPoint)
-                    -- Why does this not work here??? it literally works a couple of lines below??????
-                    selectionUtils.addMesh(Game.FindEntityByID(entityId), "Mesh", "base\\spawner\\cube.mesh", scalePoint, "red", true)
+                    selectionBox:spawn()
+                    requestEntity()
                 else
-                    -- Game.FindEntityByID(entityId) **HAS** to be used here, otherwise it returns nil?????????????????
-                    -- So just don't touch it and hope it continues to work
-                    exEntitySpawner.Despawn(Game.FindEntityByID(entityId))
+                    selectionBox:resolveEntity()
+                    selectionBox:despawn()
                 end
 
             end
@@ -289,6 +304,9 @@ function CETGui()
             ImGui.PopStyleColor()
         end
         ImGui.Text("Make sure the entire selection is visible")
+    end
+    if checkEntityRequest() == true then
+        selectionBox:resolveEntity()
     end
     ImGui.End()
 end

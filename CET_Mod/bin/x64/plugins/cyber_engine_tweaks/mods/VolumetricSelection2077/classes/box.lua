@@ -1,3 +1,4 @@
+-- class containing the basic more abstract properties of a box
 local vector3 = require("classes/vector3")
 
 ---@class box

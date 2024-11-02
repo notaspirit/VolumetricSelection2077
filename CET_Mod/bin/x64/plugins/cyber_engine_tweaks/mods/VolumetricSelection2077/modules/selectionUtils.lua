@@ -42,7 +42,7 @@ local function addMesh(entity, name, mesh, scale, app, enabled)
     local component = entMeshComponent.new()
     component.name = name
     component.mesh = ResRef.FromString(mesh)
-    component.visualScale = ToVector3({x = scale.x, y = scale.y, z = scale.z})
+    component.visualScale = ToVector3({10, 10, 10})
     component.meshAppearance = app
     component.isEnabled = enabled
 
