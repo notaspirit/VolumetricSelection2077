@@ -47,6 +47,11 @@ registerForEvent('onDraw', function()
     end
 end)
 
+-- onShutdown event, happens when game is closed or CET force reloads
+registerForEvent("onShutdown", function ()
+    onShutdown()
+end)
+
 -- return mod info 
 -- for communication between mods
 return mod

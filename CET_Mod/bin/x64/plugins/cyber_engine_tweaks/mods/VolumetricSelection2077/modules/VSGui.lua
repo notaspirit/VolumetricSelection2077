@@ -85,12 +85,11 @@ end
 
 local function requestEntity()
     entityState.requestedEntity = true
-    entityState.requestEndTime = ImGui.GetTime() + 2
+    entityState.requestEndTime = ImGui.GetTime() + 0.1
 end
 
 local function checkEntityRequest()
     if entityState.requestedEntity and ImGui.GetTime() > entityState.requestEndTime then
-        entity = Game.FindEntityByID(entityId)
         entityState.requestedEntity = false
         return true
     end
@@ -181,7 +180,9 @@ function CETGui()
             if changedRelativeRotationX or changedRelativeRotationY or changedRelativeRotationZ then
                 originPoint = movePoint(originPoint, rotationPoint, relativeOffset)
                 selectionBox:setOrigin(originPoint)
+                selectionBox:updatePosition()
             end
+
             ImGui.TableNextRow()
             ImGui.TableNextColumn()
             ImGui.TableNextColumn()
@@ -243,11 +244,13 @@ function CETGui()
 
             if changedRotationX or changedRotationY or changedRotationZ then
                 wrapRotation(rotationPoint)
+                selectionBox:updatePosition()
             end
             ImGui.TableNextColumn()
             ImGui.SetNextItemWidth(valueWidth)
             if ImGui.Button("Reset Rotation") then
                 resetRotation()
+                selectionBox:updatePosition()
             end
 
             ImGui.TableNextRow()
@@ -306,10 +309,6 @@ function CETGui()
         end
         ImGui.Text("Make sure the entire selection is visible")
     end
-    -- TODO: Entity jumps in position when this is called, even though it shouldn't
-    -- Also Need to account for the components visual scale being originated in the center, rather then the origin point
-    -- -> either find a way to adjust where the components scale from, or change the box's min / max points to match
-    -- also rotation might be around the middle too, so that will need to be accounted for as well
     if checkEntityRequest() == true then
         selectionBox:resolveEntity()
         selectionBox:updateScale()
@@ -325,5 +324,8 @@ function NoRHTGui()
     ImGui.End()
 end
 
+function onShutdown()
+    selectionBox:despawn()
+end
 -- return function
-return CETGui, NoRHTGui
+return CETGui, NoRHTGui, onShutdown

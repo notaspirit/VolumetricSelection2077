@@ -11,24 +11,29 @@ local vector3 = require("classes/vector3")
 local box = {}
 box.__index = box
 
-local function buildVertices(min, scale, rotation)
+local function buildVertices(origin, scale, rotation)
     local vertices = {}
-    local point = vector3:new(min.x, min.y, min.z)
-    -- Origin Point 1/8
+    -- Calculate the starting point (back bottom left vertex)
+    local point = vector3:new(
+        origin.x - scale.x/2,
+        origin.y - scale.y/2,
+        origin.z - scale.z/2
+    )
+    -- Back Bottom Left 1/8
     vertices[1] = point
-    -- Only X Axis 2/8
+    -- Back Bottom Right 2/8
     vertices[2] = point:move(rotation, {x = scale.x, y = 0, z = 0})
-    -- Only Y Axis 3/8
+    -- Back Top Left 3/8
     vertices[3] = point:move(rotation, {x = 0, y = scale.y, z = 0})
-    -- Only Z Axis 4/8
-    vertices[4] = point:move(rotation, {x = 0, y = 0, z = scale.z})
-    -- X + Y 5/8
-    vertices[5] = point:move(rotation, {x = scale.x, y = scale.y, z = 0})
-    -- X + Z 6/8
+    -- Back Top Right 4/8
+    vertices[4] = point:move(rotation, {x = scale.x, y = scale.y, z = 0})
+    -- Front Bottom Left 5/8
+    vertices[5] = point:move(rotation, {x = 0, y = 0, z = scale.z})
+    -- Front Bottom Right 6/8
     vertices[6] = point:move(rotation, {x = scale.x, y = 0, z = scale.z})
-    -- Y + Z 7/8
+    -- Front Top Left 7/8
     vertices[7] = point:move(rotation, {x = 0, y = scale.y, z = scale.z})
-    -- X + Y + Z 8/8
+    -- Front Top Right 8/8
     vertices[8] = point:move(rotation, {x = scale.x, y = scale.y, z = scale.z})
     return vertices
 end
