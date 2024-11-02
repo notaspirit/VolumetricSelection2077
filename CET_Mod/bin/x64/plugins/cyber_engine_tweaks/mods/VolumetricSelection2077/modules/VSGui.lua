@@ -208,6 +208,7 @@ function CETGui()
             
             if changedScaleX or changedScaleY or changedScaleZ then
                 selectionBox:setScale(scalePoint)
+                selectionBox:updateScale()
             end
 
             ImGui.TableNextColumn()
@@ -305,8 +306,14 @@ function CETGui()
         end
         ImGui.Text("Make sure the entire selection is visible")
     end
+    -- TODO: Entity jumps in position when this is called, even though it shouldn't
+    -- Also Need to account for the components visual scale being originated in the center, rather then the origin point
+    -- -> either find a way to adjust where the components scale from, or change the box's min / max points to match
+    -- also rotation might be around the middle too, so that will need to be accounted for as well
     if checkEntityRequest() == true then
         selectionBox:resolveEntity()
+        selectionBox:updateScale()
+        selectionBox:updatePosition()
     end
     ImGui.End()
 end

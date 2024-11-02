@@ -38,56 +38,50 @@ function ToQuaternion(rotation)
 end
 
 function visualizationBox:spawn()
-    local entityPath = "vs2077\\customcube.ent"
-    local worldTransform = WorldTransform.new()
+    -- local entityPath = "base\\items\\interactive\\industrial\\int_industrial_002__robotic_arm_delamain.ent"
+    local entityPath = "base\\spawner\\empty_entity.ent"
+    --[[ local worldTransform = WorldTransform.new()
     worldTransform:SetPosition(ToVector4({x = self.origin.x, y = self.origin.y, z = self.origin.z, w = 1}))
     worldTransform:SetOrientation(ToQuaternion(self.rotation))
     self.entityID = exEntitySpawner.Spawn(entityPath, worldTransform)
+    ]]
+
+    local spec = DynamicEntitySpec.new()
+    spec.recordID = entityPath
+    spec.position = ToVector4({x = self.origin.x, y = self.origin.y, z = self.origin.z, w = 1})
+    spec.rotation = ToQuaternion(self.rotation)
+    spec.alwaysSpawned = true
+    spec.appearanceName = ""
+    self.entityID = Game.GetDynamicEntitySystem():CreateEntity(spec)
     if not self.entityID then
         print("Failed to spawn entity")
         return false
     else
-        print("Entity spawned!")
+        print("Entity spawned with ID: " .. self.entityID)
     end
     return true
 end
 
 function visualizationBox:resolveEntity()
-    self.entity = Game.FindEntityByID(self.entityID)
+    self.entity = Game.GetDynamicEntitySystem():GetEntity(self.entityID)
     if not self.entity then
         print("Failed to resolve entity")
         return false
     end
-    print("Entity resolved!")
     return true
 end
 
 function visualizationBox:despawn()
     exEntitySpawner.Despawn(self.entity)
-    self.entity = nil
-    self.entityID = nil
+    -- Game.GetDynamicEntitySystem():DestroyEntity(self.entityID)
 end
 
 function visualizationBox:updatePosition()
-    if not self.entity then return end
     local EARotation = EulerAngles.new(self.rotation.x, self.rotation.y, self.rotation.z)
     local vector4Position = ToVector4({x = self.origin.x, y = self.origin.y, z = self.origin.z, w = 1})
     print("Teleporting...")
     Game.GetTeleportationFacility():Teleport(self.entity, vector4Position, EARotation)
     print("Teleported!")
-    local newPosition = self.entity:GetWorldPosition()
-    print("New position: " .. newPosition.x .. ", " .. newPosition.y .. ", " .. newPosition.z)
-    local component = self.entity:FindComponentByName("Component")
-    component:Toggle(false)
-    component:Toggle(true)
-end
-
-function visualizationBox:updateScale()
-    if not self.entity then return end
-    local component = self.entity:FindComponentByName("Component")
-    component.visualScale = ToVector3({x=self.scale.x*0.5, y=self.scale.y*0.5, z=self.scale.z*0.5})
-    component:Toggle(false)
-    component:Toggle(true)
 end
 
 return visualizationBox
