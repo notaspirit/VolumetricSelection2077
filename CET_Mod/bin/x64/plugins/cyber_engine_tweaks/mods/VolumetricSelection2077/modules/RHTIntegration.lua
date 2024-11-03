@@ -3,7 +3,7 @@ local Object_keys = require("modules/table_keys")
 local jsonUtils = require("modules/jsonUtils")
 local saveSelectionOutput = require("modules/saveSelectionOutput")
 -- Variables
-local scaleBuffer = 1.2
+local maxDistance = 110
 
 -- gets the further point of the box from the point
 local function getFurtherPoint(box, point)
@@ -103,9 +103,9 @@ function RHTScan(box)
     local gamePlayPos = Game.GetPlayer():GetWorldPosition()
     local playerPos = vector3:new(gamePlayPos.x, gamePlayPos.y, gamePlayPos.z)
     local furtherPoint = getFurtherPoint(box, playerPos)
-    local distance = furtherPoint:distance(playerPos)*scaleBuffer
-    if distance > 120 then
-        RHTResult.text = "Distance is too great, please move closer to the selection"
+    local distance = furtherPoint:distance(playerPos)
+    if distance > maxDistance then
+        RHTResult.text = string.format("Furthest point distance %.1f m should be less than %.1f m, please move closer to the selection", distance, maxDistance)
         RHTResult.type = "error"
         return RHTResult
     end

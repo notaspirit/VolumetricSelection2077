@@ -1,3 +1,5 @@
+local StatusMessage = require("modules/StatusMessage")
+
 -- class inheriting from the box class, but with the addition of the visualizer entity
 ---@class visualizationBox : box
 ---@field entityID entityID
@@ -38,26 +40,32 @@ function ToQuaternion(rotation)
 end
 
 function visualizationBox:spawn()
+    local statusMessage = StatusMessage.getInstance()
+    if self.entity then return end
     local entityPath = "vs2077\\customcube.ent"
     local worldTransform = WorldTransform.new()
     worldTransform:SetPosition(ToVector4({x = self.origin.x, y = self.origin.y, z = self.origin.z, w = 1}))
     worldTransform:SetOrientation(ToQuaternion(self.rotation))
     self.entityID = exEntitySpawner.Spawn(entityPath, worldTransform)
     if not self.entityID then
+        statusMessage:setMessage("Failed to spawn visualization box", "error")
         return false
     end
     return true
 end
 
 function visualizationBox:resolveEntity()
+    local statusMessage = StatusMessage.getInstance()
     self.entity = Game.FindEntityByID(self.entityID)
     if not self.entity then
+        statusMessage:setMessage("Failed to resolve visualization box", "error")
         return false
     end
     return true
 end
 
 function visualizationBox:despawn()
+    if not self.entity then return end
     exEntitySpawner.Despawn(self.entity)
     self.entity = nil
     self.entityID = nil

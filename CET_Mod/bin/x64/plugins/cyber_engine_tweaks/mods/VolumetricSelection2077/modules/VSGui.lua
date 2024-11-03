@@ -1,6 +1,7 @@
 local vector3 = require('classes/vector3')
 local RHTScan = require('modules/RHTIntegration')
 local visualizationBox = require('classes/visualizationBox')
+local StatusMessage = require('modules/StatusMessage')
 
 -- Initialize variables
 -- 3d Objects
@@ -26,9 +27,7 @@ local valueWidth = 100
 local totalWidth = typeWidth + valueWidth
 
 -- Status Text
-local statusMessage = ""
-local statusEndTime = 0
-local statusDuration = 10
+local statusMessage = StatusMessage.getInstance()
 
 -- Entity
 local entityState ={
@@ -76,14 +75,8 @@ local function movePoint(point, rotation, distance)
     return modifiedVector
 end
 
-local function showStatusText(text, type)
-    statusMessage = text
-    statusEndTime = ImGui.GetTime() + statusDuration
-    statusType = type or "info"
-end
-
 local function handleRHTStatus(RHTResult)
-    showStatusText(RHTResult.text, RHTResult.type)
+    statusMessage:setMessage(RHTResult.text, RHTResult.type)
 end
 
 local function requestEntity()
@@ -303,17 +296,7 @@ function CETGui()
             ImGui.EndTable()
         end
 
-        if ImGui.GetTime() < statusEndTime then
-            if statusType == "error" then
-                ImGui.PushStyleColor(ImGuiCol.Text, 1, 0, 0, 1)  -- Red
-            elseif statusType == "success" then
-                ImGui.PushStyleColor(ImGuiCol.Text, 0, 1, 0, 1)  -- Green
-            else
-                ImGui.PushStyleColor(ImGuiCol.Text, 1, 1, 1, 1)  -- White
-            end
-            ImGui.Text(statusMessage)
-            ImGui.PopStyleColor()
-        end
+        statusMessage:display()
         ImGui.Text("Make sure the entire selection is visible")
     end
     if checkEntityRequest() == true then
