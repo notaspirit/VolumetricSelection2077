@@ -1,15 +1,6 @@
-# (Indefinitely Paused) VolumetricSelection2077 Now undepricated
-A selection tool for easily selecting everything basically based on a 3d selection box in game.
-It does not require for manually picking out sectors to select.
+# VolumetricSelection2077
+A work in progress selection tool to pick out all nodes and actors within an ingame 3d selection box.
 
-why:
-1. no way to get mesh data within a wscript
-2. no way to get actor meshes with just wkit cli (and would require a lot of extra work to get the mesh data)
-3. exporting all data would take very long and require a lot of disk space (just sectors would take 103h and 6.9GB (Nice). If meshes take 20s per mesh that would be 572h or 72d and if we assume the mesh data is the same size as the actor meshes (it's bigger) that would be 39GB) yeah I ain't doing all that
-4. if the user has to run the scripts when needed and cache the data, it's not any easier than existing tools (e.g. exporting the sector into blender)
-
-(It wasn't even dead for 24h so it doesn't count) the 5s rule applies here
-
-Waiting on the new version of the wolvenkit.common package for the c# app
+The CET part of the tool is released as a preview / measuring / visualization tool. It also supports exporting all visible sectors within max 110m of the player. 
 
 Credits to: keanuWheeze for the cube mesh and the material
