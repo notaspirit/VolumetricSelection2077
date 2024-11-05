@@ -3,3 +3,5 @@
 **/.stfolder/
 CSharp App/bin/
 CSharp App/obj/
+**/build/
+CtrlADel.sln
