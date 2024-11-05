@@ -1,4 +1,22 @@
-require("modules/VSGui")
+print("Starting mod initialization...")
+
+-- Try to load the module
+local VSGui
+local success, error = pcall(function()
+    VSGui = require("modules/VSGui")
+end)
+
+if not success then
+    print("Failed to load VSGui:", error)
+    return
+end
+
+if not VSGui then
+    print("VSGui module is nil")
+    return
+end
+
+print("VSGui loaded successfully")
 
 -- initial variables
 local isOverlayVisible = false
@@ -37,19 +55,27 @@ end)
 -- onDraw (happens every frame)
 registerForEvent('onDraw', function()
     -- if overlay is visible, draw ImGui
-    if isOverlayVisible then
+    if isOverlayVisible and VSGui then  -- Add nil check
         -- draws main gui only if RHT is installed
         if RHTBool then
-            CETGui()
+            if type(VSGui.CETGui) == "function" then  -- Add type check
+                VSGui.CETGui()
+            else
+                print("CETGui is not a function")
+            end
         else
-            NoRHTGui()
+            if type(VSGui.noRHTGui) == "function" then  -- Add type check
+                VSGui.noRHTGui()
+            else
+                print("noRHTGui is not a function")
+            end
         end
     end
 end)
 
 -- onShutdown event, happens when game is closed or CET force reloads
 registerForEvent("onShutdown", function ()
-    onShutdown()
+    VSGui.onShutdown()
 end)
 
 -- return mod info 

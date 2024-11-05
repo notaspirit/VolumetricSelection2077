@@ -10,6 +10,7 @@ local vector3 = require("classes/vector3")
 ---@field rotation vector3
 local box = {}
 box.__index = box
+box.__type = "box"
 
 local function buildVertices(origin, scale, rotation)
     local vertices = {}

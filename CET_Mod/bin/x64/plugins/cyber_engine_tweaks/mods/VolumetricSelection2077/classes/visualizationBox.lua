@@ -15,7 +15,7 @@ visualizationBox.__index = visualizationBox
 
 function visualizationBox:new(origin, scale, rotation)
     ---@type visualizationBox
-    local instance = box.new(self, origin, scale, rotation)  -- Create an instance using the box constructor
+    local instance = box:new(origin, scale, rotation)  -- Create an instance using the box constructor
     setmetatable(instance, visualizationBox)  -- Set the metatable to visualizationBox
     instance.entityID = nil
     instance.entity = nil
