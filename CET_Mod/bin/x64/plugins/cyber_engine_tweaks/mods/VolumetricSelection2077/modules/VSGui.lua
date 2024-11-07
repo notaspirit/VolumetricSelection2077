@@ -40,6 +40,7 @@ local entityState = {
 }
 
 -- Helper Functions
+-- I think this function gets called every frame? not sure and it works so idk rn
 local function initSelectionBox()
     if isInitialized then return end
     
@@ -454,7 +455,7 @@ local function settingsTab()
         ImGui.TableNextColumn()
         ImGui.SetNextItemWidth(valueWidth)
         local newRHTRange
-        newRHTRange, changedRHTRange = ImGui.DragFloat("##RHTRange", RHTRangeLocal, 1, 1, 1000)
+        newRHTRange, changedRHTRange = ImGui.DragFloat("##RHTRange", RHTRangeLocal, 1, 1, 999)
         if changedRHTRange then
             RHTRangeLocal = newRHTRange
             settingsInstance:update("RHTRange", RHTRangeLocal)

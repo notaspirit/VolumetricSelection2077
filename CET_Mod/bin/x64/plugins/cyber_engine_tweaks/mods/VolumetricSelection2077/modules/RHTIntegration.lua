@@ -2,8 +2,7 @@ local vector3 = require("classes/vector3")
 local Object_keys = require("modules/table_keys")
 local jsonUtils = require("modules/jsonUtils")
 local saveSelectionOutput = require("modules/saveSelectionOutput")
--- Variables
-local maxDistance = 110
+local settingsService = require("modules/settings")
 
 -- gets the further point of the box from the point
 local function getFurtherPoint(box, point)
@@ -104,6 +103,8 @@ function RHTScan(box)
     local playerPos = vector3:new(gamePlayPos.x, gamePlayPos.y, gamePlayPos.z)
     local furtherPoint = getFurtherPoint(box, playerPos)
     local distance = furtherPoint:distance(playerPos)
+    local settings = settingsService.getInstance()
+    local maxDistance = settings.RHTRange
     if distance > maxDistance then
         RHTResult.text = string.format("Furthest point distance %.1f m should be less than %.1f m, please move closer to the selection", distance, maxDistance)
         RHTResult.type = "error"
