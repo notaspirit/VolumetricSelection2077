@@ -1,4 +1,5 @@
 using VolumetricSelection2077.Services;
+using VolumetricSelection2077.Resources;
 
 namespace VolumetricSelection2077.ViewModels
 {

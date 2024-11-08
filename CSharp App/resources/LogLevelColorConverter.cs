@@ -4,7 +4,7 @@ using Serilog.Events;
 using System;
 using System.Globalization;
 
-namespace VolumetricSelection2077
+namespace VolumetricSelection2077.Resources
 {
     public class LogLevelColorConverter : IValueConverter
     {

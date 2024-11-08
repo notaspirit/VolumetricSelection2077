@@ -4,17 +4,17 @@ using VolumetricSelection2077.Services;
 using System;
 using System.IO;
 using Avalonia.Interactivity;
-using System.Threading.Tasks;
 
 namespace VolumetricSelection2077;
 public partial class MainWindow : Window
 {
     private readonly SettingsService _settings;
-
+    private readonly GameFileService _gameFileService;
     public MainWindow()
     {
         InitializeComponent();
         _settings = SettingsService.Instance;
+        _gameFileService = new GameFileService();
         DataContext = _settings;
         InitializeLogger();
     }
@@ -62,6 +62,9 @@ public partial class MainWindow : Window
         {
             return;
         }
+        new WolvenkitCLIService().SetSettings();
         Logger.Info("Starting process...");
+        // _gameFileService.buildFileMap();
+        _gameFileService.GetFiles();
     }
 }
