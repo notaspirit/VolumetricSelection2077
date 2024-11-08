@@ -493,6 +493,11 @@ function CETGui()
         selectionBox:updateScale()
         selectionBox:updatePosition()
     end
+    if ImGui.GetIO().MouseWheel > 0 then
+        print("Scrolled up!")
+    elseif ImGui.GetIO().MouseWheel < 0 then
+        print("Scrolled down!")
+    end    
     ImGui.End()
 end
 

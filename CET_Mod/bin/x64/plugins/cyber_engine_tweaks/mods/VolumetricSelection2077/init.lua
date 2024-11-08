@@ -1,22 +1,4 @@
-print("Starting mod initialization...")
-
--- Try to load the module
-local VSGui
-local success, error = pcall(function()
-    VSGui = require("modules/VSGui")
-end)
-
-if not success then
-    print("Failed to load VSGui:", error)
-    return
-end
-
-if not VSGui then
-    print("VSGui module is nil")
-    return
-end
-
-print("VSGui loaded successfully")
+VSGui = require("modules/VSGui")
 
 -- initial variables
 local isOverlayVisible = false
