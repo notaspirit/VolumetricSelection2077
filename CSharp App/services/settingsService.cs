@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Text.Json;
-using Serilog;
 
 namespace VolumetricSelection2077.Services;
 public class SettingsService
@@ -23,6 +22,7 @@ public class SettingsService
         SaveToArchiveMods = false;
         OutputDirectory = "";
         OutputFilename = "";
+        WolvenkitCLIPath = "";
     }
 
     // Singleton instance
@@ -52,6 +52,7 @@ public class SettingsService
     public bool SaveToArchiveMods { get; set; }
     public string OutputDirectory { get; set; }
     public string OutputFilename { get; set; }
+    public string WolvenkitCLIPath { get; set; }
     // Methods for loading and saving settings
     public void LoadSettings()
     {
@@ -76,6 +77,7 @@ public class SettingsService
                     SaveToArchiveMods = settings.SaveToArchiveMods;
                     OutputDirectory = settings.OutputDirectory;
                     OutputFilename = settings.OutputFilename;
+                    WolvenkitCLIPath = settings.WolvenkitCLIPath;
                 }
             }
             catch (Exception ex)

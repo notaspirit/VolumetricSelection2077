@@ -4,6 +4,8 @@ using System;
 using System.Text.Json;
 using VolumetricSelection2077.Models;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace VolumetricSelection2077.Services
 {
@@ -101,44 +103,52 @@ namespace VolumetricSelection2077.Services
                 string jsonString = File.ReadAllText(selectionFilePath);
                 var options = new JsonSerializerOptions
                 {
-                    PropertyNameCaseInsensitive = true // Optional: allows for case-insensitive property matching
+                    PropertyNameCaseInsensitive = true
                 };
 
-                // Try to deserialize into our model
-                var selections = JsonSerializer.Deserialize<List<Selection>>(jsonString, options);
+                // The JSON is now an array with two elements
+                var jsonDoc = JsonDocument.Parse(jsonString);
+                var root = jsonDoc.RootElement;
 
-                if (selections == null || selections.Count == 0)
+                if (!root.EnumerateArray().Any())
                 {
-                    Logger.Error("Selection file is empty or invalid");
+                    Logger.Error("Selection file is empty");
                     return false;
                 }
 
-                // Validate the first selection (assuming we only need one)
-                var selection = selections[0];
+                // First element is the box
+                var boxElement = root[0];
+                // Second element is the sectors array
+                var sectorsElement = root[1];
 
-                // Validate SelectionBox
-                if (selection.SelectionBox == null)
+                // Validate box
+                if (!boxElement.TryGetProperty("vertices", out var vertices) || 
+                    vertices.GetArrayLength() != 8)
                 {
-                    Logger.Error("Selection file missing SelectionBox");
+                    Logger.Error("Selection file has invalid vertices");
                     return false;
                 }
 
-                // Validate Sectors
-                if (selection.Sectors == null || selection.Sectors.Count == 0)
+                // Validate sectors
+                var sectors = sectorsElement.EnumerateArray()
+                    .Select(s => s.GetString())
+                    .Where(s => !string.IsNullOrEmpty(s))
+                    .ToList();
+
+                if (!sectors.Any())
                 {
                     Logger.Error("Selection file has no sectors");
                     return false;
                 }
 
-                // Validate all sector paths exist and have correct extension
-                foreach (var sector in selection.Sectors)
+                // Validate sector file extensions
+                foreach (var sector in sectors)
                 {
-                    if (string.IsNullOrWhiteSpace(sector))
+                    if (sector == null)
                     {
-                        Logger.Error("Empty sector path found");
+                        Logger.Error("Selection file has null sector");
                         return false;
                     }
-                    
                     if (!sector.EndsWith(".streamingsector", StringComparison.OrdinalIgnoreCase))
                     {
                         Logger.Error($"Invalid sector file extension: {sector}");
@@ -155,9 +165,43 @@ namespace VolumetricSelection2077.Services
                 return false;
             }
         }
-        public static bool ValidateInput(string gamePath, string outputFilename)
+        public static async Task<bool> ValidateWolvenkitVersion()
         {
-            return ValidateGamePath(gamePath) && ValidateOutputFilename(outputFilename) && ValidateSelectionFile(gamePath);
+            var wolvenkitCLI = new WolvenkitCLIService();
+            var version = await wolvenkitCLI.GetVersionAsync();
+            if (string.IsNullOrEmpty(version))
+            {
+                return false;
+            }
+            Logger.Info($"Wolvenkit version: {version}");
+            // Extract version number (everything before -nightly if it exists)
+            var versionString = version.Split('-')[0];
+            
+            // Parse version
+            if (!Version.TryParse(versionString, out Version? currentVersion))
+            {
+                Logger.Error($"Failed to parse WolvenKit version: {versionString}");
+                return false;
+            }
+
+            var minimumVersion = new Version(8, 15, 0);
+            if (currentVersion < minimumVersion)
+            {
+                Logger.Error($"WolvenKit version {versionString} is below minimum required version {minimumVersion}");
+                return false;
+            }
+
+            Logger.Success($"WolvenKit version {versionString} meets minimum requirement {minimumVersion}");
+            return true;
+        }
+        public static async Task<bool> ValidateInput(string gamePath, string outputFilename)
+        {
+            Logger.Info("Validating input...");
+            var syncValidations = ValidateGamePath(gamePath) && 
+                                ValidateOutputFilename(outputFilename) && 
+                                ValidateSelectionFile(gamePath);
+                                
+            return syncValidations && await ValidateWolvenkitVersion();
         }
     }
 }

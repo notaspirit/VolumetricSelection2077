@@ -1,33 +1,24 @@
 using System.Collections.Generic;
 
-namespace VolumetricSelection2077.Models
+public class Vector3
 {
-    public class Selection
-    {
-        public required SelectionBox SelectionBox { get; set; }
-        public required List<string> Sectors { get; set; }
-    }
+    public float X { get; set; }
+    public float Y { get; set; }
+    public float Z { get; set; }
+}
 
-    public class SelectionBox
-    {
-        public required Position Pos1 { get; set; }
-        public required Position Pos2 { get; set; }
-        public required Quaternion Quat { get; set; }
-    }
+public class SelectionBox
+{
+    public Vector3 Origin { get; set; } = new();
+    public Vector3 Max { get; set; } = new();
+    public Vector3 Min { get; set; } = new();
+    public Vector3 Scale { get; set; } = new();
+    public Vector3 Rotation { get; set; } = new();
+    public List<Vector3> Vertices { get; set; } = new();
+}
 
-    public class Position
-    {
-        public required float X { get; set; }
-        public required float Y { get; set; }
-        public required float Z { get; set; }
-        public required float W { get; set; }
-    }
-
-    public class Quaternion
-    {
-        public required float I { get; set; }
-        public required float J { get; set; }
-        public required float K { get; set; }
-        public required float R { get; set; }
-    }
+public class Selection
+{
+    public SelectionBox Box { get; set; } = new();
+    public List<string> Sectors { get; set; } = new();
 }

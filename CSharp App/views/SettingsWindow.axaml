@@ -6,7 +6,7 @@
         Title="VolumetricSelection2077"
         Icon="../assets/redCube.ico"
         Width="500"
-        Height="450"
+        SizeToContent="Height"
         Background="#171c26">
     <Border Margin="5">
         <Grid>
@@ -42,7 +42,7 @@
             <TextBlock Text="Cache Directory" ToolTip.Tip="{Binding Descriptions.CacheDirectoryTooltip}" Grid.Row="7" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
             <TextBlock Text="Save to archive mods" ToolTip.Tip="{Binding Descriptions.SaveToArchiveModsTooltip}" Grid.Row="8" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
             <TextBlock Text="Output Directory" ToolTip.Tip="{Binding Descriptions.OutputDirectoryTooltip}" Grid.Row="9" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
-
+            <TextBlock Text="Wolvenkit CLI Path" ToolTip.Tip="{Binding Descriptions.WolvenkitCLIPathTooltip}" Grid.Row="10" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
             <!-- Second Row: Setting Control (e.g., ToggleSwitch) -->
             <TextBox x:Name="GameDirectoryTextBox" Text="{Binding Settings.GameDirectory}" Watermark="Path to game directory" Grid.Row="1" Grid.Column="1" Margin="5" />
             <ToggleSwitch x:Name="CacheToggleSwitch" IsChecked="{Binding Settings.CacheEnabled}" Grid.Row="2" Grid.Column="1" Margin="5" />
@@ -52,7 +52,7 @@
             <TextBox x:Name="CacheDirectoryTextBox" Text="{Binding Settings.CacheDirectory}" Watermark="Path to custom cache folder" Grid.Row="7" Grid.Column="1" Margin="5" />
             <ToggleSwitch x:Name="SaveToArchiveModsToggleSwitch" IsChecked="{Binding Settings.SaveToArchiveMods}" Grid.Row="8" Grid.Column="1" Margin="5" />
             <TextBox x:Name="OutputDirectoryTextBox" Text="{Binding Settings.OutputDirectory}" Watermark="Path to custom output folder" Grid.Row="9" Grid.Column="1" Margin="5" />
-
+            <TextBox x:Name="WolvenkitCLIPathTextBox" Text="{Binding Settings.WolvenkitCLIPath}" Watermark="Path to Wolvenkit CLI" Grid.Row="10" Grid.Column="1" Margin="5" />
             <!-- Alternatively, for a TextBox instead of a ToggleSwitch -->
             <!-- <TextBox Grid.Row="1" Grid.Column="1" Margin="5" /> -->
         </Grid>

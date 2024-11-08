@@ -1,10 +1,10 @@
 using Avalonia.Controls;
 using VolumetricSelection2077.Views;
 using VolumetricSelection2077.Services;
-using Serilog;
 using System;
 using System.IO;
 using Avalonia.Interactivity;
+using System.Threading.Tasks;
 
 namespace VolumetricSelection2077;
 public partial class MainWindow : Window
@@ -55,9 +55,10 @@ public partial class MainWindow : Window
         logViewer?.ClearLog();
     }
 
-    private void FindSelectedButton_Click(object? sender, RoutedEventArgs e)
+    private async void FindSelectedButton_Click(object? sender, RoutedEventArgs e)
     {
-        if (!ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename))
+        // Add await here because ValidateInput is async
+        if (!await ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename))
         {
             return;
         }
