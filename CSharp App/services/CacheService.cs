@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using System.Text;
 using LightningDB.Native;
 using System.Collections.Generic;
+using System.Linq;
+
 namespace VolumetricSelection2077.Services
 {
     public enum CacheDatabase
@@ -83,7 +85,7 @@ namespace VolumetricSelection2077.Services
             {
                 return (false, $"Invalid database name: {database}");
             }
-            // Add validation for empty keys and data
+
             if (string.IsNullOrEmpty(keyname))
             {
                 Logger.Error("Cannot save entry with empty key");
@@ -104,28 +106,16 @@ namespace VolumetricSelection2077.Services
                     Flags = DatabaseOpenFlags.Create 
                 });
 
-                var keyBytes = Encoding.UTF8.GetBytes(keyname);
+                // Clean the key before storing it - matching SaveBatch implementation
+                var cleanKey = new string(keyname.Where(c => !char.IsControl(c)).ToArray());
+                var keyBytes = Encoding.UTF8.GetBytes(cleanKey);
+                
                 tx.Put(db, keyBytes, data);
                 tx.Commit();
-
-                // Verify the save
-                using var verifyTx = _env.BeginTransaction(TransactionBeginFlags.ReadOnly);
-                using var verifyDb = verifyTx.OpenDatabase(database);
-                var (resultCode, _, value) = verifyTx.Get(verifyDb, keyBytes);
-                
-                if (resultCode == MDBResultCode.Success)
-                {
-                    return (true, string.Empty);
-                }
-                else
-                {
-                    Logger.Error($"Save succeeded but verification failed for: {keyname}");
-                    return (false, "Save verification failed");
-                }
+                return (true, string.Empty);
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to save entry to database: {ex.Message}");
                 return (false, ex.Message);
             }
         }
@@ -215,7 +205,9 @@ namespace VolumetricSelection2077.Services
 
                 foreach (var (key, value) in entries)
                 {
-                    var keyBytes = Encoding.UTF8.GetBytes(key);
+                    // Clean the key before storing it
+                    var cleanKey = new string(key.Where(c => !char.IsControl(c)).ToArray());
+                    var keyBytes = Encoding.UTF8.GetBytes(cleanKey);
                     tx.Put(db, keyBytes, value);
                 }
 
@@ -225,6 +217,49 @@ namespace VolumetricSelection2077.Services
             catch (Exception ex)
             {
                 return (false, ex.Message);
+            }
+        }
+        public void LogDatabaseSample(string database, int sampleSize = 1000)
+        {
+            if (!IsValidDatabase(database))
+            {
+                Logger.Error($"Invalid database name: {database}");
+                return;
+            }
+
+            try
+            {
+                using var tx = _env.BeginTransaction(TransactionBeginFlags.ReadOnly);
+                using var db = tx.OpenDatabase(database);
+                using var cursor = tx.CreateCursor(db);
+
+                if (cursor.First() == MDBResultCode.Success)
+                {
+                    do
+                    {
+                        var (resultCode, key, value) = cursor.GetCurrent();
+                        if (resultCode != MDBResultCode.Success) break;
+
+                        var keyString = Encoding.UTF8.GetString(key.CopyToNewArray());
+                        
+                        // Only show entries that look like sector paths
+                        if (keyString.Contains("sector", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Logger.Info($"Database entry found:");
+                            Logger.Info($"Full path: {keyString}");
+                            Logger.Info("Characters:");
+                            foreach (char c in keyString)
+                            {
+                                Logger.Info($"  '{c}' (ASCII: {(int)c})");
+                            }
+                            return; // Just show the first sector we find
+                        }
+                    } while (cursor.Next() == MDBResultCode.Success);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to read database: {ex.Message}");
             }
         }
         public void Dispose()

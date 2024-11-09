@@ -183,35 +183,42 @@ namespace VolumetricSelection2077.Services
         {
             string selectionFilePath = Path.Combine(_settings.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "VolumetricSelection2077", "data", "selection.json");
             string jsonString = File.ReadAllText(selectionFilePath);
-            var options = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            };
             var jsonDoc = JsonDocument.Parse(jsonString);
             var root = jsonDoc.RootElement;
             var sectorsElement = root[1];
+            
             var sectors = sectorsElement.EnumerateArray()
-                    .Select(s => s.GetString())
+                    .Select(s => s.GetString()?.Trim())  // Trim any whitespace
                     .Where(s => !string.IsNullOrEmpty(s))
                     .ToList();
 
             foreach (var sector in sectors)
             {
-                if (sector == null)
-                {
-                    Logger.Error("Sector is null");
-                    continue;
-                }
-                var (exists, data, error) = _cacheService.GetEntry("FileMap", sector.ToString());
+                if (sector == null) continue;
+
+                // Trim any control characters (like CR/LF) for the lookup
+                var cleanSector = new string(sector.Where(c => !char.IsControl(c)).ToArray());
+                
+                Logger.Info($"Looking up sector: '{cleanSector}'");
+                var (exists, data, error) = _cacheService.GetEntry("FileMap", cleanSector);
                 if (exists && data != null)
                 {
-                    Logger.Info(Encoding.UTF8.GetString(data));
+                    Logger.Info($"Found: {BitConverter.ToInt32(data)}");
+                    var (exists2, data2, error2) = _cacheService.GetEntry(CacheDatabase.FileMap.ToString(), BitConverter.ToInt32(data).ToString());
+                    if (exists2 && data2 != null)
+                    {
+                        Logger.Info($"Archive file: {Encoding.UTF8.GetString(data2)}");
+                    } else {
+                        Logger.Error($"Failed to get archive file: {error2}");
+                    }
                 }
                 else
                 {
-                    Logger.Error($"Sector {sector} not found in cache");
+                    Logger.Error($"Not found in cache: {error}");
                 }
             }
         }
-    }   
+    }
 }
+       
+
