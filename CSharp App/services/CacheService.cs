@@ -12,8 +12,7 @@ namespace VolumetricSelection2077.Services
     public enum CacheDatabase
     {
         FileMap,
-        StreamingSectors,
-        Meshes
+        ExtractedFiles,
     }
 
     public class CacheService : IDisposable
@@ -22,8 +21,23 @@ namespace VolumetricSelection2077.Services
         private readonly string _workingPath;
         private readonly SettingsService _settings;
         private readonly LightningEnvironment _env;
-
-        public CacheService()
+        private static CacheService? _instance;
+        private static readonly object _lock = new object();
+        public static CacheService Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    lock (_lock)
+                    {
+                        _instance ??= new CacheService();
+                    }
+                }
+                return _instance;
+            }
+        }
+        internal CacheService()
         {
             _settings = SettingsService.Instance;
             string cacheDirectory = Path.Combine(_settings.CacheDirectory, "cache");

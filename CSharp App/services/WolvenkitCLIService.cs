@@ -6,10 +6,19 @@ using System.IO;
 using VolumetricSelection2077.Resources;
 using System.Collections.Generic;
 using System.Linq;
+using WolvenKit.RED4.Archive.IO;
+using WolvenKit.RED4.Archive.CR2W;
 namespace VolumetricSelection2077.Services
 {
     public class WolvenkitCLIService
     {
+        private readonly CacheService _cacheService;
+
+        public WolvenkitCLIService()
+        {
+            _cacheService = CacheService.Instance;
+        }
+        
         // Validate Wolvenkit CLI path, doesn't check if it's a valid CLI, only if the file exists -> it's only used as validation when creating the wrapper
         private static bool ValidateWolvenkitCLIPath(string wolvenkitCLIPath)
         {
@@ -153,5 +162,77 @@ namespace VolumetricSelection2077.Services
             }
             return output.Split('\n').ToList();
         }
+        /*
+        private CR2WFile? BinaryToCR2WFile(byte[] binary)
+        {
+            using var br = new BinaryReader(new MemoryStream(binary));
+            using var cr2wReader = new CR2WReader(br);
+            cr2wReader.ReadFile(out CR2WFile? extractedFile, false);
+            cr2wReader.Dispose();
+            return extractedFile;
+        }
+        public async Task<(bool success, string error, CR2WFile? file)> ExtractCR2WFile(string filePath)
+        {
+            Logger.Info($"Extracting CR2W file: {filePath}");
+            // First try to get the file from the extracted files cache
+            var (EFsuccess, EFfile, EFerror) = _cacheService.GetEntry(CacheDatabase.ExtractedFiles.ToString(), filePath);
+            if (EFsuccess && EFfile != null && string.IsNullOrEmpty(EFerror))
+            {
+                Logger.Info($"Found file in extracted files cache: {filePath}");
+                return (true, string.Empty, BinaryToCR2WFile(EFfile));
+            }
+            Logger.Info($"File not found in extracted files cache, getting archive file index from file map cache");
+            // If not found, get the archive file index from the file map cache
+            var (FMsuccess, FMoutput, FMerror) = _cacheService.GetEntry(CacheDatabase.FileMap.ToString(), filePath);
+            if (!FMsuccess || FMoutput == null || !string.IsNullOrEmpty(FMerror))
+            {
+                Logger.Error($"Failed to get file map entry: {FMerror}");
+                return (false, FMerror, null);
+            }
+            Logger.Info($"Found archive file index in file map cache: {BitConverter.ToInt32(FMoutput)}");
+            // Get the archive file path from the file map cache using the archive file index
+            var (AFsuccess, AFoutput, AFerror) = _cacheService.GetEntry(CacheDatabase.FileMap.ToString(), BitConverter.ToInt32(FMoutput).ToString());
+            if (!AFsuccess || AFoutput == null || !string.IsNullOrEmpty(AFerror))
+            {
+                Logger.Error($"Failed to get file map entry: {AFerror}");
+                return (false, AFerror, null);
+            }
+            Logger.Info($"Found archive file path in file map cache: {AFoutput}");
+            // extract the file from the archive file
+            var (extractOutput, extractError) = await ExecuteCommand($"archive extract \"{AFoutput}\" --pattern \"{filePath}\" --outpath \"{Path.Combine(_settingsService.CacheDirectory, "working")}\"");
+            if (!string.IsNullOrEmpty(extractError))
+            {
+                Logger.Error($"Failed to extract file from archive: {extractError}");
+                return (false, extractError, null);
+            }
+            Logger.Info($"Extracted file from archive: {extractOutput}");
+            // build the extracted file path
+            string extractedFilePath = Path.Combine(_settingsService.CacheDirectory, "working", filePath);
+            // check if the file exists
+            if (!File.Exists(extractedFilePath))
+            {
+                Logger.Error($"Failed to find extracted file: {extractedFilePath}");
+                return (false, "Failed to find extracted file", null);
+            }
+            Logger.Info($"Found extracted file: {extractedFilePath}");
+            // convert the file to a CR2WFile
+            var outputCR2WFile = BinaryToCR2WFile(File.ReadAllBytes(extractedFilePath));
+            // check if the conversion was successful
+            if (outputCR2WFile == null)
+            {
+                Logger.Error($"Failed to convert extracted file to CR2WFile: {extractedFilePath}");
+                return (false, "Failed to convert extracted file to CR2WFile", null);
+            }
+            Logger.Info($"Converted extracted file to CR2WFile: {outputCR2WFile}");
+            // save the file to the extracted files cache
+            _cacheService.SaveEntry(CacheDatabase.ExtractedFiles.ToString(), filePath, File.ReadAllBytes(extractedFilePath));
+            Logger.Info($"Saved extracted file to extracted files cache: {filePath}");
+            // delete the file from disk 
+            // TODO: make it delete the folder structure too, but not a priority
+            File.Delete(extractedFilePath);
+            Logger.Info($"Deleted extracted file from disk: {extractedFilePath}");
+            return (true, string.Empty, outputCR2WFile);
+        }
+        */
     }
 }
