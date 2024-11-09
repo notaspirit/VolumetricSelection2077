@@ -8,15 +8,19 @@ using System.Collections.Generic;
 using System.Linq;
 using WolvenKit.RED4.Archive.IO;
 using WolvenKit.RED4.Archive.CR2W;
+using System.Text;
+
 namespace VolumetricSelection2077.Services
 {
     public class WolvenkitCLIService
     {
         private readonly CacheService _cacheService;
+        private readonly SettingsService _settingsService;
 
         public WolvenkitCLIService()
         {
             _cacheService = CacheService.Instance;
+            _settingsService = SettingsService.Instance;
         }
         
         // Validate Wolvenkit CLI path, doesn't check if it's a valid CLI, only if the file exists -> it's only used as validation when creating the wrapper
@@ -32,7 +36,7 @@ namespace VolumetricSelection2077.Services
 
         public async void SetSettings()
         {
-            string cliDirPath = SettingsService.Instance.WolvenkitCLIPath;
+            string cliDirPath = _settingsService.WolvenkitCLIPath;
             if (!ValidateWolvenkitCLIPath(Path.Combine(cliDirPath, "WolvenKit.CLI.exe")))
             {
                 return;
@@ -44,7 +48,7 @@ namespace VolumetricSelection2077.Services
         {
             try
             {
-                string cliPath = SettingsService.Instance.WolvenkitCLIPath;
+                string cliPath = _settingsService.WolvenkitCLIPath;
                 string fullPath = Path.Combine(cliPath, "WolvenKit.CLI.exe");
                 
                 if (!ValidateWolvenkitCLIPath(fullPath))
@@ -162,12 +166,12 @@ namespace VolumetricSelection2077.Services
             }
             return output.Split('\n').ToList();
         }
-        /*
+        
         private CR2WFile? BinaryToCR2WFile(byte[] binary)
         {
             using var br = new BinaryReader(new MemoryStream(binary));
             using var cr2wReader = new CR2WReader(br);
-            cr2wReader.ReadFile(out CR2WFile? extractedFile, false);
+            cr2wReader.ReadFile(out CR2WFile? extractedFile, true);
             cr2wReader.Dispose();
             return extractedFile;
         }
@@ -197,9 +201,11 @@ namespace VolumetricSelection2077.Services
                 Logger.Error($"Failed to get file map entry: {AFerror}");
                 return (false, AFerror, null);
             }
-            Logger.Info($"Found archive file path in file map cache: {AFoutput}");
+            string archiveFilePathRel = Encoding.UTF8.GetString(AFoutput);
+            Logger.Info($"Found archive file path in file map cache: {archiveFilePathRel}");
+            string archiveFilePath = Path.Combine(_settingsService.GameDirectory, archiveFilePathRel);
             // extract the file from the archive file
-            var (extractOutput, extractError) = await ExecuteCommand($"archive extract \"{AFoutput}\" --pattern \"{filePath}\" --outpath \"{Path.Combine(_settingsService.CacheDirectory, "working")}\"");
+            var (extractOutput, extractError) = await ExecuteCommand($"extract \"{archiveFilePath}\" --pattern \"{filePath}\" --outpath \"{Path.Combine(_settingsService.CacheDirectory, "working")}\"");
             if (!string.IsNullOrEmpty(extractError))
             {
                 Logger.Error($"Failed to extract file from archive: {extractError}");
@@ -216,14 +222,21 @@ namespace VolumetricSelection2077.Services
             }
             Logger.Info($"Found extracted file: {extractedFilePath}");
             // convert the file to a CR2WFile
-            var outputCR2WFile = BinaryToCR2WFile(File.ReadAllBytes(extractedFilePath));
-            // check if the conversion was successful
-            if (outputCR2WFile == null)
+            try
             {
+                var outputCR2WFile = BinaryToCR2WFile(File.ReadAllBytes(extractedFilePath));
+                // check if the conversion was successful
+                if (outputCR2WFile == null)
+                {
                 Logger.Error($"Failed to convert extracted file to CR2WFile: {extractedFilePath}");
                 return (false, "Failed to convert extracted file to CR2WFile", null);
+                }
+                Logger.Info($"Converted extracted file to CR2WFile: {outputCR2WFile}");
+            } catch (Exception ex)
+            {
+                Logger.Error($"Failed to convert extracted file to CR2WFile: {ex.Message}");
+                return (false, $"Failed to convert extracted file to CR2WFile: {ex.Message}", null);
             }
-            Logger.Info($"Converted extracted file to CR2WFile: {outputCR2WFile}");
             // save the file to the extracted files cache
             _cacheService.SaveEntry(CacheDatabase.ExtractedFiles.ToString(), filePath, File.ReadAllBytes(extractedFilePath));
             Logger.Info($"Saved extracted file to extracted files cache: {filePath}");
@@ -231,8 +244,7 @@ namespace VolumetricSelection2077.Services
             // TODO: make it delete the folder structure too, but not a priority
             File.Delete(extractedFilePath);
             Logger.Info($"Deleted extracted file from disk: {extractedFilePath}");
-            return (true, string.Empty, outputCR2WFile);
+            return (true, string.Empty, null);
         }
-        */
     }
 }

@@ -10,13 +10,13 @@ public class ProcessService
     private readonly GameFileService _gameFileService;
     private readonly CacheService _cacheService;
     private readonly SettingsService _settings;
-    // private readonly WolvenkitCLIService _wolvenkitCLIService;
+    private readonly WolvenkitCLIService _wolvenkitCLIService;
     public ProcessService()
     {
         _gameFileService = new GameFileService();
         _cacheService = CacheService.Instance;
         _settings = SettingsService.Instance;
-        //_wolvenkitCLIService = new WolvenkitCLIService();
+        _wolvenkitCLIService = new WolvenkitCLIService();
     }
 
     private string FormatElapsedTime(TimeSpan elapsed)
@@ -55,38 +55,30 @@ public class ProcessService
             }
             
             Logger.Info("Checking for filemap...");
-            // var (success, error) = await _gameFileService.buildFileMap();
+            var (success, error) = await _gameFileService.buildFileMap();
             
             stopwatch.Stop();
             var elapsed = stopwatch.Elapsed;
 
-            Logger.Info("Attemtping to extract file from cache...");
-            var (success, output, error) = _cacheService.GetEntry(CacheDatabase.FileMap.ToString(), @"base\worlds\03_night_city\sectors\_generated\collisions\03_night_city.geometry_cache");
-            if (!success || output == null)
+            
+            if (!success)
             {
-                Logger.Error($"Failed to get entry from cache: {error}");
-                return (false, error);
+               Logger.Info($"Process failed after {FormatElapsedTime(elapsed)}");
+               return (false, error);
             }
-            Logger.Info($"Successfully extracted file from cache: {BitConverter.ToInt32(output, 0)}");
             
-            // if (!success)
-            // {
-            //    Logger.Info($"Process failed after {FormatElapsedTime(elapsed)}");
-            //    return (false, error);
-            // }
+            _gameFileService.GetFiles();
             
-            // _gameFileService.GetFiles();
-            /*
             string testFilePath = @"base\worlds\03_night_city\sectors\_generated\collisions\03_night_city.geometry_cache";
-            var (WKsuccess, WKerror, WKoutputCR2WFile) = await _wolvenkitCLIService.ExtractFile(testFilePath);
+            var (WKsuccess, WKerror, WKoutputCR2WFile) = await _wolvenkitCLIService.ExtractCR2WFile(testFilePath);
             if (!WKsuccess || WKoutputCR2WFile == null || !string.IsNullOrEmpty(WKerror))
             {
                 Logger.Error($"Failed to extract CR2W file: {WKerror}");
                 return (false, WKerror);
             }
             Logger.Info($"Successfully extracted CR2W file: {testFilePath}");
-            */
-            // Logger.Success($"Process completed in {FormatElapsedTime(elapsed)}");
+            
+            Logger.Success($"Process completed in {FormatElapsedTime(elapsed)}");
             
             return (true, string.Empty);
             
