@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Text;
 using LightningDB.Native;
-
+using System.Collections.Generic;
 namespace VolumetricSelection2077.Services
 {
     public enum CacheDatabase
@@ -198,9 +198,39 @@ namespace VolumetricSelection2077.Services
                 return false;
             }
         }
+        public (bool success, string error) SaveBatch(string database, IEnumerable<(string key, byte[] value)> entries)
+        {
+            if (!IsValidDatabase(database))
+            {
+                return (false, $"Invalid database name: {database}");
+            }
+
+            try
+            {
+                using var tx = _env.BeginTransaction();
+                using var db = tx.OpenDatabase(database, new DatabaseConfiguration 
+                { 
+                    Flags = DatabaseOpenFlags.Create 
+                });
+
+                foreach (var (key, value) in entries)
+                {
+                    var keyBytes = Encoding.UTF8.GetBytes(key);
+                    tx.Put(db, keyBytes, value);
+                }
+
+                tx.Commit();
+                return (true, string.Empty);
+            }
+            catch (Exception ex)
+            {
+                return (false, ex.Message);
+            }
+        }
         public void Dispose()
         {
             _env?.Dispose();
         }
     }
 }
+

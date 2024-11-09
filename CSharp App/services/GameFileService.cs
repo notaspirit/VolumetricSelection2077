@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.Json;
 using System.Linq;
 using System.Threading.Tasks;
+
 namespace VolumetricSelection2077.Services
 {
     public class GameFileService
@@ -42,7 +43,7 @@ namespace VolumetricSelection2077.Services
         }
         public async Task<(bool success, string error)> buildFileMap()
         {
-            // if the filemap already exists return
+            int totalProcessedEntries = 0;
             var (exists, value, error) = _cacheService.GetEntry(CacheDatabase.FileMap.ToString(), "completed");
             if (exists && error == "" && value != null)
             {
@@ -85,13 +86,44 @@ namespace VolumetricSelection2077.Services
             Logger.Info($"Found {contentArchiveFiles.Length} content archive files");
             foreach (var contentArchiveFile in contentArchiveFiles)
             {
-                var contentFiles = await _wolvenkitCLIService.ListFilesInArchiveFile(contentArchiveFile, _wolvenkitCLISettings.AllExtensionsRegex);
-                Logger.Info($"Found {contentFiles.Count} files in {contentArchiveFile}");
-                foreach (var contentFile in contentFiles)
+                if (!RelevantArchiveFiles.IsRelevant(Path.GetFileName(contentArchiveFile)))
                 {
-                    _cacheService.SaveEntry(CacheDatabase.FileMap.ToString(), contentFile, BitConverter.GetBytes(archiveIndex));
-
+                    Logger.Info($"Skipping {contentArchiveFile} as it is not a relevant archive file");
+                    continue;
                 }
+                int processedEntryCount = 0;
+                int batchSize = 5000;
+                var contentFiles = await _wolvenkitCLIService.ListFilesInArchiveFile(contentArchiveFile, _wolvenkitCLISettings.AllExtensionsRegex);
+                int contentFileCount = contentFiles.Count - 1;
+                if (contentFileCount <= 0)
+                {
+                    Logger.Info($"No files found in {contentArchiveFile}");
+                    continue;
+                }
+                Logger.Info($"Found {contentFileCount} files in {contentArchiveFile}");
+                // Process in chunks
+                foreach (var chunk in contentFiles.Where(f => !string.IsNullOrEmpty(f))
+                                            .Chunk(batchSize))
+                {
+                    var entries = chunk.Select(file => (
+                        key: file,
+                        value: BitConverter.GetBytes(archiveIndex)
+                    ));
+
+                    var (success, error2) = _cacheService.SaveBatch(CacheDatabase.FileMap.ToString(), entries);
+                    if (!success)
+                    {
+                        Logger.Error($"Failed to save batch: {error2}");
+                        return (false, error2);
+                    }
+
+                    processedEntryCount += chunk.Length;
+                    totalProcessedEntries += chunk.Length;
+                    Logger.Info($"Processed {processedEntryCount:N0} entries...");
+                    Logger.Info($"Total processed entries: {totalProcessedEntries:N0}");
+                    await Task.Delay(10);
+                }
+
                 string contentArchiveFilePath = Path.Combine("archive", "pc", "content", Path.GetFileName(contentArchiveFile));
                 _cacheService.SaveEntry(CacheDatabase.FileMap.ToString(), archiveIndex.ToString(), Encoding.UTF8.GetBytes(contentArchiveFilePath));
                 archiveIndex++;
@@ -101,13 +133,44 @@ namespace VolumetricSelection2077.Services
             Logger.Info($"Found {ep1ArchiveFiles.Length} ep1 archive files");
             foreach (var ep1ArchiveFile in ep1ArchiveFiles)
             {
-                var ep1Files = await _wolvenkitCLIService.ListFilesInArchiveFile(ep1ArchiveFile, _wolvenkitCLISettings.AllExtensionsRegex);
-                Logger.Info($"Found {ep1Files.Count} files in {ep1ArchiveFile}");
-                foreach (var ep1File in ep1Files)
+                if (!RelevantArchiveFiles.IsRelevant(Path.GetFileName(ep1ArchiveFile)))
                 {
-                    _cacheService.SaveEntry(CacheDatabase.FileMap.ToString(), ep1File, BitConverter.GetBytes(archiveIndex));
-
+                    Logger.Info($"Skipping {ep1ArchiveFile} as it is not a relevant archive file");
+                    continue;
                 }
+                int processedEntryCount = 0;
+                int batchSize = 5000;
+                var ep1Files = await _wolvenkitCLIService.ListFilesInArchiveFile(ep1ArchiveFile, _wolvenkitCLISettings.AllExtensionsRegex);
+                int ep1FileCount = ep1Files.Count - 1;
+                if (ep1FileCount <= 0)
+                {
+                    Logger.Info($"No files found in {ep1ArchiveFile}");
+                    continue;
+                }
+                Logger.Info($"Found {ep1FileCount} files in {ep1ArchiveFile}");
+                // Process in chunks
+                foreach (var chunk in ep1Files.Where(f => !string.IsNullOrEmpty(f))
+                                            .Chunk(batchSize))
+                {
+                    var entries = chunk.Select(file => (
+                        key: file,
+                        value: BitConverter.GetBytes(archiveIndex)
+                    ));
+
+                    var (success, error2) = _cacheService.SaveBatch(CacheDatabase.FileMap.ToString(), entries);
+                    if (!success)
+                    {
+                        Logger.Error($"Failed to save batch: {error2}");
+                        return (false, error2);
+                    }
+
+                    processedEntryCount += chunk.Length;
+                    totalProcessedEntries += chunk.Length;
+                    Logger.Info($"Processed {processedEntryCount:N0} entries...");
+                    Logger.Info($"Total processed entries: {totalProcessedEntries:N0}");
+                    await Task.Delay(10);
+                }
+
                 string ep1ArchiveFilePath = Path.Combine("archive", "pc", "ep1", Path.GetFileName(ep1ArchiveFile));
                 _cacheService.SaveEntry(CacheDatabase.FileMap.ToString(), archiveIndex.ToString(), Encoding.UTF8.GetBytes(ep1ArchiveFilePath));
                 archiveIndex++;
