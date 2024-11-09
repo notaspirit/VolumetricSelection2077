@@ -77,7 +77,7 @@ namespace VolumetricSelection2077.Services
             return Enum.TryParse<CacheDatabase>(database, true, out _);
         }
 
-        public async Task<(bool success, string error)> SaveEntry(string database, string keyname, byte[] data)
+        public (bool success, string error) SaveEntry(string database, string keyname, byte[] data)
         {
             if (!IsValidDatabase(database))
             {
@@ -160,6 +160,42 @@ namespace VolumetricSelection2077.Services
             {
                 Logger.Error($"Failed to get entry from database: {ex.Message}");
                 return (false, null, ex.Message);
+            }
+        }
+
+        public bool DropDatabase(string database)
+        {
+            if (!IsValidDatabase(database))
+            {
+                Logger.Error($"Invalid database name: {database}");
+                return false;
+            }
+
+            try
+            {
+                using var tx = _env.BeginTransaction();
+                try
+                {
+                    // Try to open the database first to check if it exists
+                    using var db = tx.OpenDatabase(database);
+                    
+                    // Drop the database
+                    tx.DropDatabase(db);
+                    tx.Commit();
+                    
+                    Logger.Success($"Successfully dropped database: {database}");
+                    return true;
+                }
+                catch (LightningException ex) when (ex.Message.Contains("not found"))
+                {
+                    Logger.Info($"Database {database} doesn't exist, nothing to drop");
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to drop database: {ex.Message}");
+                return false;
             }
         }
         public void Dispose()

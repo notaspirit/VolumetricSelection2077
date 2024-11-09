@@ -4,18 +4,37 @@ using VolumetricSelection2077.Services;
 using System;
 using System.IO;
 using Avalonia.Interactivity;
+using System.Threading.Tasks;
+using Avalonia.Threading;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using Avalonia.Styling;
+using Avalonia;
 
 namespace VolumetricSelection2077;
 public partial class MainWindow : Window
 {
     private readonly SettingsService _settings;
-    private readonly GameFileService _gameFileService;
+    private readonly ProcessService _processService;
+        private bool _isProcessing;
+
+    // Define the AvaloniaProperty for IsProcessing
+    public static readonly StyledProperty<bool> IsProcessingProperty =
+        AvaloniaProperty.Register<MainWindow, bool>(nameof(IsProcessing));
+
+    // Property wrapper
+    public bool IsProcessing
+    {
+        get => GetValue(IsProcessingProperty);
+        set => SetValue(IsProcessingProperty, value);
+    }
+
     public MainWindow()
     {
         InitializeComponent();
         _settings = SettingsService.Instance;
-        _gameFileService = new GameFileService();
-        DataContext = _settings;
+        _processService = new ProcessService();
+        DataContext = this;
         InitializeLogger();
     }
 
@@ -57,14 +76,25 @@ public partial class MainWindow : Window
 
     private async void FindSelectedButton_Click(object? sender, RoutedEventArgs e)
     {
-        // Add await here because ValidateInput is async
-        if (!await ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename))
+        if (IsProcessing) return;
+
+        try
         {
-            return;
+            IsProcessing = true;
+            var (success, error) = await _processService.Process();
+            if (!success)
+            {
+                Logger.Error($"Process failed: {error}");
+            }
         }
-        new WolvenkitCLIService().SetSettings();
-        Logger.Info("Starting process...");
-        // _gameFileService.buildFileMap();
-        _gameFileService.GetFiles();
+        catch (Exception ex)
+        {
+            Logger.Error($"Critical error: {ex.Message}");
+            IsProcessing = false;
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
     }
 }
