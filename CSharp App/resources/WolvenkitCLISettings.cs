@@ -20,6 +20,6 @@ namespace VolumetricSelection2077.Resources
     ""WithMaterials"": false
   }
 }";
-        public string AllExtensionsRegex { get; set; } = @"\.(app|ent|geometrycache|mesh|w2mesh|streamingsector)$";
+        public string AllExtensionsRegex { get; set; } = @"\.(app|ent|geometry_cache|mesh|w2mesh|streamingsector)$";
     }
 }

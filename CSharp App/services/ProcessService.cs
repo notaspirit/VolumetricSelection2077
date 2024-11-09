@@ -66,15 +66,8 @@ public class ProcessService
             }
             
             _gameFileService.GetFiles();
-            //_cacheService.LogDatabaseSample(CacheDatabase.FileMap.ToString());
-            var (exists, data, error2) = _cacheService.GetEntry(CacheDatabase.FileMap.ToString(), "exterior_-1_0_-1_6.streamingsector");
-            if (exists && data != null)
-            {
-                Logger.Success($"Process completed in {FormatElapsedTime(elapsed)}");
-                return (true, string.Empty);
-            }
-            Logger.Error($"Sector \"exterior_-1_0_-1_6.streamingsector\" not found in cache");
-            return (false, $"Sector \"exterior_-1_0_-1_6.streamingsector\" not found in cache");
+            Logger.Success($"Process completed in {FormatElapsedTime(elapsed)}");
+            return (true, string.Empty);
         }
         catch (Exception ex)
         {
