@@ -11,6 +11,7 @@ namespace VolumetricSelection2077.Services
 {
     public static class ValidationService
     {
+        private static readonly SettingsService _settingsService = SettingsService.Instance;
         public static bool ValidateOutputFilename(string filename)
         {
             // Regular expressions for validation
@@ -194,12 +195,39 @@ namespace VolumetricSelection2077.Services
             Logger.Success($"WolvenKit version {versionString} meets minimum requirement {minimumVersion}");
             return true;
         }
+
+        public static bool ValidateOutputDirectory(string outputDirectory)
+        {
+            if (string.IsNullOrWhiteSpace(outputDirectory))
+            {
+                Logger.Info("Output directory is not set in settings, using default");
+                outputDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "output");
+                Directory.CreateDirectory(outputDirectory);
+                _settingsService.OutputDirectory = outputDirectory;
+                _settingsService.SaveSettings();
+            }
+            return Directory.Exists(outputDirectory);
+        }
+        public static bool ValidateCacheDirectory(string cacheDirectory)
+        {
+            if (string.IsNullOrWhiteSpace(cacheDirectory))
+            {
+                Logger.Info("Cache directory is not set in settings, using default");
+                cacheDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077");
+                Directory.CreateDirectory(cacheDirectory);
+                _settingsService.CacheDirectory = cacheDirectory;
+                _settingsService.SaveSettings();
+            }
+            return Directory.Exists(cacheDirectory);
+        }
         public static async Task<bool> ValidateInput(string gamePath, string outputFilename)
         {
             Logger.Info("Validating input...");
             var syncValidations = ValidateGamePath(gamePath) && 
                                 ValidateOutputFilename(outputFilename) && 
-                                ValidateSelectionFile(gamePath);
+                                ValidateSelectionFile(gamePath) &&
+                                ValidateOutputDirectory(_settingsService.OutputDirectory) &&
+                                ValidateCacheDirectory(_settingsService.CacheDirectory);
                                 
             return syncValidations && await ValidateWolvenkitVersion();
         }
