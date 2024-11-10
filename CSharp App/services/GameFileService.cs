@@ -268,6 +268,41 @@ namespace VolumetricSelection2077.Services
             _cacheService.SaveEntry(CacheDatabase.ExtractedFiles.ToString(), filePath, file);
             return ConvertToCR2W(file);
         }
+        public async Task<(bool success, string error, List<byte[]> files)> GetBulkMPFiles(List<string> filePaths)
+        {
+            /*
+            the idea here is that the output needs to have the same order and length as the input
+            so that on the recieving end we know which data belongs to which file
+            since we first need to check the cache, each entry that is not found in the cache will be set as null
+            all the files that weren't found in the cache will be added to a list
+            this list will be used to extract the files from the archive
+            after the extraction, they will need to be preprocessed (removing all the irrelevant data) and turned into messagepack bytes
+            these will be added to the output list at the same index as the original filepaths
+
+            alternatively I can just try to load all the files from the cache *after* they were extracted
+            this way I don't need to care about the order or if some files are missing from the cache
+            but this will double the read usage, should be fine though since I am using lmdb
+            */
+            string[] cleanFilePaths = filePaths.Select(f => new string(f.Where(c => !char.IsControl(c)).ToArray())).ToArray();
+            var firstCacheResults = _cacheService.GetEntries(CacheDatabase.FileMap.ToString(), cleanFilePaths);
+            List<string> missingFiles = new List<string>();
+            foreach (var filePath in cleanFilePaths)
+            {
+                if (!firstCacheResults[filePath].Exists && !missingFiles.Contains(filePath))
+                {
+                    missingFiles.Add(filePath);
+                }
+            }
+            if (missingFiles.Count > 0)
+            {
+                // extract the missing files in bulk from the archive as json
+                // then clean and convert them to messagepack
+                // then save them to the extracted files cache
+            }
+            // load all the requested files from the cache
+            // return them in the order of the filepaths
+            return (true, string.Empty, new List<byte[]>());
+        }
     }
 }
        

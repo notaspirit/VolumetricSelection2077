@@ -15,9 +15,6 @@ public class SettingsService
         // Initialize default settings here
         GameDirectory = "";
         CacheEnabled = true;
-        CacheSectorData = true;
-        CacheMeshData = true;
-        CacheGeometryCache = true;
         CacheDirectory = "";
         SaveToArchiveMods = false;
         OutputDirectory = "";
@@ -45,9 +42,6 @@ public class SettingsService
     // Properties
     public string GameDirectory { get; set; }
     public bool CacheEnabled { get; set; }
-    public bool CacheSectorData { get; set; }
-    public bool CacheMeshData { get; set; }
-    public bool CacheGeometryCache { get; set; }
     public string CacheDirectory { get; set; }
     public bool SaveToArchiveMods { get; set; }
     public string OutputDirectory { get; set; }
@@ -70,9 +64,6 @@ public class SettingsService
                 {
                     GameDirectory = settings.GameDirectory;
                     CacheEnabled = settings.CacheEnabled;
-                    CacheSectorData = settings.CacheSectorData;
-                    CacheMeshData = settings.CacheMeshData;
-                    CacheGeometryCache = settings.CacheGeometryCache;
                     CacheDirectory = settings.CacheDirectory;
                     SaveToArchiveMods = settings.SaveToArchiveMods;
                     OutputDirectory = settings.OutputDirectory;

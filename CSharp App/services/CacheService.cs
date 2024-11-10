@@ -276,6 +276,99 @@ namespace VolumetricSelection2077.Services
                 Logger.Error($"Failed to read database: {ex.Message}");
             }
         }
+        public class CacheResult
+        {
+            public bool Exists { get; set; }
+            public byte[]? Data { get; set; }
+            public string Error { get; set; } = string.Empty;
+        }
+
+        public Dictionary<string, CacheResult> GetEntries(string database, IEnumerable<string> keys)
+        {
+            var results = new Dictionary<string, CacheResult>();
+            
+            if (!IsValidDatabase(database))
+            {
+                // Return error result for all keys
+                foreach (var key in keys)
+                {
+                    results[key] = new CacheResult 
+                    { 
+                        Exists = false, 
+                        Error = $"Invalid database name: {database}" 
+                    };
+                }
+                return results;
+            }
+
+            try
+            {
+                using var tx = _env.BeginTransaction(TransactionBeginFlags.ReadOnly);
+                using var db = tx.OpenDatabase(database);
+
+                foreach (var key in keys)
+                {
+                    try
+                    {
+                        var keyBytes = Encoding.UTF8.GetBytes(key);
+                        var (resultCode, _, value) = tx.Get(db, keyBytes);
+                        
+                        if (resultCode != MDBResultCode.Success)
+                        {
+                            results[key] = new CacheResult 
+                            { 
+                                Exists = false, 
+                                Error = "Entry not found" 
+                            };
+                            continue;
+                        }
+
+                        results[key] = new CacheResult 
+                        { 
+                            Exists = true, 
+                            Data = value.CopyToNewArray() 
+                        };
+                    }
+                    catch (Exception ex)
+                    {
+                        results[key] = new CacheResult 
+                        { 
+                            Exists = false, 
+                            Error = ex.Message 
+                        };
+                    }
+                }
+
+                return results;
+            }
+            catch (LightningException ex) when (ex.Message.Contains("not found"))
+            {
+                // Database not found, return error for all keys
+                foreach (var key in keys)
+                {
+                    results[key] = new CacheResult 
+                    { 
+                        Exists = false, 
+                        Error = "Database not found" 
+                    };
+                }
+                return results;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to get entries from database: {ex.Message}");
+                // General error, return error for all keys
+                foreach (var key in keys)
+                {
+                    results[key] = new CacheResult 
+                    { 
+                        Exists = false, 
+                        Error = ex.Message 
+                    };
+                }
+                return results;
+            }
+        }
         public void Dispose()
         {
             _env?.Dispose();

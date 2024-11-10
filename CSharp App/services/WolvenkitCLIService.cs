@@ -166,9 +166,6 @@ namespace VolumetricSelection2077.Services
             }
             return output.Split('\n').ToList();
         }
-        
-
-        // Waiting on Wkit nuget package to fix dependency on native kraken.dll
         public async Task<(bool success, string error, byte[]? file)> ExtractRawFile(string filePath)
         {
             Logger.Info($"Extracting raw file: {filePath}");
