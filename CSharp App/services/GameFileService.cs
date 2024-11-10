@@ -235,7 +235,7 @@ namespace VolumetricSelection2077.Services
             try
             {
                 var cr2wFile = BinaryToCR2WFile(binary);
-                if (cr2wFile == null)
+                if (cr2wFile == null) 
                 {
                     return (false, "Failed to convert file to CR2WFile", null);
                 }
@@ -268,7 +268,7 @@ namespace VolumetricSelection2077.Services
             _cacheService.SaveEntry(CacheDatabase.ExtractedFiles.ToString(), filePath, file);
             return ConvertToCR2W(file);
         }
-        public async Task<(bool success, string error, List<byte[]> files)> GetBulkMPFiles(List<string> filePaths)
+        public async Task<(bool success, string error, List<byte[]>? files)> GetBulkMPackFiles(List<string> filePaths)
         {
             /*
             the idea here is that the output needs to have the same order and length as the input
@@ -295,6 +295,12 @@ namespace VolumetricSelection2077.Services
             }
             if (missingFiles.Count > 0)
             {
+                Logger.Info($"Found {missingFiles.Count} missing files, extracting...");
+                var (success, error, files) = await _wolvenkitCLIService.ExtractBulkJsonFiles(missingFiles);
+                if (!success || files == null)
+                {
+                    return (false, error, null);
+                }
                 // extract the missing files in bulk from the archive as json
                 // then clean and convert them to messagepack
                 // then save them to the extracted files cache

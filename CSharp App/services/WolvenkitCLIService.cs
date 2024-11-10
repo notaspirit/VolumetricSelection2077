@@ -16,11 +16,12 @@ namespace VolumetricSelection2077.Services
     {
         private readonly CacheService _cacheService;
         private readonly SettingsService _settingsService;
-
+        private readonly UtilService _utilService;
         public WolvenkitCLIService()
         {
             _cacheService = CacheService.Instance;
             _settingsService = SettingsService.Instance;
+            _utilService = new UtilService();
         }
         
         // Validate Wolvenkit CLI path, doesn't check if it's a valid CLI, only if the file exists -> it's only used as validation when creating the wrapper
@@ -158,7 +159,7 @@ namespace VolumetricSelection2077.Services
         }
         public async Task<List<string>> ListFilesInArchiveFile(string archiveFilePath, string regex)
         {
-            var (output, error) = await ExecuteCommand($"archiveinfo \"{archiveFilePath}\" --regex {regex} --list");
+            var (output, error) = await ExecuteCommand($"archiveinfo \"{_utilService.EscapeSlashes(archiveFilePath)}\" --regex {regex} --list");
             if (!string.IsNullOrEmpty(error))
             {
                 Logger.Error($"Failed to get archive info: {error}");
@@ -188,7 +189,7 @@ namespace VolumetricSelection2077.Services
             Logger.Info($"Found archive file path in file map cache: {archiveFilePathRel}");
             string archiveFilePath = Path.Combine(_settingsService.GameDirectory, archiveFilePathRel);
             // extract the file from the archive file
-            var (extractOutput, extractError) = await ExecuteCommand($"extract \"{archiveFilePath}\" --pattern \"{filePath}\" --outpath \"{Path.Combine(_settingsService.CacheDirectory, "working")}\"");
+            var (extractOutput, extractError) = await ExecuteCommand($"extract \"{_utilService.EscapeSlashes(archiveFilePath)}\" --pattern \"{_utilService.EscapeSlashes(filePath)}\" --outpath \"{_utilService.EscapeSlashes(Path.Combine(_settingsService.CacheDirectory, "working"))}\"");
             if (!string.IsNullOrEmpty(extractError))
             {
                 Logger.Error($"Failed to extract file from archive: {extractError}");
@@ -222,6 +223,84 @@ namespace VolumetricSelection2077.Services
                 {
                     File.Delete(extractedFilePath);
                     Logger.Info($"Deleted extracted file from disk: {extractedFilePath}");
+                }
+            }
+        }
+        public async Task<(bool success, string error, Dictionary<string, byte[]>? files)> ExtractBulkJsonFiles(List<string> filePaths)
+        {
+            if (filePaths == null || filePaths.Count == 0)
+            {
+                return (false, "No files specified for extraction", null);
+            }
+
+            // Get unique archive paths for these files
+            HashSet<string> archivePaths = new HashSet<string>();
+            foreach (var filePath in filePaths)
+            {
+                var (FMsuccess, FMoutput, FMerror) = _cacheService.GetEntry(CacheDatabase.FileMap.ToString(), filePath);
+                if (!FMsuccess || FMoutput == null) continue;
+                
+                var archiveIndex = BitConverter.ToInt32(FMoutput);
+                var (AFsuccess, AFoutput, AFerror) = _cacheService.GetEntry(CacheDatabase.FileMap.ToString(), archiveIndex.ToString());
+                if (!AFsuccess || AFoutput == null) continue;
+
+                string archivePath = Encoding.UTF8.GetString(AFoutput);
+                archivePaths.Add(archivePath);
+            }
+
+            if (archivePaths.Count == 0)
+            {
+                return (false, "No valid archive paths found", null);
+            }
+
+            // Extract files from each archive
+            Dictionary<string, byte[]> files = new Dictionary<string, byte[]>();
+            List<string> extractedFilePaths = new List<string>();
+            string outPath = Path.Combine(_settingsService.CacheDirectory, "working");
+
+            foreach (var archivePath in archivePaths)
+            {
+                string archiveFilePathAbs = Path.Combine(_settingsService.GameDirectory, archivePath);
+                var (extractOutput, extractError) = await ExecuteCommand($"uncook \"{_utilService.EscapeSlashes(archiveFilePathAbs)}\" --regex \"{_utilService.EscapeSlashes(_utilService.BuildORRegex(filePaths))}\" --outpath \"{_utilService.EscapeSlashes(outPath)}\"");
+                if (!string.IsNullOrEmpty(extractError))
+                {
+                    Logger.Error($"Failed to extract files from archive {archivePath}: {extractError}");
+                    continue;
+                }
+            }
+
+            // Read and collect all extracted files
+            try
+            {
+                foreach (var filePath in filePaths)
+                {
+                    string filePathAbsJson = Path.Combine(outPath, filePath + ".json");
+                    string filePathAbsRaw = Path.Combine(outPath, filePath);
+                    if (File.Exists(filePathAbsJson))
+                    {
+                        files[filePath] = File.ReadAllBytes(filePathAbsJson);
+                        extractedFilePaths.Add(filePathAbsJson);
+                    }
+                    if (File.Exists(filePathAbsRaw))
+                    {
+                        extractedFilePaths.Add(filePathAbsRaw);
+                    }
+                }
+                return (true, string.Empty, files);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to read extracted files: {ex.Message}");
+                return (false, $"Failed to read extracted files: {ex.Message}", null);
+            }
+            finally
+            {
+                foreach (var filePath in extractedFilePaths)
+                {
+                    if (File.Exists(filePath))
+                    {
+                        File.Delete(filePath);
+                    }
                 }
             }
         }

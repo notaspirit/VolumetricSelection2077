@@ -1,10 +1,10 @@
 Sector Example
     - Name: exterior_-22_16_1_0
-    - Nodes:
+    - Nodes: (array)
         - AXLindex: 0
         - Type: worldCollisionNode | worldMeshNode | etc.
         - MeshPath: \base\vehicles\car_sedan_01\car_sedan_01.mesh | null
-        - MeshGroup: | null
+        - MeshGroup: | null (array)
             - Component:
                 - MeshPath: \base\vehicles\car_sedan_01\car_sedan_01.mesh
                 - Transform: 
@@ -15,9 +15,9 @@ Sector Example
             - Position: [x, y, z]
             - Rotation: [i, j, k, r]
             - Scale: [x, y, z]
-        - Actors: | null
+        - Actors: | null (array)
             - ActorIndex: 0
-            - Shapes: 
+            - Shapes: (array)
                 - Type: mesh | box | sphere | etc.
                 - MeshId: 0 | null
                 - Transform: 
