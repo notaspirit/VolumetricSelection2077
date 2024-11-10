@@ -70,7 +70,7 @@ public class ProcessService
             _gameFileService.GetFiles();
             
             string testFilePath = @"base\worlds\03_night_city\sectors\_generated\collisions\03_night_city.geometry_cache";
-            var (WKsuccess, WKerror, WKoutputCR2WFile) = await _wolvenkitCLIService.ExtractCR2WFile(testFilePath);
+            var (WKsuccess, WKerror, WKoutputCR2WFile) = await _gameFileService.GetCR2WFile(testFilePath);
             if (!WKsuccess || WKoutputCR2WFile == null || !string.IsNullOrEmpty(WKerror))
             {
                 Logger.Error($"Failed to extract CR2W file: {WKerror}");

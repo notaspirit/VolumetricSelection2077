@@ -167,25 +167,11 @@ namespace VolumetricSelection2077.Services
             return output.Split('\n').ToList();
         }
         
-        private CR2WFile? BinaryToCR2WFile(byte[] binary)
+
+        // Waiting on Wkit nuget package to fix dependency on native kraken.dll
+        public async Task<(bool success, string error, byte[]? file)> ExtractRawFile(string filePath)
         {
-            using var br = new BinaryReader(new MemoryStream(binary));
-            using var cr2wReader = new CR2WReader(br);
-            cr2wReader.ReadFile(out CR2WFile? extractedFile, true);
-            cr2wReader.Dispose();
-            return extractedFile;
-        }
-        public async Task<(bool success, string error, CR2WFile? file)> ExtractCR2WFile(string filePath)
-        {
-            Logger.Info($"Extracting CR2W file: {filePath}");
-            // First try to get the file from the extracted files cache
-            var (EFsuccess, EFfile, EFerror) = _cacheService.GetEntry(CacheDatabase.ExtractedFiles.ToString(), filePath);
-            if (EFsuccess && EFfile != null && string.IsNullOrEmpty(EFerror))
-            {
-                Logger.Info($"Found file in extracted files cache: {filePath}");
-                return (true, string.Empty, BinaryToCR2WFile(EFfile));
-            }
-            Logger.Info($"File not found in extracted files cache, getting archive file index from file map cache");
+            Logger.Info($"Extracting raw file: {filePath}");
             // If not found, get the archive file index from the file map cache
             var (FMsuccess, FMoutput, FMerror) = _cacheService.GetEntry(CacheDatabase.FileMap.ToString(), filePath);
             if (!FMsuccess || FMoutput == null || !string.IsNullOrEmpty(FMerror))
@@ -221,30 +207,26 @@ namespace VolumetricSelection2077.Services
                 return (false, "Failed to find extracted file", null);
             }
             Logger.Info($"Found extracted file: {extractedFilePath}");
-            // convert the file to a CR2WFile
-            try
+            byte[] fileBytes;
+            try 
             {
-                var outputCR2WFile = BinaryToCR2WFile(File.ReadAllBytes(extractedFilePath));
-                // check if the conversion was successful
-                if (outputCR2WFile == null)
-                {
-                Logger.Error($"Failed to convert extracted file to CR2WFile: {extractedFilePath}");
-                return (false, "Failed to convert extracted file to CR2WFile", null);
-                }
-                Logger.Info($"Converted extracted file to CR2WFile: {outputCR2WFile}");
-            } catch (Exception ex)
-            {
-                Logger.Error($"Failed to convert extracted file to CR2WFile: {ex.Message}");
-                return (false, $"Failed to convert extracted file to CR2WFile: {ex.Message}", null);
+                fileBytes = File.ReadAllBytes(extractedFilePath);
+                return (true, string.Empty, fileBytes);
             }
-            // save the file to the extracted files cache
-            _cacheService.SaveEntry(CacheDatabase.ExtractedFiles.ToString(), filePath, File.ReadAllBytes(extractedFilePath));
-            Logger.Info($"Saved extracted file to extracted files cache: {filePath}");
-            // delete the file from disk 
-            // TODO: make it delete the folder structure too, but not a priority
-            File.Delete(extractedFilePath);
-            Logger.Info($"Deleted extracted file from disk: {extractedFilePath}");
-            return (true, string.Empty, null);
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to read extracted file: {ex.Message}");
+                return (false, $"Failed to read extracted file: {ex.Message}", null);
+            }
+            finally 
+            {
+                // This will run even if reading the file fails
+                if (File.Exists(extractedFilePath))
+                {
+                    File.Delete(extractedFilePath);
+                    Logger.Info($"Deleted extracted file from disk: {extractedFilePath}");
+                }
+            }
         }
     }
 }

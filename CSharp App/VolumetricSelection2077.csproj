@@ -26,9 +26,4 @@
   <ItemGroup>
     <AvaloniaResource Include="assets\**" />
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="native\kraken.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
 </Project>

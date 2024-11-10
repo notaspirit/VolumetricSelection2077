@@ -2,15 +2,14 @@ using VolumetricSelection2077.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using WolvenKit.Core.Interfaces;
-using WolvenKit.RED4.CR2W;
-using WolvenKit.RED4.Types;
 using WolvenKit.RED4.Archive.IO;
 using VolumetricSelection2077.Resources;
 using System.Text;
 using System.Text.Json;
 using System.Linq;
 using System.Threading.Tasks;
+using WolvenKit.RED4.Archive.CR2W;
+
 
 namespace VolumetricSelection2077.Services
 {
@@ -179,6 +178,7 @@ namespace VolumetricSelection2077.Services
             Logger.Success("Filemap build complete");
             return (true, string.Empty);
         }
+        // Basically just for testing ig
         public void GetFiles()
         {
             string selectionFilePath = Path.Combine(_settings.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "VolumetricSelection2077", "data", "selection.json");
@@ -217,6 +217,56 @@ namespace VolumetricSelection2077.Services
                     Logger.Error($"Not found in cache: {error}");
                 }
             }
+        }
+        // Converts a raw file to a CR2WFile
+        // waiting on Wkit nuget package to fix dependency on native kraken.dll
+        private CR2WFile? BinaryToCR2WFile(byte[] binary)
+        {
+            using var br = new BinaryReader(new MemoryStream(binary));
+            using var cr2wReader = new CR2WReader(br);
+            cr2wReader.ReadFile(out CR2WFile? extractedFile, true);
+            cr2wReader.Dispose();
+            return extractedFile;
+        }
+        // Gets a CR2WFile from the game archive
+        // basically only used for the geometrycache file all other files will be either extracted as json or glb
+        private (bool success, string error, CR2WFile? file) ConvertToCR2W(byte[] binary)
+        {
+            try
+            {
+                var cr2wFile = BinaryToCR2WFile(binary);
+                if (cr2wFile == null)
+                {
+                    return (false, "Failed to convert file to CR2WFile", null);
+                }
+                return (true, string.Empty, cr2wFile);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to convert file to CR2WFile: {ex.Message}", null);
+            }
+        }
+
+        public async Task<(bool success, string error, CR2WFile? file)> GetCR2WFile(string filePath)
+        {
+            Logger.Info($"Getting CR2W file: {filePath}");
+            Logger.Info($"Checking extracted files cache");
+            var (EFsuccess, EFfile, EFerror) = _cacheService.GetEntry(CacheDatabase.ExtractedFiles.ToString(), filePath);
+            if (EFsuccess && EFfile != null && string.IsNullOrEmpty(EFerror))
+            {
+                Logger.Info($"Found file in extracted files cache: {filePath}");
+                return ConvertToCR2W(EFfile);
+            }
+
+            Logger.Info($"File not found in extracted files cache, getting from archive");
+            var (success, error, file) = await _wolvenkitCLIService.ExtractRawFile(filePath);
+            if (!success || file == null)
+            {
+                return (false, error, null);
+            }
+
+            _cacheService.SaveEntry(CacheDatabase.ExtractedFiles.ToString(), filePath, file);
+            return ConvertToCR2W(file);
         }
     }
 }

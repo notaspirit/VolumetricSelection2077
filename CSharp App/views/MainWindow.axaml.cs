@@ -34,7 +34,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         _settings = SettingsService.Instance;
         _processService = new ProcessService();
-        DataContext = this;
+        DataContext = _settings;
         InitializeLogger();
     }
 
