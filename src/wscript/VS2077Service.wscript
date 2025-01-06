@@ -29,8 +29,8 @@ const exampleJson = {
 
 // Settings
 
-const refreshDelay = 10 * 1000; // 10 seconds
-const maxIdleCycles = 30; // 5 minutes
+const refreshDelay = 10 * 1000;
+const maxIdleCycles = 10;
 const apiFilename = "VS2077\\requests.json";
 
 // Imports
@@ -51,14 +51,14 @@ function replaceExtension(path, newExptension) {
 
 // ---@return array<string>
 function getRequests() {
-    Logger.Info("GetRequests called!");
+    // Logger.Info("GetRequests called!");
     if (wkit.FileExistsInRaw(apiFilename)) {
         const requests = JSON.parse(wkit.LoadRawJsonFromProject(apiFilename, "json"));
         if (requests == null) {
             Logger.Error("Error loading requests from " + apiFilename);
             return [];
         }
-        Logger.Info("Returning requests!");
+        // Logger.Info("Returning requests!");
         return requests.requests;
     } else {
         return [];
@@ -107,64 +107,78 @@ function uncookHash(sectorHash, actorHash, path) {
     return {success: true, error: ""};
 }
 
-function main () {
+// ---@param string path
+// ---returns {success: boolean, error: string}
+function listAllFiles(path) {
+    const fileList = wkit.GetArchiveFiles();
+    if (fileList == null) {
+        return {success: false, error: "Failed to get archive files"};
+    }
+
+    wkit.SaveToRaw(path, JSON.stringify(fileList));
+    return {success: true, error: ""};
+}
+
+
+async function main () {
     Logger.Info("Starting Volumetric Selection 2077 Service");
     var index = 0;
     while (true) {
-        index++;
-        if (index > 10) {
-            break;
-        }
-//        time.sleep(refreshDelay);
-        const requests = getRequests();
-        if (idleCycles > maxIdleCycles) { 
-            const maxIdleCycles = maxIdleCycles * refreshDelay / 1000 / 60;
-            Logger.Warning("Service is idling for " + toString(maxIdleCycles) + ", shutting down! Run script again to continue...");
-            break;
-        }
-        if (requests.length == 0) {
-            // idleCycles++;
-            Logger.Info("No requests found.");
-            continue;
-        }
-        Logger.Info("Request " + requests.length + " found!");
-        Logger.Info(JSON.stringify(requests));
+        Logger.Info("Running loop. . . ")
+        Logger.Info("Current Idle Cycles:"  + idleCycles);
 
-        // idleCycles = 0;
+        let didProcess = false;
+        let changedStatus = false;
+
+        const requests = getRequests();
 
         for (var i = 0; i < requests.length; i++) {
-            Logger.Info("Found " + requests[i] + " requests");
+            //Logger.Info("Found " + requests[i] + " requests");
             const request = requests[i];
             if (request.isFulfilled) {
                 continue;
             }
+            didProcess = true;
 
             switch (request.requestType) {
                 case "json":
-                    Logger.Info("Found " + JSON.stringify(request));
+                    //Logger.Info("Found " + JSON.stringify(request));
                     const resultJson = uncookToJson(request.path);
                     if (resultJson.success) {
                         request.isFulfilled = true;
+                        changedStatus = true;
                     } else {
                         Logger.Error("Failed to uncook json: " + resultJson.error);
                     }
                     break;
                 case "glb":
-                    Logger.Info("Found " + JSON.stringify(request));
+                    //Logger.Info("Found " + JSON.stringify(request));
                     const resultGlb = uncookToGlb(request.path);
                     if (resultGlb.success) {
                         request.isFulfilled = true;
+                        changedStatus = true;
                     } else {
                         Logger.Error("Failed to uncook glb: " + resultGlb.error);
                     }
                     break;
                 case "hash":
-                    Logger.Info("Found " + JSON.stringify(request));
+                    //Logger.Info("Found " + JSON.stringify(request));
                     const resultHash = uncookHash(request.sectorHash, request.actorHash, request.path);
                     if (resultHash.success) {
                         request.isFulfilled = true;
+                        changedStatus = true;
                     } else {
                         Logger.Error("Failed to uncook hash: " + resultHash.error);
+                    }
+                    break;
+                case "list":
+                    //Logger.Info("Found " + JSON.stringify(request));
+                    const resultFiles = listAllFiles(request.path);
+                    if (resultFiles.success) {
+                        request.isFulfilled = true;
+                        changedStatus = true;
+                    } else {
+                        Logger.Error("Failed to list all files: " + resultFiles.error);
                     }
                     break;
                 default:
@@ -172,7 +186,23 @@ function main () {
                     break;
             }
         }
-        wkit.SaveToRaw(apiFilename, JSON.stringify({requests: requests}));
+        if (didProcess) {
+            idleCycles = 0;
+        } else {
+            idleCycles++;
+        }
+
+        if (idleCycles > maxIdleCycles) { 
+            const idleTime = maxIdleCycles * refreshDelay / 1000 / 60;
+            Logger.Warning("Service is idling for " + idleTime.toFixed(2) + "min, shutting down! Run script again to continue...");
+            break;
+        }
+
+        if (changedStatus) {
+            wkit.SaveToRaw(apiFilename, JSON.stringify({requests: requests}, null, 4));
+        }
+
+        wkit.Sleep(refreshDelay);
     }
 }
 
