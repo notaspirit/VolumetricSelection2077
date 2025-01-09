@@ -325,6 +325,11 @@ function main () {
                     request.isFulfilled = true;
                     request.isProcessed = true;
                     break;
+                case "ping":
+                    debugLog("Found " + JSON.stringify(request), "info");
+                    request.isFulfilled = true;
+                    request.isProcessed = true;
+                    break;
                 default:
                     Logger.Warning("Unknown request type: " + request.requestType);
                     request.errorMessage = "Unknown request type: " + request.requestType
