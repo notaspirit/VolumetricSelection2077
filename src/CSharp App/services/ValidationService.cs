@@ -220,7 +220,7 @@ namespace VolumetricSelection2077.Services
             }
             return Directory.Exists(cacheDirectory);
         }
-        public static async Task<bool> ValidateInput(string gamePath, string outputFilename)
+        public static bool ValidateInput(string gamePath, string outputFilename)
         {
             Logger.Info("Validating input...");
             var syncValidations = ValidateGamePath(gamePath) && 
@@ -229,7 +229,7 @@ namespace VolumetricSelection2077.Services
                                 ValidateOutputDirectory(_settingsService.OutputDirectory) &&
                                 ValidateCacheDirectory(_settingsService.CacheDirectory);
                                 
-            return syncValidations && await ValidateWolvenkitVersion();
+            return syncValidations;
         }
     }
 }

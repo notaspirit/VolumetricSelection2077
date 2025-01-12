@@ -677,6 +677,19 @@
           }
         }
       },
+      "SharpGLTF.Core/1.0.3": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/SharpGLTF.Core.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/SharpGLTF.Core.dll": {
+            "related": ".xml"
+          }
+        }
+      },
       "SkiaSharp/2.88.8": {
         "type": "package",
         "dependencies": {
@@ -1785,6 +1798,26 @@
         "serilog.sinks.file.nuspec"
       ]
     },
+    "SharpGLTF.Core/1.0.3": {
+      "sha512": "su+Flcg2g6GgOIgulRGBDMHA6zY5NBx6NYH1Ayd6iBbSbwspHsN2VQgZfANgJy92cBf7qtpjC0uMiShbO+TEEg==",
+      "type": "package",
+      "path": "sharpgltf.core/1.0.3",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "glTF2Sharp.png",
+        "lib/net6.0/SharpGLTF.Core.dll",
+        "lib/net6.0/SharpGLTF.Core.xml",
+        "lib/net8.0/SharpGLTF.Core.dll",
+        "lib/net8.0/SharpGLTF.Core.xml",
+        "lib/netstandard2.0/SharpGLTF.Core.dll",
+        "lib/netstandard2.0/SharpGLTF.Core.xml",
+        "lib/netstandard2.1/SharpGLTF.Core.dll",
+        "lib/netstandard2.1/SharpGLTF.Core.xml",
+        "sharpgltf.core.1.0.3.nupkg.sha512",
+        "sharpgltf.core.nuspec"
+      ]
+    },
     "SkiaSharp/2.88.8": {
       "sha512": "bRkp3uKp5ZI8gXYQT57uKwil1uobb2p8c69n7v5evlB/2JNcMAXVcw9DZAP5Ig3WSvgzGm2YSn27UVeOi05NlA==",
       "type": "package",
@@ -2195,6 +2228,7 @@
       "Serilog >= 4.1.0",
       "Serilog.Sinks.Console >= 6.0.0",
       "Serilog.Sinks.File >= 6.0.0",
+      "SharpGLTF.Core >= 1.0.3",
       "Wolvenkit.Core >= 8.15.1",
       "Wolvenkit.red4 >= 8.15.1"
     ]
@@ -2205,11 +2239,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\dev0\\prjk\\VolumetricSelection2077\\Cyberpunk2077 Mods\\CtrlADel\\CSharp App\\VolumetricSelection2077.csproj",
+      "projectUniqueName": "D:\\dev0\\prjk\\VolumetricSelection2077\\Cyberpunk2077 Mods\\CtrlADel\\src\\CSharp App\\VolumetricSelection2077.csproj",
       "projectName": "VolumetricSelection2077",
-      "projectPath": "D:\\dev0\\prjk\\VolumetricSelection2077\\Cyberpunk2077 Mods\\CtrlADel\\CSharp App\\VolumetricSelection2077.csproj",
+      "projectPath": "D:\\dev0\\prjk\\VolumetricSelection2077\\Cyberpunk2077 Mods\\CtrlADel\\src\\CSharp App\\VolumetricSelection2077.csproj",
       "packagesPath": "C:\\Users\\zweit\\.nuget\\packages\\",
-      "outputPath": "D:\\dev0\\prjk\\VolumetricSelection2077\\Cyberpunk2077 Mods\\CtrlADel\\CSharp App\\obj\\",
+      "outputPath": "D:\\dev0\\prjk\\VolumetricSelection2077\\Cyberpunk2077 Mods\\CtrlADel\\src\\CSharp App\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\zweit\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -2280,6 +2314,10 @@
           "Serilog.Sinks.File": {
             "target": "Package",
             "version": "[6.0.0, )"
+          },
+          "SharpGLTF.Core": {
+            "target": "Package",
+            "version": "[1.0.3, )"
           },
           "Wolvenkit.Core": {
             "target": "Package",

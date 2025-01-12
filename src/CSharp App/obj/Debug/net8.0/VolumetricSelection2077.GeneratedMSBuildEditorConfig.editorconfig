@@ -15,18 +15,18 @@ build_property.PlatformNeutralAssembly =
 build_property.EnforceExtendedAnalyzerRules = 
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = VolumetricSelection2077
-build_property.ProjectDir = D:\dev0\prjk\VolumetricSelection2077\Cyberpunk2077 Mods\CtrlADel\CSharp App\
+build_property.ProjectDir = D:\dev0\prjk\VolumetricSelection2077\Cyberpunk2077 Mods\CtrlADel\src\CSharp App\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 
-[D:/dev0/prjk/VolumetricSelection2077/Cyberpunk2077 Mods/CtrlADel/CSharp App/App.axaml]
+[D:/dev0/prjk/VolumetricSelection2077/Cyberpunk2077 Mods/CtrlADel/src/CSharp App/App.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 
-[D:/dev0/prjk/VolumetricSelection2077/Cyberpunk2077 Mods/CtrlADel/CSharp App/views/LogViewer.axaml]
+[D:/dev0/prjk/VolumetricSelection2077/Cyberpunk2077 Mods/CtrlADel/src/CSharp App/views/LogViewer.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 
-[D:/dev0/prjk/VolumetricSelection2077/Cyberpunk2077 Mods/CtrlADel/CSharp App/views/MainWindow.axaml]
+[D:/dev0/prjk/VolumetricSelection2077/Cyberpunk2077 Mods/CtrlADel/src/CSharp App/views/MainWindow.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml
 
-[D:/dev0/prjk/VolumetricSelection2077/Cyberpunk2077 Mods/CtrlADel/CSharp App/views/SettingsWindow.axaml]
+[D:/dev0/prjk/VolumetricSelection2077/Cyberpunk2077 Mods/CtrlADel/src/CSharp App/views/SettingsWindow.axaml]
 build_metadata.AdditionalFiles.SourceItemGroup = AvaloniaXaml

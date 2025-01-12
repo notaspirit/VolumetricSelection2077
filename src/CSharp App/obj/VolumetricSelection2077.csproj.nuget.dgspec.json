@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\dev0\\prjk\\VolumetricSelection2077\\Cyberpunk2077 Mods\\CtrlADel\\CSharp App\\VolumetricSelection2077.csproj": {}
+    "D:\\dev0\\prjk\\VolumetricSelection2077\\Cyberpunk2077 Mods\\CtrlADel\\src\\CSharp App\\VolumetricSelection2077.csproj": {}
   },
   "projects": {
-    "D:\\dev0\\prjk\\VolumetricSelection2077\\Cyberpunk2077 Mods\\CtrlADel\\CSharp App\\VolumetricSelection2077.csproj": {
+    "D:\\dev0\\prjk\\VolumetricSelection2077\\Cyberpunk2077 Mods\\CtrlADel\\src\\CSharp App\\VolumetricSelection2077.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\dev0\\prjk\\VolumetricSelection2077\\Cyberpunk2077 Mods\\CtrlADel\\CSharp App\\VolumetricSelection2077.csproj",
+        "projectUniqueName": "D:\\dev0\\prjk\\VolumetricSelection2077\\Cyberpunk2077 Mods\\CtrlADel\\src\\CSharp App\\VolumetricSelection2077.csproj",
         "projectName": "VolumetricSelection2077",
-        "projectPath": "D:\\dev0\\prjk\\VolumetricSelection2077\\Cyberpunk2077 Mods\\CtrlADel\\CSharp App\\VolumetricSelection2077.csproj",
+        "projectPath": "D:\\dev0\\prjk\\VolumetricSelection2077\\Cyberpunk2077 Mods\\CtrlADel\\src\\CSharp App\\VolumetricSelection2077.csproj",
         "packagesPath": "C:\\Users\\zweit\\.nuget\\packages\\",
-        "outputPath": "D:\\dev0\\prjk\\VolumetricSelection2077\\Cyberpunk2077 Mods\\CtrlADel\\CSharp App\\obj\\",
+        "outputPath": "D:\\dev0\\prjk\\VolumetricSelection2077\\Cyberpunk2077 Mods\\CtrlADel\\src\\CSharp App\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\zweit\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -82,6 +82,10 @@
             "Serilog.Sinks.File": {
               "target": "Package",
               "version": "[6.0.0, )"
+            },
+            "SharpGLTF.Core": {
+              "target": "Package",
+              "version": "[1.0.3, )"
             },
             "Wolvenkit.Core": {
               "target": "Package",

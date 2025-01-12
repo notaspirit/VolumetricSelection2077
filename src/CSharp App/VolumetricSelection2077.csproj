@@ -20,6 +20,7 @@
     <PackageReference Include="Serilog" Version="4.1.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+    <PackageReference Include="SharpGLTF.Core" Version="1.0.3" />
     <PackageReference Include="Wolvenkit.Core" Version="8.15.1" />
     <PackageReference Include="Wolvenkit.red4" Version="8.15.1" />
   </ItemGroup>

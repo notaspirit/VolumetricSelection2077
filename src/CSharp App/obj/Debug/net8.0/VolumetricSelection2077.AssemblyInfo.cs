@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("VolumetricSelection2077")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+11d58c6be7ac80001975d85bc3d28556bf9ba657")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+69e7969dc76dc43cc102ab382cfd46db21d450a7")]
 [assembly: System.Reflection.AssemblyProductAttribute("VolumetricSelection2077")]
 [assembly: System.Reflection.AssemblyTitleAttribute("VolumetricSelection2077")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

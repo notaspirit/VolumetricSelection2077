@@ -22,6 +22,9 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200" />
@@ -40,6 +43,9 @@
             <TextBlock Text="Save to archive mods" ToolTip.Tip="{Binding Descriptions.SaveToArchiveModsTooltip}" Grid.Row="8" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
             <TextBlock Text="Output Directory" ToolTip.Tip="{Binding Descriptions.OutputDirectoryTooltip}" Grid.Row="9" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
             <TextBlock Text="Wolvenkit CLI Path" ToolTip.Tip="{Binding Descriptions.WolvenkitCLIPathTooltip}" Grid.Row="10" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
+            <TextBlock Text="Wolvenkit Project Path" ToolTip.Tip="{Binding Descriptions.WolvenkitProjectPathTooltip}" Grid.Row="11" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
+            <TextBlock Text="Wolvenkit Refresh Delay" ToolTip.Tip="{Binding Descriptions.WolvenkitRefreshDelayTooltip}" Grid.Row="12" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
+            <TextBlock Text="Wolvenkit Timeout" ToolTip.Tip="{Binding Descriptions.WolvenkitRefreshDelayTooltip}" Grid.Row="13" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
             <!-- Second Row: Setting Control (e.g., ToggleSwitch) -->
             <TextBox x:Name="GameDirectoryTextBox" Text="{Binding Settings.GameDirectory}" Watermark="Path to game directory" Grid.Row="1" Grid.Column="1" Margin="5" />
             <ToggleSwitch x:Name="CacheToggleSwitch" IsChecked="{Binding Settings.CacheEnabled}" Grid.Row="2" Grid.Column="1" Margin="5" />
@@ -54,6 +60,9 @@
             <ToggleSwitch x:Name="SaveToArchiveModsToggleSwitch" IsChecked="{Binding Settings.SaveToArchiveMods}" Grid.Row="8" Grid.Column="1" Margin="5" />
             <TextBox x:Name="OutputDirectoryTextBox" Text="{Binding Settings.OutputDirectory}" Watermark="Path to custom output folder" Grid.Row="9" Grid.Column="1" Margin="5" />
             <TextBox x:Name="WolvenkitCLIPathTextBox" Text="{Binding Settings.WolvenkitCLIPath}" Watermark="Path to Wolvenkit CLI" Grid.Row="10" Grid.Column="1" Margin="5" />
+            <TextBox x:Name="WolvenkitProjectPathTextBox" Text="{Binding Settings.WolvenkitProjectPath}" Watermark="Path to Wolvenkit project" Grid.Row="11" Grid.Column="1" Margin="5" />
+            <TextBox x:Name="WolvenkitRefreshDelayTextBox" Text="{Binding Settings.WolvenkitRefreshDelay}, Converter={StaticResource IntToStringConverter}}" Watermark="Refresh delay in seconds" Grid.Row="12" Grid.Column="1" Margin="5" PreviewTextInput="WolvenkitTimeoutTextBox_PreviewTextInput"/>
+            <TextBox x:Name="WolvenkitTimeoutTextBox" Text="{Binding Settings.WolvenkitTimeout}, Converter={StaticResource IntToStringConverter}}" Watermark="Timeout in seconds" Grid.Row="13" Grid.Column="1" Margin="5" PreviewTextInput="WolvenkitTimeoutTextBox_PreviewTextInput"/>
             <!-- Alternatively, for a TextBox instead of a ToggleSwitch -->
             <!-- <TextBox Grid.Row="1" Grid.Column="1" Margin="5" /> -->
         </Grid>

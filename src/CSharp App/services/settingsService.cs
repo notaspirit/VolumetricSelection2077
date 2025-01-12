@@ -20,6 +20,9 @@ public class SettingsService
         OutputDirectory = "";
         OutputFilename = "";
         WolvenkitCLIPath = "";
+        WolvenkitAPIRequestInterval = 1000;
+        WolvenkitAPIRequestIntervalMilliSecondsTimeout = 1 * 1000 * 60;
+        WolvenkitProjectPath = "";
     }
 
     // Singleton instance
@@ -47,6 +50,9 @@ public class SettingsService
     public string OutputDirectory { get; set; }
     public string OutputFilename { get; set; }
     public string WolvenkitCLIPath { get; set; }
+    public int WolvenkitAPIRequestInterval { get; set; }
+    public int WolvenkitAPIRequestIntervalMilliSecondsTimeout { get; set; }
+    public string WolvenkitProjectPath { get; set; }
     // Methods for loading and saving settings
     public void LoadSettings()
     {
@@ -69,6 +75,8 @@ public class SettingsService
                     OutputDirectory = settings.OutputDirectory;
                     OutputFilename = settings.OutputFilename;
                     WolvenkitCLIPath = settings.WolvenkitCLIPath;
+                    WolvenkitAPIRequestInterval = settings.WolvenkitAPIRequestInterval;
+                    WolvenkitProjectPath = settings.WolvenkitProjectPath;
                 }
             }
             catch (Exception ex)

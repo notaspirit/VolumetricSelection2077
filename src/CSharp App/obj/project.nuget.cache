@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "JQmYU7prHHM=",
+  "dgSpecHash": "7NKlhtQL7aQ=",
   "success": true,
-  "projectFilePath": "D:\\dev0\\prjk\\VolumetricSelection2077\\Cyberpunk2077 Mods\\CtrlADel\\CSharp App\\VolumetricSelection2077.csproj",
+  "projectFilePath": "D:\\dev0\\prjk\\VolumetricSelection2077\\Cyberpunk2077 Mods\\CtrlADel\\src\\CSharp App\\VolumetricSelection2077.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\zweit\\.nuget\\packages\\avalonia\\11.1.0\\avalonia.11.1.0.nupkg.sha512",
     "C:\\Users\\zweit\\.nuget\\packages\\avalonia.angle.windows.natives\\2.1.22045.20230930\\avalonia.angle.windows.natives.2.1.22045.20230930.nupkg.sha512",
@@ -37,6 +37,7 @@
     "C:\\Users\\zweit\\.nuget\\packages\\serilog\\4.1.0\\serilog.4.1.0.nupkg.sha512",
     "C:\\Users\\zweit\\.nuget\\packages\\serilog.sinks.console\\6.0.0\\serilog.sinks.console.6.0.0.nupkg.sha512",
     "C:\\Users\\zweit\\.nuget\\packages\\serilog.sinks.file\\6.0.0\\serilog.sinks.file.6.0.0.nupkg.sha512",
+    "C:\\Users\\zweit\\.nuget\\packages\\sharpgltf.core\\1.0.3\\sharpgltf.core.1.0.3.nupkg.sha512",
     "C:\\Users\\zweit\\.nuget\\packages\\skiasharp\\2.88.8\\skiasharp.2.88.8.nupkg.sha512",
     "C:\\Users\\zweit\\.nuget\\packages\\skiasharp.nativeassets.linux\\2.88.8\\skiasharp.nativeassets.linux.2.88.8.nupkg.sha512",
     "C:\\Users\\zweit\\.nuget\\packages\\skiasharp.nativeassets.macos\\2.88.8\\skiasharp.nativeassets.macos.2.88.8.nupkg.sha512",

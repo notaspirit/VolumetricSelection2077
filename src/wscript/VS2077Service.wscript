@@ -324,11 +324,13 @@ function main () {
                     changedStatus = true;
                     request.isFulfilled = true;
                     request.isProcessed = true;
+                    request.outPath = "localhost";
                     break;
                 case "ping":
                     debugLog("Found " + JSON.stringify(request), "info");
                     request.isFulfilled = true;
                     request.isProcessed = true;
+                    request.outPath = "localhost";
                     break;
                 default:
                     Logger.Warning("Unknown request type: " + request.requestType);

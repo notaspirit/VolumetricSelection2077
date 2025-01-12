@@ -18,6 +18,7 @@
           "Serilog": "4.1.0",
           "Serilog.Sinks.Console": "6.0.0",
           "Serilog.Sinks.File": "6.0.0",
+          "SharpGLTF.Core": "1.0.3",
           "WolvenKit.Core": "8.15.1",
           "WolvenKit.RED4": "8.15.1"
         },
@@ -529,6 +530,14 @@
           }
         }
       },
+      "SharpGLTF.Core/1.0.3": {
+        "runtime": {
+          "lib/net8.0/SharpGLTF.Core.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
       "SkiaSharp/2.88.8": {
         "dependencies": {
           "SkiaSharp.NativeAssets.Win32": "2.88.8",
@@ -901,6 +910,13 @@
       "sha512": "sha512-lxjg89Y8gJMmFxVkbZ+qDgjl+T4yC5F7WSLTvA+5q0R04tfKVLRL/EHpYoJ/MEQd2EeCKDuylBIVnAYMotmh2A==",
       "path": "serilog.sinks.file/6.0.0",
       "hashPath": "serilog.sinks.file.6.0.0.nupkg.sha512"
+    },
+    "SharpGLTF.Core/1.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-su+Flcg2g6GgOIgulRGBDMHA6zY5NBx6NYH1Ayd6iBbSbwspHsN2VQgZfANgJy92cBf7qtpjC0uMiShbO+TEEg==",
+      "path": "sharpgltf.core/1.0.3",
+      "hashPath": "sharpgltf.core.1.0.3.nupkg.sha512"
     },
     "SkiaSharp/2.88.8": {
       "type": "package",
