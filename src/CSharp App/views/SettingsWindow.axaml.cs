@@ -1,46 +1,74 @@
 using Avalonia.Controls;
 using VolumetricSelection2077.ViewModels;
 using System;
+using VolumetricSelection2077.Services;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using Avalonia.VisualTree;
 using Avalonia.Input;
 
-
-namespace VolumetricSelection2077;
-
-public partial class SettingsWindow : Window
+namespace VolumetricSelection2077
 {
-    public SettingsWindow()
+    public partial class SettingsWindow : Window
     {
-        InitializeComponent();
-        DataContext = new SettingsViewModel();
-        this.Closed += new EventHandler(OnSettingsWindowClosed);
-    }
-    private void OnSettingsWindowClosed(object? sender, EventArgs e)
-    {
-        var viewModel = DataContext as SettingsViewModel;
-        viewModel?.Settings.SaveSettings(); // Save settings when window closes
-    }
 
-    private void WolvenkitRefreshDelayTextBox_PreviewTextInput(object sender, TextInputEventArgs e)
-    {
-        string? text = e.Text;
-        if (text != null)
+        private SettingsService _settings;
+        public SettingsWindow()
         {
-            if (!char.IsDigit(text, text.Length - 1))
+            _settings = SettingsService.Instance;
+            InitializeComponent();
+            DataContext = new SettingsViewModel();
+            this.Closed += new EventHandler(OnSettingsWindowClosed);
+        }
+        private void OnSettingsWindowClosed(object? sender, EventArgs e)
+        {
+            var viewModel = DataContext as SettingsViewModel;
+            viewModel?.Settings.SaveSettings(); // Save settings when window closes
+        }
+        public string wkitAPIRefreshIntervalString
+        {
+            get => _settings.WolvenkitAPIRequestInterval.ToString();
+            set
             {
-                e.Handled = true;
+                if (int.TryParse(value, out int interval) && interval >= 0)
+                {
+                    _settings.WolvenkitAPIRequestInterval = interval;
+                    OnPropertyChanged();
+                }
             }
         }
-    }
 
-    private void WolvenkitTimeoutTextBox_PreviewTextInput(object sender, TextInputEventArgs e)
-    {
-        string? text = e.Text;
-        if (text != null)
+        public string wkitAPITimeoutString
         {
-            if (!char.IsDigit(text, text.Length - 1))
+            get => _settings.WolvenkitAPIRequestTimeout.ToString();
+            set
             {
-                e.Handled = true;
+                if (int.TryParse(value, out int Rtimeout) && Rtimeout >= 0)
+                {
+                    _settings.WolvenkitAPIRequestTimeout = Rtimeout;
+                    OnPropertyChanged();
+                }
             }
         }
-    }
+
+        public string wkitAPIInactivityTimeout
+        {
+            get => _settings.WolvenkitAPIInactivityTimeout.ToString();
+            set
+            {
+                if (int.TryParse(value, out int Itimeout) && Itimeout >= 0)
+                {
+                    _settings.WolvenkitAPIInactivityTimeout = Itimeout;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public new event PropertyChangedEventHandler? PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    };
 }

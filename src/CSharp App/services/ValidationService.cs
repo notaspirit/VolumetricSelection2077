@@ -222,12 +222,10 @@ namespace VolumetricSelection2077.Services
         }
         public static bool ValidateInput(string gamePath, string outputFilename)
         {
-            Logger.Info("Validating input...");
             var syncValidations = ValidateGamePath(gamePath) && 
                                 ValidateOutputFilename(outputFilename) && 
                                 ValidateSelectionFile(gamePath) &&
-                                ValidateOutputDirectory(_settingsService.OutputDirectory) &&
-                                ValidateCacheDirectory(_settingsService.CacheDirectory);
+                                ValidateOutputDirectory(_settingsService.OutputDirectory);
                                 
             return syncValidations;
         }

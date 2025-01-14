@@ -95,7 +95,7 @@ namespace VolumetricSelection2077.Services
                     ["outPath"] = ""
                 };
             }
-            else if (requestType == WkitAPITypes.Types.Ping)
+            else if (requestType == WkitAPITypes.Types.Ping || requestType == WkitAPITypes.Types.RefreshSettings)
             {
                 requests[requestTime] = new JsonObject
                 {
@@ -122,24 +122,25 @@ namespace VolumetricSelection2077.Services
                     ["outPath"] = ""
                 };
             }
-            File.WriteAllText(commsFile, JsonSerializer.Serialize(apiFileContent));
+            string serializedData = JsonSerializer.Serialize(apiFileContent);
+            File.WriteAllText(commsFile, serializedData);
 
             bool isProcessed = false;
             bool isFulfilled = false;
             int retries = 0;
-            int requestTimeOutCycles = _settings.WolvenkitAPIRequestIntervalMilliSecondsTimeout / _settings.WolvenkitAPIRequestInterval;
+            int requestTimeOutCycles = _settings.WolvenkitAPIRequestTimeout / _settings.WolvenkitAPIRequestInterval;
             while (!isFulfilled)
             {
                 await Task.Delay(_settings.WolvenkitAPIRequestInterval);
                 apiFileContent = JsonSerializer.Deserialize<JsonObject>(File.ReadAllText(commsFile));
-                bool? tempIsFullfilled = apiFileContent?["requests"]?[requestTime]?["isFulfilled"]?.GetValue<bool>();
-                bool? TempIsProcessed = apiFileContent?["requests"]?[requestTime]?["isProcessed"]?.GetValue<bool>();
+                bool tempIsFullfilled = apiFileContent?["requests"]?[requestTime]?["isFulfilled"]?.GetValue<bool>() ?? false;
+                bool tempIsProcessed = apiFileContent?["requests"]?[requestTime]?["isProcessed"]?.GetValue<bool>() ?? false;
 
-                if (isProcessed)
+                if (tempIsProcessed)
                 {
                     isProcessed = true;
                 }
-                if (isFulfilled)
+                if (tempIsFullfilled)
                 {
                     isFulfilled = true;
                 }
@@ -182,13 +183,13 @@ namespace VolumetricSelection2077.Services
                 return (false, "Failed to get Wolvenkit API script version.", string.Empty);
             }
             var (success, error, outPath) = await makeRequst(WkitAPITypes.Types.Ping, null, null, null);
-            if (success && outPath == "localhost" )
+            if (success)
             {
                 return (true, string.Empty, version);
             } 
             else
             {
-                return (false, "Failed to ping Wolvenkit API script.", string.Empty);
+                return (false, "Failed to ping Wolvenkit API script." + error, string.Empty);
             }
         }
 
@@ -199,7 +200,8 @@ namespace VolumetricSelection2077.Services
             {
                 return (false, error, null);
             }
-            JsonObject? fileContent = JsonSerializer.Deserialize<JsonObject>(File.ReadAllText(outPath));
+            string filepath = _settings.WolvenkitProjectPath + "/source/raw/" + outPath;
+            JsonObject? fileContent = JsonSerializer.Deserialize<JsonObject>(File.ReadAllText(filepath));
             return (true, string.Empty, fileContent);
         }
 
@@ -215,7 +217,8 @@ namespace VolumetricSelection2077.Services
             {
                 return (false, error, null);
             }
-            ModelRoot model = ModelRoot.Load(outPath);
+            string filepath = _settings.WolvenkitProjectPath + "/source/raw/" + outPath;
+            ModelRoot model = ModelRoot.Load(filepath);
             return (true, string.Empty, model);
         }
 
@@ -226,12 +229,30 @@ namespace VolumetricSelection2077.Services
             {
                 return (false, error, null);
             }
-            JsonObject? fileContent = JsonSerializer.Deserialize<JsonObject>(File.ReadAllText(outPath));
+            string filepath = Path.Combine(_settings.WolvenkitProjectPath + "/source/raw/" + outPath);
+            JsonObject? fileContent = JsonSerializer.Deserialize<JsonObject>(File.ReadAllText(filepath));
             return (true, string.Empty, fileContent);
         }
 
         public async Task<(bool, string)> RefreshSettings()
         {
+            string commsFile = _settings.WolvenkitProjectPath + "/source/raw/VS2077/requests.json";
+            if (!File.Exists(commsFile))
+            {
+                return (false, $"Failed to find {commsFile}. Unable to make request to Wolvenkit API.");
+            }
+            string jsonString = File.ReadAllText(commsFile);
+            JsonObject? apiFileContent = JsonSerializer.Deserialize<JsonObject>(jsonString);
+
+            bool apiFileContentExists = apiFileContent != null;
+            bool refreshDelayExists = apiFileContent?["settings"]?["refreshDelay"] != null;
+            bool maxIdleCyclesExists = apiFileContent?["settings"]?["maxIdleCycles"] != null;
+
+            if (refreshDelayExists && maxIdleCyclesExists && apiFileContentExists)
+            {
+                apiFileContent["settings"]["refreshDelay"] = _settings.WolvenkitAPIRequestInterval;
+                apiFileContent["settings"]["maxIdleCycles"] = _settings.WolvenkitAPIInactivityTimeout;
+            }
             var (success, error, outPath) = await makeRequst(WkitAPITypes.Types.RefreshSettings, null, null, null);
             if (!success || outPath != "localhost")
             {

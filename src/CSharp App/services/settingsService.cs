@@ -21,7 +21,8 @@ public class SettingsService
         OutputFilename = "";
         WolvenkitCLIPath = "";
         WolvenkitAPIRequestInterval = 1000;
-        WolvenkitAPIRequestIntervalMilliSecondsTimeout = 1 * 1000 * 60;
+        WolvenkitAPIRequestTimeout = 1 * 1000 * 60;
+        WolvenkitAPIInactivityTimeout = 5 * 1000 * 60;
         WolvenkitProjectPath = "";
     }
 
@@ -51,8 +52,10 @@ public class SettingsService
     public string OutputFilename { get; set; }
     public string WolvenkitCLIPath { get; set; }
     public int WolvenkitAPIRequestInterval { get; set; }
-    public int WolvenkitAPIRequestIntervalMilliSecondsTimeout { get; set; }
+    public int WolvenkitAPIRequestTimeout { get; set; }
     public string WolvenkitProjectPath { get; set; }
+
+    public int WolvenkitAPIInactivityTimeout { get; set; }
     // Methods for loading and saving settings
     public void LoadSettings()
     {
