@@ -55,7 +55,7 @@ namespace VolumetricSelection2077.Services
             string commsFile = _settings.WolvenkitProjectPath + "/source/raw/VS2077/requests.json";
             if (!File.Exists(commsFile))
             {
-                return (false, $"Failed to find {commsFile}. Unable to make request to Wolvenkit API.", string.Empty);
+                return (false, $"Failed to find {commsFile}. Unable to make request to VS2077 WScript.", string.Empty);
             }
 
             string jsonString = File.ReadAllText(commsFile);
@@ -63,7 +63,7 @@ namespace VolumetricSelection2077.Services
             string requestTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
             if (apiFileContent == null)
             {
-                return (false, "Failed to parse requests.json. Unable to make request to Wolvenkit API.", string.Empty);
+                return (false, "Failed to parse requests.json. Unable to make request to VS2077 WScript.", string.Empty);
             }
 
             if (apiFileContent["requests"] == null)
@@ -148,7 +148,7 @@ namespace VolumetricSelection2077.Services
                 if (retries > 3 && isProcessed == false)
                 {
                     cleanRequest(requestTime);
-                    return (false, $"Failed to get response from Wolvenkit API script. Make sure that the script is running in the expected project.", string.Empty);
+                    return (false, $"Failed to get response from VS2077 WScript. Make sure that the script is running in the expected project.", string.Empty);
                 }
                 if (retries > requestTimeOutCycles  && isProcessed == true)
                 {
@@ -161,7 +161,7 @@ namespace VolumetricSelection2077.Services
             if (string.IsNullOrEmpty(outPath))
             {
                 cleanRequest(requestTime);
-                return (false, "Failed to get output path from Wolvenkit API script.", string.Empty);
+                return (false, "Failed to get output path from VS2077 WScript.", string.Empty);
             }
             cleanRequest(requestTime);
             return (true, string.Empty, outPath);
@@ -172,7 +172,7 @@ namespace VolumetricSelection2077.Services
             string commsFile = _settings.WolvenkitProjectPath + "/source/raw/VS2077/requests.json";
             if (!File.Exists(commsFile))
             {
-                return (false, $"Failed to find {commsFile}. Unable to get Wolvenkit API script version. Make sure that the script is running in the expected project.", string.Empty);
+                return (false, $"Failed to find {commsFile}. Unable to get VS2077 WScript version. Make sure that the script is running in the expected project.", string.Empty);
             }
 
             string jsonString = File.ReadAllText(commsFile);
@@ -180,7 +180,7 @@ namespace VolumetricSelection2077.Services
             string? version = apiFileContent?["settings"]?["version"]?.GetValue<string>();
             if (string.IsNullOrEmpty(version))
             {
-                return (false, "Failed to get Wolvenkit API script version.", string.Empty);
+                return (false, "Failed to get VS2077 WScript version.", string.Empty);
             }
             var (success, error, outPath) = await makeRequst(WkitAPITypes.Types.Ping, null, null, null);
             if (success)
@@ -189,7 +189,7 @@ namespace VolumetricSelection2077.Services
             } 
             else
             {
-                return (false, "Failed to ping Wolvenkit API script." + error, string.Empty);
+                return (false, "Failed to ping VS2077 WScript." + error, string.Empty);
             }
         }
 
@@ -239,7 +239,7 @@ namespace VolumetricSelection2077.Services
             string commsFile = _settings.WolvenkitProjectPath + "/source/raw/VS2077/requests.json";
             if (!File.Exists(commsFile))
             {
-                return (false, $"Failed to find {commsFile}. Unable to make request to Wolvenkit API.");
+                return (false, $"Failed to find {commsFile}. Unable to make request to VS2077 WScript.");
             }
             string jsonString = File.ReadAllText(commsFile);
             JsonObject? apiFileContent = JsonSerializer.Deserialize<JsonObject>(jsonString);

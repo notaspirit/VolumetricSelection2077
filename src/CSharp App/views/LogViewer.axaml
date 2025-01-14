@@ -8,7 +8,8 @@
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
                     <SelectableTextBlock Text="{Binding Text}" 
-                                       FontFamily="Cascadia Code, Consolas, Courier New, Monospace">
+                                       FontFamily="Cascadia Code, Consolas, Courier New, Monospace"
+                                       TextWrapping="Wrap">
                         <SelectableTextBlock.Foreground>
                             <Binding Path="Level" Converter="{StaticResource LogLevelColorConverter}"/>
                         </SelectableTextBlock.Foreground>

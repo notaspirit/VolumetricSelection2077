@@ -130,21 +130,21 @@ public class ProcessService
         if (!success || string.IsNullOrEmpty(version))
         {
             stopwatch.Stop();
-            Logger.Error($"Failed to get WolvenkitAPIScript version");
+            Logger.Error($"Failed to get VS2077 WScript version");
             Logger.Error($"Process failed after {FormatElapsedTime(stopwatch.Elapsed)}");
             return (false, error);
         } else {
-            Logger.Success($"WolvenkitAPIScript Version: {version}");
+            Logger.Success($"VS2077 WScript Version: {version}");
         }
         var (success5, error5) = await _wolvenkitAPIService.RefreshSettings();
         if (!success5)
         {
             stopwatch.Stop();
-            Logger.Error($"Failed to set WolvenkitAPIScript settings: {error5}");
+            Logger.Error($"Failed to set VS2077 WScript settings: {error5}");
             Logger.Error($"Process failed after {FormatElapsedTime(stopwatch.Elapsed)}");
             return (false, error);
         } else {
-            Logger.Success($"WolvenkitAPIScript settings set successfully");
+            Logger.Success($"VS2077 WScript settings set successfully");
         }
         
         stopwatch.Stop();
