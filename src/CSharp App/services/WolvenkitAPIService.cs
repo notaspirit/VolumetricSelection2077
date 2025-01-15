@@ -193,15 +193,15 @@ namespace VolumetricSelection2077.Services
             }
         }
 
-        public async Task<(bool, string, JsonObject?)> GetFileAsJson(string filePath)
+        public async Task<(bool, string, string?)> GetFileAsJson(string filePath)
         {
             var (success, error, outPath) = await makeRequst(WkitAPITypes.Types.Json, filePath, null, null);
             if (!success)
             {
                 return (false, error, null);
             }
-            string filepath = _settings.WolvenkitProjectPath + "/source/raw/" + outPath;
-            JsonObject? fileContent = JsonSerializer.Deserialize<JsonObject>(File.ReadAllText(filepath));
+            string filepath = Path.Combine(_settings.WolvenkitProjectPath, "source", "raw", outPath);
+            string fileContent = File.ReadAllText(filepath);
             return (true, string.Empty, fileContent);
         }
 
@@ -217,7 +217,7 @@ namespace VolumetricSelection2077.Services
             {
                 return (false, error, null);
             }
-            string filepath = _settings.WolvenkitProjectPath + "/source/raw/" + outPath;
+            string filepath = Path.Combine(_settings.WolvenkitProjectPath, "source", "raw", outPath);
             ModelRoot model = ModelRoot.Load(filepath);
             return (true, string.Empty, model);
         }
