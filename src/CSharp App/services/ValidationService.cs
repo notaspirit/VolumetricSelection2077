@@ -6,6 +6,7 @@ using VolumetricSelection2077.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace VolumetricSelection2077.Services
 {
@@ -98,73 +99,37 @@ namespace VolumetricSelection2077.Services
                 Logger.Error("Selection file not found");
                 return false;
             }
+            string CETOutputFileString = File.ReadAllText(selectionFilePath);
+            SelectionInput? CETOutputFile = JsonConvert.DeserializeObject<SelectionInput>(CETOutputFileString);
 
-            try
+            if (CETOutputFile == null)
             {
-                string jsonString = File.ReadAllText(selectionFilePath);
-                var options = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                };
-
-                // The JSON is now an array with two elements
-                var jsonDoc = JsonDocument.Parse(jsonString);
-                var root = jsonDoc.RootElement;
-
-                if (!root.EnumerateArray().Any())
-                {
-                    Logger.Error("Selection file is empty");
-                    return false;
-                }
-
-                // First element is the box
-                var boxElement = root[0];
-                // Second element is the sectors array
-                var sectorsElement = root[1];
-
-                // Validate box
-                if (!boxElement.TryGetProperty("vertices", out var vertices) || 
-                    vertices.GetArrayLength() != 8)
-                {
-                    Logger.Error("Selection file has invalid vertices");
-                    return false;
-                }
-
-                // Validate sectors
-                var sectors = sectorsElement.EnumerateArray()
-                    .Select(s => s.GetString())
-                    .Where(s => !string.IsNullOrEmpty(s))
-                    .ToList();
-
-                if (!sectors.Any())
-                {
-                    Logger.Error("Selection file has no sectors");
-                    return false;
-                }
-
-                // Validate sector file extensions
-                foreach (var sector in sectors)
-                {
-                    if (sector == null)
-                    {
-                        Logger.Error("Selection file has null sector");
-                        return false;
-                    }
-                    if (!sector.EndsWith(".streamingsector", StringComparison.OrdinalIgnoreCase))
-                    {
-                        Logger.Error($"Invalid sector file extension: {sector}");
-                        return false;
-                    }
-                }
-
-                Logger.Success("Selection file is valid");
-                return true;
-            }
-            catch (JsonException ex)
-            {
-                Logger.Error($"Invalid JSON format: {ex.Message}");
+                Logger.Error("Failed to parse selection file");
                 return false;
             }
+
+            if (CETOutputFile.Box.Vertices.Length != 8)
+            {
+                Logger.Error("Selection box count is invalid");
+                return false;
+            }
+
+            if (CETOutputFile.Sectors.Length == 0)
+            {
+                Logger.Error("No sectors selected");
+                return false;
+            }
+            
+            foreach (string sector in CETOutputFile.Sectors)
+            {
+                if (string.IsNullOrWhiteSpace(sector) || !sector.EndsWith(".streamingsector"))
+                {
+                    Logger.Error("Sector name is invalid");
+                    return false;
+                }
+            }
+            Logger.Success("Selection file is valid");
+            return true;
         }
         public static async Task<bool> ValidateWolvenkitVersion()
         {

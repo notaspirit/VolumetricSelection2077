@@ -118,8 +118,8 @@ function RHTScan(box)
         end
     end
     local outputTable = {}
-    table.insert(outputTable, box:toTable())
-    table.insert(outputTable, inRangeSector)
+    outputTable["box"] = box:toTable()
+    outputTable["sectors"] = inRangeSector
     if saveSelectionOutput(jsonUtils.TableToJSON(outputTable)) then
         RHTResult.text = "Saved "..#inRangeSector.." sectors"
         RHTResult.type = "success"

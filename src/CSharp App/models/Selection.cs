@@ -1,24 +1,35 @@
-using System.Collections.Generic;
+using BulletSharp.Math;
+using System.Text.Json.Serialization;
 
-public class Vector3
+namespace VolumetricSelection2077.Models
 {
-    public float X { get; set; }
-    public float Y { get; set; }
-    public float Z { get; set; }
-}
+    public class SelectionBox
+    {
+        [JsonPropertyName("origin")]
+        public Vector3 Origin { get; set; }
 
-public class SelectionBox
-{
-    public Vector3 Origin { get; set; } = new();
-    public Vector3 Max { get; set; } = new();
-    public Vector3 Min { get; set; } = new();
-    public Vector3 Scale { get; set; } = new();
-    public Vector3 Rotation { get; set; } = new();
-    public List<Vector3> Vertices { get; set; } = new();
-}
+        [JsonPropertyName("max")]
+        public Vector3 Max { get; set; }
 
-public class Selection
-{
-    public SelectionBox Box { get; set; } = new();
-    public List<string> Sectors { get; set; } = new();
+        [JsonPropertyName("min")]
+        public Vector3 Min { get; set; }
+
+        [JsonPropertyName("scale")]
+        public Vector3 Scale { get; set; }
+
+        [JsonPropertyName("rotation")]
+        public Vector3 Rotation { get; set; }
+
+        [JsonPropertyName("vertices")]
+        public required Vector3[] Vertices { get; set; }
+    }
+
+    public class SelectionInput
+    {
+        [JsonPropertyName("box")]
+        public required SelectionBox Box { get; set; }
+
+        [JsonPropertyName("sectors")]
+        public required string[] Sectors { get; set; }
+    }
 }

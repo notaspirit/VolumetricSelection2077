@@ -3,24 +3,19 @@ using System;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.Json;
-using System.Linq;
+using VolumetricSelection2077.Models;
+using VolumetricSelection2077.JsonParsers;
+using Newtonsoft.Json;
 
 namespace VolumetricSelection2077.Services;
 
 public class ProcessService
 {
-    private readonly GameFileService _gameFileService;
-    private readonly CacheService _cacheService;
     private readonly SettingsService _settings;
-    private readonly WolvenkitCLIService _wolvenkitCLIService;
     private readonly WolvenkitAPIService _wolvenkitAPIService;
     public ProcessService()
     {
-        _gameFileService = new GameFileService();
-        _cacheService = CacheService.Instance;
         _settings = SettingsService.Instance;
-        _wolvenkitCLIService = new WolvenkitCLIService();
         _wolvenkitAPIService = new WolvenkitAPIService();
     }
 
@@ -43,76 +38,32 @@ public class ProcessService
         
         return string.Join(", ", parts);
     }
-    /*
-    public async Task<(bool success, string error)> Process()
+
+    private (bool success, string error, AxlRemovalSector? result) ProcessStreamingsector(AbbrSector sector, string sectorPath)
     {
-        var stopwatch = Stopwatch.StartNew();
+        Logger.Info("Starting processing streaming sector");
+        int meshCount = 0;
+        List<string> meshTypes = new List<string>();
         
-        try
+        foreach (var nodeDataEntry in sector.NodeData)
         {
-            Logger.Info("Starting process...");
-            
-            if (!await ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename))
+            AbbrStreamingSectorNodesEntry nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
+            Logger.Info(nodeEntry.Type);
+            if (nodeEntry.Type.Contains("Mesh"))
             {
-                stopwatch.Stop();
-                Logger.Info($"Process failed after {FormatElapsedTime(stopwatch.Elapsed)}");
-                return (false, "Validation failed");
+                Logger.Info(nodeEntry.MeshDepotPath ?? "No mesh path");
+                meshCount++;
+                if (!meshTypes.Contains(nodeEntry.Type))
+                {
+                    meshTypes.Add(nodeEntry.Type);
+                }
             }
-            
-            Logger.Info("Checking for filemap...");
-            var (success, error) = await _gameFileService.buildFileMap();
-            
-            stopwatch.Stop();
-            var elapsed = stopwatch.Elapsed;
-
-            
-            if (!success)
-            {
-               Logger.Info($"Process failed after {FormatElapsedTime(elapsed)}");
-               return (false, error);
-            }
-            
-            Logger.Info("Getting selection...");
-            // _gameFileService.GetFiles();
-            string selectionFilePath = Path.Combine(_settings.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "VolumetricSelection2077", "data", "selection.json");
-            string jsonString = File.ReadAllText(selectionFilePath);
-            var jsonDoc = JsonDocument.Parse(jsonString);
-            var root = jsonDoc.RootElement;
-            var sectorsElement = root[1];
-            
-            var sectors = sectorsElement.EnumerateArray()
-                .Select(s => s.GetString()?.Trim())
-                .Where(s => !string.IsNullOrEmpty(s))
-                .Select(s => s!)  // Add this line to convert List<string?> to List<string>
-                .ToList();
-            Logger.Info($"Found {sectors.Count} sectors");
-            Logger.Info("Getting sectors...");
-            var (success3, error3, files3) = await _gameFileService.GetBulkMPackFiles(sectors);
-            Logger.Info("Done!");
-            /*
-            string testFilePath = @"base\worlds\03_night_city\sectors\_generated\collisions\03_night_city.geometry_cache";
-            var (WKsuccess, WKerror, WKoutputCR2WFile) = await _gameFileService.GetCR2WFile(testFilePath);
-            if (!WKsuccess || WKoutputCR2WFile == null || !string.IsNullOrEmpty(WKerror))
-            {
-                Logger.Error($"Failed to extract CR2W file: {WKerror}");
-                return (false, WKerror);
-            }
-            Logger.Info($"Successfully extracted CR2W file: {testFilePath}");
-
-            Logger.Success($"Process completed in {FormatElapsedTime(elapsed)}");
-
-            return (true, string.Empty);
-            
         }
-        catch (Exception ex)
-        {
-            stopwatch.Stop();
-            Logger.Error($"Process failed after {FormatElapsedTime(stopwatch.Elapsed)}");
-            return (false, ex.Message);
-        }
+        Logger.Info($"Found {meshCount.ToString()} in {sectorPath}");
+        Logger.Info($"Avaliable mesh types: {string.Join(", ", meshTypes)}");
         
+        return (true, "", null);
     }
-    */
 
     public async Task<(bool success, string error)> Process()
     {
@@ -145,6 +96,45 @@ public class ProcessService
             return (false, error);
         } else {
             Logger.Success($"VS2077 WScript settings set successfully");
+        }
+
+        Logger.Info("Starting Process...");
+        
+        string CETOuputFilepath = Path.Combine(_settings.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "VolumetricSelection2077", "data", "selection.json");
+        string CETOutputFileString = File.ReadAllText(CETOuputFilepath);
+        SelectionInput? CETOutputFile = JsonConvert.DeserializeObject<SelectionInput>(CETOutputFileString);
+
+        if (CETOutputFile == null)
+        {
+            stopwatch.Stop();
+            Logger.Error("Failed to parse CET output file");
+            Logger.Error($"Process failed after {FormatElapsedTime(stopwatch.Elapsed)}");
+            return (false, "Failed to parse CET output file");
+        }
+
+        List<string> testSectors = new List<string>();
+        testSectors.Add("base\\worlds\\03_night_city\\_compiled\\default\\exterior_-6_-4_0_2.streamingsector");
+        
+        foreach (string streamingSectorName in testSectors)
+        {
+            var (successGET, errrorGET, stringGET) = await _wolvenkitAPIService.GetFileAsJson(streamingSectorName);
+            if (!successGET || !string.IsNullOrEmpty(errrorGET) || string.IsNullOrEmpty(stringGET))
+            {
+                Logger.Error($"Failed to get streamingsector {streamingSectorName}, error: {errrorGET}");
+                continue;
+            }
+            
+            // DebugService.ChildValueMeshPathDebug(stringGET);
+            
+            AbbrSector? sectorDeserialized = AbbrSectorParser.Deserialize(stringGET);
+            if (sectorDeserialized == null)
+            {
+                Logger.Error($"Failed to deserialize streamingsector {streamingSectorName}");
+                continue;
+            }
+            
+            var (succsessProc, errorProc, AxlRemovalSector) = ProcessStreamingsector(sectorDeserialized, streamingSectorName);
+            
         }
         
         stopwatch.Stop();
