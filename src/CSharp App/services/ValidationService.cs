@@ -1,11 +1,8 @@
 using System.Text.RegularExpressions;
 using System.IO;
 using System;
-using System.Text.Json;
 using VolumetricSelection2077.Models;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Linq;
 using Newtonsoft.Json;
 
 namespace VolumetricSelection2077.Services
@@ -131,36 +128,6 @@ namespace VolumetricSelection2077.Services
             Logger.Success("Selection file is valid");
             return true;
         }
-        public static async Task<bool> ValidateWolvenkitVersion()
-        {
-            var wolvenkitCLI = new WolvenkitCLIService();
-            var version = await wolvenkitCLI.GetVersionAsync();
-            if (string.IsNullOrEmpty(version))
-            {
-                return false;
-            }
-            Logger.Info($"Wolvenkit version: {version}");
-            // Extract version number (everything before -nightly if it exists)
-            var versionString = version.Split('-')[0];
-            
-            // Parse version
-            if (!Version.TryParse(versionString, out Version? currentVersion))
-            {
-                Logger.Error($"Failed to parse WolvenKit version: {versionString}");
-                return false;
-            }
-
-            var minimumVersion = new Version(8, 15, 0);
-            if (currentVersion < minimumVersion)
-            {
-                Logger.Error($"WolvenKit version {versionString} is below minimum required version {minimumVersion}");
-                return false;
-            }
-
-            Logger.Success($"WolvenKit version {versionString} meets minimum requirement {minimumVersion}");
-            return true;
-        }
-
         public static bool ValidateOutputDirectory(string outputDirectory)
         {
             if (string.IsNullOrWhiteSpace(outputDirectory))
