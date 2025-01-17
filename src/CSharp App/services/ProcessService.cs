@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.IO;
 using VolumetricSelection2077.Models;
-using VolumetricSelection2077.JsonParsers;
+using VolumetricSelection2077.Parsers;
 using Newtonsoft.Json;
 
 namespace VolumetricSelection2077.Services;
@@ -84,9 +84,9 @@ public class ProcessService
             Logger.Error($"Failed to get VS2077 WScript version");
             Logger.Error($"Process failed after {FormatElapsedTime(stopwatch.Elapsed)}");
             return (false, error);
-        } else {
-            Logger.Success($"VS2077 WScript Version: {version}");
         }
+        Logger.Success($"VS2077 WScript Version: {version}");
+        
         var (success5, error5) = await _wolvenkitAPIService.RefreshSettings();
         if (!success5)
         {
@@ -94,9 +94,9 @@ public class ProcessService
             Logger.Error($"Failed to set VS2077 WScript settings: {error5}");
             Logger.Error($"Process failed after {FormatElapsedTime(stopwatch.Elapsed)}");
             return (false, error);
-        } else {
-            Logger.Success($"VS2077 WScript settings set successfully");
         }
+        Logger.Success($"VS2077 WScript settings set successfully");
+        
 
         Logger.Info("Starting Process...");
         
@@ -112,6 +112,17 @@ public class ProcessService
             return (false, "Failed to parse CET output file");
         }
 
+        var (successGLB, errorGLB, testGLB) = await _wolvenkitAPIService.GetFileAsGlb(
+            "ep1\\worlds\\03_night_city\\sectors\\_external\\proxy\\2939601539\\mon_ave_scaffolding_f.mesh");
+        if (testGLB == null)
+        {
+            stopwatch.Stop();
+            Logger.Error($"Failed to get test GLB file");
+            Logger.Error($"Process failed after {FormatElapsedTime(stopwatch.Elapsed)}");
+            return (false, "Failed to get test GLB file");
+        }
+        var parsedGlb = AbbrMeshParser.ParseFromGlb(testGLB);
+        /*
         List<string> testSectors = new List<string>();
         testSectors.Add("base\\worlds\\03_night_city\\_compiled\\default\\exterior_-6_-4_0_2.streamingsector");
         
@@ -124,8 +135,6 @@ public class ProcessService
                 continue;
             }
             
-            // DebugService.ChildValueMeshPathDebug(stringGET);
-            
             AbbrSector? sectorDeserialized = AbbrSectorParser.Deserialize(stringGET);
             if (sectorDeserialized == null)
             {
@@ -136,7 +145,7 @@ public class ProcessService
             var (succsessProc, errorProc, AxlRemovalSector) = ProcessStreamingsector(sectorDeserialized, streamingSectorName);
             
         }
-        
+        */
         stopwatch.Stop();
         var elapsed = stopwatch.Elapsed;
         Logger.Info($"Process completed in {FormatElapsedTime(elapsed)}.");

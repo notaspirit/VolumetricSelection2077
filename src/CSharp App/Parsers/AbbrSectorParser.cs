@@ -8,7 +8,7 @@ using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Converters;
 using VolumetricSelection2077.Services;
 
-namespace VolumetricSelection2077.JsonParsers;
+namespace VolumetricSelection2077.Parsers;
 
 public class AbbrSectorParser
 {
