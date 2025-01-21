@@ -20,26 +20,7 @@ public class ProcessService
         _settings = SettingsService.Instance;
         _gameFileService = GameFileService.Instance;
     }
-
-    private string FormatElapsedTime(TimeSpan elapsed)
-    {
-        var parts = new List<string>();
-        
-        if (elapsed.Hours > 0)
-        {
-            parts.Add($"{elapsed.Hours} hour{(elapsed.Hours == 1 ? "" : "s")}");
-        }
-        if (elapsed.Minutes > 0)
-        {
-            parts.Add($"{elapsed.Minutes} minute{(elapsed.Minutes == 1 ? "" : "s")}");
-        }
-        if (elapsed.Seconds > 0 || parts.Count == 0)
-        {
-            parts.Add($"{elapsed.Seconds}.{elapsed.Milliseconds:D3} seconds");
-        }
-        
-        return string.Join(", ", parts);
-    }
+    
     // also returns null if none of the nodes in the sector are inside the box
     private async Task<(bool success, string error, AxlRemovalSector? result)> ProcessStreamingsector(AbbrSector sector, string sectorPath, SelectionBox selectionBox)
     {
@@ -108,13 +89,10 @@ public class ProcessService
 
     public async Task<(bool success, string error)> Process()
     {
-        var stopwatch = Stopwatch.StartNew();
         Logger.Info("Validating inputs...");
 
         if (!ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename))
         {
-            stopwatch.Stop();
-            Logger.Error($"Process failed after {FormatElapsedTime(stopwatch.Elapsed)}");
             return (false, "Validation failed");
         }
         Logger.Info("Starting Process...");
@@ -126,40 +104,8 @@ public class ProcessService
 
         if (CETOutputFile == null)
         {
-            stopwatch.Stop();
-            Logger.Error("Failed to parse CET output file");
-            Logger.Error($"Process failed after {FormatElapsedTime(stopwatch.Elapsed)}");
             return (false, "Failed to parse CET output file");
         }
-        /*
-        _gameFileService.Testing();
-        
-        string actorHash = "1367596920923086056";
-        string sectorHash = "10565727457643407283";
-        var (success, error, Output) = _gameFileService.GetGeometryFromCache(sectorHash, actorHash);
-        Logger.Info($"Getting GeometryCache Entry resulted in: {success}, {error}, {Output}");
-        
-        string testGLBPath =
-            Regex.Replace(
-                "ep1\\worlds\\03_night_city\\sectors\\_external\\proxy\\2939601539\\mon_ave_scaffolding_f.mesh",
-                @"\\{2}", @"\");
-        ResourcePath testResourcePath = testGLBPath;
-        Logger.Info(testResourcePath.GetResolvedText() ?? "No resolved text found!");
-        var (successGLB, errorGLB, testGLB) = _gameFileService.GetGameFileAsGlb(testGLBPath);
-        if (testGLB == null || successGLB == false)
-        {
-            stopwatch.Stop();
-            Logger.Error("Failed to get test GLB file");
-            Logger.Error(errorGLB);
-            Logger.Error($"Process failed after {FormatElapsedTime(stopwatch.Elapsed)}");
-            return (false, "Failed to get test GLB file");
-        }
-
-        var parsedGlb = AbbrMeshParser.ParseFromGlb(testGLB);
-        
-        List<string> testSectors = new List<string>();
-        testSectors.Add("base\\worlds\\03_night_city\\_compiled\\default\\exterior_-6_-4_0_2.streamingsector");
-        */
         List<AxlRemovalSector> sectors = new List<AxlRemovalSector>();
         
         foreach (string streamingSectorName in CETOutputFile.Sectors)
@@ -190,7 +136,7 @@ public class ProcessService
 
         if (sectors.Count == 0)
         {
-            Logger.Error("No sectors Intersect!");
+            Logger.Warning("No sectors Intersect!");
         }
         else
         {
@@ -201,13 +147,8 @@ public class ProcessService
                     Sectors = sectors
                 }
             };
-            Logger.Info(JsonConvert.SerializeObject(removalFile, new JsonSerializerSettings(){NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented}));
+            //Logger.Info(JsonConvert.SerializeObject(removalFile, new JsonSerializerSettings(){NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented}));
         }
-        
-        
-        stopwatch.Stop();
-        var elapsed = stopwatch.Elapsed;
-        Logger.Info($"Process completed in {FormatElapsedTime(elapsed)}.");
         return (true, string.Empty);
     }
 }

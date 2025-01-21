@@ -7,9 +7,11 @@ using Avalonia.Interactivity;
 using System.Threading.Tasks;
 using Avalonia.Threading;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Avalonia.Styling;
 using Avalonia;
+using Microsoft.VisualBasic.CompilerServices;
 
 namespace VolumetricSelection2077;
 public partial class MainWindow : Window
@@ -77,7 +79,7 @@ public partial class MainWindow : Window
     private async void FindSelectedButton_Click(object? sender, RoutedEventArgs e)
     {
         if (IsProcessing) return;
-
+        Stopwatch stopwatch = Stopwatch.StartNew();
         try
         {
             IsProcessing = true;
@@ -89,11 +91,14 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Logger.Error($"Critical error: {ex.Message}");
+            Logger.Error($"Critical error: {ex}");
             IsProcessing = false;
         }
         finally
         {
+            stopwatch.Stop();
+            string formattedTime = new UtilService().FormatElapsedTime(stopwatch.Elapsed);
+            Logger.Info($"Process finished after: {formattedTime}");
             IsProcessing = false;
         }
     }
