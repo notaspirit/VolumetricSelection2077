@@ -1,5 +1,6 @@
 using BulletSharp.Math;
 using System.Text.Json.Serialization;
+using System.Collections.Generic;
 
 namespace VolumetricSelection2077.Models
 {
@@ -18,10 +19,10 @@ namespace VolumetricSelection2077.Models
         public Vector3 Scale { get; set; }
 
         [JsonPropertyName("rotation")]
-        public Vector3 Rotation { get; set; }
+        public Quaternion Rotation { get; set; }
 
         [JsonPropertyName("vertices")]
-        public required Vector3[] Vertices { get; set; }
+        public required List<Vector3> Vertices { get; set; }
     }
 
     public class SelectionInput
