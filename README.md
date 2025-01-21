@@ -5,4 +5,4 @@ The CET part of the tool is released as a preview / measuring / visualization to
 
 Credits to: 
 - keanuWheeze for the cube mesh and the material
-- [Wolvenkit](https://github.com/WolvenKit/WolvenKit) for GeometryCacheService and related structures (PhysX Namespace)
+- [Wolvenkit](https://github.com/WolvenKit/WolvenKit) for GeometryCacheService and related structures (PhysX Namespace) as well as various nuget packages related to the cyberpunk game files
