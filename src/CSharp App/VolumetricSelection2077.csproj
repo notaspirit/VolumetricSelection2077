@@ -16,6 +16,8 @@
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
     <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.1.0" />
     <PackageReference Include="BulletSharp" Version="0.11.1" />
+    <PackageReference Include="HelixToolkit.SharpDX.Core" Version="2.25.0" />
+    <PackageReference Include="HelixToolkit.Wpf.SharpDX" Version="2.25.0" />
     <PackageReference Include="LightningDB" Version="0.16.0" />
     <PackageReference Include="MessagePack" Version="2.5.187" />
     <PackageReference Include="Newtonsoft.Json.Schema" Version="4.0.1" />
@@ -23,8 +25,10 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
     <PackageReference Include="SharpGLTF.Core" Version="1.0.3" />
-    <PackageReference Include="Wolvenkit.Core" Version="8.15.1" />
-    <PackageReference Include="Wolvenkit.red4" Version="8.15.1" />
+    <PackageReference Include="WolvenKit.Common" Version="8.16.0" />
+    <PackageReference Include="Wolvenkit.Core" Version="8.16.0" />
+    <PackageReference Include="WolvenKit.Modkit" Version="8.16.0" />
+    <PackageReference Include="Wolvenkit.red4" Version="8.16.0" />
   </ItemGroup>
 
   <ItemGroup>
