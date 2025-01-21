@@ -105,7 +105,7 @@ namespace VolumetricSelection2077.Services
                 return false;
             }
 
-            if (CETOutputFile.Box.Vertices.Length != 8)
+            if (CETOutputFile.Box.Vertices.Count != 8)
             {
                 Logger.Error("Selection box count is invalid");
                 return false;
