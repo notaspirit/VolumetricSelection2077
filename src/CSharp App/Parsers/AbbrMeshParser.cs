@@ -51,7 +51,6 @@ public class AbbrMeshParser
         foreach (var mesh in meshRaw.LogicalMeshes)
         {
             if (!mesh.Name.EndsWith(lowestLodLevel)) continue;
-            Logger.Info($"Mesh: {mesh.Name}");
             List<Vector3> _vertices = new List<Vector3>();
             IList<uint>? _indices = null;
             foreach (var primitive in mesh.Primitives)
