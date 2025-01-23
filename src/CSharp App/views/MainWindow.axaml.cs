@@ -83,7 +83,10 @@ public partial class MainWindow : Window
         try
         {
             IsProcessing = true;
-            var (success, error) = await _processService.Process();
+            var (success, error) = await Task.Run(() =>
+            { 
+                return _processService.Process();
+            });
             if (!success)
             {
                 Logger.Error($"Process failed: {error}");
