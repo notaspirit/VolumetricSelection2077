@@ -19,7 +19,7 @@ public class ProcessService
     }
     
     // also returns null if none of the nodes in the sector are inside the box
-    private async Task<(bool success, string error, AxlRemovalSector? result)> ProcessStreamingsector(AbbrSector sector, string sectorPath, SelectionBox selectionBox)
+    private async Task<(bool success, string error, AxlRemovalSector? result)> ProcessStreamingsector(AbbrSector sector, string sectorPath, SelectionInput selectionBox)
     {
         Logger.Info($"Processing sector {sectorPath}");
         List<AxlRemovalNodeDeletion> nodeDeletions = new List<AxlRemovalNodeDeletion>();
@@ -48,7 +48,8 @@ public class ProcessService
                 }
                 
                 bool isInside = CollisionCheckService.isMeshInsideBox(mesh,
-                    selectionBox,
+                    selectionBox.Obb,
+                    selectionBox.Aabb,
                     nodeDataEntry.Position,
                     nodeDataEntry.Scale,
                     nodeDataEntry.Rotation);
@@ -100,11 +101,11 @@ public class ProcessService
         string CETOuputFilepath = Path.Combine(_settings.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks",
             "mods", "VolumetricSelection2077", "data", "selection.json");
         string CETOutputFileString = File.ReadAllText(CETOuputFilepath);
-        SelectionInput? CETOutputFile = JsonConvert.DeserializeObject<SelectionInput>(CETOutputFileString);
+        var (successSP, errorSP, CETOutputFile) = SelectionParser.ParseSelection(CETOutputFileString);
 
-        if (CETOutputFile == null)
+        if (CETOutputFile == null || successSP == false)
         {
-            return (false, "Failed to parse CET output file");
+            return (false, $"Failed to parse CET output file with error: {errorSP}");
         }
         // Logger.Info(JsonConvert.SerializeObject(CETOutputFile, Formatting.Indented));
         List<AxlRemovalSector> sectors = new List<AxlRemovalSector>();
@@ -128,7 +129,7 @@ public class ProcessService
             }
 
             var (successPSS, errorPSS, resultPss) =
-                await ProcessStreamingsector(sectorDeserialized, streamingSectorName, CETOutputFile.Box);
+                await ProcessStreamingsector(sectorDeserialized, streamingSectorName, CETOutputFile);
             if (successPSS && resultPss != null)
             {
                 sectors.Add(resultPss);

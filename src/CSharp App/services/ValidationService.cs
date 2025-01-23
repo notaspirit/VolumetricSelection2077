@@ -96,35 +96,6 @@ namespace VolumetricSelection2077.Services
                 Logger.Error("Selection file not found");
                 return false;
             }
-            string CETOutputFileString = File.ReadAllText(selectionFilePath);
-            SelectionInput? CETOutputFile = JsonConvert.DeserializeObject<SelectionInput>(CETOutputFileString);
-
-            if (CETOutputFile == null)
-            {
-                Logger.Error("Failed to parse selection file");
-                return false;
-            }
-
-            if (CETOutputFile.Box.Vertices.Count != 8)
-            {
-                Logger.Error("Selection box count is invalid");
-                return false;
-            }
-
-            if (CETOutputFile.Sectors.Length == 0)
-            {
-                Logger.Error("No sectors selected");
-                return false;
-            }
-            
-            foreach (string sector in CETOutputFile.Sectors)
-            {
-                if (string.IsNullOrWhiteSpace(sector) || !sector.EndsWith(".streamingsector"))
-                {
-                    Logger.Error("Sector name is invalid");
-                    return false;
-                }
-            }
             Logger.Success("Selection file is valid");
             return true;
         }
