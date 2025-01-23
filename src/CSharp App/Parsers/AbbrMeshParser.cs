@@ -1,8 +1,7 @@
 using System.Collections.Generic;
-using BulletSharp;
 using VolumetricSelection2077.Models;
 using SharpGLTF.Schema2;
-using BulletSharp.Math;
+using SharpDX;
 using Newtonsoft.Json.Linq;
 using VolumetricSelection2077.Services;
 
@@ -10,7 +9,7 @@ namespace VolumetricSelection2077.Parsers;
 
 public class AbbrMeshParser
 {
-    private static Vector3 SysVec3ToBulletVec3(System.Numerics.Vector3 vec3)
+    private static Vector3 SysVec3ToSharpVec3(System.Numerics.Vector3 vec3)
     {
         return new Vector3(vec3.X, vec3.Y, vec3.Z);
     }
@@ -59,7 +58,7 @@ public class AbbrMeshParser
                 _indices = primitive.GetIndices();
                 foreach (var vertex in vertices)
                 {
-                    _vertices.Add(SysVec3ToBulletVec3(vertex));
+                    _vertices.Add(SysVec3ToSharpVec3(vertex));
                 }
             }
 
@@ -68,10 +67,14 @@ public class AbbrMeshParser
                 Logger.Warning($"Mesh: {mesh.Name} has no vertices or indices!");
                 continue;
             }
+            
+            OrientedBoundingBox meshBoundingBox = CollisionCheckService.BuildAABB(_vertices);
+            
             _subMeshes.Add(new AbbrSubMeshes()
             {
                 Indices = _indices,
                 Vertices = _vertices,
+                BoundingBox = meshBoundingBox
             });
         }
 
@@ -111,7 +114,7 @@ public class AbbrMeshParser
         
         List<Vector3> vertices = new List<Vector3>();
         IList<uint> indices = new List<uint>();
-        Aabb boundingBox = new Aabb();
+        OrientedBoundingBox meshBoundingBox = new OrientedBoundingBox();
         
         foreach (var vertex in _vertices)
         {
@@ -142,8 +145,10 @@ public class AbbrMeshParser
         
         if (bbMinX != null && bbMinY != null && bbMinZ != null && bbMaxX != null && bbMaxY != null && bbMaxZ != null)
         {
-            boundingBox.Min = new Vector3(bbMinX.Value, bbMinY.Value, bbMinZ.Value);
-            boundingBox.Max = new Vector3(bbMaxX.Value, bbMaxY.Value, bbMaxZ.Value);
+            var minimum = new Vector3(bbMinX.Value, bbMinY.Value, bbMinZ.Value);
+            var maximum = new Vector3(bbMaxX.Value, bbMaxY.Value, bbMaxZ.Value);
+            
+            meshBoundingBox = new OrientedBoundingBox(minimum, maximum);
         }
         else
         {
@@ -156,7 +161,7 @@ public class AbbrMeshParser
         {
             Indices = indices,
             Vertices = vertices,
-            BoundingBox = boundingBox,
+            BoundingBox = meshBoundingBox,
             IsConvexCollider = _isConvexCollider,
         });
 

@@ -1,6 +1,5 @@
-using BulletSharp.Math;
+using SharpDX;
 using System.Collections.Generic;
-using BulletSharp;
 
 namespace VolumetricSelection2077.Models;
 
@@ -13,6 +12,6 @@ public class AbbrSubMeshes
 {
     public required List<Vector3> Vertices;
     public required IList<uint> Indices;
-    public Aabb? BoundingBox;
+    public required OrientedBoundingBox BoundingBox;
     public bool? IsConvexCollider;
 }

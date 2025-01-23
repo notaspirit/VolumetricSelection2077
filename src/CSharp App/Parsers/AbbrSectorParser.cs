@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
-using BulletSharp.Math;
 using Newtonsoft.Json.Linq;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Converters;
+using VolumetricSelection2077.Services;
+using WolvenKit.RED4.Types;
+using Quaternion = SharpDX.Quaternion;
+using Vector3 = SharpDX.Vector3;
 
 namespace VolumetricSelection2077.Parsers;
 
@@ -24,6 +27,26 @@ public class AbbrSectorParser
         List<AbbrStreamingSectorNodesEntry> _nodesEntries = new List<AbbrStreamingSectorNodesEntry>();
         foreach (var nodeDataEntry in nodeData)
         {
+            if (nodeDataEntry?["Position"]?["X"]?.Value<float>() == null ||
+                nodeDataEntry?["Position"]?["Y"]?.Value<float>() == null ||
+                nodeDataEntry?["Position"]?["Z"]?.Value<float>() == null)
+            {
+                Logger.Warning("Cannot parse position of node data entry!");
+            }
+            if (nodeDataEntry?["Scale"]?["X"]?.Value<float>() == null ||
+                nodeDataEntry?["Scale"]?["Y"]?.Value<float>() == null ||
+                nodeDataEntry?["Scale"]?["Z"]?.Value<float>() == null)
+            {
+                Logger.Warning("Cannot parse scale of node data entry!");
+            }
+            if (nodeDataEntry?["Orientation"]?["i"]?.Value<float>() == null ||
+                nodeDataEntry?["Orientation"]?["j"]?.Value<float>() == null ||
+                nodeDataEntry?["Orientation"]?["k"]?.Value<float>() == null ||
+                nodeDataEntry?["Orientation"]?["r"]?.Value<float>() == null)
+            {
+                Logger.Warning("Cannot parse rotation of node data entry!");
+            }
+            
             _nodeDataEntries.Add(new AbbrStreamingSectorNodeDataEntry()
             {
                 Position = new Vector3(nodeDataEntry?["Position"]?["X"]?.Value<float>() ?? 0,

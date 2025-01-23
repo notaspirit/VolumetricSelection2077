@@ -1,13 +1,10 @@
 using System.Threading.Tasks;
-using System;
-using System.Diagnostics;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Parsers;
 using Newtonsoft.Json;
-using WolvenKit.RED4.Types;
 
 namespace VolumetricSelection2077.Services;
 
@@ -24,6 +21,7 @@ public class ProcessService
     // also returns null if none of the nodes in the sector are inside the box
     private async Task<(bool success, string error, AxlRemovalSector? result)> ProcessStreamingsector(AbbrSector sector, string sectorPath, SelectionBox selectionBox)
     {
+        Logger.Info($"Processing sector {sectorPath}");
         List<AxlRemovalNodeDeletion> nodeDeletions = new List<AxlRemovalNodeDeletion>();
         int nodeDataIndex = 0;
         foreach (var nodeDataEntry in sector.NodeData)
@@ -37,6 +35,7 @@ public class ProcessService
                 if (!successGet || model == null)
                 {
                     Logger.Warning($"Failed to get {meshDepotPath} with error: {errorGet}");
+                    nodeDataIndex++;
                     continue;
                 }
                 
@@ -44,14 +43,15 @@ public class ProcessService
                 if (mesh == null)
                 {
                     Logger.Warning($"Failed to parse {meshDepotPath}.");
+                    nodeDataIndex++;
                     continue;
                 }
                 
-                bool isInside = CollisionCheckService.checkMesh(mesh,
+                bool isInside = CollisionCheckService.isMeshInsideBox(mesh,
                     selectionBox,
-                    nodeDataEntry.Rotation,
                     nodeDataEntry.Position,
-                    nodeDataEntry.Scale);
+                    nodeDataEntry.Scale,
+                    nodeDataEntry.Rotation);
                 
                 if (isInside)
                 {
@@ -72,7 +72,7 @@ public class ProcessService
             }
             nodeDataIndex++;
         }
-
+        Logger.Info($"Found {nodeDeletions.Count} node deletions out of {nodeDataIndex + 1} nodes.");
         if (nodeDeletions.Count == 0)
         {
             return (true, "No Nodes Intersect with Box.", null);
@@ -106,6 +106,7 @@ public class ProcessService
         {
             return (false, "Failed to parse CET output file");
         }
+        // Logger.Info(JsonConvert.SerializeObject(CETOutputFile, Formatting.Indented));
         List<AxlRemovalSector> sectors = new List<AxlRemovalSector>();
         
         foreach (string streamingSectorName in CETOutputFile.Sectors)
@@ -147,7 +148,7 @@ public class ProcessService
                     Sectors = sectors
                 }
             };
-            //Logger.Info(JsonConvert.SerializeObject(removalFile, new JsonSerializerSettings(){NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented}));
+            Logger.Info(JsonConvert.SerializeObject(removalFile, new JsonSerializerSettings(){NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented}));
         }
         return (true, string.Empty);
     }

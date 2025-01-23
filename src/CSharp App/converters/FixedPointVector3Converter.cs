@@ -1,8 +1,7 @@
-using Newtonsoft.Json;
+
 using System;
-using System.Numerics;
 using Newtonsoft.Json.Linq;
-using Vector3 = BulletSharp.Math.Vector3;
+using Vector3 = SharpDX.Vector3;
 
 namespace VolumetricSelection2077.Converters;
 public class FixedPointVector3Converter
