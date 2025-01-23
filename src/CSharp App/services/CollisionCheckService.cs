@@ -9,25 +9,6 @@ namespace VolumetricSelection2077.Services;
 
 public class CollisionCheckService
 {
-    public static OrientedBoundingBox BuildAABB(List<Vector3> points)
-    {
-        Vector3 min = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
-        Vector3 max = new Vector3(float.MinValue, float.MinValue, float.MinValue);
-
-        foreach (Vector3 point in points)
-        {
-            min.X = Math.Min(point.X, min.X);
-            min.Y = Math.Min(point.Y, min.Y);
-            min.Z = Math.Min(point.Z, min.Z);
-
-            max.X = Math.Max(point.X, max.X);
-            max.Y = Math.Max(point.Y, max.Y);
-            max.Z = Math.Max(point.Z, max.Z);
-        }
-
-        return new OrientedBoundingBox(min, max);
-    }
-
     public static bool isMeshInsideBox(AbbrMesh mesh, SelectionBox box, Vector3 meshPosition, Vector3 meshScale, Quaternion meshRotation)
     {
         Matrix selectionBoxMatrix = Matrix.RotationYawPitchRoll(box.Rotation.X, box.Rotation.Y, box.Rotation.Z);

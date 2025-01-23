@@ -68,7 +68,7 @@ public class AbbrMeshParser
                 continue;
             }
             
-            OrientedBoundingBox meshBoundingBox = CollisionCheckService.BuildAABB(_vertices);
+            OrientedBoundingBox meshBoundingBox = new OrientedBoundingBox(_vertices.ToArray());
             
             _subMeshes.Add(new AbbrSubMeshes()
             {
