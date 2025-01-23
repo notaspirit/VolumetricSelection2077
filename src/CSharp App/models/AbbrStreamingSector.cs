@@ -10,11 +10,16 @@ namespace VolumetricSelection2077.Models
         public required List<AbbrStreamingSectorNodeDataEntry> NodeData { get; set; }
     }
 
-    public class AbbrStreamingSectorNodeDataEntry
+    public class AbbrSectorTransform
     {
         public Vector3 Position { get; set; }
         public Quaternion Rotation { get; set; }
         public Vector3 Scale { get; set; }
+    }
+    
+    public class AbbrStreamingSectorNodeDataEntry
+    {
+        public required List<AbbrSectorTransform> Transforms { get; set; }
         public int NodeIndex { get; set; }
     }
     public class AbbrStreamingSectorNodesEntry
@@ -27,18 +32,12 @@ namespace VolumetricSelection2077.Models
 
     public class AbbrCollisionActors
     {
-        public required Vector3 Position { get; set; }
-        public required Quaternion Rotation { get; set; }
-        public required Vector3 Scale { get; set; }
+        public required AbbrSectorTransform Transform { get; set; }
         public List<AbbrActorShapes>? Shapes { get; set; }
     }
     public class AbbrActorShapes
     {
-        public Vector3 Position { get; set; }
-        
-        public Quaternion Rotation { get; set; }
-        
-        public Vector3 Scale { get; set; }
+        public required AbbrSectorTransform Transform { get; set; }
         
         public string? Hash { get; set; }
         

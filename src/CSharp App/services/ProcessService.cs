@@ -50,9 +50,7 @@ public class ProcessService
                 bool isInside = CollisionCheckService.isMeshInsideBox(mesh,
                     selectionBox.Obb,
                     selectionBox.Aabb,
-                    nodeDataEntry.Position,
-                    nodeDataEntry.Scale,
-                    nodeDataEntry.Rotation);
+                    nodeDataEntry.Transforms);
                 
                 if (isInside)
                 {

@@ -9,25 +9,25 @@ namespace VolumetricSelection2077.Services;
 
 public class CollisionCheckService
 {
-    public static bool isMeshInsideBox(AbbrMesh mesh, OrientedBoundingBox selectionBoxOBB, BoundingBox selectionBoxAabb, Vector3 meshPosition, Vector3 meshScale, Quaternion meshRotation)
+    public static bool isMeshInsideBox(AbbrMesh mesh, OrientedBoundingBox selectionBoxOBB, BoundingBox selectionBoxAabb, List<AbbrSectorTransform> transforms)
     {
-        //Logger.Info("OBB" + JsonSerializer.Serialize(selectionBoxOBB.Center.X) + " " + JsonSerializer.Serialize(selectionBoxOBB.Center.Y) + " " + JsonSerializer.Serialize(selectionBoxOBB.Center.Z));
-        //Logger.Info("AABB" + JsonSerializer.Serialize(newSelectionBox.Center.X) + " " + JsonSerializer.Serialize(newSelectionBox.Center.Y) + " " + JsonSerializer.Serialize(newSelectionBox.Center.Z));
-        
         foreach (var submesh in mesh.SubMeshes)
         {
-            Matrix meshRotationMatrix = Matrix.RotationQuaternion(meshRotation);
-            submesh.BoundingBox.Translate(meshPosition);
-            submesh.BoundingBox.Scale(meshScale);
-            submesh.BoundingBox.Transform(meshRotationMatrix);
-            
-            BoundingBox newSubmeshBoundingBox = submesh.BoundingBox.GetBoundingBox();
-            
-            ContainmentType contained = selectionBoxAabb.Contains(newSubmeshBoundingBox);
-            //Logger.Info($"AABB (Center: {newSubmeshBoundingBox.Center.X} {newSubmeshBoundingBox.Center.Y} {newSubmeshBoundingBox.Center.Z}) is inside {contained} selection.");
-            if (contained != ContainmentType.Disjoint)
+            foreach (var transform in transforms)
             {
-                return true;
+                Matrix meshRotationMatrix = Matrix.RotationQuaternion(transform.Rotation);
+                submesh.BoundingBox.Transform(meshRotationMatrix);
+                submesh.BoundingBox.Translate(transform.Position);
+                submesh.BoundingBox.Scale(transform.Scale);
+
+                BoundingBox newSubmeshBoundingBox = submesh.BoundingBox.GetBoundingBox();
+
+                ContainmentType contained = selectionBoxAabb.Contains(newSubmeshBoundingBox);
+                //Logger.Info($"AABB (Center: {newSubmeshBoundingBox.Center.X} {newSubmeshBoundingBox.Center.Y} {newSubmeshBoundingBox.Center.Z}) is inside {contained} selection.");
+                if (contained != ContainmentType.Disjoint)
+                {
+                    return true;
+                }
             }
         }
         return false;

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json.Linq;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Converters;
@@ -19,6 +20,8 @@ public class AbbrSectorParser
         JArray? nodes = rootChunk?["nodes"] as JArray;
         JArray? nodeData = rootChunk?["nodeData"]?["Data"] as JArray;
 
+        JArray? instancedMeshNodeTransforms = null;
+        
         if (nodes == null || nodeData == null)
         {
             return null;
@@ -47,17 +50,57 @@ public class AbbrSectorParser
                 Logger.Warning("Cannot parse rotation of node data entry!");
             }
             
+            List<AbbrSectorTransform> transforms = new List<AbbrSectorTransform>();
+
+            var node = nodes?[nodeDataEntry?["NodeIndex"].Value<int>()]?["Data"];
+            
+            if (node?["$type"]?.Value<string>() == "worldInstancedMeshNode")
+            {
+                if (instancedMeshNodeTransforms == null)
+                {
+                    instancedMeshNodeTransforms = node["worldTransformsBuffer"]?["sharedDataBuffer"]?["Data"]?["buffer"]?["Data"]?["Transforms"] as JArray;
+                }
+                
+                int? startIndex = node["worldTransformsBuffer"]?["startIndex"]?.Value<int>();
+                int? numElements = node["worldTransformsBuffer"]?["numElements"]?.Value<int>();
+
+                if (startIndex == null || numElements == null)
+                {
+                    Logger.Error(
+                        $"No start or num of elements found for InstancedMeshNode! {nodeDataEntry?["NodeIndex"]}: {startIndex ?? -1}, {numElements ?? -1}");
+                    return null;
+                }
+
+                foreach (var element in instancedMeshNodeTransforms.ToArray().AsSpan((int)startIndex, (int)numElements))
+                {
+                    transforms.Add(new AbbrSectorTransform()
+                    {
+                        Position = new Vector3(element["translation"]["X"].Value<float>(), element["translation"]["Y"].Value<float>(), element["translation"]["Z"].Value<float>()),
+                        Scale = new Vector3(element["scale"]["X"].Value<float>(), element["scale"]["Y"].Value<float>(), element["scale"]["Z"].Value<float>()),
+                        Rotation = new Quaternion(element["rotation"]["i"].Value<float>(), element["rotation"]["j"].Value<float>(), element["rotation"]["k"].Value<float>(), element["rotation"]["r"].Value<float>()),
+                    });
+                }
+                
+            }
+            else
+            {
+                transforms.Add(new AbbrSectorTransform()
+                {
+                    Position = new Vector3(nodeDataEntry?["Position"]?["X"]?.Value<float>() ?? 0,
+                        nodeDataEntry?["Position"]?["Y"]?.Value<float>() ?? 0,
+                        nodeDataEntry?["Position"]?["Z"]?.Value<float>() ?? 0),
+                    Rotation = new Quaternion(nodeDataEntry?["Orientation"]?["i"]?.Value<int>() ?? 0,
+                        nodeDataEntry?["Orientation"]?["j"]?.Value<int>() ?? 0,
+                        nodeDataEntry?["Orientation"]?["k"]?.Value<int>() ?? 0,
+                        nodeDataEntry?["Orientation"]?["r"]?.Value<int>() ?? 0),
+                    Scale = new Vector3(nodeDataEntry?["Scale"]?["X"]?.Value<int>() ?? 0,
+                        nodeDataEntry?["Scale"]?["Y"]?.Value<int>() ?? 0, nodeDataEntry?["Scale"]?["Z"]?.Value<int>() ?? 0), 
+                });
+            }
+            
             _nodeDataEntries.Add(new AbbrStreamingSectorNodeDataEntry()
             {
-                Position = new Vector3(nodeDataEntry?["Position"]?["X"]?.Value<float>() ?? 0,
-                    nodeDataEntry?["Position"]?["Y"]?.Value<float>() ?? 0,
-                    nodeDataEntry?["Position"]?["Z"]?.Value<float>() ?? 0),
-                Rotation = new Quaternion(nodeDataEntry?["Orientation"]?["i"]?.Value<int>() ?? 0,
-                    nodeDataEntry?["Orientation"]?["j"]?.Value<int>() ?? 0,
-                    nodeDataEntry?["Orientation"]?["k"]?.Value<int>() ?? 0,
-                    nodeDataEntry?["Orientation"]?["r"]?.Value<int>() ?? 0),
-                Scale = new Vector3(nodeDataEntry?["Scale"]?["X"]?.Value<int>() ?? 0,
-                    nodeDataEntry?["Scale"]?["Y"]?.Value<int>() ?? 0, nodeDataEntry?["Scale"]?["Z"]?.Value<int>() ?? 0),
+                Transforms = transforms,
                 NodeIndex = nodeDataEntry?["NodeIndex"]?.Value<int>() ?? 0,
             });
         }
@@ -124,9 +167,11 @@ public class AbbrSectorParser
                             _shapes.Add(new AbbrActorShapes()
                             {
                                 Hash = _hash,
-                                Position = _positionShape,
-                                Scale = _scaleShape,
-                                Rotation = _rotationShape,
+                                Transform = new AbbrSectorTransform(){
+                                    Position = _positionShape,
+                                    Scale = _scaleShape,
+                                    Rotation = _rotationShape,
+                                    },
                                 ShapeType = _shapeType
                             });
                         }
@@ -138,9 +183,11 @@ public class AbbrSectorParser
 
                     _collisionActors.Add(new AbbrCollisionActors()
                     {
-                        Scale = _scale,
-                        Position = _position,
-                        Rotation = _quaternion,
+                        Transform = new AbbrSectorTransform(){
+                            Scale = _scale,
+                            Position = _position,
+                            Rotation = _quaternion,
+                            },
                         Shapes = _shapes
                     });
                 }
