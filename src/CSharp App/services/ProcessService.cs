@@ -105,7 +105,18 @@ public class ProcessService
         {
             return (false, $"Failed to parse CET output file with error: {errorSP}");
         }
+        
         // Logger.Info(JsonConvert.SerializeObject(CETOutputFile, Formatting.Indented));
+        Logger.Info("Selection Box AABB Details:");
+        Logger.Info($"Center point: {CETOutputFile.Aabb.Center.ToString()}");
+        Logger.Info($"Box Vertices: {string.Join(", ", CETOutputFile.Aabb.GetCorners())}");
+        Logger.Info($"Box scale: {CETOutputFile.Aabb.Size}");
+        
+        Logger.Info("Selection Box OBB Details:");
+        Logger.Info($"Center point: {CETOutputFile.Obb.Center.ToString()}");
+        Logger.Info($"Box Vertices: {string.Join(", ", CETOutputFile.Obb.GetCorners())}");
+        Logger.Info($"Box scale: {CETOutputFile.Obb.Size}");
+        
         List<AxlRemovalSector> sectors = new List<AxlRemovalSector>();
         
         foreach (string streamingSectorName in CETOutputFile.Sectors)
@@ -149,6 +160,7 @@ public class ProcessService
             };
             Logger.Info(JsonConvert.SerializeObject(removalFile, new JsonSerializerSettings(){NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented}));
         }
+        
         return (true, string.Empty);
     }
 }

@@ -3,6 +3,7 @@ using SharpDX;
 using VolumetricSelection2077.Models;
 using System.Collections.Generic;
 using System.Text.Json;
+using HelixToolkit.Wpf.SharpDX;
 using SharpGLTF.IO;
 
 namespace VolumetricSelection2077.Services;
@@ -16,17 +17,29 @@ public class CollisionCheckService
             foreach (var transform in transforms)
             {
                 Matrix meshRotationMatrix = Matrix.RotationQuaternion(transform.Rotation);
+                submesh.BoundingBox.Scale(transform.Scale);
                 submesh.BoundingBox.Transform(meshRotationMatrix);
                 submesh.BoundingBox.Translate(transform.Position);
-                submesh.BoundingBox.Scale(transform.Scale);
 
+   
                 BoundingBox newSubmeshBoundingBox = submesh.BoundingBox.GetBoundingBox();
-
+                
                 ContainmentType contained = selectionBoxAabb.Contains(newSubmeshBoundingBox);
-                //Logger.Info($"AABB (Center: {newSubmeshBoundingBox.Center.X} {newSubmeshBoundingBox.Center.Y} {newSubmeshBoundingBox.Center.Z}) is inside {contained} selection.");
                 if (contained != ContainmentType.Disjoint)
                 {
-                    return true;
+                    foreach (Vector3 vertex in submesh.Vertices)
+                    {
+                        Vector3 scaledVector = vertex * transform.Scale;
+                        Vector4 rotatedVector = Vector3.Transform(scaledVector, meshRotationMatrix);
+                        Vector3 translatedVector = new Vector3(rotatedVector.X, rotatedVector.Y, rotatedVector.Z) + transform.Position;
+
+                        
+                        ContainmentType vertexContained = selectionBoxOBB.Contains(translatedVector);
+                        if (vertexContained != ContainmentType.Disjoint)
+                        {
+                            return true;
+                        }
+                    }
                 }
             }
         }
