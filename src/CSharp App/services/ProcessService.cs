@@ -5,6 +5,8 @@ using System.Text.RegularExpressions;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Parsers;
 using Newtonsoft.Json;
+using SharpDX;
+using VolumetricSelection2077.Resources;
 
 namespace VolumetricSelection2077.Services;
 
@@ -24,50 +26,84 @@ public class ProcessService
         Logger.Info($"Processing sector {sectorPath}");
         List<AxlRemovalNodeDeletion> nodeDeletions = new List<AxlRemovalNodeDeletion>();
         int nodeDataIndex = 0;
+        // int checkedMeshes = 0;
         foreach (var nodeDataEntry in sector.NodeData)
-        {
+        { 
+            /* Removed for testing
+
+            */
+
+            CollisionCheck.Types entryType = CollisionCheck.Types.Default;
+            
             var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
             if (nodeEntry.MeshDepotPath != null)
             {
-                string meshDepotPath = nodeEntry.MeshDepotPath;
-                // get mesh, pass local transform and mesh to mesh check method, if mesh is inside the box add index and type to list
-                var (successGet, errorGet, model) = _gameFileService.GetGameFileAsGlb(meshDepotPath);
-                if (!successGet || model == null)
-                {
-                    Logger.Warning($"Failed to get {meshDepotPath} with error: {errorGet}");
-                    nodeDataIndex++;
-                    continue;
-                }
-                
-                AbbrMesh? mesh = AbbrMeshParser.ParseFromGlb(model);
-                if (mesh == null)
-                {
-                    Logger.Warning($"Failed to parse {meshDepotPath}.");
-                    nodeDataIndex++;
-                    continue;
-                }
-                
-                bool isInside = CollisionCheckService.isMeshInsideBox(mesh,
-                    selectionBox.Obb,
-                    selectionBox.Aabb,
-                    nodeDataEntry.Transforms);
-                
-                if (isInside)
-                {
-                    nodeDeletions.Add(new AxlRemovalNodeDeletion()
-                    {
-                        Index = nodeDataIndex,
-                        Type = nodeEntry.Type
-                    });
-                }
+                entryType = CollisionCheck.Types.Mesh;
+            } 
+            else if (nodeEntry.SectorHash != null && (nodeEntry.Actors != null || nodeEntry.Actors?.Count > 0))
+            {
+                entryType = CollisionCheck.Types.Collider;
             }
 
-            if (nodeEntry.SectorHash != null && (nodeEntry.Actors != null || nodeEntry.Actors?.Count > 0))
+            switch (entryType)
             {
-                foreach (var actor in nodeEntry.Actors)
-                {
-                    // switch here to process all the possible actor types (e.g. mesh, box, capsule etc)
-                }
+                case CollisionCheck.Types.Mesh:
+                    /*
+                    checkedMeshes++;
+                    if (checkedMeshes > 10)
+                    {
+                        return (false, "null", null);
+                    } 
+                    */
+                    string meshDepotPath = nodeEntry.MeshDepotPath;
+                    // get mesh, pass local transform and mesh to mesh check method, if mesh is inside the box add index and type to list
+                    var (successGet, errorGet, model) = _gameFileService.GetGameFileAsGlb(meshDepotPath);
+                    if (!successGet || model == null)
+                    {
+                        Logger.Warning($"Failed to get {meshDepotPath} with error: {errorGet}");
+                        nodeDataIndex++;
+                        continue;
+                    }
+
+                    AbbrMesh? mesh = AbbrMeshParser.ParseFromGlb(model);
+                    if (mesh == null)
+                    {
+                        Logger.Warning($"Failed to parse {meshDepotPath}.");
+                        nodeDataIndex++;
+                        continue;
+                    }
+
+                    bool isInside = CollisionCheckService.isMeshInsideBox(mesh,
+                        selectionBox.Obb,
+                        selectionBox.Aabb,
+                        nodeDataEntry.Transforms);
+
+                    if (isInside)
+                    {
+                        nodeDeletions.Add(new AxlRemovalNodeDeletion()
+                        {
+                            Index = nodeDataIndex,
+                            Type = nodeEntry.Type
+                        });
+                    }
+                    break;
+                case CollisionCheck.Types.Collider:
+                    // to be implemented
+                    break;
+                case CollisionCheck.Types.Default:
+                    foreach (var transform in nodeDataEntry.Transforms)
+                    {
+                        var intersection = selectionBox.Obb.Contains(transform.Position);
+                        if (intersection != ContainmentType.Disjoint)
+                        {
+                            nodeDeletions.Add(new AxlRemovalNodeDeletion()
+                            {
+                                Index = nodeDataIndex,
+                                Type = nodeEntry.Type
+                            });
+                        }
+                    }
+                    break;
             }
             nodeDataIndex++;
         }
@@ -121,6 +157,7 @@ public class ProcessService
         
         foreach (string streamingSectorName in CETOutputFile.Sectors)
         {
+            
             string streamingSectorNameFix = Regex.Replace(streamingSectorName, @"\\{2}", @"\");
             var (successGET, errorGET, stringGET) = _gameFileService.GetGameFileAsJsonString(streamingSectorNameFix);
             if (!successGET || !string.IsNullOrEmpty(errorGET) || string.IsNullOrEmpty(stringGET))
@@ -160,7 +197,7 @@ public class ProcessService
             };
             Logger.Info(JsonConvert.SerializeObject(removalFile, new JsonSerializerSettings(){NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented}));
         }
-        
+        // TestingService.TestVertexTransform();
         return (true, string.Empty);
     }
 }
