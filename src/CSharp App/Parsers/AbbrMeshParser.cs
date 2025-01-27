@@ -94,18 +94,18 @@ public class AbbrMeshParser
         
         bool _isConvexCollider = false;
         
-        var hasHull = collisionMeshRaw["HullData"] != null;
+        if (collisionMeshRaw["HullData"] != null)
+        {
+            _vertices = collisionMeshRaw?["HullData"]?["HullVertices"];
+            _boundingBox = collisionMeshRaw?["HullData"]?["AABB"];
+            _indices = new JArray();
+            _isConvexCollider = true;
+        }
+        
         var hasVertices = _vertices != null;
         var hasIndices = _indices != null;
         var hasBoundingBox = _boundingBox != null;
         
-        if (hasHull)
-        {
-            _vertices = collisionMeshRaw?["HullData"]?["HullVertices"];
-            _indices = new JArray();
-            _isConvexCollider = true;
-        }
-
         if (!hasVertices || !hasIndices || !hasBoundingBox)
         {
             Logger.Warning("Invalid mesh json!");
