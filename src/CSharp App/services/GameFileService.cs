@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Newtonsoft.Json;
 using WolvenKit;
@@ -119,7 +120,11 @@ public class GameFileService
             return (false, "Failed to parse input into ulong!", null);
         }
         var cacheEntry = _geometryCacheService.GetEntry(sectorHash, actorHash);
-        string outJson = JsonSerializer.Serialize(cacheEntry);
+        if (cacheEntry == null)
+        {
+            return (false, "Failed to get geometry from archives!", null);
+        }
+        string outJson =  JsonSerializer.Serialize((object)cacheEntry, new JsonSerializerOptions { IncludeFields = true, WriteIndented = true });
         return (true, "", outJson);
     }
 }
