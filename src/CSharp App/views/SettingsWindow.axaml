@@ -1,18 +1,20 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:VolumetricSelection2077"
-        x:Class="VolumetricSelection2077.SettingsWindow"
-        x:DataType="local:ViewModels.SettingsViewModel"
-        Title="VolumetricSelection2077"
-        Icon="../assets/redCube.ico"
-        Width="500"
-        SizeToContent="Height"
-        Background="#171c26">
+<Window
+    Background="#171c26"
+    Icon="../assets/redCube.ico"
+    SizeToContent="Height"
+    Title="VolumetricSelection2077"
+    Width="500"
+    x:Class="VolumetricSelection2077.SettingsWindow"
+    x:DataType="local:ViewModels.SettingsViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:local="clr-namespace:VolumetricSelection2077"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border Margin="5">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <!--
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -26,19 +28,34 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />-->
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <!-- Header Row -->
-            <TextBlock Text="Settings" FontSize="32" FontWeight="Bold" Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Left" Margin="5" />
+            <!--  Header Row  -->
+            <TextBlock
+                FontSize="32"
+                FontWeight="Bold"
+                Grid.ColumnSpan="2"
+                Grid.Row="0"
+                HorizontalAlignment="Left"
+                Margin="5"
+                Text="Settings" />
 
-            <!-- First Row: Label -->
+            <!--  First Row: Label  -->
 
-            <TextBlock Text="Game Directory" ToolTip.Tip="{Binding Descriptions.GameDirectoryTooltip}" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
+            <TextBlock
+                Grid.Column="0"
+                Grid.Row="1"
+                HorizontalAlignment="Left"
+                Margin="5"
+                Text="Game Directory"
+                ToolTip.Tip="{Binding Descriptions.GameDirectoryTooltip}"
+                VerticalAlignment="Center" />
+            <!--
             <TextBlock Text="Cache Output" ToolTip.Tip="{Binding Descriptions.CacheTooltip}" Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
             <TextBlock Text="Clear Cache" ToolTip.Tip="{Binding Descriptions.ClearCacheTooltip}" Grid.Row="6" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
             <TextBlock Text="Cache Directory" ToolTip.Tip="{Binding Descriptions.CacheDirectoryTooltip}" Grid.Row="7" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
@@ -48,26 +65,92 @@
             <TextBlock Text="Wolvenkit Project" Grid.Row="11" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
             <TextBlock Text="Request Interval" ToolTip.Tip="In milliseconds" Grid.Row="12" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
             <TextBlock Text="Request Timeout" ToolTip.Tip="In milliseconds" Grid.Row="13" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
-            <TextBlock Text="Inactivity Timeout" ToolTip.Tip="In milliseconds" Grid.Row="14" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />
-            <!-- Second Row: Setting Control (e.g., ToggleSwitch) -->
-            <TextBox x:Name="GameDirectoryTextBox" Text="{Binding Settings.GameDirectory}" Watermark="Path to game directory" Grid.Row="1" Grid.Column="1" Margin="5" />
-            <ToggleSwitch x:Name="CacheToggleSwitch" IsChecked="{Binding Settings.CacheEnabled}" Grid.Row="2" Grid.Column="1" Margin="5" />
-            <Button x:Name="ClearCacheButton" Content="Clear Cache" Grid.Row="6" Grid.Column="1" Margin="5" Background="#ad0002">
+            <TextBlock Text="Inactivity Timeout" ToolTip.Tip="In milliseconds" Grid.Row="14" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5" />-->
+            <!--  Second Row: Setting Control (e.g., ToggleSwitch)  -->
+            <TextBox
+                Grid.Column="1"
+                Grid.Row="1"
+                Margin="5"
+                Text="{Binding Settings.GameDirectory}"
+                Watermark="Path to game directory"
+                x:Name="GameDirectoryTextBox" />
+            <!--
+            <ToggleSwitch
+                Grid.Column="1"
+                Grid.Row="2"
+                IsChecked="{Binding Settings.CacheEnabled}"
+                Margin="5"
+                x:Name="CacheToggleSwitch" />
+            <Button
+                Background="#ad0002"
+                Content="Clear Cache"
+                Grid.Column="1"
+                Grid.Row="6"
+                Margin="5"
+                x:Name="ClearCacheButton">
                 <Button.Styles>
                     <Style Selector="Button:pointerover /template/ ContentPresenter">
-                        <Setter Property="Background" Value="DarkRed"/>
+                        <Setter Property="Background" Value="DarkRed" />
                     </Style>
                 </Button.Styles>
             </Button>
-            <TextBox x:Name="CacheDirectoryTextBox" Text="{Binding Settings.CacheDirectory}" Watermark="Path to custom cache folder" Grid.Row="7" Grid.Column="1" Margin="5" />
-            <ToggleSwitch x:Name="SaveToArchiveModsToggleSwitch" IsChecked="{Binding Settings.SaveToArchiveMods}" Grid.Row="8" Grid.Column="1" Margin="5" />
-            <TextBox x:Name="OutputDirectoryTextBox" Text="{Binding Settings.OutputDirectory}" Watermark="Path to custom output folder" Grid.Row="9" Grid.Column="1" Margin="5" />
-            <TextBox x:Name="WolvenkitCLIPathTextBox" Text="{Binding Settings.WolvenkitCLIPath}" Watermark="Path to Wolvenkit CLI" Grid.Row="10" Grid.Column="1" Margin="5" />
-            <TextBox x:Name="WolvenkitProjectPathTextBox" Text="{Binding Settings.WolvenkitProjectPath}" Watermark="Path to Wolvenkit project" Grid.Row="11" Grid.Column="1" Margin="5" />
-            <TextBox x:Name="WolvenkitAPIRequestIntervalTextBox" Text="{Binding $parent[local:SettingsWindow].wkitAPIRefreshIntervalString, UpdateSourceTrigger=PropertyChanged}" Watermark="API request interval" Grid.Row="12" Grid.Column="1" Margin="5" />
-            <TextBox x:Name="WolvenkitAPIRequestTimeoutTextBox" Text="{Binding $parent[local:SettingsWindow].wkitAPITimeoutString}" Watermark="API request timeout" Grid.Row="13" Grid.Column="1" Margin="5" />
-            <TextBox x:Name="WolvenkitAPIInactivityTimeoutTextBox" Text="{Binding $parent[local:SettingsWindow].wkitAPIInactivityTimeout}" Watermark="API request timeout" Grid.Row="14" Grid.Column="1" Margin="5" />
-            <!-- Alternatively, for a TextBox instead of a ToggleSwitch -->
+            <TextBox
+                Grid.Column="1"
+                Grid.Row="7"
+                Margin="5"
+                Text="{Binding Settings.CacheDirectory}"
+                Watermark="Path to custom cache folder"
+                x:Name="CacheDirectoryTextBox" />
+            <ToggleSwitch
+                Grid.Column="1"
+                Grid.Row="8"
+                IsChecked="{Binding Settings.SaveToArchiveMods}"
+                Margin="5"
+                x:Name="SaveToArchiveModsToggleSwitch" />
+            <TextBox
+                Grid.Column="1"
+                Grid.Row="9"
+                Margin="5"
+                Text="{Binding Settings.OutputDirectory}"
+                Watermark="Path to custom output folder"
+                x:Name="OutputDirectoryTextBox" />
+            <TextBox
+                Grid.Column="1"
+                Grid.Row="10"
+                Margin="5"
+                Text="{Binding Settings.WolvenkitCLIPath}"
+                Watermark="Path to Wolvenkit CLI"
+                x:Name="WolvenkitCLIPathTextBox" />
+            <TextBox
+                Grid.Column="1"
+                Grid.Row="11"
+                Margin="5"
+                Text="{Binding Settings.WolvenkitProjectPath}"
+                Watermark="Path to Wolvenkit project"
+                x:Name="WolvenkitProjectPathTextBox" />
+            <TextBox
+                Grid.Column="1"
+                Grid.Row="12"
+                Margin="5"
+                Text="{Binding $parent[local:SettingsWindow].wkitAPIRefreshIntervalString, UpdateSourceTrigger=PropertyChanged}"
+                Watermark="API request interval"
+                x:Name="WolvenkitAPIRequestIntervalTextBox" />
+            <TextBox
+                Grid.Column="1"
+                Grid.Row="13"
+                Margin="5"
+                Text="{Binding $parent[local:SettingsWindow].wkitAPITimeoutString}"
+                Watermark="API request timeout"
+                x:Name="WolvenkitAPIRequestTimeoutTextBox" />
+            <TextBox
+                Grid.Column="1"
+                Grid.Row="14"
+                Margin="5"
+                Text="{Binding $parent[local:SettingsWindow].wkitAPIInactivityTimeout}"
+                Watermark="API request timeout"
+                x:Name="WolvenkitAPIInactivityTimeoutTextBox" />
+            -->
+            <!--  Alternatively, for a TextBox instead of a ToggleSwitch  -->
             <!-- <TextBox Grid.Row="1" Grid.Column="1" Margin="5" /> -->
         </Grid>
     </Border>
