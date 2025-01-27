@@ -25,14 +25,10 @@ public class ProcessService
     {
         Logger.Info($"Processing sector {sectorPath}");
         List<AxlRemovalNodeDeletion> nodeDeletions = new List<AxlRemovalNodeDeletion>();
+        
         int nodeDataIndex = 0;
-        // int checkedMeshes = 0;
         foreach (var nodeDataEntry in sector.NodeData)
         { 
-            /* Removed for testing
-
-            */
-
             CollisionCheck.Types entryType = CollisionCheck.Types.Default;
             
             var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
@@ -48,13 +44,6 @@ public class ProcessService
             switch (entryType)
             {
                 case CollisionCheck.Types.Mesh:
-                    /*
-                    checkedMeshes++;
-                    if (checkedMeshes > 10)
-                    {
-                        return (false, "null", null);
-                    } 
-                    */
                     string meshDepotPath = nodeEntry.MeshDepotPath;
                     // get mesh, pass local transform and mesh to mesh check method, if mesh is inside the box add index and type to list
                     var (successGet, errorGet, model) = _gameFileService.GetGameFileAsGlb(meshDepotPath);
@@ -73,7 +62,7 @@ public class ProcessService
                         continue;
                     }
 
-                    bool isInside = CollisionCheckService.isMeshInsideBox(mesh,
+                    bool isInside = CollisionCheckService.IsMeshInsideBox(mesh,
                         selectionBox.Obb,
                         selectionBox.Aabb,
                         nodeDataEntry.Transforms);
@@ -88,7 +77,78 @@ public class ProcessService
                     }
                     break;
                 case CollisionCheck.Types.Collider:
-                    // to be implemented
+                    List<int> actorRemoval = new List<int>();
+                    int actorIndex = 0;
+                    foreach (var actor in nodeEntry.Actors)
+                    {
+                        bool shapeIntersects = false;
+                        string sectorHash = nodeEntry.SectorHash;
+                        AbbrSectorTransform transformActor = actor.Transform;
+                        foreach (var shape in actor.Shapes)
+                        {
+                            if (shape.ShapeType.Contains("Mesh"))
+                            {
+                                var (successGetShape, errorGetShape, collisionShapeString) = _gameFileService.GetGeometryFromCache(sectorHash, shape.Hash);
+                                if (!successGetShape || collisionShapeString == null)
+                                {
+                                    Logger.Warning($"Failed to get shape {sectorHash}, {shape.Hash} with error: {errorGetShape}");
+                                    continue;
+                                }
+                                
+                                AbbrMesh collisionShape = AbbrMeshParser.ParseFromJson(collisionShapeString);
+                                if (collisionShape == null)
+                                {
+                                    Logger.Warning($"Failed to parse {collisionShapeString}.");
+                                    continue;
+                                }
+                                
+                                bool isCollisionShapeInside = CollisionCheckService.IsCollisonMeshInsideBox(collisionShape, selectionBox.Obb, selectionBox.Aabb, nodeDataEntry.Transforms[0], transformActor, shape.Transform);
+                                if (isCollisionShapeInside)
+                                {
+                                    shapeIntersects = true;
+                                    break;
+                                }
+                            }
+
+                            if (shape.ShapeType == "Box")
+                            {
+                                bool isBoxColiderInside = CollisionCheckService.IsCollisionBoxInsideBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb, nodeDataEntry.Transforms[0]);
+                                if (isBoxColiderInside)
+                                {
+                                    shapeIntersects = true;
+                                    break;
+                                }
+                            }
+
+                            if (shape.ShapeType == "Capsule")
+                            {
+                                bool isBoxColiderInside = CollisionCheckService.IsCollisionCapsuleInsideBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb, nodeDataEntry.Transforms[0]);
+                                if (isBoxColiderInside)
+                                {
+                                    shapeIntersects = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (shapeIntersects)
+                        {
+                            actorRemoval.Add(actorIndex);
+                        }
+                        actorIndex++;
+                    }
+
+                    Logger.Debug($"Found {actorRemoval.Count} actors marked for removal in {nodeDataIndex}");
+                    if (actorRemoval.Count > 0)
+                    {
+                        nodeDeletions.Add(new AxlRemovalNodeDeletion()
+                            {
+                                Index = nodeDataIndex,
+                                Type = nodeEntry.Type,
+                                ActorDeletions = actorRemoval,
+                                ExpectedActors = nodeEntry.Actors.Count
+                            });
+                    }
                     break;
                 case CollisionCheck.Types.Default:
                     foreach (var transform in nodeDataEntry.Transforms)
@@ -143,6 +203,7 @@ public class ProcessService
         }
         
         // Logger.Info(JsonConvert.SerializeObject(CETOutputFile, Formatting.Indented));
+        /*
         Logger.Info("Selection Box AABB Details:");
         Logger.Info($"Center point: {CETOutputFile.Aabb.Center.ToString()}");
         Logger.Info($"Box Vertices: {string.Join(", ", CETOutputFile.Aabb.GetCorners())}");
@@ -152,7 +213,7 @@ public class ProcessService
         Logger.Info($"Center point: {CETOutputFile.Obb.Center.ToString()}");
         Logger.Info($"Box Vertices: {string.Join(", ", CETOutputFile.Obb.GetCorners())}");
         Logger.Info($"Box scale: {CETOutputFile.Obb.Size}");
-        
+        */
         List<AxlRemovalSector> sectors = new List<AxlRemovalSector>();
         
         foreach (string streamingSectorName in CETOutputFile.Sectors)
@@ -181,7 +242,7 @@ public class ProcessService
                 sectors.Add(resultPss);
             }
         }
-
+        
         if (sectors.Count == 0)
         {
             Logger.Warning("No sectors Intersect!");
@@ -195,7 +256,8 @@ public class ProcessService
                     Sectors = sectors
                 }
             };
-            Logger.Info(JsonConvert.SerializeObject(removalFile, new JsonSerializerSettings(){NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented}));
+            string axlFilePath = _settings.GameDirectory + @"\archive\pc\mod\" + _settings.OutputFilename + ".xl";
+            File.WriteAllText(axlFilePath, JsonConvert.SerializeObject(removalFile, new JsonSerializerSettings(){NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented}));
         }
         // TestingService.TestVertexTransform();
         return (true, string.Empty);
