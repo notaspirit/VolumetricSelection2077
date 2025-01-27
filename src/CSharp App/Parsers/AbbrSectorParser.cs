@@ -156,9 +156,9 @@ public class AbbrSectorParser
                             Vector3 _positionShape = new Vector3(shape?["Position"]?["X"]?.Value<float>() ?? 0,
                                 shape?["Position"]?["Y"]?.Value<float>() ?? 0,
                                 shape?["Position"]?["Z"]?.Value<float>() ?? 0);
-                            Vector3 _scaleShape = new Vector3(shape?["Scale"]?["X"]?.Value<float>() ?? 0,
-                                shape?["Scale"]?["Y"]?.Value<float>() ?? 0,
-                                shape?["Scale"]?["Z"]?.Value<float>() ?? 0);
+                            Vector3 _scaleShape = new Vector3(shape?["Scale"]?["X"]?.Value<float>() ?? shape?["Size"]?["X"]?.Value<float>() ?? 0,
+                                shape?["Scale"]?["Y"]?.Value<float>() ?? shape?["Size"]?["Y"]?.Value<float>() ?? 0,
+                                shape?["Scale"]?["Z"]?.Value<float>() ?? shape?["Size"]?["Z"]?.Value<float>() ?? 0);
                             Quaternion _rotationShape = new Quaternion(
                                 shape?["Orientation"]?["i"]?.Value<int>() ?? 0,
                                 shape?["Orientation"]?["j"]?.Value<int>() ?? 0,
