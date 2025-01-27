@@ -11,7 +11,7 @@ public class AbbrMeshParser
 {
     private static Vector3 SysVec3ToSharpVec3(System.Numerics.Vector3 vec3)
     {
-        return new Vector3(vec3.X, vec3.Y, vec3.Z);
+        return new Vector3(vec3.X, vec3.Z, vec3.Y);
     }
 
     private static string GetLowestLodLevel(ModelRoot model)
