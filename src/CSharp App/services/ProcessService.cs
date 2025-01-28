@@ -102,7 +102,7 @@ public class ProcessService
                                     continue;
                                 }
                                 
-                                bool isCollisionShapeInside = CollisionCheckService.IsCollisonMeshInsideBox(collisionShape, selectionBox.Obb, selectionBox.Aabb, nodeDataEntry.Transforms[0], transformActor, shape.Transform);
+                                bool isCollisionShapeInside = CollisionCheckService.IsCollisonMeshInsideBox(collisionShape, selectionBox.Obb, selectionBox.Aabb, transformActor, shape.Transform);
                                 if (isCollisionShapeInside)
                                 {
                                     shapeIntersects = true;
@@ -112,7 +112,7 @@ public class ProcessService
 
                             if (shape.ShapeType == "Box")
                             {
-                                bool isBoxColiderInside = CollisionCheckService.IsCollisionBoxInsideBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb, nodeDataEntry.Transforms[0]);
+                                bool isBoxColiderInside = CollisionCheckService.IsCollisionBoxInsideBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb);
                                 if (isBoxColiderInside)
                                 {
                                     shapeIntersects = true;
@@ -122,7 +122,7 @@ public class ProcessService
 
                             if (shape.ShapeType == "Capsule")
                             {
-                                bool isBoxColiderInside = CollisionCheckService.IsCollisionCapsuleInsideBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb, nodeDataEntry.Transforms[0]);
+                                bool isBoxColiderInside = CollisionCheckService.IsCollisionCapsuleInsideBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb);
                                 if (isBoxColiderInside)
                                 {
                                     shapeIntersects = true;
@@ -245,7 +245,7 @@ public class ProcessService
         
         if (sectors.Count == 0)
         {
-            Logger.Warning("No sectors Intersect!");
+            Logger.Warning("No sectors intersect, no output file generated!");
         }
         else
         {
@@ -258,6 +258,15 @@ public class ProcessService
             };
             string axlFilePath = _settings.GameDirectory + @"\archive\pc\mod\" + _settings.OutputFilename + ".xl";
             File.WriteAllText(axlFilePath, JsonConvert.SerializeObject(removalFile, new JsonSerializerSettings(){NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented}));
+            int nodeCount = 0;
+            foreach (var sector in sectors)
+            {
+                foreach (var node in sector.NodeDeletions)
+                {
+                    nodeCount++;
+                }
+            }
+            Logger.Success($"Found {nodeCount} nodes in {sectors.Count} sectors and saved output to the archive mod folder.");
         }
         // TestingService.TestVertexTransform();
         return (true, string.Empty);

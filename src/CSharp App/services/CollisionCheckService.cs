@@ -68,11 +68,11 @@ public class CollisionCheckService
     }
 
     public static bool IsCollisonMeshInsideBox(AbbrMesh mesh, OrientedBoundingBox selectionBoxObb,
-        BoundingBox selectionBoxAabb, AbbrSectorTransform nodeTransform, AbbrSectorTransform actorTransform, AbbrSectorTransform shapeTransform)
+        BoundingBox selectionBoxAabb, AbbrSectorTransform actorTransform, AbbrSectorTransform shapeTransform)
     {
-        Vector3 combinedScale = nodeTransform.Scale * actorTransform.Scale * shapeTransform.Scale;
-        Quaternion combinedRotation = nodeTransform.Rotation * actorTransform.Rotation * shapeTransform.Rotation;
-        Vector3 combinedTranslation = nodeTransform.Position + actorTransform.Position + shapeTransform.Position;
+        Vector3 combinedScale = actorTransform.Scale * shapeTransform.Scale;
+        Quaternion combinedRotation = actorTransform.Rotation * shapeTransform.Rotation;
+        Vector3 combinedTranslation = actorTransform.Position + shapeTransform.Position;
 
         List<AbbrSectorTransform> transforms = new List<AbbrSectorTransform>();
         var transform = new AbbrSectorTransform()
@@ -82,59 +82,77 @@ public class CollisionCheckService
             Scale = combinedScale
         };
         transforms.Add(transform);
-        return IsMeshInsideBox(mesh, selectionBoxObb, selectionBoxAabb, transforms);
+        bool isInside = IsMeshInsideBox(mesh, selectionBoxObb, selectionBoxAabb, transforms);
+        Logger.Debug("\n" +
+                     $"Build Collision Mesh Scale with {actorTransform.Scale} * {shapeTransform.Scale} => {combinedScale}\n" +
+                     $"Build Collision Mesh Rotation with {actorTransform.Rotation} * {shapeTransform.Rotation} => {combinedRotation}\n" +
+                     $"Build Collision Mesh Position with {actorTransform.Position} * {shapeTransform.Position} => {combinedTranslation}\n" +
+                     $"Mesh is inside: {isInside}.");
+        return isInside;
     }
 
-    public static bool IsCollisionBoxInsideBox(AbbrActorShapes shape, AbbrSectorTransform actorTransform, BoundingBox selectionBoxAabb, OrientedBoundingBox selectionBoxObb, AbbrSectorTransform nodeTransform)
+    public static bool IsCollisionBoxInsideBox(AbbrActorShapes shape, AbbrSectorTransform actorTransform, BoundingBox selectionBoxAabb, OrientedBoundingBox selectionBoxObb)
     {
-        Vector3 shapePosition = shape.Transform.Position + actorTransform.Position + nodeTransform.Position;
-        Vector3 shapeScale = shape.Transform.Scale * actorTransform.Scale * nodeTransform.Scale;
-        Quaternion shapeRotation = shape.Transform.Rotation * actorTransform.Rotation * nodeTransform.Rotation;
-        shapeRotation.Normalize();
-        Vector3 halfExtends = new Vector3(shapeScale.X / 2f, shapeScale.Y / 2f, shapeScale.Z / 2f);
+        Vector3 combinedTranslation = shape.Transform.Position + actorTransform.Position;
+        Vector3 combinedScale = shape.Transform.Scale * actorTransform.Scale;
+        Quaternion combinedRotation = shape.Transform.Rotation * actorTransform.Rotation;
+        combinedRotation.Normalize();
+        Vector3 halfExtends = new Vector3(combinedScale.X / 2f, combinedScale.Y / 2f, combinedScale.Z / 2f);
         OrientedBoundingBox boxObb = new OrientedBoundingBox(new Vector3(-halfExtends.X, -halfExtends.Y, -halfExtends.Z), halfExtends);
 
-        boxObb.Transform(Matrix.RotationQuaternion(shapeRotation));
-        boxObb.Translate(shapePosition);
+        boxObb.Transform(Matrix.RotationQuaternion(combinedRotation));
+        boxObb.Translate(combinedTranslation);
                                 
         BoundingBox boxAABB = boxObb.GetBoundingBox();
         ContainmentType aabbContainmentType = selectionBoxAabb.Contains(boxAABB);
+        bool isInside = false;
         if (aabbContainmentType != ContainmentType.Disjoint)
         {
             ContainmentType obbContainmentType =  selectionBoxObb.Contains(ref boxObb);
             if (obbContainmentType != ContainmentType.Disjoint)
             {
-                return true;
+                isInside = true;
             }
         }
-        return false;
+        Logger.Debug("\n" +
+                     $"Build Collision Mesh Scale with {actorTransform.Scale} * {shape.Transform.Scale} => {combinedScale}\n" +
+                     $"Build Collision Mesh Rotation with {actorTransform.Rotation} * {shape.Transform.Rotation} => {combinedRotation}\n" +
+                     $"Build Collision Mesh Position with {actorTransform.Position} * {shape.Transform.Position} => {combinedTranslation}\n" +
+                     $"Mesh is inside: {isInside}.");
+        return isInside;
     }
     
-    public static bool IsCollisionCapsuleInsideBox(AbbrActorShapes shape, AbbrSectorTransform actorTransform, BoundingBox selectionBoxAabb, OrientedBoundingBox selectionBoxObb, AbbrSectorTransform nodeTransform)
+    public static bool IsCollisionCapsuleInsideBox(AbbrActorShapes shape, AbbrSectorTransform actorTransform, BoundingBox selectionBoxAabb, OrientedBoundingBox selectionBoxObb)
     {
-        float height = shape.Transform.Scale.Y + 2 * actorTransform.Scale.X * nodeTransform.Scale.Z;   
+        float height = shape.Transform.Scale.Y + 2 * actorTransform.Scale.X;   
         Vector3 shapeSizeAsBox = new Vector3(shape.Transform.Scale.X * 2, shape.Transform.Scale.X * 2, height);
         
-        Vector3 combinedPosition = shape.Transform.Position + actorTransform.Position + nodeTransform.Position;
-        Vector3 combinedScale = shape.Transform.Scale * shapeSizeAsBox * nodeTransform.Scale;
-        Quaternion combinedRotation = shape.Transform.Rotation * actorTransform.Rotation * nodeTransform.Rotation;
+        Vector3 combinedTranslation = shape.Transform.Position + actorTransform.Position;
+        Vector3 combinedScale = shape.Transform.Scale * shapeSizeAsBox;
+        Quaternion combinedRotation = shape.Transform.Rotation * actorTransform.Rotation;
         combinedRotation.Normalize();
         Vector3 halfExtends = new Vector3(combinedScale.X / 2f, combinedScale.Y / 2f, combinedScale.Z / 2f);
         OrientedBoundingBox boxObb = new OrientedBoundingBox(new Vector3(0f - halfExtends.X, 0f - halfExtends.Y, 0f - halfExtends.Z), halfExtends);
 
         boxObb.Transform(Matrix.RotationQuaternion(combinedRotation));
-        boxObb.Translate(combinedPosition);
+        boxObb.Translate(combinedTranslation);
                                 
         BoundingBox boxAABB = boxObb.GetBoundingBox();
         ContainmentType aabbContainmentType = selectionBoxAabb.Contains(boxAABB);
+        bool isInside = false;
         if (aabbContainmentType != ContainmentType.Disjoint)
         {
             ContainmentType obbContainmentType =  selectionBoxObb.Contains(ref boxObb);
             if (obbContainmentType != ContainmentType.Disjoint)
             {
-                return true;
+                isInside = true;
             }
         }
-        return false;
+        Logger.Debug("\n" +
+                     $"Build Collision Mesh Scale with {actorTransform.Scale} * {shape.Transform.Scale} => {combinedScale}\n" +
+                     $"Build Collision Mesh Rotation with {actorTransform.Rotation} * {shape.Transform.Rotation} => {combinedRotation}\n" +
+                     $"Build Collision Mesh Position with {actorTransform.Position} * {shape.Transform.Position} => {combinedTranslation}\n" +
+                     $"Mesh is inside: {isInside}.");
+        return isInside;
     }
 }
