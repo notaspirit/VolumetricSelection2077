@@ -46,7 +46,8 @@ public class SelectionParser
         obb.Transform(selectionBoxMatrix);
         obb.Translate(new Vector3((float)originX, (float)originY, (float)originZ));
         */
-        Matrix selectionBoxMatrix = Matrix.RotationYawPitchRoll(-(float)rotX, -(float)rotY, -(float)rotZ);
+        Matrix selectionBoxMatrix = Matrix.RotationYawPitchRoll(
+            MathUtil.DegreesToRadians((float)rotX), MathUtil.DegreesToRadians((float)rotY), MathUtil.DegreesToRadians((float)rotZ));
         Vector3 halfScale = new Vector3((float)scaleX / 2, (float)scaleY / 2, (float)scaleZ / 2);
         OrientedBoundingBox obb =
             new OrientedBoundingBox(new Vector3(-halfScale.X, -halfScale.Y, -halfScale.Z), halfScale);
