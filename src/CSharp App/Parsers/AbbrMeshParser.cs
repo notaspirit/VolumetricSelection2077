@@ -11,7 +11,7 @@ public class AbbrMeshParser
 {
     private static Vector3 SysVec3ToSharpVec3(System.Numerics.Vector3 vec3)
     {
-        return new Vector3(vec3.X, vec3.Z, vec3.Y);
+        return new Vector3(vec3.X, vec3.Z, -vec3.Y);
     }
 
     private static string GetLowestLodLevel(ModelRoot model)
@@ -49,10 +49,10 @@ public class AbbrMeshParser
         string lowestLodLevel = GetLowestLodLevel(meshRaw);
         foreach (var mesh in meshRaw.LogicalMeshes)
         {
-            if (!mesh.Name.EndsWith(lowestLodLevel)) continue;
+            if (!mesh.Name.EndsWith(lowestLodLevel)) continue; // potential issue: if the lod level doesn't exist it will return an empty list
             List<Vector3> _vertices = new List<Vector3>();
             IList<uint>? _indices = null;
-            foreach (var primitive in mesh.Primitives)
+            foreach (var primitive in mesh.Primitives) // what would break if there are multiple primitives unlike the assumed 1?
             {
                 var vertices = primitive.GetVertices("POSITION").AsVector3Array();
                 _indices = primitive.GetIndices();
@@ -118,6 +118,7 @@ public class AbbrMeshParser
         
         foreach (var vertex in _vertices)
         {
+            // do vertices here need to also be inverted? => converted from glb => swap -Y and Z?
             vertices.Add(new Vector3(vertex["X"]?.Value<float>() ?? 0, vertex["Y"]?.Value<float>() ?? 0, vertex["Z"]?.Value<float>() ?? 0));
         }
 
