@@ -75,9 +75,16 @@ public class AbbrSectorParser
                 {
                     transforms.Add(new AbbrSectorTransform()
                     {
-                        Position = new Vector3(element["translation"]["X"].Value<float>(), element["translation"]["Y"].Value<float>(), element["translation"]["Z"].Value<float>()),
-                        Scale = new Vector3(element["scale"]["X"].Value<float>(), element["scale"]["Y"].Value<float>(), element["scale"]["Z"].Value<float>()),
-                        Rotation = new Quaternion(element["rotation"]["i"].Value<float>(), element["rotation"]["j"].Value<float>(), element["rotation"]["k"].Value<float>(), element["rotation"]["r"].Value<float>()),
+                        Position = new Vector3(element["translation"]["X"].Value<float>(), 
+                            element["translation"]["Y"].Value<float>(), 
+                            element["translation"]["Z"].Value<float>()),
+                        Scale = new Vector3(element["scale"]["X"].Value<float>(), 
+                            element["scale"]["Y"].Value<float>(), 
+                            element["scale"]["Z"].Value<float>()),
+                        Rotation = new Quaternion(element["rotation"]["i"].Value<float>(), 
+                            element["rotation"]["j"].Value<float>(), 
+                            element["rotation"]["k"].Value<float>(), 
+                            element["rotation"]["r"].Value<float>()),
                     });
                 }
                 
@@ -89,12 +96,13 @@ public class AbbrSectorParser
                     Position = new Vector3(nodeDataEntry?["Position"]?["X"]?.Value<float>() ?? 0,
                         nodeDataEntry?["Position"]?["Y"]?.Value<float>() ?? 0,
                         nodeDataEntry?["Position"]?["Z"]?.Value<float>() ?? 0),
-                    Rotation = new Quaternion(nodeDataEntry?["Orientation"]?["i"]?.Value<int>() ?? 0,
-                        nodeDataEntry?["Orientation"]?["j"]?.Value<int>() ?? 0,
-                        nodeDataEntry?["Orientation"]?["k"]?.Value<int>() ?? 0,
-                        nodeDataEntry?["Orientation"]?["r"]?.Value<int>() ?? 0),
-                    Scale = new Vector3(nodeDataEntry?["Scale"]?["X"]?.Value<int>() ?? 0,
-                        nodeDataEntry?["Scale"]?["Y"]?.Value<int>() ?? 0, nodeDataEntry?["Scale"]?["Z"]?.Value<int>() ?? 0), 
+                    Rotation = new Quaternion(nodeDataEntry?["Orientation"]?["i"]?.Value<float>() ?? 0,
+                        nodeDataEntry?["Orientation"]?["j"]?.Value<float>() ?? 0,
+                        nodeDataEntry?["Orientation"]?["k"]?.Value<float>() ?? 0,
+                        nodeDataEntry?["Orientation"]?["r"]?.Value<float>() ?? 1),
+                    Scale = new Vector3(nodeDataEntry?["Scale"]?["X"]?.Value<float>() ?? 0,
+                        nodeDataEntry?["Scale"]?["Y"]?.Value<float>() ?? 0, 
+                        nodeDataEntry?["Scale"]?["Z"]?.Value<float>() ?? 0), 
                 });
             }
             
@@ -115,7 +123,7 @@ public class AbbrSectorParser
             {
                 _meshPath = node?["Data"]?["mesh"]?["DepotPath"]?["$value"]?.Value<string>() ?? null;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 
             }
@@ -127,7 +135,7 @@ public class AbbrSectorParser
                     {
                         _meshPath = node?["Data"]?["meshRef"]?["DepotPath"]?["$value"]?.Value<string>() ?? null;
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         
                     }
@@ -139,11 +147,13 @@ public class AbbrSectorParser
             {
                 foreach (var actor in actorArray)
                 {
-                    Vector3 _scale = new Vector3(actor?["Scale"]?["X"]?.Value<int>() ?? 0,
-                        actor?["Scale"]?["Y"]?.Value<int>() ?? 0, actor?["Scale"]?["Z"]?.Value<int>() ?? 0);
-                    Quaternion _quaternion = new Quaternion(actor?["Orientation"]?["i"]?.Value<int>() ?? 0,
-                        actor?["Orientation"]?["j"]?.Value<int>() ?? 0, actor?["Orientation"]?["k"]?.Value<int>() ?? 0,
-                        actor?["Orientation"]?["r"]?.Value<int>() ?? 0);
+                    Vector3 _scale = new Vector3(actor?["Scale"]?["X"]?.Value<float>() ?? 0,
+                        actor?["Scale"]?["Y"]?.Value<float>() ?? 0,
+                        actor?["Scale"]?["Z"]?.Value<float>() ?? 0);
+                    Quaternion _quaternion = new Quaternion(actor?["Orientation"]?["i"]?.Value<float>() ?? 0,
+                        actor?["Orientation"]?["j"]?.Value<float>() ?? 0,
+                        actor?["Orientation"]?["k"]?.Value<float>() ?? 0,
+                        actor?["Orientation"]?["r"]?.Value<float>() ?? 1);
                     Vector3 _position = FixedPointVector3Converter.PosBitsToVec3(actor?["Position"]);
                     List<AbbrActorShapes>? _shapes = new List<AbbrActorShapes>();
                     var shapeArray = actor?["Shapes"];
@@ -160,11 +170,11 @@ public class AbbrSectorParser
                                 shape?["Scale"]?["Y"]?.Value<float>() ?? shape?["Size"]?["Y"]?.Value<float>() ?? 1,
                                 shape?["Scale"]?["Z"]?.Value<float>() ?? shape?["Size"]?["Z"]?.Value<float>() ?? 1);
                             Quaternion _rotationShape = new Quaternion(
-                                shape?["Rotation"]?["i"]?.Value<int>() ?? 0,
-                                shape?["Rotation"]?["j"]?.Value<int>() ?? 0,
-                                shape?["Rotation"]?["k"]?.Value<int>() ?? 0,
-                                shape?["Rotation"]?["r"]?.Value<int>() ?? 1);
-                            _shapes.Add(new AbbrActorShapes()
+                                shape?["Rotation"]?["i"]?.Value<float>() ?? 0,
+                                shape?["Rotation"]?["j"]?.Value<float>() ?? 0,
+                                shape?["Rotation"]?["k"]?.Value<float>() ?? 0,
+                                shape?["Rotation"]?["r"]?.Value<float>() ?? 1);
+                            _shapes.Add(new AbbrActorShapes()   
                             {
                                 Hash = _hash,
                                 Transform = new AbbrSectorTransform(){
