@@ -25,50 +25,5 @@ namespace VolumetricSelection2077
             var viewModel = DataContext as SettingsViewModel;
             viewModel?.Settings.SaveSettings(); // Save settings when window closes
         }
-        public string wkitAPIRefreshIntervalString
-        {
-            get => _settings.WolvenkitAPIRequestInterval.ToString();
-            set
-            {
-                if (int.TryParse(value, out int interval) && interval >= 0)
-                {
-                    _settings.WolvenkitAPIRequestInterval = interval;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        public string wkitAPITimeoutString
-        {
-            get => _settings.WolvenkitAPIRequestTimeout.ToString();
-            set
-            {
-                if (int.TryParse(value, out int Rtimeout) && Rtimeout >= 0)
-                {
-                    _settings.WolvenkitAPIRequestTimeout = Rtimeout;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        public string wkitAPIInactivityTimeout
-        {
-            get => _settings.WolvenkitAPIInactivityTimeout.ToString();
-            set
-            {
-                if (int.TryParse(value, out int Itimeout) && Itimeout >= 0)
-                {
-                    _settings.WolvenkitAPIInactivityTimeout = Itimeout;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        public new event PropertyChangedEventHandler? PropertyChanged;
-
-        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
     };
 }

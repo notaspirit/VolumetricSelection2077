@@ -16,14 +16,10 @@ public class SettingsService
         GameDirectory = "";
         CacheEnabled = true;
         CacheDirectory = "";
-        SaveToArchiveMods = false;
+        SaveToArchiveMods = true;
         OutputDirectory = "";
         OutputFilename = "";
-        WolvenkitCLIPath = "";
-        WolvenkitAPIRequestInterval = 1000;
-        WolvenkitAPIRequestTimeout = 1 * 1000 * 60;
-        WolvenkitAPIInactivityTimeout = 5 * 1000 * 60;
-        WolvenkitProjectPath = "";
+        DebugMode = true;
     }
 
     // Singleton instance
@@ -50,12 +46,7 @@ public class SettingsService
     public bool SaveToArchiveMods { get; set; }
     public string OutputDirectory { get; set; }
     public string OutputFilename { get; set; }
-    public string WolvenkitCLIPath { get; set; }
-    public int WolvenkitAPIRequestInterval { get; set; }
-    public int WolvenkitAPIRequestTimeout { get; set; }
-    public string WolvenkitProjectPath { get; set; }
-
-    public int WolvenkitAPIInactivityTimeout { get; set; }
+    public bool DebugMode { get; set; }
     // Methods for loading and saving settings
     public void LoadSettings()
     {
@@ -77,9 +68,7 @@ public class SettingsService
                     SaveToArchiveMods = settings.SaveToArchiveMods;
                     OutputDirectory = settings.OutputDirectory;
                     OutputFilename = settings.OutputFilename;
-                    WolvenkitCLIPath = settings.WolvenkitCLIPath;
-                    WolvenkitAPIRequestInterval = settings.WolvenkitAPIRequestInterval;
-                    WolvenkitProjectPath = settings.WolvenkitProjectPath;
+                    DebugMode = settings.DebugMode;
                 }
             }
             catch (Exception ex)

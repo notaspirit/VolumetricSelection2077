@@ -10,6 +10,7 @@ namespace VolumetricSelection2077.Services
     {
         private static ILogger? _logger;
         private static readonly List<ILogEventSink> _sinks = new();
+        private static SettingsService _settingsService;
         
         public static void Initialize(string logDirectory)
         {
@@ -27,6 +28,7 @@ namespace VolumetricSelection2077.Services
             }
 
             _logger = loggerConfig.CreateLogger();
+            _settingsService = SettingsService.Instance;
         }
 
         public static void AddSink(ILogEventSink sink)
@@ -54,8 +56,13 @@ namespace VolumetricSelection2077.Services
         public static void Error(string message) 
             => _logger?.Error(FormatMessage(message, "Error  "));
 
-        public static void Debug(string message) 
-            => _logger?.Debug(FormatMessage(message, "Debug  "));
+        public static void Debug(string message)
+        {
+            if (_settingsService.DebugMode)
+            {
+                _logger?.Debug(FormatMessage(message, "Debug  "));
+            }
+        }
 
         public static void Success(string message) 
             => _logger?.Fatal(FormatMessage(message, "Success"));
