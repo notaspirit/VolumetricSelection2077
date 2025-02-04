@@ -19,7 +19,7 @@ public class SettingsService
         SaveToArchiveMods = true;
         OutputDirectory = "";
         OutputFilename = "";
-        DebugMode = true;
+        DebugMode = false;
     }
 
     // Singleton instance
