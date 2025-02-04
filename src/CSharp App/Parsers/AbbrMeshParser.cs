@@ -11,7 +11,7 @@ public class AbbrMeshParser
 {
     private static Vector3 SysVec3ToSharpVec3(System.Numerics.Vector3 vec3)
     {
-        return new Vector3(vec3.X, vec3.Z, -vec3.Y);
+        return new Vector3(vec3.X, -vec3.Z, vec3.Y);
     }
 
     private static string GetLowestLodLevel(ModelRoot model)
@@ -49,10 +49,10 @@ public class AbbrMeshParser
         string lowestLodLevel = GetLowestLodLevel(meshRaw);
         foreach (var mesh in meshRaw.LogicalMeshes)
         {
-            if (!mesh.Name.EndsWith(lowestLodLevel)) continue; // potential issue: if the lod level doesn't exist it will return an empty list
+            if (!mesh.Name.EndsWith(lowestLodLevel)) continue;
             List<Vector3> _vertices = new List<Vector3>();
             IList<uint>? _indices = null;
-            foreach (var primitive in mesh.Primitives) // what would break if there are multiple primitives unlike the assumed 1?
+            foreach (var primitive in mesh.Primitives)
             {
                 var vertices = primitive.GetVertices("POSITION").AsVector3Array();
                 _indices = primitive.GetIndices();
@@ -68,8 +68,8 @@ public class AbbrMeshParser
                 continue;
             }
             
-            OrientedBoundingBox meshBoundingBox = new OrientedBoundingBox(_vertices.ToArray());
-            
+            OrientedBoundingBox meshBoundingBoxOBB = new(_vertices.ToArray());
+            BoundingBox meshBoundingBox = meshBoundingBoxOBB.GetBoundingBox();
             _subMeshes.Add(new AbbrSubMeshes()
             {
                 Indices = _indices,
@@ -114,7 +114,7 @@ public class AbbrMeshParser
         
         List<Vector3> vertices = new List<Vector3>();
         IList<uint> indices = new List<uint>();
-        OrientedBoundingBox meshBoundingBox = new OrientedBoundingBox();
+        BoundingBox meshBoundingBox = new();
         
         foreach (var vertex in _vertices)
         {
@@ -149,7 +149,7 @@ public class AbbrMeshParser
             var minimum = new Vector3(bbMinX.Value, bbMinY.Value, bbMinZ.Value);
             var maximum = new Vector3(bbMaxX.Value, bbMaxY.Value, bbMaxZ.Value);
             
-            meshBoundingBox = new OrientedBoundingBox(minimum, maximum);
+            meshBoundingBox = new(minimum, maximum);
         }
         else
         {

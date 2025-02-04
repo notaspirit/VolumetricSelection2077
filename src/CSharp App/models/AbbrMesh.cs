@@ -12,6 +12,6 @@ public class AbbrSubMeshes
 {
     public required List<Vector3> Vertices;
     public required IList<uint> Indices;
-    public required OrientedBoundingBox BoundingBox;
+    public required BoundingBox BoundingBox;
     public bool? IsConvexCollider;
 }
