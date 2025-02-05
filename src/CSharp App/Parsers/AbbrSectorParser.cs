@@ -147,9 +147,9 @@ public class AbbrSectorParser
             {
                 foreach (var actor in actorArray)
                 {
-                    Vector3 _scale = new Vector3(actor?["Scale"]?["X"]?.Value<float>() ?? 0,
-                        actor?["Scale"]?["Y"]?.Value<float>() ?? 0,
-                        actor?["Scale"]?["Z"]?.Value<float>() ?? 0);
+                    Vector3 _scale = new Vector3(actor?["Scale"]?["X"]?.Value<float>() ?? 1,
+                        actor?["Scale"]?["Y"]?.Value<float>() ?? 1,
+                        actor?["Scale"]?["Z"]?.Value<float>() ?? 1);
                     Quaternion _quaternion = new Quaternion(actor?["Orientation"]?["i"]?.Value<float>() ?? 0,
                         actor?["Orientation"]?["j"]?.Value<float>() ?? 0,
                         actor?["Orientation"]?["k"]?.Value<float>() ?? 0,
