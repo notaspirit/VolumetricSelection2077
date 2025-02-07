@@ -1,12 +1,15 @@
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Parsers;
 using Newtonsoft.Json;
 using SharpDX;
 using VolumetricSelection2077.Resources;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace VolumetricSelection2077.Services;
 
@@ -24,11 +27,14 @@ public class ProcessService
     private async Task<(bool success, string error, AxlRemovalSector? result)> ProcessStreamingsector(AbbrSector sector, string sectorPath, SelectionInput selectionBox)
     {
         Logger.Info($"Processing sector {sectorPath}");
+        
         List<AxlRemovalNodeDeletion> nodeDeletions = new List<AxlRemovalNodeDeletion>();
         
         int nodeDataIndex = 0;
         foreach (var nodeDataEntry in sector.NodeData)
-        { 
+        {
+            // Logger.Debug($"Processing node {nodeDataIndex}:");
+            
             CollisionCheck.Types entryType = CollisionCheck.Types.Default;
             
             var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
@@ -86,49 +92,52 @@ public class ProcessService
                         AbbrSectorTransform transformActor = actor.Transform;
                         foreach (var shape in actor.Shapes)
                         {
+                            
                             if (shape.ShapeType.Contains("Mesh"))
                             {
-                                var (successGetShape, errorGetShape, collisionShapeString) = _gameFileService.GetGeometryFromCache(sectorHash, shape.Hash);
-                                if (!successGetShape || collisionShapeString == null)
+                                var (successGetShape, errorGetShape, collisionMeshString) = _gameFileService.GetGeometryFromCache(sectorHash, shape.Hash);
+                                if (!successGetShape || collisionMeshString == null)
                                 {
                                     Logger.Warning($"Failed to get shape {sectorHash}, {shape.Hash} with error: {errorGetShape}");
                                     continue;
                                 }
                                 
-                                AbbrMesh collisionShape = AbbrMeshParser.ParseFromJson(collisionShapeString);
-                                if (collisionShape == null)
+                                AbbrMesh collisionMesh = AbbrMeshParser.ParseFromJson(collisionMeshString);
+                                if (collisionMesh == null)
                                 {
-                                    Logger.Warning($"Failed to parse {collisionShapeString}.");
+                                    Logger.Warning($"Failed to parse {collisionMeshString}.");
                                     continue;
                                 }
                                 
-                                bool isCollisionShapeInside = CollisionCheckService.IsCollisonMeshInsideBox(collisionShape, selectionBox.Obb, selectionBox.Aabb, transformActor, shape.Transform);
-                                if (isCollisionShapeInside)
+                                bool isCollisionMeshInsideBox = CollisionCheckService.IsCollisonMeshInsideSelectionBox(collisionMesh, selectionBox.Obb, selectionBox.Aabb, transformActor, shape.Transform);
+                                if (isCollisionMeshInsideBox)
                                 {
                                     shapeIntersects = true;
                                     break;
                                 }
                             }
-
+                            
                             if (shape.ShapeType == "Box")
                             {
-                                bool isBoxColiderInside = CollisionCheckService.IsCollisionBoxInsideBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb);
-                                if (isBoxColiderInside)
+                                string collectionName = sectorPath.Split(@"\")[^1] + " " + nodeDataIndex + " " + actorIndex; // just for testing so it's easy to identify the source of the shapes
+                                bool isCollisionBoxInsideBox = CollisionCheckService.IsCollisionBoxInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb, collectionName);
+                                if (isCollisionBoxInsideBox)
                                 {
                                     shapeIntersects = true;
                                     break;
                                 }
                             }
-
+                            
                             if (shape.ShapeType == "Capsule")
                             {
-                                bool isBoxColiderInside = CollisionCheckService.IsCollisionCapsuleInsideBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb);
-                                if (isBoxColiderInside)
+                                bool isCollisionCapsuleInsideBox = CollisionCheckService.IsCollisionCapsuleInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb);
+                                if (isCollisionCapsuleInsideBox)
                                 {
                                     shapeIntersects = true;
                                     break;
                                 }
                             }
+                            
                         }
 
                         if (shapeIntersects)
@@ -138,7 +147,7 @@ public class ProcessService
                         actorIndex++;
                     }
 
-                    Logger.Debug($"Found {actorRemoval.Count} actors marked for removal in {nodeDataIndex}");
+                    // Logger.Debug($"Found {actorRemoval.Count} actors marked for removal in {nodeDataIndex}");
                     if (actorRemoval.Count > 0)
                     {
                         nodeDeletions.Add(new AxlRemovalNodeDeletion()
@@ -185,7 +194,6 @@ public class ProcessService
     public async Task<(bool success, string error)> Process()
     {
         Logger.Info("Validating inputs...");
-
         if (!ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename))
         {
             return (false, "Validation failed");
@@ -201,20 +209,35 @@ public class ProcessService
         {
             return (false, $"Failed to parse CET output file with error: {errorSP}");
         }
-        
-        // Logger.Info(JsonConvert.SerializeObject(CETOutputFile, Formatting.Indented));
         /*
-        Logger.Info("Selection Box AABB Details:");
-        Logger.Info($"Center point: {CETOutputFile.Aabb.Center.ToString()}");
-        Logger.Info($"Box Vertices: {string.Join(", ", CETOutputFile.Aabb.GetCorners())}");
-        Logger.Info($"Box scale: {CETOutputFile.Aabb.Size}");
+        Logger.Debug("Selection Box AABB Details:");
+        Logger.Debug($"Center point: {CETOutputFile.Aabb.Center.ToString()}");
+        Logger.Debug($"Box Vertices: {string.Join(", ", CETOutputFile.Aabb.GetCorners())}");
+        Logger.Debug($"Box scale: {CETOutputFile.Aabb.Size}");
         
-        Logger.Info("Selection Box OBB Details:");
-        Logger.Info($"Center point: {CETOutputFile.Obb.Center.ToString()}");
-        Logger.Info($"Box Vertices: {string.Join(", ", CETOutputFile.Obb.GetCorners())}");
-        Logger.Info($"Box scale: {CETOutputFile.Obb.Size}");
+        Logger.Debug("Selection Box OBB Details:");
+        Logger.Debug($"Center point: {CETOutputFile.Obb.Center.ToString()}");
+        Logger.Debug($"Box Vertices: {string.Join(", ", CETOutputFile.Obb.GetCorners())}");
+        Logger.Debug($"Box scale: {CETOutputFile.Obb.Size}");
         */
+        string uniqueId = "initial";
+        
+        string selectionBoxString = $"selectionBoxVerts{uniqueId} = [ ";
+        var vertsSelectionBox = CETOutputFile.Obb.GetCorners();
+        foreach (var v in vertsSelectionBox)
+        {
+            selectionBoxString +=
+                $"({v.X.ToString(CultureInfo.InvariantCulture)}, {v.Y.ToString(CultureInfo.InvariantCulture)}, {v.Z.ToString(CultureInfo.InvariantCulture)}),";
+        }
+
+        selectionBoxString +=
+            $"]\n" +
+            $"selectionBox{uniqueId} = create_box(\"selectionBox{uniqueId}\", selectionBoxVerts{uniqueId}, \"none\")\n";
+
         List<AxlRemovalSector> sectors = new List<AxlRemovalSector>();
+
+        // List<string> testSectors = new();
+        // testSectors.Add(@"base\worlds\03_night_city\_compiled\default\exterior_-10_-4_0_1.streamingsector");
         
         foreach (string streamingSectorName in CETOutputFile.Sectors)
         {
@@ -234,7 +257,7 @@ public class ProcessService
                 Logger.Error($"Failed to deserialize streamingsector {streamingSectorName}");
                 continue;
             }
-
+            
             var (successPSS, errorPSS, resultPss) =
                 await ProcessStreamingsector(sectorDeserialized, streamingSectorName, CETOutputFile);
             if (successPSS && resultPss != null)
@@ -261,10 +284,7 @@ public class ProcessService
             int nodeCount = 0;
             foreach (var sector in sectors)
             {
-                foreach (var node in sector.NodeDeletions)
-                {
-                    nodeCount++;
-                }
+                nodeCount += sector.NodeDeletions.Count;
             }
             Logger.Success($"Found {nodeCount} nodes in {sectors.Count} sectors and saved output to the archive mod folder.");
         }
