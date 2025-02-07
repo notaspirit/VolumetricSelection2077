@@ -346,7 +346,10 @@ local function controlsTab()
         end
         ImGui.EndTable()
     end
-
+    
+    if ImGui.Button("Print Current Read Position") then
+        selectionBox:LogCurrentStats()
+    end
     statusMessage:display()
     ImGui.Text("Make sure the entire selection is visible")
 end
@@ -493,11 +496,6 @@ function CETGui()
         selectionBox:updateScale()
         selectionBox:updatePosition()
     end
-    if ImGui.GetIO().MouseWheel > 0 then
-        print("Scrolled up!")
-    elseif ImGui.GetIO().MouseWheel < 0 then
-        print("Scrolled down!")
-    end    
     ImGui.End()
 end
 
