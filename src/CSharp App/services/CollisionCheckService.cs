@@ -9,7 +9,7 @@ using SharpGLTF.IO;
 
 namespace VolumetricSelection2077.Services;
 
-public class CollisionCheckService
+public static class CollisionCheckService
 {
     private static Vector3 Vec4toVec3(Vector4 v)
     {
@@ -92,7 +92,6 @@ public class CollisionCheckService
     public static bool IsCollisonMeshInsideSelectionBox(AbbrMesh mesh, OrientedBoundingBox selectionBoxObb,
         BoundingBox selectionBoxAabb, AbbrSectorTransform actorTransform, AbbrSectorTransform shapeTransform)
     {
-        return true;
         Vector3 combinedScale = actorTransform.Scale * shapeTransform.Scale;
         Quaternion normalizedShapeRotation = shapeTransform.Rotation;
         normalizedShapeRotation.Normalize();
@@ -122,71 +121,32 @@ public class CollisionCheckService
 
     public static bool IsCollisionBoxInsideSelectionBox(AbbrActorShapes shape, AbbrSectorTransform actorTransform, BoundingBox selectionBoxAabb, OrientedBoundingBox selectionBoxObb, string collectionName) // the collectionName is just for test building the blender collections
     {
-        // Vector3 combinedTranslation = shape.Transform.Position + actorTransform.Position;
-        Vector3 combinedTranslation = Vector3.Add(actorTransform.Position, shape.Transform.Position);
-        /*
-         Logger.Debug($"\n" +
-                     $"Building Collision Box with:" +
-                     $"Actor Position: {actorTransform.Position}" +
-                     $"Shape Position: {shape.Transform.Position}" +
-                     $"Combined Position: {combinedTranslation}");
-        */
-        // Vector3 combinedScale = shape.Transform.Scale * actorTransform.Scale;
-        Vector3 combinedScale = Vector3.Multiply(actorTransform.Scale, shape.Transform.Scale);
+        // only working way to apply actor and shape transform
+        Matrix shapeTransformMatrix = Matrix.Scaling(new Vector3(1,1,1)) * 
+                                Matrix.RotationQuaternion(shape.Transform.Rotation) * 
+                                Matrix.Translation(shape.Transform.Position);
 
-        Quaternion normalizedShapeRotation = shape.Transform.Rotation;
-        normalizedShapeRotation.Normalize();
+        Matrix actorTransformMatrix = Matrix.Scaling(actorTransform.Scale) * 
+                                Matrix.RotationQuaternion(actorTransform.Rotation) * 
+                                Matrix.Translation(actorTransform.Position);
 
-        Quaternion normalizedActorRotation = actorTransform.Rotation;
-        normalizedActorRotation.Normalize();
-        
-        // Quaternion combinedRotation = normalizedShapeRotation * normalizedActorRotation;
-        Quaternion.Multiply(ref normalizedActorRotation, ref normalizedShapeRotation, out Quaternion combinedRotation);
-        OrientedBoundingBox boxObb = new OrientedBoundingBox(-combinedScale, combinedScale);
-        
-        boxObb.Transform(Matrix.RotationQuaternion(combinedRotation));
-        boxObb.Translate(combinedTranslation);
-        
-        // for testing only
-        
-        /*
-        var verts = boxObb.GetCorners();
-        string blenderVerticies = "verts = [\n";
-        foreach (var vertex in verts)
-        {
-            blenderVerticies += $"bm.verts.new(({vertex.X.ToString(CultureInfo.InvariantCulture)}, " +
-                                $"{vertex.Y.ToString(CultureInfo.InvariantCulture)}, " +
-                                $"{vertex.Z.ToString(CultureInfo.InvariantCulture)})),\n";
-        }
-        blenderVerticies += "]";
-        Logger.Debug($"\n" +
-                     $"{blenderVerticies}");
-        */
-        
-        
-        // testing end
+        Matrix transformMatrix = shapeTransformMatrix * actorTransformMatrix;
 
+        OrientedBoundingBox collisionBox = new(-shape.Transform.Scale, shape.Transform.Scale);
+        collisionBox.Transform(transformMatrix);
+        BoundingBox collisionBoxAabb = collisionBox.GetBoundingBox();
+        
         bool isInside = false;
-        
-        BoundingBox boxAABB = boxObb.GetBoundingBox();
-        ContainmentType aabbContainmentType = selectionBoxAabb.Contains(boxAABB);
+        ContainmentType aabbContainmentType = selectionBoxAabb.Contains(collisionBoxAabb);
         if (aabbContainmentType != ContainmentType.Disjoint)
         {
-            ContainmentType obbContainmentType =  selectionBoxObb.Contains(ref boxObb);
+            ContainmentType obbContainmentType =  selectionBoxObb.Contains(ref collisionBox);
             if (obbContainmentType != ContainmentType.Disjoint)
             {
                 isInside = true;
             }
         }
         /*
-Logger.Debug("\n" +
-             $"Build Collision Mesh Scale with {actorTransform.Scale} * {shape.Transform.Scale} => {combinedScale}\n" +
-             $"Build Collision Mesh Rotation with {actorTransform.Rotation} * {shape.Transform.Rotation} => {combinedRotation}\n" +
-             $"Build Collision Mesh Position with {actorTransform.Position} * {shape.Transform.Position} => {combinedTranslation}\n" +
-             $"Mesh is inside: {isInside}.");
-             */
-
-
         if (isInside)
         {
             collectionName = "true " + collectionName;
@@ -199,7 +159,7 @@ Logger.Debug("\n" +
         string uniqueId = DateTime.UtcNow.Ticks.ToString();
         
         string collisionBoxString = $"collisionBoxVerts{uniqueId} = [ ";
-        var vertsCollisionBox = boxObb.GetCorners();
+        var vertsCollisionBox = collisionBox.GetCorners();
         foreach (var v in vertsCollisionBox)
         {
             collisionBoxString +=
@@ -223,7 +183,7 @@ Logger.Debug("\n" +
             $"]\n" +
             $"selectionBox{uniqueId} = create_box(\"selectionBox{uniqueId}\", selectionBoxVerts{uniqueId}, \"{collectionName}\")\n";
         */
-        Logger.Debug(collisionBoxString /*+ selectionBoxString */);
+        // Logger.Debug(collisionBoxString /*+ selectionBoxString */);
         
         return isInside;
     }
