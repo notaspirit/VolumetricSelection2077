@@ -21,6 +21,7 @@ public class AbbrSectorParser
         JArray? nodeData = rootChunk?["nodeData"]?["Data"] as JArray;
 
         JArray? instancedMeshNodeTransforms = null;
+        JArray? instancedDestructibleMeshNodeTransforms = null;
         
         if (nodes == null || nodeData == null)
         {
@@ -53,59 +54,101 @@ public class AbbrSectorParser
             List<AbbrSectorTransform> transforms = new List<AbbrSectorTransform>();
 
             var node = nodes?[nodeDataEntry?["NodeIndex"].Value<int>()]?["Data"];
-            
-            if (node?["$type"]?.Value<string>() == "worldInstancedMeshNode")
+            string nodeType = node?["$type"].Value<string>();
+            switch (nodeType)
             {
-                if (instancedMeshNodeTransforms == null)
-                {
-                    instancedMeshNodeTransforms = node["worldTransformsBuffer"]?["sharedDataBuffer"]?["Data"]?["buffer"]?["Data"]?["Transforms"] as JArray;
-                }
-                
-                int? startIndex = node["worldTransformsBuffer"]?["startIndex"]?.Value<int>();
-                int? numElements = node["worldTransformsBuffer"]?["numElements"]?.Value<int>();
-
-                if (startIndex == null || numElements == null)
-                {
-                    Logger.Error(
-                        $"No start or num of elements found for InstancedMeshNode! {nodeDataEntry?["NodeIndex"]}: {startIndex ?? -1}, {numElements ?? -1}");
-                    return null;
-                }
-
-                foreach (var element in instancedMeshNodeTransforms.ToArray().AsSpan((int)startIndex, (int)numElements))
-                {
-                    transforms.Add(new AbbrSectorTransform()
+                case "worldInstancedMeshNode":
+                    if (instancedMeshNodeTransforms == null)
                     {
-                        Position = new Vector3(element["translation"]["X"].Value<float>(), 
-                            element["translation"]["Y"].Value<float>(), 
-                            element["translation"]["Z"].Value<float>()),
-                        Scale = new Vector3(element["scale"]["X"].Value<float>(), 
-                            element["scale"]["Y"].Value<float>(), 
-                            element["scale"]["Z"].Value<float>()),
-                        Rotation = new Quaternion(element["rotation"]["i"].Value<float>(), 
-                            element["rotation"]["j"].Value<float>(), 
-                            element["rotation"]["k"].Value<float>(), 
-                            element["rotation"]["r"].Value<float>()),
-                    });
-                }
+                        instancedMeshNodeTransforms = node["worldTransformsBuffer"]?["sharedDataBuffer"]?["Data"]?["buffer"]?["Data"]?["Transforms"] as JArray;
+                    }
                 
-            }
-            else
-            {
-                transforms.Add(new AbbrSectorTransform()
-                {
-                    Position = new Vector3(nodeDataEntry?["Position"]?["X"]?.Value<float>() ?? 0,
+                    int? startIndexWimn = node["worldTransformsBuffer"]?["startIndex"]?.Value<int>();
+                    int? numElementsWimn = node["worldTransformsBuffer"]?["numElements"]?.Value<int>();
+
+                    if (startIndexWimn == null || numElementsWimn == null)
+                    {
+                        Logger.Error(
+                            $"No start or num of elements found for InstancedMeshNode! {nodeDataEntry?["NodeIndex"]}: {startIndexWimn ?? -1}, {numElementsWimn ?? -1}");
+                        return null;
+                    }
+
+                    foreach (var element in instancedMeshNodeTransforms.ToArray().AsSpan((int)startIndexWimn, (int)numElementsWimn))
+                    {
+                        transforms.Add(new AbbrSectorTransform()
+                        {
+                            Position = new Vector3(element["translation"]["X"].Value<float>(), 
+                                element["translation"]["Y"].Value<float>(), 
+                                element["translation"]["Z"].Value<float>()),
+                            Scale = new Vector3(element["scale"]["X"].Value<float>(), 
+                                element["scale"]["Y"].Value<float>(), 
+                                element["scale"]["Z"].Value<float>()),
+                            Rotation = new Quaternion(element["rotation"]["i"].Value<float>(), 
+                                element["rotation"]["j"].Value<float>(), 
+                                element["rotation"]["k"].Value<float>(), 
+                                element["rotation"]["r"].Value<float>()),
+                        });
+                    }
+                    break;
+                case "worldInstancedDestructibleMeshNode":
+
+                    Vector3 nodeDataPosition = new(nodeDataEntry?["Position"]?["X"]?.Value<float>() ?? 0,
                         nodeDataEntry?["Position"]?["Y"]?.Value<float>() ?? 0,
-                        nodeDataEntry?["Position"]?["Z"]?.Value<float>() ?? 0),
-                    Rotation = new Quaternion(nodeDataEntry?["Orientation"]?["i"]?.Value<float>() ?? 0,
+                        nodeDataEntry?["Position"]?["Z"]?.Value<float>() ?? 0);
+                    Quaternion nodeDataRotation = new(nodeDataEntry?["Orientation"]?["i"]?.Value<float>() ?? 0,
                         nodeDataEntry?["Orientation"]?["j"]?.Value<float>() ?? 0,
                         nodeDataEntry?["Orientation"]?["k"]?.Value<float>() ?? 0,
-                        nodeDataEntry?["Orientation"]?["r"]?.Value<float>() ?? 1),
-                    Scale = new Vector3(nodeDataEntry?["Scale"]?["X"]?.Value<float>() ?? 0,
-                        nodeDataEntry?["Scale"]?["Y"]?.Value<float>() ?? 0, 
-                        nodeDataEntry?["Scale"]?["Z"]?.Value<float>() ?? 0), 
-                });
+                        nodeDataEntry?["Orientation"]?["r"]?.Value<float>() ?? 1);
+                    Vector3 nodeDataScale = new(nodeDataEntry?["Scale"]?["X"]?.Value<float>() ?? 1,
+                            nodeDataEntry?["Scale"]?["Y"]?.Value<float>() ?? 1,
+                            nodeDataEntry?["Scale"]?["Z"]?.Value<float>() ?? 1);
+                    
+                    if (instancedDestructibleMeshNodeTransforms == null)
+                    {
+                        instancedDestructibleMeshNodeTransforms = node["cookedInstanceTransforms"]?["sharedDataBuffer"]?["Data"]?["buffer"]?["Data"]?["Transforms"] as JArray;
+                    }
+                
+                    int? startIndexWidmn = node["cookedInstanceTransforms"]?["startIndex"]?.Value<int>();
+                    int? numElementsWidmn = node["cookedInstanceTransforms"]?["numElements"]?.Value<int>();
+
+                    if (startIndexWidmn == null || numElementsWidmn == null)
+                    {
+                        Logger.Error(
+                            $"No start or num of elements found for InstancedMeshNode! {nodeDataEntry?["NodeIndex"]}: {startIndexWidmn ?? -1}, {numElementsWidmn ?? -1}");
+                        return null;
+                    }
+
+                    foreach (var element in instancedDestructibleMeshNodeTransforms.ToArray().AsSpan((int)startIndexWidmn, (int)numElementsWidmn))
+                    {
+                        transforms.Add(new AbbrSectorTransform()
+                        {
+                            Position = new Vector3(element["position"]["X"].Value<float>(), 
+                                element["position"]["Y"].Value<float>(), 
+                                element["position"]["Z"].Value<float>()) + nodeDataPosition,
+                            Scale = nodeDataScale,
+                            Rotation = new Quaternion(element["orientation"]["i"].Value<float>(), 
+                                element["orientation"]["j"].Value<float>(), 
+                                element["orientation"]["k"].Value<float>(), 
+                                element["orientation"]["r"].Value<float>()) * nodeDataRotation,
+                        });
+                    }
+                    break;
+                default:
+                    transforms.Add(new AbbrSectorTransform()
+                    {
+                        Position = new Vector3(nodeDataEntry?["Position"]?["X"]?.Value<float>() ?? 0,
+                            nodeDataEntry?["Position"]?["Y"]?.Value<float>() ?? 0,
+                            nodeDataEntry?["Position"]?["Z"]?.Value<float>() ?? 0),
+                        Rotation = new Quaternion(nodeDataEntry?["Orientation"]?["i"]?.Value<float>() ?? 0,
+                            nodeDataEntry?["Orientation"]?["j"]?.Value<float>() ?? 0,
+                            nodeDataEntry?["Orientation"]?["k"]?.Value<float>() ?? 0,
+                            nodeDataEntry?["Orientation"]?["r"]?.Value<float>() ?? 1),
+                        Scale = new Vector3(nodeDataEntry?["Scale"]?["X"]?.Value<float>() ?? 1,
+                            nodeDataEntry?["Scale"]?["Y"]?.Value<float>() ?? 1, 
+                            nodeDataEntry?["Scale"]?["Z"]?.Value<float>() ?? 1), 
+                    });
+                    break;
             }
-            
             _nodeDataEntries.Add(new AbbrStreamingSectorNodeDataEntry()
             {
                 Transforms = transforms,
@@ -141,7 +184,7 @@ public class AbbrSectorParser
                     }
                 }
             }
-            List<AbbrCollisionActors>? _collisionActors = new List<AbbrCollisionActors>();
+            List<AbbrCollisionActors>? _collisionActors = new();
             var actorArray = node?["Data"]?["compiledData"]?["Data"]?["Actors"] as JArray;
             if (actorArray?.GetType() == typeof(JArray))
             {
@@ -155,7 +198,7 @@ public class AbbrSectorParser
                         actor?["Orientation"]?["k"]?.Value<float>() ?? 0,
                         actor?["Orientation"]?["r"]?.Value<float>() ?? 1);
                     Vector3 _position = FixedPointVector3Converter.PosBitsToVec3(actor?["Position"]);
-                    List<AbbrActorShapes>? _shapes = new List<AbbrActorShapes>();
+                    List<AbbrActorShapes>? _shapes = new();
                     var shapeArray = actor?["Shapes"];
                     if (shapeArray?.GetType() == typeof(JArray))
                     {
