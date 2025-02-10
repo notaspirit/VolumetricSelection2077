@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace VolumetricSelection2077.Services;
 public class SettingsService
@@ -48,7 +50,17 @@ public class SettingsService
     public string OutputDirectory { get; set; }
     public string OutputFilename { get; set; }
     public bool DebugMode { get; set; }
+    
+    [JsonIgnore]
     public BitArray NodeTypeFilter { get; set; }
+    
+    [JsonPropertyName("NodeTypeFilter")]
+    public bool[] NodeTypeFilterProxy
+    {
+        get => NodeTypeFilter?.Cast<bool>().ToArray();
+        set => NodeTypeFilter = value != null ? new BitArray(value) : new BitArray(122, true);
+    }
+    
     // Methods for loading and saving settings
     public void LoadSettings()
     {
