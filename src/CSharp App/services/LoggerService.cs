@@ -15,8 +15,7 @@ namespace VolumetricSelection2077.Services
         public static void Initialize(string logDirectory)
         {
             var logFileName = Path.Combine(logDirectory, $"log_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
-            // string outputTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss}] {Message:lj}{NewLine}{Exception}";
-            string outputTemplate = "{Message:lj}\n";
+            string outputTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss}] {Message:lj}{NewLine}{Exception}";
 
             var loggerConfig = new LoggerConfiguration()
                 .MinimumLevel.Debug()
@@ -59,11 +58,6 @@ namespace VolumetricSelection2077.Services
 
         public static void Debug(string message)
         {
-            if (true)
-            {
-                _logger?.Debug(message);
-                return;
-            }
             if (_settingsService.DebugMode)
             {
                 _logger?.Debug(FormatMessage(message, "Debug  "));
