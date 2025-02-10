@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.IO;
 using System.Text.Json;
 
@@ -20,9 +21,9 @@ public class SettingsService
         OutputDirectory = "";
         OutputFilename = "";
         DebugMode = false;
+        NodeTypeFilter = new BitArray(122, true);
     }
-
-    // Singleton instance
+    
     public static SettingsService Instance
     {
         get
@@ -47,6 +48,7 @@ public class SettingsService
     public string OutputDirectory { get; set; }
     public string OutputFilename { get; set; }
     public bool DebugMode { get; set; }
+    public BitArray NodeTypeFilter { get; set; }
     // Methods for loading and saving settings
     public void LoadSettings()
     {
@@ -69,6 +71,7 @@ public class SettingsService
                     OutputDirectory = settings.OutputDirectory;
                     OutputFilename = settings.OutputFilename;
                     DebugMode = settings.DebugMode;
+                    NodeTypeFilter = settings.NodeTypeFilter;
                 }
             }
             catch (Exception ex)
