@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using DynamicData;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Parsers;
 using Newtonsoft.Json;
@@ -34,10 +35,22 @@ public class ProcessService
         foreach (var nodeDataEntry in sector.NodeData)
         {
             // Logger.Debug($"Processing node {nodeDataIndex}:");
+            var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
+            
+            int nodeTypeTableIndex = NodeTypeProcessingOptions.NodeTypeOptions.IndexOf(nodeEntry.Type);
+            if (nodeTypeTableIndex == -1)
+            {
+                Logger.Warning($"Node {nodeEntry.Type} is not part of the assumed node type set! Please report this issue. Processing node regardless.");
+            }
+            else
+            {
+                if (_settings.NodeTypeFilter[nodeTypeTableIndex] != true)
+                {
+                    continue;
+                }
+            }
             
             CollisionCheck.Types entryType = CollisionCheck.Types.Default;
-            
-            var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
             if (nodeEntry.MeshDepotPath != null)
             {
                 entryType = CollisionCheck.Types.Mesh;
@@ -83,6 +96,7 @@ public class ProcessService
                     }
                     break;
                 case CollisionCheck.Types.Collider:
+                    
                     List<int> actorRemoval = new List<int>();
                     int actorIndex = 0;
                     foreach (var actor in nodeEntry.Actors)
@@ -158,6 +172,7 @@ public class ProcessService
                                 ExpectedActors = nodeEntry.Actors.Count
                             });
                     }
+                    
                     break;
                 case CollisionCheck.Types.Default:
                     foreach (var transform in nodeDataEntry.Transforms)
@@ -232,8 +247,9 @@ public class ProcessService
 
         selectionBoxString +=
             $"]\n" +
-            $"selectionBox{uniqueId} = create_box(\"selectionBox{uniqueId}\", selectionBoxVerts{uniqueId}, \"none\")\n";
-
+            $"selectionBox{uniqueId} = create_box(\"selectionBox{uniqueId}\", selectionBoxVerts{uniqueId}, \"initial\")\n";
+        
+        Logger.Debug(selectionBoxString);
         List<AxlRemovalSector> sectors = new List<AxlRemovalSector>();
 
         // List<string> testSectors = new();
