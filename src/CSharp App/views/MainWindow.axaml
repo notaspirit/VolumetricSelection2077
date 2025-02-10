@@ -101,6 +101,14 @@
                 Grid.Row="5"
                 Margin="5"
                 x:Name="LogViewer" />
+            <TextBlock
+                FontSize="10"
+                Foreground="White"
+                Grid.Row="5"
+                HorizontalAlignment="Right"
+                Margin="5"
+                Text="{Binding ProgramVersion}"
+                VerticalAlignment="Bottom" />
         </Grid>
     </Border>
 </Window>

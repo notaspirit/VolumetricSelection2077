@@ -14,6 +14,8 @@ local relativeOffset = vector3:new(0, 0, 0)
 local selectionBox = nil
 
 -- Settings
+local versionString = "1.0.0-beta1"
+
 local settingsInstance = settings.getInstance()
 local isHighlighted = false
 local isInitialized = false
@@ -346,10 +348,6 @@ local function controlsTab()
         end
         ImGui.EndTable()
     end
-    
-    if ImGui.Button("Print Current Read Position") then
-        selectionBox:LogCurrentStats()
-    end
     statusMessage:display()
     ImGui.Text("Make sure the entire selection is visible")
 end
@@ -479,7 +477,7 @@ function CETGui()
         initSelectionBox()
     end
     -- draw ImGui window
-    if ImGui.Begin('VolumetricSelection2077') then
+    if ImGui.Begin('VolumetricSelection2077', true, ImGuiWindowFlags.AlwaysAutoResize) then
         if ImGui.BeginTabBar("TabList1") then
             if ImGui.BeginTabItem("Controls") then
                 controlsTab()
@@ -496,6 +494,7 @@ function CETGui()
         selectionBox:updateScale()
         selectionBox:updatePosition()
     end
+    ImGui.Text("Version: " .. versionString)
     ImGui.End()
 end
 

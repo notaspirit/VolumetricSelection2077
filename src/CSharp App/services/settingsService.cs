@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -24,6 +25,7 @@ public class SettingsService
         OutputFilename = "";
         DebugMode = false;
         NodeTypeFilter = new BitArray(122, true);
+        ProgramVersion = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion?.Split("+")[0] ?? "Version not found.";
     }
     
     public static SettingsService Instance
@@ -60,6 +62,9 @@ public class SettingsService
         get => NodeTypeFilter?.Cast<bool>().ToArray();
         set => NodeTypeFilter = value != null ? new BitArray(value) : new BitArray(122, true);
     }
+    
+    [JsonIgnore]
+    public string ProgramVersion { get; set; }
     
     // Methods for loading and saving settings
     public void LoadSettings()

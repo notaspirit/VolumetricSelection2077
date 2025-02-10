@@ -208,6 +208,7 @@ public class ProcessService
 
     public async Task<(bool success, string error)> Process()
     {
+        Logger.Info($"Version: {_settings.ProgramVersion}");
         Logger.Info("Validating inputs...");
         if (!ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename))
         {
