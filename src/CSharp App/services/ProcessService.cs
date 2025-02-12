@@ -10,6 +10,8 @@ using VolumetricSelection2077.Parsers;
 using Newtonsoft.Json;
 using SharpDX;
 using VolumetricSelection2077.Resources;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace VolumetricSelection2077.Services;
@@ -300,7 +302,22 @@ public class ProcessService
                 }
             };
             string axlFilePath = _settings.GameDirectory + @"\archive\pc\mod\" + _settings.OutputFilename + ".xl";
-            File.WriteAllText(axlFilePath, JsonConvert.SerializeObject(removalFile, new JsonSerializerSettings(){NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented}));
+            string outputContent;
+            if (_settings.SaveAsYaml)
+            {
+                var serializer = new SerializerBuilder()
+                    .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                    .Build();
+
+                outputContent = serializer.Serialize(removalFile);
+            }
+            else
+            {
+                outputContent = JsonConvert.SerializeObject(removalFile,
+                    new JsonSerializerSettings()
+                        { NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented });
+            }
+            File.WriteAllText(axlFilePath, outputContent);
             int nodeCount = 0;
             foreach (var sector in sectors)
             {

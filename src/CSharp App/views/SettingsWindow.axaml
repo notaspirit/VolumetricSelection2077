@@ -20,6 +20,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200" />
@@ -54,6 +55,15 @@
                 Text="Node Filter"
                 ToolTip.Tip="{Binding Descriptions.NodeFilterTooltip}"
                 VerticalAlignment="Center" />
+            <TextBlock
+                Grid.Column="0"
+                Grid.Row="3"
+                HorizontalAlignment="Left"
+                Margin="5"
+                Text="Save As Yaml"
+                ToolTip.Tip="{Binding Descriptions.SaveAsYamlToolTip}"
+                VerticalAlignment="Center" />
+
             <!--  Second Row: Setting Control (e.g., ToggleSwitch)  -->
             <TextBox
                 Grid.Column="1"
@@ -136,6 +146,13 @@
                     </Flyout>
                 </Button.Flyout>
             </Button>
+            <ToggleSwitch
+                Grid.Column="1"
+                Grid.Row="3"
+                IsChecked="{Binding Settings.SaveAsYaml}"
+                Margin="5"
+                OffContent=""
+                OnContent="" />
         </Grid>
     </Border>
 </Window>

@@ -26,6 +26,7 @@ public class SettingsService
         DebugMode = false;
         NodeTypeFilter = new BitArray(122, true);
         ProgramVersion = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion?.Split("+")[0] ?? "Version not found.";
+        SaveAsYaml = false;
     }
     
     public static SettingsService Instance
@@ -66,6 +67,8 @@ public class SettingsService
     [JsonIgnore]
     public string ProgramVersion { get; set; }
     
+    public bool SaveAsYaml { get; set; }
+    
     // Methods for loading and saving settings
     public void LoadSettings()
     {
@@ -89,6 +92,7 @@ public class SettingsService
                     OutputFilename = settings.OutputFilename;
                     DebugMode = settings.DebugMode;
                     NodeTypeFilter = settings.NodeTypeFilter;
+                    SaveAsYaml = settings.SaveAsYaml;
                 }
             }
             catch (Exception ex)

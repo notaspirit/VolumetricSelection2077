@@ -9,5 +9,6 @@ namespace VolumetricSelection2077.Resources
         public string SaveToArchiveModsTooltip { get; set; } = "Ignores the output directory and saves the '.xl' file to {game directory}/archive/pc/mod";
         public string OutputDirectoryTooltip { get; set; } = "Path to the output directory (defaults to %AppData%/VolumetricSelection2077/output)";
         public string NodeFilterTooltip { get; set; } = "Filter what nodes should be processed or skipped";
+        public string SaveAsYamlToolTip { get; set; } = "Save as yaml or as json";
     }
 }
