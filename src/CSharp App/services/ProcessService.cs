@@ -91,7 +91,8 @@ public class ProcessService
                         nodeDeletions.Add(new AxlRemovalNodeDeletion()
                         {
                             Index = nodeDataIndex,
-                            Type = nodeEntry.Type
+                            Type = nodeEntry.Type,
+                            DebugName = nodeEntry.DebugName
                         });
                     }
                     break;
@@ -169,7 +170,8 @@ public class ProcessService
                                 Index = nodeDataIndex,
                                 Type = nodeEntry.Type,
                                 ActorDeletions = actorRemoval,
-                                ExpectedActors = nodeEntry.Actors.Count
+                                ExpectedActors = nodeEntry.Actors.Count,
+                                DebugName = nodeEntry.DebugName
                             });
                     }
                     
@@ -183,7 +185,8 @@ public class ProcessService
                             nodeDeletions.Add(new AxlRemovalNodeDeletion()
                             {
                                 Index = nodeDataIndex,
-                                Type = nodeEntry.Type
+                                Type = nodeEntry.Type,
+                                DebugName = nodeEntry.DebugName
                             });
                         }
                     }

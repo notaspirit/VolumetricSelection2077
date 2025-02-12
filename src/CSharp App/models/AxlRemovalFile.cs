@@ -40,4 +40,7 @@ public class AxlRemovalNodeDeletion
     
     [JsonProperty("index")]
     public required int Index { get; set; }
+    
+    [JsonProperty("debugName")]
+    public string? DebugName { get; set; }
 }

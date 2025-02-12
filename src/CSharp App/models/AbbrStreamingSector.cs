@@ -28,6 +28,7 @@ namespace VolumetricSelection2077.Models
         public string? MeshDepotPath { get; set; }
         public List<AbbrCollisionActors>? Actors { get; set; }
         public string? SectorHash { get; set; }
+        public string? DebugName { get; set; }
     }
 
     public class AbbrCollisionActors

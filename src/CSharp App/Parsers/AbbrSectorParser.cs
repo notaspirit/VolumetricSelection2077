@@ -160,6 +160,7 @@ public class AbbrSectorParser
         {
             string _type = node?["Data"]?["$type"]?.Value<string>() ?? "";
             string? _sectorHash = node?["Data"]?["sectorHash"]?.Value<string>() ?? null;
+            string? _debugName = node?["Data"]?["debugName"]?["$value"]?.Value<string>() ?? null;
             string? _meshPath = null;
 
             try
@@ -255,7 +256,8 @@ public class AbbrSectorParser
                 Type = _type,
                 MeshDepotPath = _meshPath,
                 SectorHash = _sectorHash,
-                Actors = _collisionActors
+                Actors = _collisionActors,
+                DebugName = _debugName
             });
         }
         return new AbbrSector()
