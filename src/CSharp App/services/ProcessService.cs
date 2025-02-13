@@ -3,8 +3,10 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Avalonia.Controls.Shapes;
 using DynamicData;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Parsers;
@@ -14,6 +16,7 @@ using VolumetricSelection2077.Resources;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 using JsonSerializer = System.Text.Json.JsonSerializer;
+using Path = System.IO.Path;
 
 namespace VolumetricSelection2077.Services;
 
@@ -30,12 +33,7 @@ public class ProcessService
     // also returns null if none of the nodes in the sector are inside the box
     private async Task<(bool success, string error, AxlRemovalSector? result)> ProcessStreamingsector(AbbrSector sector, string sectorPath, SelectionInput selectionBox)
     {
-        Logger.Info($"Processing sector {sectorPath}");
-        
-        List<AxlRemovalNodeDeletion> nodeDeletions = new List<AxlRemovalNodeDeletion>();
-        
-        int nodeDataIndex = 0;
-        foreach (var nodeDataEntry in sector.NodeData)
+        async Task<AxlRemovalNodeDeletion?> ProcessNodeAsync(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index)
         {
             // Logger.Debug($"Processing node {nodeDataIndex}:");
             var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
@@ -49,7 +47,7 @@ public class ProcessService
             {
                 if (_settings.NodeTypeFilter[nodeTypeTableIndex] != true)
                 {
-                    continue;
+                    return null;
                 }
             }
             
@@ -72,16 +70,14 @@ public class ProcessService
                     if (!successGet || model == null)
                     {
                         Logger.Warning($"Failed to get {meshDepotPath} with error: {errorGet}");
-                        nodeDataIndex++;
-                        continue;
+                        return null;
                     }
 
                     AbbrMesh? mesh = AbbrMeshParser.ParseFromGlb(model);
                     if (mesh == null)
                     {
                         Logger.Warning($"Failed to parse {meshDepotPath}.");
-                        nodeDataIndex++;
-                        continue;
+                        return null;
                     }
 
                     bool isInside = CollisionCheckService.IsMeshInsideBox(mesh,
@@ -91,14 +87,14 @@ public class ProcessService
 
                     if (isInside)
                     {
-                        nodeDeletions.Add(new AxlRemovalNodeDeletion()
+                        return new AxlRemovalNodeDeletion()
                         {
-                            Index = nodeDataIndex,
+                            Index = index,
                             Type = nodeEntry.Type,
                             DebugName = nodeEntry.DebugName
-                        });
+                        };
                     }
-                    break;
+                    return null;
                 case CollisionCheck.Types.Collider:
                     
                     List<int> actorRemoval = new List<int>();
@@ -113,7 +109,7 @@ public class ProcessService
                             
                             if (shape.ShapeType.Contains("Mesh"))
                             {
-                                var (successGetShape, errorGetShape, collisionMeshString) = _gameFileService.GetGeometryFromCache(sectorHash, shape.Hash);
+                                var (successGetShape, errorGetShape, collisionMeshString) = await _gameFileService.GetGeometryFromCacheAsync(sectorHash, shape.Hash);
                                 if (!successGetShape || collisionMeshString == null)
                                 {
                                     Logger.Warning($"Failed to get shape {sectorHash}, {shape.Hash} with error: {errorGetShape}");
@@ -137,7 +133,7 @@ public class ProcessService
                             
                             if (shape.ShapeType == "Box")
                             {
-                                string collectionName = sectorPath.Split(@"\")[^1] + " " + nodeDataIndex + " " + actorIndex; // just for testing so it's easy to identify the source of the shapes
+                                string collectionName = sectorPath.Split(@"\")[^1] + " " + index + " " + actorIndex; // just for testing so it's easy to identify the source of the shapes
                                 bool isCollisionBoxInsideBox = CollisionCheckService.IsCollisionBoxInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb, collectionName);
                                 if (isCollisionBoxInsideBox)
                                 {
@@ -168,36 +164,50 @@ public class ProcessService
                     // Logger.Debug($"Found {actorRemoval.Count} actors marked for removal in {nodeDataIndex}");
                     if (actorRemoval.Count > 0)
                     {
-                        nodeDeletions.Add(new AxlRemovalNodeDeletion()
+                        return new AxlRemovalNodeDeletion()
                             {
-                                Index = nodeDataIndex,
+                                Index = index,
                                 Type = nodeEntry.Type,
                                 ActorDeletions = actorRemoval,
                                 ExpectedActors = nodeEntry.Actors.Count,
                                 DebugName = nodeEntry.DebugName
-                            });
+                            };
                     }
-                    
-                    break;
+                    return null;
                 case CollisionCheck.Types.Default:
                     foreach (var transform in nodeDataEntry.Transforms)
                     {
                         var intersection = selectionBox.Obb.Contains(transform.Position);
                         if (intersection != ContainmentType.Disjoint)
                         {
-                            nodeDeletions.Add(new AxlRemovalNodeDeletion()
+                            return new AxlRemovalNodeDeletion()
                             {
-                                Index = nodeDataIndex,
+                                Index = index,
                                 Type = nodeEntry.Type,
                                 DebugName = nodeEntry.DebugName
-                            });
+                            };
                         }
                     }
-                    break;
+                    return null;
             }
-            nodeDataIndex++;
+
+            return null;
         }
-        Logger.Info($"Found {nodeDeletions.Count} node deletions out of {nodeDataIndex + 1} nodes.");
+        
+        var tasks = sector.NodeData.Select((input, index) => Task.Run(() => ProcessNodeAsync(input, index))).ToArray();
+
+        var nodeDeletionsRaw = await Task.WhenAll(tasks);
+
+        List<AxlRemovalNodeDeletion> nodeDeletions = new();
+        foreach (var nodeDeletion in nodeDeletionsRaw)
+        {
+            if (nodeDeletion != null)
+            {
+                nodeDeletions.Add(nodeDeletion);
+            }
+        }
+        
+        Logger.Info($"Found {nodeDeletions.Count} node deletions out of {sector.NodeData.Count()} nodes.");
         if (nodeDeletions.Count == 0)
         {
             return (true, "No Nodes Intersect with Box.", null);
@@ -289,20 +299,20 @@ public class ProcessService
         
         Logger.Debug(selectionBoxString);
         */
-        List<AxlRemovalSector> sectors = new List<AxlRemovalSector>();
+        // List<AxlRemovalSector> sectors = new List<AxlRemovalSector>();
 
         // List<string> testSectors = new();
         // testSectors.Add(@"base\worlds\03_night_city\_compiled\default\exterior_-10_-4_0_1.streamingsector");
         
-        foreach (string streamingSectorName in CETOutputFile.Sectors)
+        async Task<AxlRemovalSector?> SectorProcessThread(string streamingSectorName)
         {
-            
+            Logger.Info($"Starting sector process thread for {streamingSectorName}...");
             string streamingSectorNameFix = Regex.Replace(streamingSectorName, @"\\{2}", @"\");
             var (successGET, errorGET, stringGET) = _gameFileService.GetGameFileAsJsonString(streamingSectorNameFix);
             if (!successGET || !string.IsNullOrEmpty(errorGET) || string.IsNullOrEmpty(stringGET))
             {
                 Logger.Error($"Failed to get streamingsector {streamingSectorName}, error: {errorGET}");
-                continue;
+                return null;
             }
             // Logger.Info(stringGET);
 
@@ -310,14 +320,30 @@ public class ProcessService
             if (sectorDeserialized == null)
             {
                 Logger.Error($"Failed to deserialize streamingsector {streamingSectorName}");
-                continue;
+                return null;
             }
             
-            var (successPSS, errorPSS, resultPss) =
-                await ProcessStreamingsector(sectorDeserialized, streamingSectorName, CETOutputFile);
-            if (successPSS && resultPss != null)
+            var (successPSS, errorPSS, resultPss) = await ProcessStreamingsector(sectorDeserialized, streamingSectorName, CETOutputFile);
+            if (successPSS)
+            { 
+                Logger.Info($"Successfully processed streamingsector {streamingSectorName} which found {resultPss?.NodeDeletions.Count ?? 0} nodes out of {sectorDeserialized.NodeData.Count} nodes.");
+                return resultPss;
+            }
+            
+            Logger.Error($"Failed to processes streamingsector {streamingSectorName} with errror: {errorPSS}");
+            return null;
+        }
+        
+        var tasks = CETOutputFile.Sectors.Select(input => Task.Run(() => SectorProcessThread(input))).ToArray();
+
+        var sectorsOutputRaw = await Task.WhenAll(tasks);
+
+        List<AxlRemovalSector> sectors = new();
+        foreach (var sector in sectorsOutputRaw)
+        {
+            if (sector != null)
             {
-                sectors.Add(resultPss);
+                sectors.Add(sector);
             }
         }
         

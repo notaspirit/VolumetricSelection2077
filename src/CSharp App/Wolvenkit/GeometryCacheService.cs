@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using WolvenKit.App.PhysX;
 using WolvenKit.Common;
 using WolvenKit.Core.Interfaces;
@@ -18,11 +19,14 @@ namespace WolvenKit.App.Services
 
         private readonly CName _cachePath = (CName)@"base\worlds\03_night_city\sectors\_generated\collisions\03_night_city.geometry_cache";
         private bool _isLoaded;
+        
+        private readonly Lazy<Task> _loadTask;
 
         public GeometryCacheService(IArchiveManager archive, Red4ParserService parser)
         {
             _archive = archive;
             _parser = parser;
+            _loadTask = new Lazy<Task>(() => Task.Run(() => Load()));
         }
 
         public void Load()
@@ -112,8 +116,7 @@ namespace WolvenKit.App.Services
                     }
                 }
             }
-        }
-
+        } 
         public PhysXMesh? GetEntry(ulong sectorHash, ulong entryHash)
         {
             if (!_isLoaded)
@@ -132,6 +135,25 @@ namespace WolvenKit.App.Services
             {
                 return _entries[0][entryHash];
             }
+            return null;
+        } 
+        
+        public async Task<PhysXMesh?> GetEntryAsync(ulong sectorHash, ulong entryHash)
+        {
+            await _loadTask.Value;
+
+            if (_entries.TryGetValue(sectorHash, out var sectorEntries) &&
+                sectorEntries.TryGetValue(entryHash, out var mesh))
+            {
+                return mesh;
+            }
+
+            if (_entries.TryGetValue(0, out var defaultEntries) &&
+                defaultEntries.TryGetValue(entryHash, out var meshDefault))
+            {
+                return meshDefault;
+            }
+
             return null;
         }
     }

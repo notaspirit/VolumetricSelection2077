@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using WolvenKit;
 using WolvenKit.Common.Services;
@@ -120,6 +121,22 @@ public class GameFileService
             return (false, "Failed to parse input into ulong!", null);
         }
         var cacheEntry = _geometryCacheService.GetEntry(sectorHash, actorHash);
+        if (cacheEntry == null)
+        {
+            return (false, "Failed to get geometry from archives!", null);
+        }
+        string outJson =  JsonSerializer.Serialize((object)cacheEntry, new JsonSerializerOptions { IncludeFields = true, WriteIndented = true });
+        return (true, "", outJson);
+    }
+    
+    public async Task<(bool, string, string?)> GetGeometryFromCacheAsync(string sectorHashString, string actorHashString)
+    {
+        if (!ulong.TryParse(sectorHashString, out ulong sectorHash) ||
+            !ulong.TryParse(actorHashString, out ulong actorHash))
+        {
+            return (false, "Failed to parse input into ulong!", null);
+        }
+        var cacheEntry = await _geometryCacheService.GetEntryAsync(sectorHash, actorHash);
         if (cacheEntry == null)
         {
             return (false, "Failed to get geometry from archives!", null);
