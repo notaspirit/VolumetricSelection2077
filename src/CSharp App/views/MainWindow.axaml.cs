@@ -12,6 +12,7 @@ using System.Runtime.CompilerServices;
 using Avalonia.Styling;
 using Avalonia;
 using Microsoft.VisualBasic.CompilerServices;
+using VolumetricSelection2077.TestingStuff;
 
 namespace VolumetricSelection2077;
 public partial class MainWindow : Window
@@ -100,9 +101,23 @@ public partial class MainWindow : Window
         finally
         {
             stopwatch.Stop();
-            string formattedTime = new UtilService().FormatElapsedTime(stopwatch.Elapsed);
+            string formattedTime = UtilService.FormatElapsedTime(stopwatch.Elapsed);
             Logger.Info($"Process finished after: {formattedTime}");
             IsProcessing = false;
+        }
+    }
+
+    private async void Benchmark_Click(object? sender, RoutedEventArgs e)
+    {
+        if (IsProcessing) return;
+        try
+        {
+            IsProcessing = true;
+            await Task.Run(() => Benchmarking.RunBenchmarks());
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Benchmarking failed: {ex}");
         }
     }
 }

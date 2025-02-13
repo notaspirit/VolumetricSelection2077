@@ -5,16 +5,16 @@ namespace VolumetricSelection2077.Services
 {
     public class UtilService
     {
-        public string BuildORRegex(List<string> patterns)
+        public static string BuildORRegex(List<string> patterns)
         {
             return string.Join("|", patterns);
         }
-        public string EscapeSlashes(string input)
+        public static string EscapeSlashes(string input)
         {
             return input.Replace("\\", "\\\\");
         }
         
-        public string FormatElapsedTime(TimeSpan elapsed)
+        public static string FormatElapsedTime(TimeSpan elapsed)
         {
             var parts = new List<string>();
         

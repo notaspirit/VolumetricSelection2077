@@ -71,6 +71,18 @@
                         </Style>
                     </Button.Styles>
                 </Button>
+                <Button
+                    Background="#6b82b2"
+                    Click="Benchmark_Click"
+                    Content="Benchmark"
+                    Grid.Column="3"
+                    IsVisible="{Binding DebugMode}">
+                    <Button.Styles>
+                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                            <Setter Property="Background" Value="#455472" />
+                        </Style>
+                    </Button.Styles>
+                </Button>
                 <!--
                 <Button Grid.Column="3"
                        Content="Merge Output"

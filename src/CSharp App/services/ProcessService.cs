@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Globalization;
@@ -211,25 +212,55 @@ public class ProcessService
         return (true, "", result);
     }
 
-    public async Task<(bool success, string error)> Process()
+    public async Task<(bool success, string error)> Process(string? customRemovalFile = null, string? customRemovalDirectory = null)
     {
         Logger.Info($"Version: {_settings.ProgramVersion}");
         Logger.Info("Validating inputs...");
+        /*
         if (!ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename))
         {
             return (false, "Validation failed");
         }
+        */
         Logger.Info("Starting Process...");
-
-        string CETOuputFilepath = Path.Combine(_settings.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks",
-            "mods", "VolumetricSelection2077", "data", "selection.json");
-        string CETOutputFileString = File.ReadAllText(CETOuputFilepath);
-        var (successSP, errorSP, CETOutputFile) = SelectionParser.ParseSelection(CETOutputFileString);
-
-        if (CETOutputFile == null || successSP == false)
+        
+        bool customRemovalFileProvided = customRemovalFile != null;
+        bool customRemovalDirectoryProvided = customRemovalDirectory != null;
+        if (customRemovalFileProvided != customRemovalDirectoryProvided)
         {
-            return (false, $"Failed to parse CET output file with error: {errorSP}");
+            throw new Exception("Both file path and output directory must be provided for a custom process!");
         }
+
+        if (!File.Exists(customRemovalFile))
+        {
+            throw new Exception($"Provided file ({customRemovalFile}) doesn't exist!");
+        }
+
+        SelectionInput? CETOutputFile;
+        
+        if (customRemovalDirectory == null)
+        {
+            string CETOuputFilepath = Path.Combine(_settings.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks",
+                "mods", "VolumetricSelection2077", "data", "selection.json");
+            string CETOutputFileString = File.ReadAllText(CETOuputFilepath);
+            ( var successSP, var errorSP, CETOutputFile) = SelectionParser.ParseSelection(CETOutputFileString);
+
+            if (CETOutputFile == null || successSP == false)
+            {
+                return (false, $"Failed to parse CET output file with error: {errorSP}");
+            }
+        }
+        else
+        {
+            string customOutputFileString = File.ReadAllText(customRemovalFile);
+            (var successSP, var errorSP, CETOutputFile) = SelectionParser.ParseSelection(customOutputFileString);
+            if (CETOutputFile == null || successSP == false)
+            {
+                return (false, $"Failed to parse CET output file with error: {errorSP}");
+            }
+        }
+            
+
         /*
         Logger.Debug("Selection Box AABB Details:");
         Logger.Debug($"Center point: {CETOutputFile.Aabb.Center.ToString()}");
@@ -241,6 +272,7 @@ public class ProcessService
         Logger.Debug($"Box Vertices: {string.Join(", ", CETOutputFile.Obb.GetCorners())}");
         Logger.Debug($"Box scale: {CETOutputFile.Obb.Size}");
         */
+        /*
         string uniqueId = "initial";
         
         string selectionBoxString = $"selectionBoxVerts{uniqueId} = [ ";
@@ -256,6 +288,7 @@ public class ProcessService
             $"selectionBox{uniqueId} = create_box(\"selectionBox{uniqueId}\", selectionBoxVerts{uniqueId}, \"initial\")\n";
         
         Logger.Debug(selectionBoxString);
+        */
         List<AxlRemovalSector> sectors = new List<AxlRemovalSector>();
 
         // List<string> testSectors = new();
@@ -301,7 +334,16 @@ public class ProcessService
                     Sectors = sectors
                 }
             };
-            string axlFilePath = _settings.GameDirectory + @"\archive\pc\mod\" + _settings.OutputFilename + ".xl";
+            string axlFilePath;
+            if (customRemovalDirectory == null)
+            {
+                axlFilePath = _settings.GameDirectory + @"\archive\pc\mod\" + _settings.OutputFilename + ".xl";   
+            }
+            else
+            {
+                string fileName = Path.GetFileNameWithoutExtension(customRemovalFile);
+                axlFilePath = customRemovalDirectory + $"\\{fileName}.xl";
+            }
             string outputContent;
             if (_settings.SaveAsYaml)
             {
