@@ -6,6 +6,8 @@
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
   </PropertyGroup>
 
   <ItemGroup>
@@ -41,4 +43,6 @@
     <FileVersion>1.0.0.0</FileVersion>
     <InformationalVersion>1.0.0-beta1</InformationalVersion>
   </PropertyGroup>
+  
+  
 </Project>

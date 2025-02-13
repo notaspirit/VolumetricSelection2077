@@ -1,11 +1,14 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Avalonia.Controls.Shapes;
 using DynamicData;
 using VolumetricSelection2077.Models;
@@ -222,16 +225,16 @@ public class ProcessService
         return (true, "", result);
     }
 
-    public async Task<(bool success, string error)> Process(string? customRemovalFile = null, string? customRemovalDirectory = null)
+    public async Task<(bool success, string error)> MainProcessTask(string? customRemovalFile = null, string? customRemovalDirectory = null)
     {
         Logger.Info($"Version: {_settings.ProgramVersion}");
         Logger.Info("Validating inputs...");
-        /*
+        
         if (!ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename))
         {
             return (false, "Validation failed");
         }
-        */
+        
         Logger.Info("Starting Process...");
         
         bool customRemovalFileProvided = customRemovalFile != null;
@@ -241,7 +244,7 @@ public class ProcessService
             throw new Exception("Both file path and output directory must be provided for a custom process!");
         }
 
-        if (!File.Exists(customRemovalFile))
+        if (!File.Exists(customRemovalFile) && (customRemovalDirectoryProvided || customRemovalDirectory != null))
         {
             throw new Exception($"Provided file ({customRemovalFile}) doesn't exist!");
         }

@@ -86,7 +86,7 @@ public partial class MainWindow : Window
             IsProcessing = true;
             var (success, error) = await Task.Run(() =>
             { 
-                return _processService.Process();
+                return _processService.MainProcessTask();
             });
             if (!success)
             {
@@ -119,5 +119,6 @@ public partial class MainWindow : Window
         {
             Logger.Error($"Benchmarking failed: {ex}");
         }
+        IsProcessing = false;
     }
 }

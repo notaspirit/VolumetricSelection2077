@@ -42,7 +42,7 @@ public class Benchmarking
             var stopwatch = Stopwatch.StartNew();
             try
             {
-                var (status, error) =  await processingService.Process(file, benchOutputDir);
+                var (status, error) =  await processingService.MainProcessTask(file, benchOutputDir);
                 if (status != true || error != "")
                 {
                     throw new Exception($"Error: {error}");
