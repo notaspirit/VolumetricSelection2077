@@ -1,5 +1,9 @@
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
+using VolumetricSelection2077.Models;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace VolumetricSelection2077.Services
 {
@@ -32,6 +36,26 @@ namespace VolumetricSelection2077.Services
             }
         
             return string.Join(", ", parts);
+        }
+
+        public static AxlRemovalFile? TryParseAxlRemovalFile(String input)
+        {
+            try
+            {
+                return JsonConvert.DeserializeObject<AxlRemovalFile>(input);
+            }
+            catch (JsonException) { }
+            
+            try
+            {
+                var deserializer = new DeserializerBuilder()
+                    .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                    .Build();
+                return deserializer.Deserialize<AxlRemovalFile>(input);
+            }
+            catch (YamlDotNet.Core.YamlException) { }
+            
+            return null;
         }
     }
 }

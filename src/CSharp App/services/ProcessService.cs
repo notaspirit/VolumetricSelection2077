@@ -380,6 +380,39 @@ public class ProcessService
                 string fileName = Path.GetFileNameWithoutExtension(customRemovalFile);
                 axlFilePath = customRemovalDirectory + $"\\{fileName}.xl";
             }
+            
+            if (_settings.ExtendExistingFile && File.Exists(axlFilePath))
+            {
+                string fileContent = File.ReadAllText(axlFilePath);
+                var exisitngRemovalFile = UtilService.TryParseAxlRemovalFile(fileContent);
+                if (exisitngRemovalFile != null)
+                {
+                    var newSectors = removalFile.Streaming.Sectors;
+                    var oldSectors = exisitngRemovalFile.Streaming.Sectors;
+                        
+                    Dictionary<string, AxlRemovalSector> mergedDict = oldSectors.ToDictionary(x => x.Path);
+
+                    foreach (var newSector in newSectors)
+                    {
+                        if (mergedDict.TryGetValue(newSector.Path, out AxlRemovalSector existingSector))
+                        {
+                            existingSector.NodeDeletions.AddRange(newSector.NodeDeletions);
+                            existingSector.NodeDeletions = existingSector.NodeDeletions.Distinct().ToList();
+                        }
+                        else
+                        {
+                            mergedDict[newSector.Path] = newSector;
+                        }
+                    }
+                    var mergedSectors = mergedDict.Values.ToList();
+                    removalFile.Streaming.Sectors = mergedSectors;
+                }
+                else
+                {
+                    Logger.Error($"Failed to parse existing removal file {axlFilePath}");
+                }
+            }
+            
             string outputContent;
             if (_settings.SaveAsYaml)
             {
@@ -405,6 +438,13 @@ public class ProcessService
                 {
                     File.WriteAllText(outputFilePath, outputContent);
                     Logger.Info($"Created file {outputFilePath}");
+                    return;
+                }
+
+                if (_settings.ExtendExistingFile)
+                {
+                    File.WriteAllText(outputFilePath, outputContent);
+                    Logger.Info($"Extended file {outputFilePath}");
                     return;
                 }
                 

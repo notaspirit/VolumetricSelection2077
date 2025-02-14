@@ -28,6 +28,7 @@ public class SettingsService
         ProgramVersion = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion?.Split("+")[0] ?? "Version not found.";
         SaveAsYaml = false;
         AllowOverwrite = false;
+        ExtendExistingFile = false;
     }
     
     public static SettingsService Instance
@@ -71,6 +72,7 @@ public class SettingsService
     public bool SaveAsYaml { get; set; }
     
     public bool AllowOverwrite { get; set; }
+    public bool ExtendExistingFile { get; set; }
     
     // Methods for loading and saving settings
     public void LoadSettings()
@@ -97,6 +99,7 @@ public class SettingsService
                     NodeTypeFilter = settings.NodeTypeFilter;
                     SaveAsYaml = settings.SaveAsYaml;
                     AllowOverwrite = settings.AllowOverwrite;
+                    ExtendExistingFile = settings.ExtendExistingFile;
                 }
             }
             catch (Exception ex)

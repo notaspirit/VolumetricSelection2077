@@ -22,6 +22,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200" />
@@ -71,6 +72,14 @@
                 Margin="5"
                 Text="Allow Output File Overwrite"
                 ToolTip.Tip="{Binding Descriptions.AllowOverwriteTooltip}"
+                VerticalAlignment="Center" />
+            <TextBlock
+                Grid.Column="0"
+                Grid.Row="5"
+                HorizontalAlignment="Left"
+                Margin="5"
+                Text="Extend Existing File"
+                ToolTip.Tip="{Binding Descriptions.ExtendExistingFileTooltip}"
                 VerticalAlignment="Center" />
 
             <!--  Second Row: Setting Control (e.g., ToggleSwitch)  -->
@@ -166,6 +175,13 @@
                 Grid.Column="1"
                 Grid.Row="4"
                 IsChecked="{Binding Settings.AllowOverwrite}"
+                Margin="5"
+                OffContent=""
+                OnContent="" />
+            <ToggleSwitch
+                Grid.Column="1"
+                Grid.Row="5"
+                IsChecked="{Binding Settings.ExtendExistingFile}"
                 Margin="5"
                 OffContent=""
                 OnContent="" />
