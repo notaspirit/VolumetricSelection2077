@@ -27,6 +27,7 @@ public class SettingsService
         NodeTypeFilter = new BitArray(122, true);
         ProgramVersion = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion?.Split("+")[0] ?? "Version not found.";
         SaveAsYaml = false;
+        AllowOverwrite = false;
     }
     
     public static SettingsService Instance
@@ -60,7 +61,7 @@ public class SettingsService
     [JsonPropertyName("NodeTypeFilter")]
     public bool[] NodeTypeFilterProxy
     {
-        get => NodeTypeFilter?.Cast<bool>().ToArray();
+        get => NodeTypeFilter.Cast<bool>().ToArray();
         set => NodeTypeFilter = value != null ? new BitArray(value) : new BitArray(122, true);
     }
     
@@ -68,6 +69,8 @@ public class SettingsService
     public string ProgramVersion { get; set; }
     
     public bool SaveAsYaml { get; set; }
+    
+    public bool AllowOverwrite { get; set; }
     
     // Methods for loading and saving settings
     public void LoadSettings()
@@ -93,6 +96,7 @@ public class SettingsService
                     DebugMode = settings.DebugMode;
                     NodeTypeFilter = settings.NodeTypeFilter;
                     SaveAsYaml = settings.SaveAsYaml;
+                    AllowOverwrite = settings.AllowOverwrite;
                 }
             }
             catch (Exception ex)

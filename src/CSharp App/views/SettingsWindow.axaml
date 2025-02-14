@@ -21,6 +21,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200" />
@@ -63,6 +64,14 @@
                 Text="Save As Yaml"
                 ToolTip.Tip="{Binding Descriptions.SaveAsYamlToolTip}"
                 VerticalAlignment="Center" />
+            <TextBlock
+                Grid.Column="0"
+                Grid.Row="4"
+                HorizontalAlignment="Left"
+                Margin="5"
+                Text="Allow Output File Overwrite"
+                ToolTip.Tip="{Binding Descriptions.AllowOverwriteTooltip}"
+                VerticalAlignment="Center" />
 
             <!--  Second Row: Setting Control (e.g., ToggleSwitch)  -->
             <TextBox
@@ -72,7 +81,7 @@
                 Text="{Binding Settings.GameDirectory}"
                 Watermark="Path to game directory"
                 x:Name="GameDirectoryTextBox" />
-            <!--  Later bind button name to be (selected)/(total)  -->
+
             <Button
                 Background="#6b82b2"
                 Grid.Column="1"
@@ -150,6 +159,13 @@
                 Grid.Column="1"
                 Grid.Row="3"
                 IsChecked="{Binding Settings.SaveAsYaml}"
+                Margin="5"
+                OffContent=""
+                OnContent="" />
+            <ToggleSwitch
+                Grid.Column="1"
+                Grid.Row="4"
+                IsChecked="{Binding Settings.AllowOverwrite}"
                 Margin="5"
                 OffContent=""
                 OnContent="" />

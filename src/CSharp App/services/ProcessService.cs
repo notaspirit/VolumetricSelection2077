@@ -210,7 +210,6 @@ public class ProcessService
             }
         }
         
-        Logger.Info($"Found {nodeDeletions.Count} node deletions out of {sector.NodeData.Count()} nodes.");
         if (nodeDeletions.Count == 0)
         {
             return (true, "No Nodes Intersect with Box.", null);
@@ -363,6 +362,14 @@ public class ProcessService
                     Sectors = sectors
                 }
             };
+            
+            int nodeCount = 0;
+            foreach (var sector in sectors)
+            {
+                nodeCount += sector.NodeDeletions.Count;
+            }
+            Logger.Success($"Found {nodeCount} nodes across {sectors.Count} sectors.");
+            
             string axlFilePath;
             if (customRemovalDirectory == null)
             {
@@ -378,6 +385,7 @@ public class ProcessService
             {
                 var serializer = new SerializerBuilder()
                     .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                    .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
                     .Build();
 
                 outputContent = serializer.Serialize(removalFile);
@@ -388,13 +396,43 @@ public class ProcessService
                     new JsonSerializerSettings()
                         { NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented });
             }
-            File.WriteAllText(axlFilePath, outputContent);
-            int nodeCount = 0;
-            foreach (var sector in sectors)
+            
+            void SaveFile(string outputFilePath)
             {
-                nodeCount += sector.NodeDeletions.Count;
+                Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
+                
+                if (!File.Exists(outputFilePath))
+                {
+                    File.WriteAllText(outputFilePath, outputContent);
+                    Logger.Info($"Created file {outputFilePath}");
+                    return;
+                }
+                
+                if (_settings.AllowOverwrite)
+                {
+                    File.WriteAllText(outputFilePath, outputContent);
+                    Logger.Info($"Overwrote file {outputFilePath}");
+                    return;
+                }
+                
+                int totalCount = 1;
+                string outputFilePathWithoutExtension = outputFilePath.Split('.').First();
+                foreach (var file in Directory.GetFiles(Path.GetDirectoryName(outputFilePath), "*.*",
+                             SearchOption.AllDirectories))
+                {
+                    if (!file.StartsWith(outputFilePathWithoutExtension)) continue;
+                    if (Int32.TryParse(file.Split("+").Last(), out int count))
+                    {
+                        if (count > totalCount) totalCount = count;
+                    }
+                }
+                
+                string newOutputFilePath = $"{outputFilePathWithoutExtension.Split("+").First()}+{totalCount}.xl";
+                File.WriteAllText(newOutputFilePath, outputContent);
+                Logger.Info($"Created file {newOutputFilePath}");
             }
-            Logger.Success($"Found {nodeCount} nodes in {sectors.Count} sectors and saved output to the archive mod folder.");
+            
+            SaveFile(axlFilePath);
         }
         // TestingService.TestVertexTransform();
         return (true, string.Empty);
