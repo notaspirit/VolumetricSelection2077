@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -13,6 +14,7 @@ using WolvenKit.RED4.CR2W;
 using Newtonsoft.Json.Linq;
 using SharpGLTF.Schema2;
 using VolumetricSelection2077.Models;
+using VolumetricSelection2077.TestingStuff;
 using WolvenKit.App.Services;
 using WolvenKit.Common.Conversion;
 using WolvenKit.Common.FNV1A;
@@ -84,6 +86,9 @@ public class GameFileService
 
     public (bool, string, string?) GetGameFileAsJsonString(string filename)
     {
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
+        
         if (!ulong.TryParse(filename, out var hash))
         {
             hash = FNV1A64HashAlgorithm.HashString(filename);
@@ -91,21 +96,51 @@ public class GameFileService
         CR2WFile? gameFileRaw = _archiveManager.GetCR2WFile(hash, false, false);
         if (gameFileRaw == null)
         {
+            stopwatch.Stop();
+            Benchmarking.Instance.SerializingToSectorJson.Add(stopwatch.Elapsed);
             return (false, "Failed to get gamefile from archives!", null);
         }
+        
+        var stopwatchSerialize = new Stopwatch();
+        stopwatchSerialize.Start();
+        
         var dto = new RedFileDto(gameFileRaw);
         string gameFileJson = RedJsonSerializer.Serialize(dto);
+        
+        stopwatchSerialize.Stop();
+        Benchmarking.Instance.GetSector.Add(stopwatchSerialize.Elapsed);
+        
+        stopwatch.Stop();
+        Benchmarking.Instance.SerializingToSectorJson.Add(stopwatch.Elapsed);
+        
         return (true, "", gameFileJson);
     }
 
     public (bool, string, ModelRoot?) GetGameFileAsGlb(string filename)
     {
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
+        
         CR2WFile? gameFileRaw = _archiveManager.GetCR2WFile(filename, false, false);
         if (gameFileRaw == null)
         {
+            stopwatch.Stop();
+            Benchmarking.Instance.GetMeshGlb.Add(stopwatch.Elapsed);
             return (false, "Failed to get gamefile from archives!", null);
         }
+        
+        var stopwatchSerialize = new Stopwatch();
+        stopwatchSerialize.Start();
+        
         var resultModel = MeshTools.GetModel(gameFileRaw, false, false);
+        
+        stopwatchSerialize.Stop();
+        Benchmarking.Instance.SerializingToMeshGlb.Add(stopwatchSerialize.Elapsed);
+        
+        stopwatch.Stop();
+        Benchmarking.Instance.GetMeshGlb.Add(stopwatch.Elapsed);
+
+        
         if (resultModel == null)
         {
             return (false, "Failed to convert CR2W file to Glb!", null);
@@ -131,17 +166,34 @@ public class GameFileService
     
     public async Task<(bool, string, string?)> GetGeometryFromCacheAsync(string sectorHashString, string actorHashString)
     {
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
+
+        
         if (!ulong.TryParse(sectorHashString, out ulong sectorHash) ||
             !ulong.TryParse(actorHashString, out ulong actorHash))
         {
+            stopwatch.Stop();
+            Benchmarking.Instance.GetMeshJson.Add(stopwatch.Elapsed);
             return (false, "Failed to parse input into ulong!", null);
         }
         var cacheEntry = await _geometryCacheService.GetEntryAsync(sectorHash, actorHash);
         if (cacheEntry == null)
         {
+            stopwatch.Stop();
+            Benchmarking.Instance.GetMeshJson.Add(stopwatch.Elapsed);
             return (false, "Failed to get geometry from archives!", null);
         }
+        
+        var stopwatchSerialize = new Stopwatch();
+        stopwatchSerialize.Start();
         string outJson =  JsonSerializer.Serialize((object)cacheEntry, new JsonSerializerOptions { IncludeFields = true, WriteIndented = true });
+        stopwatchSerialize.Stop();
+        Benchmarking.Instance.SerializingToMeshJson.Add(stopwatchSerialize.Elapsed);
+        
+        stopwatch.Stop();
+        Benchmarking.Instance.GetMeshJson.Add(stopwatch.Elapsed);
+        
         return (true, "", outJson);
     }
 }

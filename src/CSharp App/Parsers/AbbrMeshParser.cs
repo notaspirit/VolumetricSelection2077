@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using VolumetricSelection2077.Models;
 using SharpGLTF.Schema2;
 using SharpDX;
 using Newtonsoft.Json.Linq;
 using VolumetricSelection2077.Services;
+using VolumetricSelection2077.TestingStuff;
 
 namespace VolumetricSelection2077.Parsers;
 
@@ -41,6 +43,9 @@ public class AbbrMeshParser
     }
     public static AbbrMesh? ParseFromGlb(ModelRoot meshRaw)
     {
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
+        
         List<AbbrSubMeshes> _subMeshes = new List<AbbrSubMeshes>();
         if (meshRaw.LogicalMeshes.Count == 0)
         {
@@ -78,6 +83,10 @@ public class AbbrMeshParser
             });
         }
 
+        
+        stopwatch.Stop();
+        Benchmarking.Instance.MeshGlbParsing.Add(stopwatch.Elapsed);
+        
         return new AbbrMesh()
         {
             SubMeshes = _subMeshes,
@@ -86,6 +95,9 @@ public class AbbrMeshParser
 
     public static AbbrMesh? ParseFromJson(string jsonString)
     { 
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
+        
         JObject collisionMeshRaw = JObject.Parse(jsonString);
         
         var _vertices = collisionMeshRaw["Vertices"];
@@ -166,6 +178,9 @@ public class AbbrMeshParser
             IsConvexCollider = _isConvexCollider,
         });
 
+        stopwatch.Stop();
+        Benchmarking.Instance.MeshJsonParsing.Add(stopwatch.Elapsed);
+        
         return new AbbrMesh()
         {
             SubMeshes = subMeshes

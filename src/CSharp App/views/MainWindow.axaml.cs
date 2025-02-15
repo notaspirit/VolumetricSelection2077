@@ -113,7 +113,7 @@ public partial class MainWindow : Window
         try
         {
             IsProcessing = true;
-            await Task.Run(() => Benchmarking.RunBenchmarks());
+            await Task.Run(() => Benchmarking.Instance.RunBenchmarks());
         }
         catch (Exception ex)
         {

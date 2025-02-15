@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Converters;
 using VolumetricSelection2077.Services;
+using VolumetricSelection2077.TestingStuff;
 using WolvenKit.RED4.Types;
 using Quaternion = SharpDX.Quaternion;
 using Vector3 = SharpDX.Vector3;
@@ -15,6 +17,9 @@ public class AbbrSectorParser
 {
     public static AbbrSector? Deserialize(string jsonString)
     {
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
+        
         JObject sectorRaw = JObject.Parse(jsonString);
         JObject? rootChunk = sectorRaw["Data"]?["RootChunk"] as JObject;
         JArray? nodes = rootChunk?["nodes"] as JArray;
@@ -260,6 +265,10 @@ public class AbbrSectorParser
                 DebugName = _debugName
             });
         }
+        
+        stopwatch.Stop();
+        Benchmarking.Instance.SectorParsing.Add(stopwatch.Elapsed);
+        
         return new AbbrSector()
         {
             Nodes = _nodesEntries,
