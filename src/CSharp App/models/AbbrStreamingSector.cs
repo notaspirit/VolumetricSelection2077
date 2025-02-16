@@ -26,21 +26,21 @@ namespace VolumetricSelection2077.Models
     {
         public required string Type { get; set; }
         public string? MeshDepotPath { get; set; }
-        public List<AbbrCollisionActors>? Actors { get; set; }
-        public string? SectorHash { get; set; }
+        public AbbrCollisionActors[]? Actors { get; set; }
+        public ulong? SectorHash { get; set; }
         public string? DebugName { get; set; }
     }
 
     public class AbbrCollisionActors
     {
         public required AbbrSectorTransform Transform { get; set; }
-        public List<AbbrActorShapes>? Shapes { get; set; }
+        public AbbrActorShapes[]? Shapes { get; set; }
     }
     public class AbbrActorShapes
     {
         public required AbbrSectorTransform Transform { get; set; }
         
-        public string? Hash { get; set; }
+        public ulong? Hash { get; set; }
         
         public required string ShapeType { get; set; }
     }

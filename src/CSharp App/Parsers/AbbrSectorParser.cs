@@ -17,6 +17,7 @@ public class AbbrSectorParser
 {
     public static AbbrSector? Deserialize(string jsonString)
     {
+        /*
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         
@@ -274,5 +275,7 @@ public class AbbrSectorParser
             Nodes = _nodesEntries,
             NodeData = _nodeDataEntries
         };
+        */
+        return null;
     }
 }

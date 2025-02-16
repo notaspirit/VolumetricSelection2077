@@ -1,6 +1,7 @@
 
 using System;
 using Newtonsoft.Json.Linq;
+using WolvenKit.RED4.Types;
 using Vector3 = SharpDX.Vector3;
 
 namespace VolumetricSelection2077.Converters;
@@ -34,5 +35,19 @@ public class FixedPointVector3Converter
         
         return new Vector3(x, y, z);
     }
+    
+    public static Vector3 PosBitsToVec3(WorldPosition worldPos)
+    {
+        int bitsX = worldPos.X.Bits;
+        int bitsY = worldPos.Y.Bits;
+        int bitsZ = worldPos.Z.Bits;
+        
+        float x = ToFloat(bitsX);
+        float y = ToFloat(bitsY);
+        float z = ToFloat(bitsZ);
+        
+        return new Vector3(x, y, z);
+    }
+    
 
 }

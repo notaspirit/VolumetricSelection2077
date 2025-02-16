@@ -60,7 +60,7 @@ public class ProcessService
             {
                 entryType = CollisionCheck.Types.Mesh;
             } 
-            else if (nodeEntry.SectorHash != null && (nodeEntry.Actors != null || nodeEntry.Actors?.Count > 0))
+            else if (nodeEntry.SectorHash != null && (nodeEntry.Actors != null || nodeEntry.Actors?.Length > 0))
             {
                 entryType = CollisionCheck.Types.Collider;
             }
@@ -106,14 +106,14 @@ public class ProcessService
                     foreach (var actor in nodeEntry.Actors)
                     {
                         bool shapeIntersects = false;
-                        string sectorHash = nodeEntry.SectorHash;
+                        string sectorHash = nodeEntry.SectorHash.ToString();
                         AbbrSectorTransform transformActor = actor.Transform;
                         foreach (var shape in actor.Shapes)
                         {
                             
                             if (shape.ShapeType.Contains("Mesh"))
                             {
-                                var (successGetShape, errorGetShape, collisionMeshString) = await _gameFileService.GetGeometryFromCacheAsync(sectorHash, shape.Hash);
+                                var (successGetShape, errorGetShape, collisionMeshString) = await _gameFileService.GetGeometryFromCacheAsync(sectorHash, shape.Hash.ToString());
                                 if (!successGetShape || collisionMeshString == null)
                                 {
                                     Logger.Warning($"Failed to get shape {sectorHash}, {shape.Hash} with error: {errorGetShape}");
@@ -173,7 +173,7 @@ public class ProcessService
                                 Index = index,
                                 Type = nodeEntry.Type,
                                 ActorDeletions = actorRemoval,
-                                ExpectedActors = nodeEntry.Actors.Count,
+                                ExpectedActors = nodeEntry.Actors.Length,
                                 DebugName = nodeEntry.DebugName
                             };
                     }
