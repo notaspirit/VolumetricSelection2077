@@ -1,29 +1,20 @@
 using System;
 using System.IO;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using WolvenKit;
 using WolvenKit.Common.Services;
 using WolvenKit.Core.Interfaces;
 using WolvenKit.Core.Services;
 using WolvenKit.RED4.CR2W.Archive;
 using WolvenKit.RED4.CR2W;
-using Newtonsoft.Json.Linq;
 using SharpGLTF.Schema2;
-using VolumetricSelection2077.Models;
-using WolvenKit.App.Services;
 using WolvenKit.Common.Conversion;
 using WolvenKit.Common.FNV1A;
-using WolvenKit.Common.Interfaces;
-using WolvenKit.Modkit.RED4;
 using WolvenKit.Modkit.RED4.Tools;
 using WolvenKit.RED4.Archive.CR2W;
-using WolvenKit.RED4.Archive.IO;
 using WolvenKit.RED4.CR2W.JSON;
 using JsonSerializer = System.Text.Json.JsonSerializer;
-using WolvenKit.RED4.Types;
 
 namespace VolumetricSelection2077.Services;
 
