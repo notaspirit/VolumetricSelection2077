@@ -39,9 +39,9 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <Version>1.0.0.0</Version>
-    <FileVersion>1.0.0.0</FileVersion>
-    <InformationalVersion>1.0.0-beta1</InformationalVersion>
+    <Version>1000.0.0.0</Version>
+    <FileVersion>1000.0.0.0</FileVersion>
+    <InformationalVersion>1000.0.0-beta1</InformationalVersion>
   </PropertyGroup>
   
   

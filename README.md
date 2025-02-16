@@ -2,6 +2,8 @@
 # VolumetricSelection2077
 Is a beta tool for bulk removing nodes from the world in Cyberpunk2077 using a selection box.
 
+Note that the versioning is epoch semantic => [Epoch * 1000 + MAJOR].MINOR.PATCH.PRERELEASE[INDEX]
+
 ## Instructions
 1. Installation
     1. CET Mod
