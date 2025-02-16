@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using DynamicData;
 using SharpDX.Direct3D9;
 using VolumetricSelection2077.Converters;
@@ -8,6 +9,8 @@ using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.Archive.CR2W;
 using WolvenKit.RED4.Types;
 using Int64 = System.Int64;
+using Vector3 = SharpDX.Vector3;
+using worldNodeData = WolvenKit.RED4.Archive.Buffer.worldNodeData;
 
 namespace VolumetricSelection2077.Parsers;
 
@@ -21,7 +24,7 @@ public class DirectAbbrSectorParser
         }
         var sector = input.RootChunk as worldStreamingSector;
 
-         var nodes = new AbbrStreamingSectorNodesEntry[sector.Nodes.Count];
+        var nodes = new AbbrStreamingSectorNodesEntry[sector.Nodes.Count];
         
         int nodeIndex = 0;
         foreach (var node in sector.Nodes)
@@ -39,6 +42,9 @@ public class DirectAbbrSectorParser
                     break;
                 case worldInstancedMeshNode instancedMeshNode:
                     meshPath = instancedMeshNode.Mesh.DepotPath;
+                    break;
+                case worldInstancedOccluderNode instancedOccluderNode:
+                    meshPath = instancedOccluderNode.Mesh.DepotPath;
                     break;
                 case worldCollisionNode collisionNode:
                     sectorHash = collisionNode.SectorHash;
@@ -119,6 +125,65 @@ public class DirectAbbrSectorParser
             Logger.Info($"{actors?.Length}");
         }
 
+        var nodeDataBuffer = sector.NodeData.Data as CArray<worldNodeData>;
+        var nodeDataOut = new AbbrStreamingSectorNodeDataEntry[nodeDataBuffer.Count];
+        
+        int nodeDataIndex = 0;
+        foreach (var nodeDataEntry in nodeDataBuffer)
+        {
+            AbbrSectorTransform[] transforms;
+
+            switch (sector.Nodes[nodeDataEntry.NodeIndex].Chunk)
+            {
+                case worldInstancedMeshNode instancedNode:
+                    Logger.Info("worldInstancedMeshNode");
+                    transforms = new AbbrSectorTransform[instancedNode.WorldTransformsBuffer.NumElements];
+                    var transformsInstancedBuffer = instancedNode.WorldTransformsBuffer.SharedDataBuffer.Chunk.Buffer.Data as CookedInstanceTransformsBuffer;
+                    int transformsInstancedIndex = 0;
+                    foreach (var transform in transformsInstancedBuffer.Transforms.ToArray().AsSpan((int)(uint)instancedNode.WorldTransformsBuffer.StartIndex, (int)(uint)instancedNode.WorldTransformsBuffer.NumElements))
+                    {
+                        transforms[transformsInstancedIndex] = new AbbrSectorTransform()
+                        {
+                            Position = WolvenkitToSharpDX.Vector3(transform.Position),
+                            Rotation = WolvenkitToSharpDX.Quaternion(transform.Orientation),
+                            Scale = new Vector3(1,1,1)
+                        };
+                        transformsInstancedIndex++;
+                    }
+                    break;
+                case worldInstancedDestructibleMeshNode instancedDestructibleNode:
+                    Logger.Info("worldInstancedDestructibleMeshNode");
+                    transforms = new AbbrSectorTransform[instancedDestructibleNode.CookedInstanceTransforms.NumElements];
+                    var transformsInstancedDestructibleBuffer = instancedDestructibleNode.CookedInstanceTransforms.SharedDataBuffer.Chunk.Buffer.Data as CookedInstanceTransformsBuffer;
+                    int transformsInstancedDestructibleIndex = 0;
+                    foreach (var transform in transformsInstancedDestructibleBuffer.Transforms.ToArray().AsSpan((int)(uint)instancedDestructibleNode.CookedInstanceTransforms.StartIndex, (int)(uint)instancedDestructibleNode.CookedInstanceTransforms.NumElements))
+                    {
+                        transforms[transformsInstancedDestructibleIndex] = new AbbrSectorTransform()
+                        {
+                            Position = WolvenkitToSharpDX.Vector3(transform.Position),
+                            Rotation = WolvenkitToSharpDX.Quaternion(transform.Orientation),
+                            Scale = new Vector3(1,1,1)
+                        };
+                        transformsInstancedDestructibleIndex++;
+                    }
+
+                    break;
+                default:
+                    Logger.Info("Default");
+                    transforms = new AbbrSectorTransform[1];
+                    transforms[0] = new AbbrSectorTransform()
+                    {
+                        Position = WolvenkitToSharpDX.Vector3(nodeDataEntry.Position),
+                        Rotation = WolvenkitToSharpDX.Quaternion(nodeDataEntry.Orientation),
+                        Scale = WolvenkitToSharpDX.Vector3(nodeDataEntry.Scale)
+                    };
+                    break;
+            }
+            Logger.Info($"{transforms.Length}");
+            nodeDataIndex++;
+        }
+        
+        
         return null;
     }
 }
