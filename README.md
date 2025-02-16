@@ -4,6 +4,8 @@ Is a beta tool for bulk removing nodes from the world in Cyberpunk2077 using a s
 
 Note that the versioning is epoch semantic => [Epoch * 1000 + MAJOR].MINOR.PATCH.PRERELEASE[INDEX]
 
+Roadmeshes and occluder resources are expected to fail, as well as any modded resources, if anything else fails or you have any other feedback please open an issue for it on GitHub.
+
 ## Instructions
 1. Installation
     1. CET Mod
@@ -33,4 +35,4 @@ CET Window Manager ([GitHub](https://github.com/notaspirit/CET-Window-Manager) |
 
 ## Credits
 - [keanuWheeze](https://github.com/justarandomguyintheinternet) for the cube mesh and the material
-- [WolvenKit](https://github.com/WolvenKit/WolvenKit) for packaging and publishing the core functionality of WolvenKit on nuget
+- [WolvenKit](https://github.com/WolvenKit/WolvenKit) for publishing the core functionality of WolvenKit on nuget

@@ -8,6 +8,7 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <PublishReadyToRun>true</PublishReadyToRun>
     <ServerGarbageCollection>true</ServerGarbageCollection>
+    <ApplicationIcon>./assets/redCube.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
