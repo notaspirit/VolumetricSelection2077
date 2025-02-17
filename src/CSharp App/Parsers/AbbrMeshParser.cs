@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using VolumetricSelection2077.Models;
 using SharpGLTF.Schema2;
 using SharpDX;
@@ -77,8 +78,8 @@ public class AbbrMeshParser
             BoundingBox meshBoundingBox = meshBoundingBoxOBB.GetBoundingBox();
             _subMeshes.Add(new AbbrSubMeshes()
             {
-                Indices = _indices,
-                Vertices = _vertices,
+                Indices = new uint[1],// _indices,
+                Vertices = new Vector3[1],// _vertices,
                 BoundingBox = meshBoundingBox
             });
         }
@@ -89,7 +90,7 @@ public class AbbrMeshParser
         
         return new AbbrMesh()
         {
-            SubMeshes = _subMeshes,
+            SubMeshes = _subMeshes.ToArray(),
         };
     }
 
@@ -172,8 +173,8 @@ public class AbbrMeshParser
 
         subMeshes.Add(new AbbrSubMeshes()
         {
-            Indices = indices,
-            Vertices = vertices,
+            Indices = indices.ToArray(),
+            Vertices = vertices.ToArray(),
             BoundingBox = meshBoundingBox,
             IsConvexCollider = _isConvexCollider,
         });
@@ -183,7 +184,7 @@ public class AbbrMeshParser
         
         return new AbbrMesh()
         {
-            SubMeshes = subMeshes
+            SubMeshes = subMeshes.ToArray()
         };
     }
 }

@@ -21,7 +21,7 @@ public class CheckAbbrMeshParser
             blenderVerticies += "]";
             
             string blenderIndicies = "faces = [\n";
-            for (int i = 0; i < submesh.Indices.Count; i += 3)
+            for (int i = 0; i < submesh.Indices.Length; i += 3)
             {
                 blenderIndicies += $"({submesh.Indices[i]}, {submesh.Indices[i+1]}, {submesh.Indices[i+2]}),\n";
             }

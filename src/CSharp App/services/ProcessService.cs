@@ -228,7 +228,7 @@ public class ProcessService
     public async Task<(bool success, string error)> MainProcessTask(string? customRemovalFile = null, string? customRemovalDirectory = null)
     {
 
-        TestDirectParsing.TestSectors();
+        TestDirectParsing.TestCMeshParser();
         return (true, "");
         Logger.Info($"Version: {_settings.ProgramVersion}");
         Logger.Info("Validating inputs...");
