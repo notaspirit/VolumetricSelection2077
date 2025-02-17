@@ -41,6 +41,9 @@ public class TestJsonParsing
         var gameExePath = new FileInfo(SettingsService.Instance.GameDirectory + @"\bin\x64\Cyberpunk2077.exe");
         _archiveManager.Initialize(gameExePath);
         
+        Logger.Info("Getting Sector...");
+        var swGet = new Stopwatch();
+        swGet.Start();
         if (!ulong.TryParse(testSector, out var hash))
         {
             hash = FNV1A64HashAlgorithm.HashString(testSector);
@@ -53,6 +56,9 @@ public class TestJsonParsing
         }
         var dto = new RedFileDto(gameFileRaw);
         string gameFileJson = RedJsonSerializer.Serialize(dto);
+        
+        swGet.Stop();
+        Logger.Info($"Elapsed: {swGet.ElapsedMilliseconds} ms");
         
         Logger.Info("First Run...");
         var sw = new Stopwatch();
