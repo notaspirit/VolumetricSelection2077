@@ -36,13 +36,18 @@ public class TestDirectParsing
 
         var gameExePath = new FileInfo(SettingsService.Instance.GameDirectory + @"\bin\x64\Cyberpunk2077.exe");
         _archiveManager.Initialize(gameExePath);
+        Logger.Info($"Getting Sector...");
+        var swGet = new Stopwatch();
+        swGet.Start();
         var testSectorCR2W = _archiveManager.GetCR2WFile(testSector);
         if (testSectorCR2W == null)
         {
             Logger.Error("Failed to get cr2w file");
             return;
         }
-
+        swGet.Stop();
+        Logger.Info($"Elapsed: {swGet.ElapsedMilliseconds} ms");
+        
         Logger.Info("First Run...");
         var sw = new Stopwatch();
         sw.Start();
