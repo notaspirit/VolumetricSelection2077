@@ -116,13 +116,6 @@ public class DirectAbbrSectorParser
             };
             
             nodeIndex++;
-            
-            Logger.Info($"{nodeIndex}");
-            Logger.Info($"{type}");
-            Logger.Info($"{debugName ?? "none"}");
-            Logger.Info($"{meshPath ?? "none"}");
-            Logger.Info($"{sectorHash}");
-            Logger.Info($"{actors?.Length}");
         }
 
         var nodeDataBuffer = sector.NodeData.Data as CArray<worldNodeData>;
@@ -136,23 +129,21 @@ public class DirectAbbrSectorParser
             switch (sector.Nodes[nodeDataEntry.NodeIndex].Chunk)
             {
                 case worldInstancedMeshNode instancedNode:
-                    Logger.Info("worldInstancedMeshNode");
                     transforms = new AbbrSectorTransform[instancedNode.WorldTransformsBuffer.NumElements];
-                    var transformsInstancedBuffer = instancedNode.WorldTransformsBuffer.SharedDataBuffer.Chunk.Buffer.Data as CookedInstanceTransformsBuffer;
+                    var transformsInstancedBuffer = instancedNode.WorldTransformsBuffer.SharedDataBuffer.Chunk.Buffer.Data as WorldTransformsBuffer;
                     int transformsInstancedIndex = 0;
                     foreach (var transform in transformsInstancedBuffer.Transforms.ToArray().AsSpan((int)(uint)instancedNode.WorldTransformsBuffer.StartIndex, (int)(uint)instancedNode.WorldTransformsBuffer.NumElements))
                     {
                         transforms[transformsInstancedIndex] = new AbbrSectorTransform()
                         {
-                            Position = WolvenkitToSharpDX.Vector3(transform.Position),
-                            Rotation = WolvenkitToSharpDX.Quaternion(transform.Orientation),
-                            Scale = new Vector3(1,1,1)
+                            Position = WolvenkitToSharpDX.Vector3(transform.Translation),
+                            Rotation = WolvenkitToSharpDX.Quaternion(transform.Rotation),
+                            Scale = WolvenkitToSharpDX.Vector3(transform.Scale)
                         };
                         transformsInstancedIndex++;
                     }
                     break;
                 case worldInstancedDestructibleMeshNode instancedDestructibleNode:
-                    Logger.Info("worldInstancedDestructibleMeshNode");
                     transforms = new AbbrSectorTransform[instancedDestructibleNode.CookedInstanceTransforms.NumElements];
                     var transformsInstancedDestructibleBuffer = instancedDestructibleNode.CookedInstanceTransforms.SharedDataBuffer.Chunk.Buffer.Data as CookedInstanceTransformsBuffer;
                     int transformsInstancedDestructibleIndex = 0;
@@ -169,7 +160,6 @@ public class DirectAbbrSectorParser
 
                     break;
                 default:
-                    Logger.Info("Default");
                     transforms = new AbbrSectorTransform[1];
                     transforms[0] = new AbbrSectorTransform()
                     {
@@ -179,11 +169,19 @@ public class DirectAbbrSectorParser
                     };
                     break;
             }
-            Logger.Info($"{transforms.Length}");
+
+            nodeDataOut[nodeDataIndex] = new AbbrStreamingSectorNodeDataEntry()
+            {
+                NodeIndex = nodeDataEntry.NodeIndex,
+                Transforms = transforms
+            };
             nodeDataIndex++;
         }
-        
-        
-        return null;
+
+        return new AbbrSector()
+        {
+            Nodes = nodes,
+            NodeData = nodeDataOut
+        };
     }
 }

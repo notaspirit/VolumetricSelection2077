@@ -6,8 +6,8 @@ namespace VolumetricSelection2077.Models
 
     public class AbbrSector
     {
-        public required List<AbbrStreamingSectorNodesEntry> Nodes { get; set; }
-        public required List<AbbrStreamingSectorNodeDataEntry> NodeData { get; set; }
+        public required AbbrStreamingSectorNodesEntry[] Nodes { get; set; }
+        public required AbbrStreamingSectorNodeDataEntry[] NodeData { get; set; }
     }
 
     public class AbbrSectorTransform
@@ -19,7 +19,7 @@ namespace VolumetricSelection2077.Models
     
     public class AbbrStreamingSectorNodeDataEntry
     {
-        public required List<AbbrSectorTransform> Transforms { get; set; }
+        public required AbbrSectorTransform[] Transforms { get; set; }
         public int NodeIndex { get; set; }
     }
     public class AbbrStreamingSectorNodesEntry

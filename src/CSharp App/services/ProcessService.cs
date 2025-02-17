@@ -84,11 +84,11 @@ public class ProcessService
                         return null;
                     }
 
-                    bool isInside = CollisionCheckService.IsMeshInsideBox(mesh,
+                    bool isInside = false; /* CollisionCheckService.IsMeshInsideBox(mesh,
                         selectionBox.Obb,
                         selectionBox.Aabb,
                         nodeDataEntry.Transforms);
-
+*/
                     if (isInside)
                     {
                         return new AxlRemovalNodeDeletion()
@@ -219,7 +219,7 @@ public class ProcessService
         var result = new AxlRemovalSector()
         {
             NodeDeletions = nodeDeletions,
-            ExpectedNodes = sector.NodeData.Count,
+            ExpectedNodes = sector.NodeData.Length,
             Path = sectorPath
         };
         return (true, "", result);
@@ -332,7 +332,7 @@ public class ProcessService
             var (successPSS, errorPSS, resultPss) = await ProcessStreamingsector(sectorDeserialized, streamingSectorName, CETOutputFile);
             if (successPSS)
             { 
-                Logger.Info($"Successfully processed streamingsector {streamingSectorName} which found {resultPss?.NodeDeletions.Count ?? 0} nodes out of {sectorDeserialized.NodeData.Count} nodes.");
+                Logger.Info($"Successfully processed streamingsector {streamingSectorName} which found {resultPss?.NodeDeletions.Count ?? 0} nodes out of {sectorDeserialized.NodeData.Length} nodes.");
                 return resultPss;
             }
             

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using VolumetricSelection2077.Parsers;
 using VolumetricSelection2077.Services;
@@ -41,6 +42,10 @@ public class TestDirectParsing
             Logger.Error("Failed to get cr2w file");
             return;
         }
+
+        Logger.Info("First Run...");
+        var sw = new Stopwatch();
+        sw.Start();
         try
         {
             DirectAbbrSectorParser.Parse(testSectorCR2W);
@@ -49,6 +54,21 @@ public class TestDirectParsing
         {
             Logger.Error(e.Message);
         }
-
+        sw.Stop();
+        Logger.Info($"Elapsed: {sw.ElapsedMilliseconds} ms");
+        
+        Logger.Info("Second Run...");
+        var sw2 = new Stopwatch();
+        sw2.Start();
+        try
+        {
+            DirectAbbrSectorParser.Parse(testSectorCR2W);
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e.Message);
+        }
+        sw2.Stop();
+        Logger.Info($"Elapsed: {sw2.ElapsedMilliseconds} ms");
     }
 }
