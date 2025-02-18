@@ -45,6 +45,21 @@ public class DirectAbbrSectorParser
                 case worldInstancedOccluderNode instancedOccluderNode:
                     meshPath = instancedOccluderNode.Mesh.DepotPath;
                     break;
+                case worldTerrainMeshNode terrainMeshNode:
+                    meshPath = terrainMeshNode.MeshRef.DepotPath;
+                    break;
+                case worldBendedMeshNode bendedMeshNode:
+                    meshPath = bendedMeshNode.Mesh.DepotPath;
+                    break;
+                case worldPhysicalDestructionNode destructionNode:
+                    meshPath = destructionNode.Mesh.DepotPath;
+                    break;
+                case worldFoliageNode foliageNode:
+                    meshPath = foliageNode.Mesh.DepotPath;
+                    break;
+                case worldStaticOccluderMeshNode staticOccluderMeshNode:
+                    meshPath = staticOccluderMeshNode.Mesh.DepotPath;
+                    break;
                 case worldCollisionNode collisionNode:
                     sectorHash = collisionNode.SectorHash;
                     actors = new AbbrCollisionActors[collisionNode.NumActors];

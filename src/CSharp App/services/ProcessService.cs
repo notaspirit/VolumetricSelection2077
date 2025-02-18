@@ -210,10 +210,12 @@ public class ProcessService
     public async Task<(bool success, string error)> MainProcessTask(string? customRemovalFile = null, string? customRemovalDirectory = null)
     {
         Logger.Info($"Version: {_settings.ProgramVersion}");
-        
+        /*
         CompareGenOutput.Run();
         return (true, string.Empty);
+        */
         
+        /*
         var options = new JsonSerializerOptions
         {
             Converters = { new Vector3Converter(), new QuaternionConverter() },
@@ -260,6 +262,8 @@ public class ProcessService
         
         // CompareGenOutput.Run();
         return (true, string.Empty);
+        */
+        
         Logger.Info("Validating inputs...");
         
         if (!ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename))
