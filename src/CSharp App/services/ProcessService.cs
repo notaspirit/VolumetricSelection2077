@@ -68,27 +68,18 @@ public class ProcessService
             switch (entryType)
             {
                 case CollisionCheck.Types.Mesh:
-                    string meshDepotPath = nodeEntry.MeshDepotPath;
-                    // get mesh, pass local transform and mesh to mesh check method, if mesh is inside the box add index and type to list
-                    var (successGet, errorGet, model) = _gameFileService.GetGameFileAsGlb(meshDepotPath);
-                    if (!successGet || model == null)
-                    {
-                        Logger.Warning($"Failed to get {meshDepotPath} with error: {errorGet}");
-                        return null;
-                    }
-
-                    AbbrMesh? mesh = AbbrMeshParser.ParseFromGlb(model);
+                    var mesh = _gameFileService.GetCMesh(nodeEntry.MeshDepotPath);
                     if (mesh == null)
                     {
-                        Logger.Warning($"Failed to parse {meshDepotPath}.");
+                        Logger.Warning($"Failed to get CMesh from {nodeEntry.MeshDepotPath}");
                         return null;
                     }
 
-                    bool isInside = false; /* CollisionCheckService.IsMeshInsideBox(mesh,
+                    bool isInside = CollisionCheckService.IsMeshInsideBox(mesh,
                         selectionBox.Obb,
                         selectionBox.Aabb,
                         nodeDataEntry.Transforms);
-*/
+                    
                     if (isInside)
                     {
                         return new AxlRemovalNodeDeletion()
@@ -100,33 +91,24 @@ public class ProcessService
                     }
                     return null;
                 case CollisionCheck.Types.Collider:
-                    
                     List<int> actorRemoval = new List<int>();
                     int actorIndex = 0;
                     foreach (var actor in nodeEntry.Actors)
                     {
-                        bool shapeIntersects = false;
-                        string sectorHash = nodeEntry.SectorHash.ToString();
-                        AbbrSectorTransform transformActor = actor.Transform;
+                        var shapeIntersects = false;
+                        var sectorHash = nodeEntry.SectorHash;
+                        var transformActor = actor.Transform;
                         foreach (var shape in actor.Shapes)
                         {
                             
                             if (shape.ShapeType.Contains("Mesh"))
                             {
-                                var (successGetShape, errorGetShape, collisionMeshString) = await _gameFileService.GetGeometryFromCacheAsync(sectorHash, shape.Hash.ToString());
-                                if (!successGetShape || collisionMeshString == null)
-                                {
-                                    Logger.Warning($"Failed to get shape {sectorHash}, {shape.Hash} with error: {errorGetShape}");
-                                    continue;
-                                }
-                                
-                                AbbrMesh collisionMesh = AbbrMeshParser.ParseFromJson(collisionMeshString);
+                                var collisionMesh = await _gameFileService.GetPhysXMesh((ulong)sectorHash, (ulong)shape.Hash);
                                 if (collisionMesh == null)
                                 {
-                                    Logger.Warning($"Failed to parse {collisionMeshString}.");
+                                    Logger.Warning($"Failed to get PhysX Mesh from {sectorHash} : {shape.Hash}");
                                     continue;
                                 }
-                                
                                 bool isCollisionMeshInsideBox = CollisionCheckService.IsCollisonMeshInsideSelectionBox(collisionMesh, selectionBox.Obb, selectionBox.Aabb, transformActor, shape.Transform);
                                 if (isCollisionMeshInsideBox)
                                 {
@@ -227,10 +209,20 @@ public class ProcessService
 
     public async Task<(bool success, string error)> MainProcessTask(string? customRemovalFile = null, string? customRemovalDirectory = null)
     {
-
-        TestDirectParsing.TestCMeshParser();
-        return (true, "");
         Logger.Info($"Version: {_settings.ProgramVersion}");
+
+        var path = @"C:\Users\zweit\AppData\Roaming\VolumetricSelection2077\sectorComparison\DirectParsing.json";
+        var sectorPath = @"base\worlds\03_night_city\_compiled\default\exterior_7_-2_0_3.streamingsector";
+        
+        var sectorTest = _gameFileService.GetSector(sectorPath);
+        
+        var sectorJson = JsonSerializer.Serialize(sectorTest);
+        
+        File.WriteAllText(path, sectorJson);
+        
+        
+        // CompareGenOutput.Run();
+        return (true, string.Empty);
         Logger.Info("Validating inputs...");
         
         if (!ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename))
@@ -313,31 +305,32 @@ public class ProcessService
         async Task<AxlRemovalSector?> SectorProcessThread(string streamingSectorName)
         {
             Logger.Info($"Starting sector process thread for {streamingSectorName}...");
-            string streamingSectorNameFix = Regex.Replace(streamingSectorName, @"\\{2}", @"\");
-            var (successGET, errorGET, stringGET) = _gameFileService.GetGameFileAsJsonString(streamingSectorNameFix);
-            if (!successGET || !string.IsNullOrEmpty(errorGET) || string.IsNullOrEmpty(stringGET))
-            {
-                Logger.Error($"Failed to get streamingsector {streamingSectorName}, error: {errorGET}");
-                return null;
-            }
-            // Logger.Info(stringGET);
 
-            AbbrSector? sectorDeserialized = AbbrSectorParser.Deserialize(stringGET);
-            if (sectorDeserialized == null)
+            try
             {
-                Logger.Error($"Failed to deserialize streamingsector {streamingSectorName}");
+                string streamingSectorNameFix = Regex.Replace(streamingSectorName, @"\\{2}", @"\");
+                var sector = _gameFileService.GetSector(streamingSectorNameFix);
+                if (sector == null)
+                {
+                    Logger.Warning($"Failed to find sector {streamingSectorNameFix}");
+                    return null;
+                }
+                
+                var (successPSS, errorPSS, resultPss) = await ProcessStreamingsector(sector, streamingSectorName, CETOutputFile);
+                if (successPSS)
+                { 
+                    Logger.Info($"Successfully processed streamingsector {streamingSectorName} which found {resultPss?.NodeDeletions.Count ?? 0} nodes out of {sector.NodeData.Length} nodes.");
+                    return resultPss;
+                }
+            
+                Logger.Error($"Failed to processes streamingsector {streamingSectorName} with error: {errorPSS}");
                 return null;
             }
-            
-            var (successPSS, errorPSS, resultPss) = await ProcessStreamingsector(sectorDeserialized, streamingSectorName, CETOutputFile);
-            if (successPSS)
-            { 
-                Logger.Info($"Successfully processed streamingsector {streamingSectorName} which found {resultPss?.NodeDeletions.Count ?? 0} nodes out of {sectorDeserialized.NodeData.Length} nodes.");
-                return resultPss;
+            catch (Exception e)
+            {
+                Logger.Error($"Failed to Processes {streamingSectorName}: {e}");
+                return null;
             }
-            
-            Logger.Error($"Failed to processes streamingsector {streamingSectorName} with errror: {errorPSS}");
-            return null;
         }
         
         var tasks = CETOutputFile.Sectors.Select(input => Task.Run(() => SectorProcessThread(input))).ToArray();
