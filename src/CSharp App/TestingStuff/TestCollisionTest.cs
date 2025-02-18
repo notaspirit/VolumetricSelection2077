@@ -99,7 +99,7 @@ public class TestCollisionTest
             }
             
             
-            bool checkResult = CollisionCheckService.IsMeshInsideBox(mesh, obb, obb.GetBoundingBox(), transforms);
+            bool checkResult = CollisionCheckService.IsMeshInsideBox(mesh, obb, obb.GetBoundingBox(), transforms.ToArray());
             if (checkResult != bbList[i].Value)
             {
                 Logger.Warning($"Got Unexpected Result {checkResult} for index {i}!");

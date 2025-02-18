@@ -53,7 +53,7 @@ public class TestDirectParsing
         sw.Start();
         try
         {
-            DirectAbbrSectorParser.Parse(testSectorCR2W);
+            DirectAbbrSectorParser.ParseFromCR2W(testSectorCR2W);
         }
         catch (Exception e)
         {
@@ -67,7 +67,7 @@ public class TestDirectParsing
         sw2.Start();
         try
         {
-            DirectAbbrSectorParser.Parse(testSectorCR2W);
+            DirectAbbrSectorParser.ParseFromCR2W(testSectorCR2W);
         }
         catch (Exception e)
         {
