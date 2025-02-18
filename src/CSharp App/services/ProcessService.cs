@@ -229,7 +229,27 @@ public class ProcessService
     {
         Logger.Info($"Version: {_settings.ProgramVersion}");
         
-        TestJsonParsing.TestSectors();
+        
+        var path = @"C:\Users\zweit\AppData\Roaming\VolumetricSelection2077\sectorComparison\JsonParsing.json";
+        var sectorPath = @"base\worlds\03_night_city\_compiled\default\exterior_7_-2_0_3.streamingsector";
+        
+        var (successGET, errorGET, stringGET) = _gameFileService.GetGameFileAsJsonString(sectorPath);
+        if (!successGET || !string.IsNullOrEmpty(errorGET) || string.IsNullOrEmpty(stringGET))
+        {
+            Logger.Error($"Failed to get streamingsector {sectorPath}, error: {errorGET}");
+        }
+        // Logger.Info(stringGET);
+
+        AbbrSector? sectorDeserialized = AbbrSectorParser.Deserialize(stringGET);
+        if (sectorDeserialized == null)
+        {
+            Logger.Error($"Failed to deserialize streamingsector {sectorPath}");
+        }
+        
+        var sectorJson = JsonSerializer.Serialize(sectorDeserialized);
+        
+        File.WriteAllText(path, sectorJson);
+        
         return (true, "");
         
         Logger.Info("Validating inputs...");
