@@ -9,8 +9,11 @@ using WolvenKit.Core.Services;
 using WolvenKit.RED4.CR2W.Archive;
 using WolvenKit.RED4.CR2W;
 using SharpGLTF.Schema2;
+using VolumetricSelection2077.Models;
+using VolumetricSelection2077.Parsers;
 using WolvenKit.Common.Conversion;
 using WolvenKit.Common.FNV1A;
+using WolvenKit.Common.PhysX;
 using WolvenKit.Modkit.RED4.Tools;
 using WolvenKit.RED4.Archive.CR2W;
 using WolvenKit.RED4.CR2W.JSON;
@@ -134,5 +137,37 @@ public class GameFileService
         }
         string outJson =  JsonSerializer.Serialize((object)cacheEntry, new JsonSerializerOptions { IncludeFields = true, WriteIndented = true });
         return (true, "", outJson);
+    }
+
+    public async Task<AbbrMesh?> GetPhysXMesh(ulong sectorHash, ulong actorHash)
+    {
+        var rawMesh = await _geometryCacheService.GetEntryAsync(sectorHash, actorHash);
+        if (rawMesh == null)
+        {
+            return null;
+        }
+        
+        return DirectAbbrMeshParser.ParseFromPhysX(rawMesh);
+    }
+
+    public AbbrMesh? GetCMesh(string path)
+    {
+        var rawMesh = _archiveManager.GetCR2WFile(path);
+        if (rawMesh == null)
+        {
+            return null;
+        }
+        
+        return DirectAbbrMeshParser.ParseFromCR2W(rawMesh);
+    }
+
+    public AbbrSector? GetSector(string path)
+    {
+        var rawSector = _archiveManager.GetCR2WFile(path);
+        if (rawSector == null)
+        {
+            return null;
+        }
+        return DirectAbbrSectorParser.ParseFromCR2W(rawSector);
     }
 }
