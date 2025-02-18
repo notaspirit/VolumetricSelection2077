@@ -33,11 +33,35 @@ public class CompareGenOutput
         CompareJsonFiles(washBoxNew, washBoxOld);
         */
 
-        var folder = @"C:\Users\zweit\AppData\Roaming\VolumetricSelection2077\sectorComparison";
-        string oldF = folder + @"\JsonParsing.json";
-        string newF = folder + @"\DirectParsing.json";
+        Logger.Info("Comparing Sectors:");
         
-        CompareJsonFiles(newF, oldF);
+        var folderSec = @"C:\Users\zweit\AppData\Roaming\VolumetricSelection2077\sectorComparison";
+        string oldSec = folderSec + @"\JsonParsing.json";
+        string newSec = folderSec + @"\DirectParsing.json";
+        
+        CompareJsonFiles(newSec, oldSec);
+        
+        Logger.Info("Comparing CMesh:");
+        
+        var folderMeshes = @"C:\Users\zweit\AppData\Roaming\VolumetricSelection2077\meshComparison";
+        string oldCmesh = folderMeshes + @"\GlbCMeshParsing.json";
+        string newCmesh = folderMeshes + @"\DirectCMeshParsing.json";
+        
+        CompareJsonFiles(newCmesh, oldCmesh);
+        
+        Logger.Info("Comparing Phys1:");
+        
+        string oldPhys1 = folderMeshes + @"\JsonPhysX1Parsing.json";
+        string newPhys1 = folderMeshes + @"\DirectPhysX1Parsing.json";
+        
+        CompareJsonFiles(newPhys1, oldPhys1);
+        
+        Logger.Info("Comparing Phys2:");
+        
+        string oldPhys2 = folderMeshes + @"\JsonPhysX2Parsing.json";
+        string newPhys2 = folderMeshes + @"\DirectPhysX2Parsing.json";
+        
+        CompareJsonFiles(newPhys2, oldPhys2);
     }
     
     /// <summary>

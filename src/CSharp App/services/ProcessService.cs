@@ -211,6 +211,9 @@ public class ProcessService
     {
         Logger.Info($"Version: {_settings.ProgramVersion}");
         
+        CompareGenOutput.Run();
+        return (true, string.Empty);
+        
         var options = new JsonSerializerOptions
         {
             Converters = { new Vector3Converter(), new QuaternionConverter() },
