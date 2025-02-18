@@ -31,7 +31,7 @@ public static class CollisionCheckService
     
     public static bool IsMeshInsideBox(AbbrMesh mesh, OrientedBoundingBox selectionBoxOBB, BoundingBox selectionBoxAabb, AbbrSectorTransform[]? transforms, Matrix? matrixTransform = null)
     {
-        static bool isInsidePrivate(AbbrSubMeshes submesh, OrientedBoundingBox selectionObb, BoundingBox selectionAabb, Matrix transform)
+        static bool IsInsidePrivate(AbbrSubMeshes submesh, OrientedBoundingBox selectionObb, BoundingBox selectionAabb, Matrix transform)
         {
             OrientedBoundingBox baseObb = new(submesh.BoundingBox);
             baseObb.Transform(transform);
@@ -63,7 +63,7 @@ public static class CollisionCheckService
         {
             foreach (var submesh in mesh.SubMeshes)
             {
-                if (isInsidePrivate(submesh, selectionBoxOBB, selectionBoxAabb, (Matrix)matrixTransform))
+                if (IsInsidePrivate(submesh, selectionBoxOBB, selectionBoxAabb, (Matrix)matrixTransform))
                 {
                     return true;
                 }
@@ -79,7 +79,7 @@ public static class CollisionCheckService
                     Matrix localTransformMatrix = Matrix.Scaling(transform.Scale) * 
                                                   Matrix.RotationQuaternion(transform.Rotation) * 
                                                   Matrix.Translation(transform.Position);
-                    if (isInsidePrivate(submesh, selectionBoxOBB, selectionBoxAabb, localTransformMatrix))
+                    if (IsInsidePrivate(submesh, selectionBoxOBB, selectionBoxAabb, localTransformMatrix))
                     {
                         return true;
                     }
