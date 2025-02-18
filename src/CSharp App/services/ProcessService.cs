@@ -228,8 +228,14 @@ public class ProcessService
     public async Task<(bool success, string error)> MainProcessTask(string? customRemovalFile = null, string? customRemovalDirectory = null)
     {
         Logger.Info($"Version: {_settings.ProgramVersion}");
+        var options = new JsonSerializerOptions
+        {
+            Converters = { new Vector3Converter(), new QuaternionConverter() },
+            WriteIndented = true
+        };
         
         
+        Logger.Info("Processing Sector");
         var path = @"C:\Users\zweit\AppData\Roaming\VolumetricSelection2077\sectorComparison\JsonParsing.json";
         var sectorPath = @"base\worlds\03_night_city\_compiled\default\exterior_7_-2_0_3.streamingsector";
         
@@ -246,9 +252,40 @@ public class ProcessService
             Logger.Error($"Failed to deserialize streamingsector {sectorPath}");
         }
         
-        var sectorJson = JsonSerializer.Serialize(sectorDeserialized);
+        var sectorJson = JsonSerializer.Serialize(sectorDeserialized, options);
         
         File.WriteAllText(path, sectorJson);
+        
+        Logger.Info("Processing CMesh");
+        var pathCMesh = @"C:\Users\zweit\AppData\Roaming\VolumetricSelection2077\meshComparison\GlbCMeshParsing.json";
+        var cmeshPath = @"base\environment\architecture\common\int\int_ent_industrial_a\int_ent_industrial_a_pillar_beam_h100_l600_a.mesh";
+        var meshTestCMeshGlb = _gameFileService.GetGameFileAsGlb(cmeshPath);
+        var meshTestCMesh = AbbrMeshParser.ParseFromGlb(meshTestCMeshGlb.Item3);
+        Logger.Info($"CMesh is null: {meshTestCMesh is null}");
+        Logger.Info($"Submeshes: {meshTestCMesh.SubMeshes.Count}");
+        var AbbrCMeshJson = JsonSerializer.Serialize(meshTestCMesh, options);
+        File.WriteAllText(pathCMesh, AbbrCMeshJson);
+        
+        Logger.Info("Processing PhysX Mesh 1");
+        var pathPhysX1 = @"C:\Users\zweit\AppData\Roaming\VolumetricSelection2077\meshComparison\JsonPhysX1Parsing.json";
+        ulong sectorHash = 12717457377011094652;
+        ulong physXMesh1Hash = 9246134327794375400;
+        var meshTestPhysX1MeshString = await _gameFileService.GetGeometryFromCacheAsync(sectorHash.ToString(), physXMesh1Hash.ToString());
+        var meshTestPhysX1Mesh = AbbrMeshParser.ParseFromJson(meshTestPhysX1MeshString.Item3);
+        Logger.Info($"CMesh is null: {meshTestPhysX1Mesh is null}");
+        Logger.Info($"Submeshes: {meshTestPhysX1Mesh.SubMeshes.Count}");
+        var AbbrPhysX1Json = JsonSerializer.Serialize(meshTestPhysX1Mesh, options);
+        File.WriteAllText(pathPhysX1, AbbrPhysX1Json);
+        
+        Logger.Info("Processing PhysX Mesh 2");
+        var pathPhysX2 = @"C:\Users\zweit\AppData\Roaming\VolumetricSelection2077\meshComparison\JsonPhysX2Parsing.json";
+        ulong physXMesh2Hash = 9386483786976406912;
+        var meshTestPhysX2MeshString = await _gameFileService.GetGeometryFromCacheAsync(sectorHash.ToString(), physXMesh2Hash.ToString());
+        var meshTestPhysX2Mesh = AbbrMeshParser.ParseFromJson(meshTestPhysX2MeshString.Item3);
+        Logger.Info($"CMesh is null: {meshTestPhysX2Mesh is null}");
+        Logger.Info($"Submeshes: {meshTestPhysX2Mesh.SubMeshes.Count}");
+        var AbbrPhysX2Json = JsonSerializer.Serialize(meshTestPhysX2Mesh, options);
+        File.WriteAllText(pathPhysX2, AbbrPhysX2Json);
         
         return (true, "");
         
