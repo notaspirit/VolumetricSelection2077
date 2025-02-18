@@ -16,14 +16,13 @@ namespace VolumetricSelection2077.Parsers;
 
 public class DirectAbbrSectorParser
 {
-    public static AbbrSector? Parse(CR2WFile input)
+    public static AbbrSector ParseFromCR2W(CR2WFile input)
     {
-        if (input.RootChunk is not worldStreamingSector)
+        if (input.RootChunk is not worldStreamingSector sector)
         {
             throw new Exception("Input file is not a world streaming sector");
         }
-        var sector = input.RootChunk as worldStreamingSector;
-
+        
         var nodes = new AbbrStreamingSectorNodesEntry[sector.Nodes.Count];
         
         int nodeIndex = 0;
@@ -151,13 +150,12 @@ public class DirectAbbrSectorParser
                     {
                         transforms[transformsInstancedDestructibleIndex] = new AbbrSectorTransform()
                         {
-                            Position = WolvenkitToSharpDX.Vector3(transform.Position),
-                            Rotation = WolvenkitToSharpDX.Quaternion(transform.Orientation),
-                            Scale = new Vector3(1,1,1)
+                            Position = WolvenkitToSharpDX.Vector3(transform.Position) + WolvenkitToSharpDX.Vector3(nodeDataEntry.Position),
+                            Rotation = WolvenkitToSharpDX.Quaternion(transform.Orientation) * WolvenkitToSharpDX.Quaternion(nodeDataEntry.Orientation),
+                            Scale = WolvenkitToSharpDX.Vector3(nodeDataEntry.Scale)
                         };
                         transformsInstancedDestructibleIndex++;
                     }
-
                     break;
                 default:
                     transforms = new AbbrSectorTransform[1];

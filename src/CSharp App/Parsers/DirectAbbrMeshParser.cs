@@ -75,7 +75,7 @@ public class DirectAbbrMeshParser
     {
         if (cr2w.RootChunk is not CMesh { RenderResourceBlob.Chunk: rendRenderMeshBlob rendBlob } cMesh)
         {
-            throw new Exception("Invalid input mesh type");
+            return null;
         }
 
         int lowestLod = 1;
@@ -84,7 +84,6 @@ public class DirectAbbrMeshParser
         {
             if (rendInfo.LodMask > lowestLod) lowestLod = rendInfo.LodMask;
         }
-        Logger.Info($"Found lowest LOD: {lowestLod}");
 
         using var ms = new MemoryStream(rendBlob.RenderBuffer.Buffer.GetBytes());
         var br = new BinaryReader(ms);
