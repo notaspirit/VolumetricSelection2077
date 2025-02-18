@@ -13,6 +13,7 @@ public class CompareGenOutput
 
     public static void Run()
     {
+        /*
         string oldBenchmarks =
             @"C:\Users\zweit\AppData\Roaming\VolumetricSelection2077\benchmarks\results\20250218080807\";
         
@@ -30,6 +31,13 @@ public class CompareGenOutput
         CompareJsonFiles(midSizedNew, midSizedOld);
         CompareJsonFiles(pacificaTescNew, pacificaTescOld);
         CompareJsonFiles(washBoxNew, washBoxOld);
+        */
+
+        var folder = @"C:\Users\zweit\AppData\Roaming\VolumetricSelection2077\sectorComparison";
+        string oldF = folder + @"\JsonParsing.json";
+        string newF = folder + @"\DirectParsing.json";
+        
+        CompareJsonFiles(newF, oldF);
     }
     
     /// <summary>
