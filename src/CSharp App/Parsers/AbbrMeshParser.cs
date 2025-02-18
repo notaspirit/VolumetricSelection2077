@@ -44,9 +44,6 @@ public class AbbrMeshParser
     }
     public static AbbrMesh? ParseFromGlb(ModelRoot meshRaw)
     {
-        var stopwatch = new Stopwatch();
-        stopwatch.Start();
-        
         List<AbbrSubMeshes> _subMeshes = new List<AbbrSubMeshes>();
         if (meshRaw.LogicalMeshes.Count == 0)
         {
@@ -83,11 +80,6 @@ public class AbbrMeshParser
                 BoundingBox = meshBoundingBox
             });
         }
-
-        
-        stopwatch.Stop();
-        Benchmarking.Instance.MeshGlbParsing.Add(stopwatch.Elapsed);
-        
         return new AbbrMesh()
         {
             SubMeshes = _subMeshes.ToArray(),
@@ -96,9 +88,6 @@ public class AbbrMeshParser
 
     public static AbbrMesh? ParseFromJson(string jsonString)
     { 
-        var stopwatch = new Stopwatch();
-        stopwatch.Start();
-        
         JObject collisionMeshRaw = JObject.Parse(jsonString);
         
         var _vertices = collisionMeshRaw["Vertices"];
@@ -178,9 +167,6 @@ public class AbbrMeshParser
             BoundingBox = meshBoundingBox,
             IsConvexCollider = _isConvexCollider,
         });
-
-        stopwatch.Stop();
-        Benchmarking.Instance.MeshJsonParsing.Add(stopwatch.Elapsed);
         
         return new AbbrMesh()
         {
