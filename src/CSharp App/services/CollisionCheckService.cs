@@ -29,7 +29,7 @@ public static class CollisionCheckService
         return result;
     }
     
-    public static bool IsMeshInsideBox(AbbrMesh mesh, OrientedBoundingBox selectionBoxOBB, BoundingBox selectionBoxAabb, List<AbbrSectorTransform>? transforms, Matrix? matrixTransform = null)
+    public static bool IsMeshInsideBox(AbbrMesh mesh, OrientedBoundingBox selectionBoxOBB, BoundingBox selectionBoxAabb, AbbrSectorTransform[]? transforms, Matrix? matrixTransform = null)
     {
         static bool isInsidePrivate(AbbrSubMeshes submesh, OrientedBoundingBox selectionObb, BoundingBox selectionAabb, Matrix transform)
         {
