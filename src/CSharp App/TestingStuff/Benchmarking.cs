@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
+using System.Linq;
 using Newtonsoft.Json;
 using VolumetricSelection2077.Services;
 using WolvenKit.RED4.Types;
@@ -17,7 +19,31 @@ public class Benchmarking
         public string averageTime { get; set; }
     }
     
-    public static async void RunBenchmarks()
+    private static Benchmarking? _instance;
+    private static readonly object _lock = new object();
+    
+    public static Benchmarking Instance
+    {
+        get
+        {
+            lock (_lock)
+            {
+                if (_instance == null)
+                {
+                    _instance = new Benchmarking();
+                }
+                return _instance;
+            }
+        }
+    }
+    
+    public ConcurrentBag<double> GetFileMs = new();
+    public ConcurrentBag<double> CheckIntersectionMs = new();
+    
+    
+    
+    
+    public async void RunBenchmarks()
     {
         Logger.Info("Starting Benchmarks");
         var processingService = new ProcessService();
@@ -66,6 +92,34 @@ public class Benchmarking
         Logger.Info($"Total procss: {UtilService.FormatElapsedTime(totalProcssTime)}");
         TimeSpan avgProcssTime = totalProcssTime / results.Count;
         Logger.Info($"Average process time: {UtilService.FormatElapsedTime(avgProcssTime)}");
+
+        double CalcPercent(double timeSpend, double totalTime)
+        {
+            return timeSpend / totalTime * 100;
+        }
+
+        double CalcAvg(double time, int occurrence)
+        {
+            return time / occurrence;
+        }
+        
+        double totalTimeMs = totalProcssTime.TotalMilliseconds;
+
+        double getFilesTotal = GetFileMs.Sum();
+
+        double checkTotal = CheckIntersectionMs.Sum();
+        
+        Logger.Info($"\n" +
+                    $"Getting Files:" +
+                    $"Total time spend: {getFilesTotal}ms\n" +
+                    $"Average time spend: {CalcAvg(getFilesTotal, GetFileMs.Count)}ms\n" +
+                    $"Percentage time spend: {CalcPercent(getFilesTotal, totalTimeMs)}%");
+        
+        Logger.Info($"\n" +
+                    $"Getting Files:" +
+                    $"Total time spend: {checkTotal}ms\n" +
+                    $"Average time spend: {CalcAvg(checkTotal, CheckIntersectionMs.Count)}ms\n" +
+                    $"Percentage time spend: {CalcPercent(checkTotal, totalTimeMs)}%");
         
         var resultsFile = new statsJsonFormat()
         {
@@ -73,11 +127,11 @@ public class Benchmarking
             totalTime = UtilService.FormatElapsedTime(totalProcssTime),
             averageTime = UtilService.FormatElapsedTime(avgProcssTime)
         };
-        
+
         string serializedResults = JsonConvert.SerializeObject(resultsFile,
             new JsonSerializerSettings()
                 { NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented });
-        
+
         string outPath = Path.Combine(benchOutputDir, "results.json");
         File.WriteAllText(outPath, serializedResults);
         Logger.Info($"Wrote results to {outPath}");

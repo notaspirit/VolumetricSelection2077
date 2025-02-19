@@ -6,8 +6,8 @@ namespace VolumetricSelection2077.Models
 
     public class AbbrSector
     {
-        public required List<AbbrStreamingSectorNodesEntry> Nodes { get; set; }
-        public required List<AbbrStreamingSectorNodeDataEntry> NodeData { get; set; }
+        public required AbbrStreamingSectorNodesEntry[] Nodes { get; set; }
+        public required AbbrStreamingSectorNodeDataEntry[] NodeData { get; set; }
     }
 
     public class AbbrSectorTransform
@@ -19,28 +19,28 @@ namespace VolumetricSelection2077.Models
     
     public class AbbrStreamingSectorNodeDataEntry
     {
-        public required List<AbbrSectorTransform> Transforms { get; set; }
+        public required AbbrSectorTransform[] Transforms { get; set; }
         public int NodeIndex { get; set; }
     }
     public class AbbrStreamingSectorNodesEntry
     {
         public required string Type { get; set; }
         public string? MeshDepotPath { get; set; }
-        public List<AbbrCollisionActors>? Actors { get; set; }
-        public string? SectorHash { get; set; }
+        public AbbrCollisionActors[]? Actors { get; set; }
+        public ulong? SectorHash { get; set; }
         public string? DebugName { get; set; }
     }
 
     public class AbbrCollisionActors
     {
         public required AbbrSectorTransform Transform { get; set; }
-        public List<AbbrActorShapes>? Shapes { get; set; }
+        public AbbrActorShapes[]? Shapes { get; set; }
     }
     public class AbbrActorShapes
     {
         public required AbbrSectorTransform Transform { get; set; }
         
-        public string? Hash { get; set; }
+        public ulong? Hash { get; set; }
         
         public required string ShapeType { get; set; }
     }

@@ -39,7 +39,6 @@ public class ProcessService
     {
         async Task<AxlRemovalNodeDeletion?> ProcessNodeAsync(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index)
         {
-            // Logger.Debug($"Processing node {nodeDataIndex}:");
             var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
             
             int nodeTypeTableIndex = NodeTypeProcessingOptions.NodeTypeOptions.IndexOf(nodeEntry.Type);
@@ -60,7 +59,7 @@ public class ProcessService
             {
                 entryType = CollisionCheck.Types.Mesh;
             } 
-            else if (nodeEntry.SectorHash != null && (nodeEntry.Actors != null || nodeEntry.Actors?.Count > 0))
+            else if (nodeEntry.SectorHash != null && (nodeEntry.Actors != null || nodeEntry.Actors?.Length > 0))
             {
                 entryType = CollisionCheck.Types.Collider;
             }
@@ -68,27 +67,17 @@ public class ProcessService
             switch (entryType)
             {
                 case CollisionCheck.Types.Mesh:
-                    string meshDepotPath = nodeEntry.MeshDepotPath;
-                    // get mesh, pass local transform and mesh to mesh check method, if mesh is inside the box add index and type to list
-                    var (successGet, errorGet, model) = _gameFileService.GetGameFileAsGlb(meshDepotPath);
-                    if (!successGet || model == null)
-                    {
-                        Logger.Warning($"Failed to get {meshDepotPath} with error: {errorGet}");
-                        return null;
-                    }
-
-                    AbbrMesh? mesh = AbbrMeshParser.ParseFromGlb(model);
+                    var mesh = _gameFileService.GetCMesh(nodeEntry.MeshDepotPath);
                     if (mesh == null)
                     {
-                        Logger.Warning($"Failed to parse {meshDepotPath}.");
+                        Logger.Warning($"Failed to get CMesh from {nodeEntry.MeshDepotPath}");
                         return null;
                     }
-
                     bool isInside = CollisionCheckService.IsMeshInsideBox(mesh,
                         selectionBox.Obb,
                         selectionBox.Aabb,
                         nodeDataEntry.Transforms);
-
+                    
                     if (isInside)
                     {
                         return new AxlRemovalNodeDeletion()
@@ -100,33 +89,24 @@ public class ProcessService
                     }
                     return null;
                 case CollisionCheck.Types.Collider:
-                    
                     List<int> actorRemoval = new List<int>();
                     int actorIndex = 0;
                     foreach (var actor in nodeEntry.Actors)
                     {
-                        bool shapeIntersects = false;
-                        string sectorHash = nodeEntry.SectorHash;
-                        AbbrSectorTransform transformActor = actor.Transform;
+                        var shapeIntersects = false;
+                        var sectorHash = nodeEntry.SectorHash;
+                        var transformActor = actor.Transform;
                         foreach (var shape in actor.Shapes)
                         {
                             
                             if (shape.ShapeType.Contains("Mesh"))
                             {
-                                var (successGetShape, errorGetShape, collisionMeshString) = await _gameFileService.GetGeometryFromCacheAsync(sectorHash, shape.Hash);
-                                if (!successGetShape || collisionMeshString == null)
-                                {
-                                    Logger.Warning($"Failed to get shape {sectorHash}, {shape.Hash} with error: {errorGetShape}");
-                                    continue;
-                                }
-                                
-                                AbbrMesh collisionMesh = AbbrMeshParser.ParseFromJson(collisionMeshString);
+                                var collisionMesh = await _gameFileService.GetPhysXMesh((ulong)sectorHash, (ulong)shape.Hash);
                                 if (collisionMesh == null)
                                 {
-                                    Logger.Warning($"Failed to parse {collisionMeshString}.");
+                                    Logger.Warning($"Failed to get PhysX Mesh from {sectorHash} : {shape.Hash}");
                                     continue;
                                 }
-                                
                                 bool isCollisionMeshInsideBox = CollisionCheckService.IsCollisonMeshInsideSelectionBox(collisionMesh, selectionBox.Obb, selectionBox.Aabb, transformActor, shape.Transform);
                                 if (isCollisionMeshInsideBox)
                                 {
@@ -164,8 +144,6 @@ public class ProcessService
                         }
                         actorIndex++;
                     }
-
-                    // Logger.Debug($"Found {actorRemoval.Count} actors marked for removal in {nodeDataIndex}");
                     if (actorRemoval.Count > 0)
                     {
                         return new AxlRemovalNodeDeletion()
@@ -173,7 +151,7 @@ public class ProcessService
                                 Index = index,
                                 Type = nodeEntry.Type,
                                 ActorDeletions = actorRemoval,
-                                ExpectedActors = nodeEntry.Actors.Count,
+                                ExpectedActors = nodeEntry.Actors.Length,
                                 DebugName = nodeEntry.DebugName
                             };
                     }
@@ -219,7 +197,7 @@ public class ProcessService
         var result = new AxlRemovalSector()
         {
             NodeDeletions = nodeDeletions,
-            ExpectedNodes = sector.NodeData.Count,
+            ExpectedNodes = sector.NodeData.Length,
             Path = sectorPath
         };
         return (true, "", result);
@@ -333,69 +311,35 @@ public class ProcessService
                 return (false, $"Failed to parse CET output file with error: {errorSP}");
             }
         }
-            
-
-        /*
-        Logger.Debug("Selection Box AABB Details:");
-        Logger.Debug($"Center point: {CETOutputFile.Aabb.Center.ToString()}");
-        Logger.Debug($"Box Vertices: {string.Join(", ", CETOutputFile.Aabb.GetCorners())}");
-        Logger.Debug($"Box scale: {CETOutputFile.Aabb.Size}");
-        
-        Logger.Debug("Selection Box OBB Details:");
-        Logger.Debug($"Center point: {CETOutputFile.Obb.Center.ToString()}");
-        Logger.Debug($"Box Vertices: {string.Join(", ", CETOutputFile.Obb.GetCorners())}");
-        Logger.Debug($"Box scale: {CETOutputFile.Obb.Size}");
-        */
-        /*
-        string uniqueId = "initial";
-        
-        string selectionBoxString = $"selectionBoxVerts{uniqueId} = [ ";
-        var vertsSelectionBox = CETOutputFile.Obb.GetCorners();
-        foreach (var v in vertsSelectionBox)
-        {
-            selectionBoxString +=
-                $"({v.X.ToString(CultureInfo.InvariantCulture)}, {v.Y.ToString(CultureInfo.InvariantCulture)}, {v.Z.ToString(CultureInfo.InvariantCulture)}),";
-        }
-
-        selectionBoxString +=
-            $"]\n" +
-            $"selectionBox{uniqueId} = create_box(\"selectionBox{uniqueId}\", selectionBoxVerts{uniqueId}, \"initial\")\n";
-        
-        Logger.Debug(selectionBoxString);
-        */
-        // List<AxlRemovalSector> sectors = new List<AxlRemovalSector>();
-
-        // List<string> testSectors = new();
-        // testSectors.Add(@"base\worlds\03_night_city\_compiled\default\exterior_-10_-4_0_1.streamingsector");
-        
         async Task<AxlRemovalSector?> SectorProcessThread(string streamingSectorName)
         {
             Logger.Info($"Starting sector process thread for {streamingSectorName}...");
-            string streamingSectorNameFix = Regex.Replace(streamingSectorName, @"\\{2}", @"\");
-            var (successGET, errorGET, stringGET) = _gameFileService.GetGameFileAsJsonString(streamingSectorNameFix);
-            if (!successGET || !string.IsNullOrEmpty(errorGET) || string.IsNullOrEmpty(stringGET))
-            {
-                Logger.Error($"Failed to get streamingsector {streamingSectorName}, error: {errorGET}");
-                return null;
-            }
-            // Logger.Info(stringGET);
 
-            AbbrSector? sectorDeserialized = AbbrSectorParser.Deserialize(stringGET);
-            if (sectorDeserialized == null)
+            try
             {
-                Logger.Error($"Failed to deserialize streamingsector {streamingSectorName}");
+                string streamingSectorNameFix = Regex.Replace(streamingSectorName, @"\\{2}", @"\");
+                var sector = _gameFileService.GetSector(streamingSectorNameFix);
+                if (sector == null)
+                {
+                    Logger.Warning($"Failed to find sector {streamingSectorNameFix}");
+                    return null;
+                }
+                
+                var (successPSS, errorPSS, resultPss) = await ProcessStreamingsector(sector, streamingSectorName, CETOutputFile);
+                if (successPSS)
+                { 
+                    Logger.Info($"Successfully processed streamingsector {streamingSectorName} which found {resultPss?.NodeDeletions.Count ?? 0} nodes out of {sector.NodeData.Length} nodes.");
+                    return resultPss;
+                }
+            
+                Logger.Error($"Failed to processes streamingsector {streamingSectorName} with error: {errorPSS}");
                 return null;
             }
-            
-            var (successPSS, errorPSS, resultPss) = await ProcessStreamingsector(sectorDeserialized, streamingSectorName, CETOutputFile);
-            if (successPSS)
-            { 
-                Logger.Info($"Successfully processed streamingsector {streamingSectorName} which found {resultPss?.NodeDeletions.Count ?? 0} nodes out of {sectorDeserialized.NodeData.Count} nodes.");
-                return resultPss;
+            catch (Exception e)
+            {
+                Logger.Error($"Failed to Processes {streamingSectorName}: {e}");
+                return null;
             }
-            
-            Logger.Error($"Failed to processes streamingsector {streamingSectorName} with errror: {errorPSS}");
-            return null;
         }
         
         var tasks = CETOutputFile.Sectors.Select(input => Task.Run(() => SectorProcessThread(input))).ToArray();
@@ -536,7 +480,6 @@ public class ProcessService
             
             SaveFile(axlFilePath);
         }
-        // TestingService.TestVertexTransform();
         return (true, string.Empty);
     }
 }

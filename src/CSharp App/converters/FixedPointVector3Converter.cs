@@ -1,6 +1,7 @@
 
 using System;
 using Newtonsoft.Json.Linq;
+using WolvenKit.RED4.Types;
 using Vector3 = SharpDX.Vector3;
 
 namespace VolumetricSelection2077.Converters;
@@ -17,16 +18,11 @@ public class FixedPointVector3Converter
     {
         return (int)(floatValue * Fixed_1);
     }
-    
-    public static Vector3 PosBitsToVec3(JToken? jsonObject)
+    public static Vector3 PosBitsToVec3(WorldPosition worldPos)
     {
-        if (jsonObject == null)
-        {
-            return new Vector3();
-        }
-        int bitsX = jsonObject?["x"]?["Bits"]?.Value<int>() ?? 0;
-        int bitsY = jsonObject?["y"]?["Bits"]?.Value<int>() ?? 0;
-        int bitsZ = jsonObject?["z"]?["Bits"]?.Value<int>() ?? 0;
+        int bitsX = worldPos.X.Bits;
+        int bitsY = worldPos.Y.Bits;
+        int bitsZ = worldPos.Z.Bits;
         
         float x = ToFloat(bitsX);
         float y = ToFloat(bitsY);
@@ -34,5 +30,6 @@ public class FixedPointVector3Converter
         
         return new Vector3(x, y, z);
     }
+    
 
 }

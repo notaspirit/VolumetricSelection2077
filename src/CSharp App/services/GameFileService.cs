@@ -9,8 +9,11 @@ using WolvenKit.Core.Services;
 using WolvenKit.RED4.CR2W.Archive;
 using WolvenKit.RED4.CR2W;
 using SharpGLTF.Schema2;
+using VolumetricSelection2077.Models;
+using VolumetricSelection2077.Parsers;
 using WolvenKit.Common.Conversion;
 using WolvenKit.Common.FNV1A;
+using WolvenKit.Common.PhysX;
 using WolvenKit.Modkit.RED4.Tools;
 using WolvenKit.RED4.Archive.CR2W;
 using WolvenKit.RED4.CR2W.JSON;
@@ -72,67 +75,35 @@ public class GameFileService
             }
         }
     }
-
-    public (bool, string, string?) GetGameFileAsJsonString(string filename)
+    public async Task<AbbrMesh?> GetPhysXMesh(ulong sectorHash, ulong actorHash)
     {
-        if (!ulong.TryParse(filename, out var hash))
+        var rawMesh = await _geometryCacheService.GetEntryAsync(sectorHash, actorHash);
+        if (rawMesh == null)
         {
-            hash = FNV1A64HashAlgorithm.HashString(filename);
+            return null;
         }
-        CR2WFile? gameFileRaw = _archiveManager.GetCR2WFile(hash, false, false);
-        if (gameFileRaw == null)
-        {
-            return (false, "Failed to get gamefile from archives!", null);
-        }
-        var dto = new RedFileDto(gameFileRaw);
-        string gameFileJson = RedJsonSerializer.Serialize(dto);
-        return (true, "", gameFileJson);
+        
+        return DirectAbbrMeshParser.ParseFromPhysX(rawMesh);
     }
 
-    public (bool, string, ModelRoot?) GetGameFileAsGlb(string filename)
+    public AbbrMesh? GetCMesh(string path)
     {
-        CR2WFile? gameFileRaw = _archiveManager.GetCR2WFile(filename, false, false);
-        if (gameFileRaw == null)
+        var rawMesh = _archiveManager.GetCR2WFile(path);
+        if (rawMesh == null)
         {
-            return (false, "Failed to get gamefile from archives!", null);
+            return null;
         }
-        var resultModel = MeshTools.GetModel(gameFileRaw, false, false);
-        if (resultModel == null)
-        {
-            return (false, "Failed to convert CR2W file to Glb!", null);
-        }
-        return (true, "", resultModel);
+        
+        return DirectAbbrMeshParser.ParseFromCR2W(rawMesh);
     }
 
-    public (bool, string, string?) GetGeometryFromCache(string sectorHashString, string actorHashString)
+    public AbbrSector? GetSector(string path)
     {
-        if (!ulong.TryParse(sectorHashString, out ulong sectorHash) ||
-            !ulong.TryParse(actorHashString, out ulong actorHash))
+        var rawSector = _archiveManager.GetCR2WFile(path);
+        if (rawSector == null)
         {
-            return (false, "Failed to parse input into ulong!", null);
+            return null;
         }
-        var cacheEntry = _geometryCacheService.GetEntry(sectorHash, actorHash);
-        if (cacheEntry == null)
-        {
-            return (false, "Failed to get geometry from archives!", null);
-        }
-        string outJson =  JsonSerializer.Serialize((object)cacheEntry, new JsonSerializerOptions { IncludeFields = true, WriteIndented = true });
-        return (true, "", outJson);
-    }
-    
-    public async Task<(bool, string, string?)> GetGeometryFromCacheAsync(string sectorHashString, string actorHashString)
-    {
-        if (!ulong.TryParse(sectorHashString, out ulong sectorHash) ||
-            !ulong.TryParse(actorHashString, out ulong actorHash))
-        {
-            return (false, "Failed to parse input into ulong!", null);
-        }
-        var cacheEntry = await _geometryCacheService.GetEntryAsync(sectorHash, actorHash);
-        if (cacheEntry == null)
-        {
-            return (false, "Failed to get geometry from archives!", null);
-        }
-        string outJson =  JsonSerializer.Serialize((object)cacheEntry, new JsonSerializerOptions { IncludeFields = true, WriteIndented = true });
-        return (true, "", outJson);
+        return DirectAbbrSectorParser.ParseFromCR2W(rawSector);
     }
 }

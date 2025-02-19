@@ -2,7 +2,7 @@
 # VolumetricSelection2077
 Is a beta tool for bulk removing nodes from the world in Cyberpunk2077 using a selection box.
 
-Note that the versioning is epoch semantic => [Epoch * 1000 + MAJOR].MINOR.PATCH.PRERELEASE[INDEX]
+Note that the versioning is epoch semantic => [Epoch * 1000 + MAJOR].MINOR.PATCH-PRERELEASE[INDEX]
 
 Roadmeshes and occluder resources are expected to fail, as well as any modded resources, if anything else fails or you have any other feedback please open an issue for it on GitHub.
 
