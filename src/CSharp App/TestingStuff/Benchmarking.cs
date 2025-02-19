@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
+using System.Linq;
 using Newtonsoft.Json;
 using VolumetricSelection2077.Services;
 using WolvenKit.RED4.Types;
@@ -35,6 +36,11 @@ public class Benchmarking
             }
         }
     }
+    
+    public ConcurrentBag<double> GetFileMs = new();
+    public ConcurrentBag<double> CheckIntersectionMs = new();
+    
+    
     
     
     public async void RunBenchmarks()
@@ -86,6 +92,34 @@ public class Benchmarking
         Logger.Info($"Total procss: {UtilService.FormatElapsedTime(totalProcssTime)}");
         TimeSpan avgProcssTime = totalProcssTime / results.Count;
         Logger.Info($"Average process time: {UtilService.FormatElapsedTime(avgProcssTime)}");
+
+        double CalcPercent(double timeSpend, double totalTime)
+        {
+            return timeSpend / totalTime * 100;
+        }
+
+        double CalcAvg(double time, int occurrence)
+        {
+            return time / occurrence;
+        }
+        
+        double totalTimeMs = totalProcssTime.TotalMilliseconds;
+
+        double getFilesTotal = GetFileMs.Sum();
+
+        double checkTotal = CheckIntersectionMs.Sum();
+        
+        Logger.Info($"\n" +
+                    $"Getting Files:" +
+                    $"Total time spend: {getFilesTotal}ms\n" +
+                    $"Average time spend: {CalcAvg(getFilesTotal, GetFileMs.Count)}ms\n" +
+                    $"Percentage time spend: {CalcPercent(getFilesTotal, totalTimeMs)}%");
+        
+        Logger.Info($"\n" +
+                    $"Getting Files:" +
+                    $"Total time spend: {checkTotal}ms\n" +
+                    $"Average time spend: {CalcAvg(checkTotal, CheckIntersectionMs.Count)}ms\n" +
+                    $"Percentage time spend: {CalcPercent(checkTotal, totalTimeMs)}%");
         
         var resultsFile = new statsJsonFormat()
         {

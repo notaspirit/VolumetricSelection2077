@@ -18,24 +18,6 @@ public class FixedPointVector3Converter
     {
         return (int)(floatValue * Fixed_1);
     }
-    
-    public static Vector3 PosBitsToVec3(JToken? jsonObject)
-    {
-        if (jsonObject == null)
-        {
-            return new Vector3();
-        }
-        int bitsX = jsonObject?["x"]?["Bits"]?.Value<int>() ?? 0;
-        int bitsY = jsonObject?["y"]?["Bits"]?.Value<int>() ?? 0;
-        int bitsZ = jsonObject?["z"]?["Bits"]?.Value<int>() ?? 0;
-        
-        float x = ToFloat(bitsX);
-        float y = ToFloat(bitsY);
-        float z = ToFloat(bitsZ);
-        
-        return new Vector3(x, y, z);
-    }
-    
     public static Vector3 PosBitsToVec3(WorldPosition worldPos)
     {
         int bitsX = worldPos.X.Bits;

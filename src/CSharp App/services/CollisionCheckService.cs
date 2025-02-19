@@ -139,45 +139,6 @@ public static class CollisionCheckService
                 isInside = true;
             }
         }
-        /*
-        if (isInside)
-        {
-            collectionName = "true " + collectionName;
-        }
-        else
-        {
-            collectionName = "false " + collectionName;
-        }
-        
-        string uniqueId = DateTime.UtcNow.Ticks.ToString();
-        
-        string collisionBoxString = $"collisionBoxVerts{uniqueId} = [ ";
-        var vertsCollisionBox = collisionBox.GetCorners();
-        foreach (var v in vertsCollisionBox)
-        {
-            collisionBoxString +=
-                $"({v.X.ToString(CultureInfo.InvariantCulture)}, {v.Y.ToString(CultureInfo.InvariantCulture)}, {v.Z.ToString(CultureInfo.InvariantCulture)}),";
-        }
-
-        collisionBoxString +=
-            $"]\n" +
-            $"collisionBox{uniqueId} = create_box(\"collisionBox{uniqueId}\", collisionBoxVerts{uniqueId}, \"{collectionName}\")\n";
-        
-        /*
-        string selectionBoxString = $"selectionBoxVerts{uniqueId} = [ ";
-        var vertsSelectionBox = selectionBoxObb.GetCorners();
-        foreach (var v in vertsSelectionBox)
-        {
-            selectionBoxString +=
-                $"({v.X.ToString(CultureInfo.InvariantCulture)}, {v.Y.ToString(CultureInfo.InvariantCulture)}, {v.Z.ToString(CultureInfo.InvariantCulture)}),";
-        }
-
-        selectionBoxString +=
-            $"]\n" +
-            $"selectionBox{uniqueId} = create_box(\"selectionBox{uniqueId}\", selectionBoxVerts{uniqueId}, \"{collectionName}\")\n";
-        */
-        // Logger.Debug(collisionBoxString /*+ selectionBoxString */);
-        
         return isInside;
     }
     
@@ -211,13 +172,6 @@ public static class CollisionCheckService
                 isInside = true;
             }
         }
-        /*
-        Logger.Debug("\n" +
-                     $"Build Collision Mesh Scale with {actorTransform.Scale} * {shape.Transform.Scale} => {combinedScale}\n" +
-                     $"Build Collision Mesh Rotation with {actorTransform.Rotation} * {shape.Transform.Rotation} => {combinedRotation}\n" +
-                     $"Build Collision Mesh Position with {actorTransform.Position} * {shape.Transform.Position} => {combinedTranslation}\n" +
-                     $"Mesh is inside: {isInside}.");
-                     */
         return isInside;
     }
 }

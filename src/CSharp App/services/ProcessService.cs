@@ -39,7 +39,6 @@ public class ProcessService
     {
         async Task<AxlRemovalNodeDeletion?> ProcessNodeAsync(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index)
         {
-            // Logger.Debug($"Processing node {nodeDataIndex}:");
             var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
             
             int nodeTypeTableIndex = NodeTypeProcessingOptions.NodeTypeOptions.IndexOf(nodeEntry.Type);
@@ -74,7 +73,6 @@ public class ProcessService
                         Logger.Warning($"Failed to get CMesh from {nodeEntry.MeshDepotPath}");
                         return null;
                     }
-
                     bool isInside = CollisionCheckService.IsMeshInsideBox(mesh,
                         selectionBox.Obb,
                         selectionBox.Aabb,
@@ -146,8 +144,6 @@ public class ProcessService
                         }
                         actorIndex++;
                     }
-
-                    // Logger.Debug($"Found {actorRemoval.Count} actors marked for removal in {nodeDataIndex}");
                     if (actorRemoval.Count > 0)
                     {
                         return new AxlRemovalNodeDeletion()
@@ -210,60 +206,6 @@ public class ProcessService
     public async Task<(bool success, string error)> MainProcessTask(string? customRemovalFile = null, string? customRemovalDirectory = null)
     {
         Logger.Info($"Version: {_settings.ProgramVersion}");
-        /*
-        CompareGenOutput.Run();
-        return (true, string.Empty);
-        */
-        
-        /*
-        var options = new JsonSerializerOptions
-        {
-            Converters = { new Vector3Converter(), new QuaternionConverter() },
-            WriteIndented = true
-        };
-        
-        Logger.Info("Processing Sector");
-        var path = @"C:\Users\zweit\AppData\Roaming\VolumetricSelection2077\sectorComparison\DirectParsing.json";
-        var sectorPath = @"base\worlds\03_night_city\_compiled\default\exterior_7_-2_0_3.streamingsector";
-        
-        var sectorTest = _gameFileService.GetSector(sectorPath);
-        
-        var sectorJson = JsonSerializer.Serialize(sectorTest, options);
-        
-        File.WriteAllText(path, sectorJson);
-        
-        Logger.Info("Processing CMesh");
-        var pathCMesh = @"C:\Users\zweit\AppData\Roaming\VolumetricSelection2077\meshComparison\DirectCMeshParsing.json";
-        var cmeshPath = @"base\environment\architecture\common\int\int_ent_industrial_a\int_ent_industrial_a_pillar_beam_h100_l600_a.mesh";
-        var meshTestCMesh = _gameFileService.GetCMesh(cmeshPath);
-        Logger.Info($"CMesh is null: {meshTestCMesh is null}");
-        Logger.Info($"Submeshes: {meshTestCMesh.SubMeshes.Length}");
-        var AbbrCMeshJson = JsonSerializer.Serialize(meshTestCMesh, options);
-        File.WriteAllText(pathCMesh, AbbrCMeshJson);
-        
-        Logger.Info("Processing PhysX Mesh 1");
-        var pathPhysX1 = @"C:\Users\zweit\AppData\Roaming\VolumetricSelection2077\meshComparison\DirectPhysX1Parsing.json";
-        ulong sectorHash = 12717457377011094652;
-        ulong physXMesh1Hash = 9246134327794375400;
-        var meshTestPhysX1Mesh = await _gameFileService.GetPhysXMesh(sectorHash, physXMesh1Hash);
-        Logger.Info($"CMesh is null: {meshTestPhysX1Mesh is null}");
-        Logger.Info($"Submeshes: {meshTestPhysX1Mesh.SubMeshes.Length}");
-        var AbbrPhysX1Json = JsonSerializer.Serialize(meshTestPhysX1Mesh, options);
-        File.WriteAllText(pathPhysX1, AbbrPhysX1Json);
-        
-        Logger.Info("Processing PhysX Mesh 2");
-        var pathPhysX2 = @"C:\Users\zweit\AppData\Roaming\VolumetricSelection2077\meshComparison\DirectPhysX2Parsing.json";
-        ulong physXMesh2Hash = 9386483786976406912;
-        var meshTestPhysX2Mesh = await _gameFileService.GetPhysXMesh(sectorHash, physXMesh2Hash);
-        Logger.Info($"CMesh is null: {meshTestPhysX2Mesh is null}");
-        Logger.Info($"Submeshes: {meshTestPhysX2Mesh.SubMeshes.Length}");
-        var AbbrPhysX2Json = JsonSerializer.Serialize(meshTestPhysX2Mesh, options);
-        File.WriteAllText(pathPhysX2, AbbrPhysX2Json);
-        
-        // CompareGenOutput.Run();
-        return (true, string.Empty);
-        */
-        
         Logger.Info("Validating inputs...");
         
         if (!ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename))
@@ -308,41 +250,6 @@ public class ProcessService
                 return (false, $"Failed to parse CET output file with error: {errorSP}");
             }
         }
-            
-
-        /*
-        Logger.Debug("Selection Box AABB Details:");
-        Logger.Debug($"Center point: {CETOutputFile.Aabb.Center.ToString()}");
-        Logger.Debug($"Box Vertices: {string.Join(", ", CETOutputFile.Aabb.GetCorners())}");
-        Logger.Debug($"Box scale: {CETOutputFile.Aabb.Size}");
-        
-        Logger.Debug("Selection Box OBB Details:");
-        Logger.Debug($"Center point: {CETOutputFile.Obb.Center.ToString()}");
-        Logger.Debug($"Box Vertices: {string.Join(", ", CETOutputFile.Obb.GetCorners())}");
-        Logger.Debug($"Box scale: {CETOutputFile.Obb.Size}");
-        */
-        /*
-        string uniqueId = "initial";
-        
-        string selectionBoxString = $"selectionBoxVerts{uniqueId} = [ ";
-        var vertsSelectionBox = CETOutputFile.Obb.GetCorners();
-        foreach (var v in vertsSelectionBox)
-        {
-            selectionBoxString +=
-                $"({v.X.ToString(CultureInfo.InvariantCulture)}, {v.Y.ToString(CultureInfo.InvariantCulture)}, {v.Z.ToString(CultureInfo.InvariantCulture)}),";
-        }
-
-        selectionBoxString +=
-            $"]\n" +
-            $"selectionBox{uniqueId} = create_box(\"selectionBox{uniqueId}\", selectionBoxVerts{uniqueId}, \"initial\")\n";
-        
-        Logger.Debug(selectionBoxString);
-        */
-        // List<AxlRemovalSector> sectors = new List<AxlRemovalSector>();
-
-        // List<string> testSectors = new();
-        // testSectors.Add(@"base\worlds\03_night_city\_compiled\default\exterior_-10_-4_0_1.streamingsector");
-        
         async Task<AxlRemovalSector?> SectorProcessThread(string streamingSectorName)
         {
             Logger.Info($"Starting sector process thread for {streamingSectorName}...");
@@ -512,7 +419,6 @@ public class ProcessService
             
             SaveFile(axlFilePath);
         }
-        // TestingService.TestVertexTransform();
         return (true, string.Empty);
     }
 }
