@@ -1,5 +1,9 @@
 
 # VolumetricSelection2077
+
+![GitHub all releases](https://img.shields.io/github/downloads/notaspirit/VolumetricSelection2077/total)
+
+
 Is a beta tool for bulk removing nodes from the world in Cyberpunk2077 using a selection box.
 
 Note that the versioning is epoch semantic => [Epoch * 1000 + MAJOR].MINOR.PATCH-PRERELEASE[INDEX]
