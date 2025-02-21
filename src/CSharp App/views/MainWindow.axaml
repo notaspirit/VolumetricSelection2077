@@ -13,7 +13,6 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:VolumetricSelection2077"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:services="clr-namespace:VolumetricSelection2077.Services"
     xmlns:views="clr-namespace:VolumetricSelection2077.Views"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border Margin="5">
@@ -45,8 +44,12 @@
                     KeyDown="ResourceFilterTextBox_KeyDown"
                     Margin="5"
                     Name="ResourceFilterTextBox"
-                    ToolTip.Tip="Filter by resource path, supports regex and partial matching"
-                    Watermark="Resource Path Filter">
+                    ToolTip.Tip="Filter by resource path, supports regex and partial matching">
+                    <TextBox.Watermark>
+                        <MultiBinding StringFormat=" {0} Resource Path Filters ">
+                            <Binding Path="ResourcePathFilterCount" />
+                        </MultiBinding>
+                    </TextBox.Watermark>
                     <FlyoutBase.AttachedFlyout>
                         <Flyout Placement="BottomEdgeAlignedLeft" ShowMode="Transient">
                             <ScrollViewer MaxHeight="300">
@@ -87,7 +90,7 @@
                     Margin="5,5,0,5"
                     Name="DebugNameFilterTextBox"
                     ToolTip.Tip="Filter by debug name, supports regex and partial matching"
-                    Watermark="Debug Name Filter">
+                    Watermark="{Binding DebugNameFilterCount, StringFormat='{}{0:N0} Debug Name Filters', FallbackValue='Error', UpdateSourceTrigger=PropertyChanged}">
                     <FlyoutBase.AttachedFlyout>
                         <Flyout Placement="BottomEdgeAlignedLeft" ShowMode="Transient">
                             <ScrollViewer MaxHeight="300">

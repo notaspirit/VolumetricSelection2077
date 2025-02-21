@@ -21,6 +21,9 @@ using VolumetricSelection2077.TestingStuff;
 namespace VolumetricSelection2077;
 public partial class MainWindow : Window
 {
+
+    private string _resourcePathWatermark = " Resource Path Filters";
+    private string _debugNameWatermark = " Debug Name Filters";
     public SettingsService _settings { get;  }
     private readonly ProcessService _processService;
         private bool _isProcessing;
@@ -38,8 +41,8 @@ public partial class MainWindow : Window
 
     public ObservableCollection<string> ResourceNameFilters { get; set; }
     public ObservableCollection<string> DebugNameFilters { get; set; }
-    
-    public Descriptions _descriptions { get; set;  } 
+    private int _resourcePathFilterCount;
+    private int _debugNameFilterCount;
     public MainWindow()
     {
         InitializeComponent();
@@ -50,9 +53,39 @@ public partial class MainWindow : Window
         InitializeLogger();
         ResourceNameFilters = new(_settings.ResourceNameFilter);
         DebugNameFilters = new (_settings.DebugNameFilter);
-        _descriptions = new Descriptions();
+        _resourcePathFilterCount = ResourceNameFilters.Count;
+        _debugNameFilterCount = DebugNameFilters.Count;
+        DebugNameFilterTextBox.Watermark = _debugNameFilterCount + _debugNameWatermark;
+        ResourceFilterTextBox.Watermark = _resourcePathFilterCount + _resourcePathWatermark;
     }
 
+    public int ResourcePathFilterCount
+    {
+        get => _resourcePathFilterCount;
+        set
+        {
+            if (_resourcePathFilterCount != value)
+            {
+                _resourcePathFilterCount = value;
+                OnPropertyChanged(nameof(ResourcePathFilterCount));
+            }
+        }
+    }
+    
+    public int DebugNameFilterCount
+    {
+        get => _debugNameFilterCount;
+        set
+        {
+            if (_debugNameFilterCount != value)
+            {
+                _debugNameFilterCount = value;
+                OnPropertyChanged(nameof(DebugNameFilterCount));
+            }
+        }
+    }
+    
+    
     private void InitializeLogger()
     {
         var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -145,6 +178,9 @@ public partial class MainWindow : Window
                 textBox.Text = string.Empty;
                 _settings.ResourceNameFilter.Add(text.ToLower());
                 _settings.SaveSettings();
+                ResourcePathFilterCount = _settings.ResourceNameFilter.Count;
+                ResourceFilterTextBox.Watermark = _resourcePathFilterCount + _resourcePathWatermark;
+                
             }
         }
     }
@@ -156,6 +192,8 @@ public partial class MainWindow : Window
             ResourceNameFilters.Remove(item.ToLower());
             _settings.ResourceNameFilter.Remove(item.ToLower());
             _settings.SaveSettings();
+            ResourcePathFilterCount = _settings.ResourceNameFilter.Count;
+            ResourceFilterTextBox.Watermark = _resourcePathFilterCount + _resourcePathWatermark;
         }
     }
     private void ResourceFilterTextBox_GotFocus(object? sender, GotFocusEventArgs e)
@@ -177,6 +215,8 @@ public partial class MainWindow : Window
                 textBox.Text = string.Empty;
                 _settings.DebugNameFilter.Add(text.ToLower());
                 _settings.SaveSettings();
+                DebugNameFilterCount = _settings.DebugNameFilter.Count;
+                DebugNameFilterTextBox.Watermark = _debugNameFilterCount + _debugNameWatermark;
             }
         }
     }
@@ -188,6 +228,8 @@ public partial class MainWindow : Window
             DebugNameFilters.Remove(item.ToLower());
             _settings.DebugNameFilter.Remove(item.ToLower());
             _settings.SaveSettings();
+            DebugNameFilterCount = _settings.DebugNameFilter.Count;
+            DebugNameFilterTextBox.Watermark = _debugNameFilterCount + _debugNameWatermark;
         }
     }
     private void DebugNameFilterTextBox_GotFocus(object? sender, GotFocusEventArgs e)
@@ -198,4 +240,10 @@ public partial class MainWindow : Window
         }
     }
     
+    public event PropertyChangedEventHandler? PropertyChanged;
+        
+    protected virtual void OnPropertyChanged(string propertyName)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
 }
