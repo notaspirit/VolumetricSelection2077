@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using VolumetricSelection2077.Views;
 using VolumetricSelection2077.Services;
 using System;
+using System.Collections.ObjectModel;
 using System.IO;
 using Avalonia.Interactivity;
 using System.Threading.Tasks;
@@ -11,13 +12,16 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Avalonia.Styling;
 using Avalonia;
+using Avalonia.Controls.Primitives;
+using Avalonia.Input;
 using Microsoft.VisualBasic.CompilerServices;
+using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.TestingStuff;
 
 namespace VolumetricSelection2077;
 public partial class MainWindow : Window
 {
-    private readonly SettingsService _settings;
+    public SettingsService _settings { get;  }
     private readonly ProcessService _processService;
         private bool _isProcessing;
 
@@ -32,13 +36,21 @@ public partial class MainWindow : Window
         set => SetValue(IsProcessingProperty, value);
     }
 
+    public ObservableCollection<string> ResourceNameFilters { get; set; }
+    public ObservableCollection<string> DebugNameFilters { get; set; }
+    
+    public Descriptions _descriptions { get; set;  } 
     public MainWindow()
     {
         InitializeComponent();
         _settings = SettingsService.Instance;
         _processService = new ProcessService();
-        DataContext = _settings;
+        DataContext = this;
+        _settings = SettingsService.Instance;
         InitializeLogger();
+        ResourceNameFilters = new(_settings.ResourceNameFilter);
+        DebugNameFilters = new (_settings.DebugNameFilter);
+        _descriptions = new Descriptions();
     }
 
     private void InitializeLogger()
@@ -121,4 +133,69 @@ public partial class MainWindow : Window
         }
         IsProcessing = false;
     }
+    
+    private void ResourceFilterTextBox_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && sender is TextBox textBox)
+        {
+            string text = textBox.Text?.Trim();
+            if (!string.IsNullOrEmpty(text))
+            {
+                ResourceNameFilters.Add(text.ToLower());
+                textBox.Text = string.Empty;
+                _settings.ResourceNameFilter.Add(text.ToLower());
+                _settings.SaveSettings();
+            }
+        }
+    }
+    
+    private void RemoveResourceNameFilter_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is string item)
+        {
+            ResourceNameFilters.Remove(item.ToLower());
+            _settings.ResourceNameFilter.Remove(item.ToLower());
+            _settings.SaveSettings();
+        }
+    }
+    private void ResourceFilterTextBox_GotFocus(object? sender, GotFocusEventArgs e)
+    {
+        if (sender is TextBox textBox)
+        {
+            FlyoutBase.ShowAttachedFlyout(textBox);
+        }
+    }
+    
+    private void DebugNameFilterTextBox_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && sender is TextBox textBox)
+        {
+            string text = textBox.Text?.Trim();
+            if (!string.IsNullOrEmpty(text))
+            {
+                DebugNameFilters.Add(text.ToLower());
+                textBox.Text = string.Empty;
+                _settings.DebugNameFilter.Add(text.ToLower());
+                _settings.SaveSettings();
+            }
+        }
+    }
+    
+    private void RemoveDebugNameFilter_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is string item)
+        {
+            DebugNameFilters.Remove(item.ToLower());
+            _settings.DebugNameFilter.Remove(item.ToLower());
+            _settings.SaveSettings();
+        }
+    }
+    private void DebugNameFilterTextBox_GotFocus(object? sender, GotFocusEventArgs e)
+    {
+        if (sender is TextBox textBox)
+        {
+            FlyoutBase.ShowAttachedFlyout(textBox);
+        }
+    }
+    
 }

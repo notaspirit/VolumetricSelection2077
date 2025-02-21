@@ -8,9 +8,10 @@
     d:DesignWidth="800"
     mc:Ignorable="d"
     x:Class="VolumetricSelection2077.MainWindow"
-    x:DataType="services:SettingsService"
+    x:DataType="local:MainWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:VolumetricSelection2077"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:services="clr-namespace:VolumetricSelection2077.Services"
     xmlns:views="clr-namespace:VolumetricSelection2077.Views"
@@ -29,11 +30,98 @@
                 Height="30"
                 Margin="5"
                 PropertyChanged="OutputFilename_PropertyChanged"
-                Text="{Binding OutputFilename}"
+                Text="{Binding _settings.OutputFilename}"
                 ToolTip.Tip="Enter the output filename, without extension"
                 Watermark="Output Filename" />
-
-            <Grid Grid.Row="2" Margin="5">
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBox
+                    GotFocus="ResourceFilterTextBox_GotFocus"
+                    Grid.Column="0"
+                    Height="30"
+                    KeyDown="ResourceFilterTextBox_KeyDown"
+                    Margin="5"
+                    Name="ResourceFilterTextBox"
+                    ToolTip.Tip="Filter by resource path, supports regex and partial matching"
+                    Watermark="Resource Path Filter">
+                    <FlyoutBase.AttachedFlyout>
+                        <Flyout Placement="BottomEdgeAlignedLeft" ShowMode="Transient">
+                            <ScrollViewer MaxHeight="300">
+                                <ItemsControl ItemsSource="{Binding ResourceNameFilters}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid ColumnDefinitions="Auto,*" Margin="0,2">
+                                                <Button
+                                                    Background="#ad0002"
+                                                    Click="RemoveResourceNameFilter_Click"
+                                                    Content="×"
+                                                    Grid.Column="0"
+                                                    Margin="5">
+                                                    <Button.Styles>
+                                                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                                            <Setter Property="Background" Value="DarkRed" />
+                                                        </Style>
+                                                    </Button.Styles>
+                                                </Button>
+                                                <TextBlock
+                                                    Grid.Column="1"
+                                                    HorizontalAlignment="Left"
+                                                    Text="{Binding}"
+                                                    VerticalAlignment="Center" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Flyout>
+                    </FlyoutBase.AttachedFlyout>
+                </TextBox>
+                <TextBox
+                    GotFocus="DebugNameFilterTextBox_GotFocus"
+                    Grid.Column="1"
+                    Height="30"
+                    KeyDown="DebugNameFilterTextBox_KeyDown"
+                    Margin="5,5,0,5"
+                    Name="DebugNameFilterTextBox"
+                    ToolTip.Tip="Filter by debug name, supports regex and partial matching"
+                    Watermark="Debug Name Filter">
+                    <FlyoutBase.AttachedFlyout>
+                        <Flyout Placement="BottomEdgeAlignedLeft" ShowMode="Transient">
+                            <ScrollViewer MaxHeight="300">
+                                <ItemsControl ItemsSource="{Binding DebugNameFilters}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid ColumnDefinitions="Auto,*" Margin="0,2">
+                                                <Button
+                                                    Background="#ad0002"
+                                                    Click="RemoveDebugNameFilter_Click"
+                                                    Content="×"
+                                                    Grid.Column="0"
+                                                    Margin="5">
+                                                    <Button.Styles>
+                                                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                                            <Setter Property="Background" Value="DarkRed" />
+                                                        </Style>
+                                                    </Button.Styles>
+                                                </Button>
+                                                <TextBlock
+                                                    Grid.Column="1"
+                                                    HorizontalAlignment="Left"
+                                                    Text="{Binding}"
+                                                    VerticalAlignment="Center" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Flyout>
+                    </FlyoutBase.AttachedFlyout>
+                </TextBox>
+            </Grid>
+            <Grid Grid.Row="3" Margin="5">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
@@ -76,7 +164,8 @@
                     Click="Benchmark_Click"
                     Content="Benchmark"
                     Grid.Column="3"
-                    IsVisible="{Binding DebugMode}">
+                    IsVisible="{Binding _settings.DebugMode}"
+                    Margin="5,0,0,0">
                     <Button.Styles>
                         <Style Selector="Button:pointerover /template/ ContentPresenter">
                             <Setter Property="Background" Value="#455472" />
@@ -108,7 +197,7 @@
                     </Button.Styles>
                 </Button>
             </Grid>
-            <ContentControl Grid.Row="3" x:Name="SettingsContent" />
+            <ContentControl Grid.Row="4" x:Name="SettingsContent" />
             <views:LogViewer
                 Grid.Row="5"
                 Margin="5"
@@ -119,7 +208,7 @@
                 Grid.Row="5"
                 HorizontalAlignment="Right"
                 Margin="5"
-                Text="{Binding ProgramVersion}"
+                Text="{Binding _settings.ProgramVersion}"
                 VerticalAlignment="Bottom" />
         </Grid>
     </Border>
