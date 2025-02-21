@@ -41,6 +41,48 @@ public class ProcessService
         {
             var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
             
+            if (_settings.DebugNameFilter.Count > 0)
+            {
+                bool matchesDebugFilter = false;
+                foreach (var filter in _settings.DebugNameFilter)
+                {
+                    if (Regex.IsMatch(nodeEntry.DebugName?.ToLower() ?? "", filter))
+                    {
+                        matchesDebugFilter = true;
+                        break;
+                    }
+                }
+
+                if (!matchesDebugFilter)
+                {
+                    return null;
+                }
+            }
+            
+            if (_settings.ResourceNameFilter.Count > 0)
+            {
+                bool matchesResourceFilter = false;
+
+                string resourcePath = nodeEntry.MeshDepotPath ?? "";
+                
+                foreach (var filter in _settings.ResourceNameFilter)
+                {
+                    if (Regex.IsMatch(resourcePath.ToLower(), filter))
+                    {
+                        matchesResourceFilter = true;
+                        break;
+                    }
+                }
+
+                if (!matchesResourceFilter)
+                {
+                    return null;
+                }
+            }
+            
+            
+
+            
             int nodeTypeTableIndex = NodeTypeProcessingOptions.NodeTypeOptions.IndexOf(nodeEntry.Type);
             if (nodeTypeTableIndex == -1)
             {

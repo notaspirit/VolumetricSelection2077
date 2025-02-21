@@ -44,7 +44,7 @@
                     KeyDown="ResourceFilterTextBox_KeyDown"
                     Margin="5"
                     Name="ResourceFilterTextBox"
-                    ToolTip.Tip="Filter by resource path, supports regex and partial matching">
+                    ToolTip.Tip="Filter by resource path, supports regex and partial matching, backslashes must be escaped in paths.">
                     <TextBox.Watermark>
                         <MultiBinding StringFormat=" {0} Resource Path Filters ">
                             <Binding Path="ResourcePathFilterCount" />
@@ -89,7 +89,7 @@
                     KeyDown="DebugNameFilterTextBox_KeyDown"
                     Margin="5,5,0,5"
                     Name="DebugNameFilterTextBox"
-                    ToolTip.Tip="Filter by debug name, supports regex and partial matching"
+                    ToolTip.Tip="Filter by debug name, supports regex and partial matching, backslashes must be escaped in paths."
                     Watermark="{Binding DebugNameFilterCount, StringFormat='{}{0:N0} Debug Name Filters', FallbackValue='Error', UpdateSourceTrigger=PropertyChanged}">
                     <FlyoutBase.AttachedFlyout>
                         <Flyout Placement="BottomEdgeAlignedLeft" ShowMode="Transient">
