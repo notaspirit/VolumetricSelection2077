@@ -111,7 +111,7 @@ public class ProcessService
             }
             
             CollisionCheck.Types entryType = CollisionCheck.Types.Default;
-            if (nodeEntry.ResourcePath != null)
+            if ((nodeEntry.ResourcePath?.EndsWith(@".mesh") ?? false) || (nodeEntry.ResourcePath?.EndsWith(@".w2mesh") ?? false))
             {
                 entryType = CollisionCheck.Types.Mesh;
             } 
