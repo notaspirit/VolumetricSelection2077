@@ -28,9 +28,10 @@
                 Grid.Row="1"
                 Height="30"
                 Margin="5"
+                Name="OutputFilenameTextBox"
                 PropertyChanged="OutputFilename_PropertyChanged"
                 Text="{Binding _settings.OutputFilename}"
-                ToolTip.Tip="Enter the output filename, without extension"
+                ToolTip.Tip="Enter the output filename, without extension, supports sub folders"
                 Watermark="Output Filename" />
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
