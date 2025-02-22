@@ -17,6 +17,7 @@ using Avalonia.Input;
 using Microsoft.VisualBasic.CompilerServices;
 using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.TestingStuff;
+using WolvenKit.Interfaces.Extensions;
 
 namespace VolumetricSelection2077;
 public partial class MainWindow : Window
@@ -133,13 +134,20 @@ public partial class MainWindow : Window
             _settings.OutputFilename = UtilService.SanitizeFilePath(_settings.OutputFilename);
             OutputFilenameTextBox.Text = _settings.OutputFilename;
             _settings.SaveSettings();
-            var (success, error) = await Task.Run(() =>
-            { 
-                return _processService.MainProcessTask();
-            });
-            if (!success)
+            if (!string.IsNullOrEmpty(_settings.OutputFilename))
             {
-                Logger.Error($"Process failed: {error}");
+                var (success, error) = await Task.Run(() =>
+                { 
+                    return _processService.MainProcessTask();
+                });
+                if (!success)
+                {
+                    Logger.Error($"Process failed: {error}");
+                }
+            }
+            else
+            {
+                Logger.Error("Output filename is empty");
             }
         }
         catch (Exception ex)
