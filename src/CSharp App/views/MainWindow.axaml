@@ -35,6 +35,7 @@
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <TextBox
@@ -82,12 +83,28 @@
                         </Flyout>
                     </FlyoutBase.AttachedFlyout>
                 </TextBox>
+                <Button
+                    Background="#6b82b2"
+                    Click="SwitchFilterModeButton_Click"
+                    Grid.Column="1"
+                    HorizontalAlignment="Center"
+                    HorizontalContentAlignment="Center"
+                    Name="SwitchModeButton"
+                    VerticalAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Width="45">
+                    <Button.Styles>
+                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                            <Setter Property="Background" Value="#455472" />
+                        </Style>
+                    </Button.Styles>
+                </Button>
                 <TextBox
                     GotFocus="DebugNameFilterTextBox_GotFocus"
-                    Grid.Column="1"
+                    Grid.Column="2"
                     Height="30"
                     KeyDown="DebugNameFilterTextBox_KeyDown"
-                    Margin="5,5,0,5"
+                    Margin="5,5,5,5"
                     Name="DebugNameFilterTextBox"
                     ToolTip.Tip="Filter by debug name, supports regex and partial matching, backslashes must be escaped in paths."
                     Watermark="{Binding DebugNameFilterCount, StringFormat='{}{0:N0} Debug Name Filters', FallbackValue='Error', UpdateSourceTrigger=PropertyChanged}">

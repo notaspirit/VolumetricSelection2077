@@ -25,7 +25,7 @@ namespace VolumetricSelection2077.Models
     public class AbbrStreamingSectorNodesEntry
     {
         public required string Type { get; set; }
-        public string? MeshDepotPath { get; set; }
+        public string? ResourcePath { get; set; }
         public AbbrCollisionActors[]? Actors { get; set; }
         public ulong? SectorHash { get; set; }
         public string? DebugName { get; set; }

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using VolumetricSelection2077.Resources;
 
 namespace VolumetricSelection2077.Services;
 public class SettingsService
@@ -32,6 +33,7 @@ public class SettingsService
         ExtendExistingFile = false;
         ResourceNameFilter = new();
         DebugNameFilter = new();
+        FilterModeOr = true;
     }
     
     public static SettingsService Instance
@@ -79,6 +81,8 @@ public class SettingsService
     public List<string> ResourceNameFilter { get; set; }
     public List<string> DebugNameFilter { get; set; }
     
+    public bool FilterModeOr { get; set; }
+    
     // Methods for loading and saving settings
     public void LoadSettings()
     {
@@ -107,6 +111,7 @@ public class SettingsService
                     ExtendExistingFile = settings.ExtendExistingFile;
                     ResourceNameFilter = settings.ResourceNameFilter;
                     DebugNameFilter = settings.DebugNameFilter;
+                    FilterModeOr = settings.FilterModeOr;
                 }
             }
             catch (Exception ex)

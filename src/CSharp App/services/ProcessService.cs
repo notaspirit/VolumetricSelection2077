@@ -41,9 +41,12 @@ public class ProcessService
         {
             var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
             
+            bool? matchesDebugFilter = null;
+            bool? matchesResourceFilter = null;
+            
             if (_settings.DebugNameFilter.Count > 0)
             {
-                bool matchesDebugFilter = false;
+                matchesDebugFilter = false;
                 foreach (var filter in _settings.DebugNameFilter)
                 {
                     if (Regex.IsMatch(nodeEntry.DebugName?.ToLower() ?? "", filter))
@@ -52,36 +55,47 @@ public class ProcessService
                         break;
                     }
                 }
-
-                if (!matchesDebugFilter)
-                {
-                    return null;
-                }
+                
             }
             
             if (_settings.ResourceNameFilter.Count > 0)
             {
-                bool matchesResourceFilter = false;
-
-                string resourcePath = nodeEntry.MeshDepotPath ?? "";
-                
+                matchesResourceFilter = false;
                 foreach (var filter in _settings.ResourceNameFilter)
                 {
-                    if (Regex.IsMatch(resourcePath.ToLower(), filter))
+                    if (Regex.IsMatch(nodeEntry.ResourcePath?.ToLower() ?? "", filter))
                     {
                         matchesResourceFilter = true;
                         break;
                     }
                 }
-
-                if (!matchesResourceFilter)
-                {
-                    return null;
-                }
             }
-            
-            
 
+            if (matchesDebugFilter != null && matchesResourceFilter != null)
+            {
+                if (_settings.FilterModeOr)
+                {
+                    if (!((bool)matchesDebugFilter || (bool)matchesResourceFilter))
+                    {
+                        return null;
+                    }
+                }
+                else
+                {
+                    if (!((bool)matchesDebugFilter && (bool)matchesResourceFilter))
+                    {
+                        return null;
+                    }
+                }
+            } 
+            else if (matchesDebugFilter.HasValue && matchesDebugFilter == false)
+            {
+                return null;
+            }
+            else if (matchesResourceFilter.HasValue && matchesResourceFilter == false)
+            {
+                return null;
+            }
             
             int nodeTypeTableIndex = NodeTypeProcessingOptions.NodeTypeOptions.IndexOf(nodeEntry.Type);
             if (nodeTypeTableIndex == -1)
@@ -97,7 +111,7 @@ public class ProcessService
             }
             
             CollisionCheck.Types entryType = CollisionCheck.Types.Default;
-            if (nodeEntry.MeshDepotPath != null)
+            if (nodeEntry.ResourcePath != null)
             {
                 entryType = CollisionCheck.Types.Mesh;
             } 
@@ -109,10 +123,10 @@ public class ProcessService
             switch (entryType)
             {
                 case CollisionCheck.Types.Mesh:
-                    var mesh = _gameFileService.GetCMesh(nodeEntry.MeshDepotPath);
+                    var mesh = _gameFileService.GetCMesh(nodeEntry.ResourcePath);
                     if (mesh == null)
                     {
-                        Logger.Warning($"Failed to get CMesh from {nodeEntry.MeshDepotPath}");
+                        Logger.Warning($"Failed to get CMesh from {nodeEntry.ResourcePath}");
                         return null;
                     }
                     bool isInside = CollisionCheckService.IsMeshInsideBox(mesh,

@@ -57,6 +57,7 @@ public partial class MainWindow : Window
         _debugNameFilterCount = DebugNameFilters.Count;
         DebugNameFilterTextBox.Watermark = _debugNameFilterCount + _debugNameWatermark;
         ResourceFilterTextBox.Watermark = _resourcePathFilterCount + _resourcePathWatermark;
+        SwitchModeButton.Content = _settings.FilterModeOr ? "Or" : "And";
     }
 
     public int ResourcePathFilterCount
@@ -237,6 +238,16 @@ public partial class MainWindow : Window
         if (sender is TextBox textBox)
         {
             FlyoutBase.ShowAttachedFlyout(textBox);
+        }
+    }
+
+    private void SwitchFilterModeButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button)
+        {
+            _settings.FilterModeOr = !_settings.FilterModeOr;
+            _settings.SaveSettings();
+            SwitchModeButton.Content = _settings.FilterModeOr ? "Or" : "And";
         }
     }
     
