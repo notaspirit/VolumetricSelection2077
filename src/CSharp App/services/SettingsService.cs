@@ -34,6 +34,8 @@ public class SettingsService
         ResourceNameFilter = new();
         DebugNameFilter = new();
         FilterModeOr = true;
+        NukeOccluders = false;
+        NukeOccludersAggressively = false;
     }
     
     public static SettingsService Instance
@@ -82,6 +84,8 @@ public class SettingsService
     public List<string> DebugNameFilter { get; set; }
     
     public bool FilterModeOr { get; set; }
+    public bool NukeOccluders { get; set; }
+    public bool NukeOccludersAggressively { get; set; }
     
     // Methods for loading and saving settings
     public void LoadSettings()
@@ -112,6 +116,8 @@ public class SettingsService
                     ResourceNameFilter = settings.ResourceNameFilter;
                     DebugNameFilter = settings.DebugNameFilter;
                     FilterModeOr = settings.FilterModeOr;
+                    NukeOccluders = settings.NukeOccluders;
+                    NukeOccludersAggressively = settings.NukeOccludersAggressively;
                 }
             }
             catch (Exception ex)

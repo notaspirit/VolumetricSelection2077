@@ -40,6 +40,16 @@ public class ProcessService
         async Task<AxlRemovalNodeDeletion?> ProcessNodeAsync(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index)
         {
             var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
+
+            if (_settings.NukeOccluders && nodeEntry.Type.ToLower().Contains("occluder"))
+            {
+                return new AxlRemovalNodeDeletion()
+                {
+                    Type = nodeEntry.Type,
+                    Index = index,
+                    DebugName = nodeEntry.DebugName
+                };
+            }
             
             bool? matchesDebugFilter = null;
             bool? matchesResourceFilter = null;
@@ -236,12 +246,17 @@ public class ProcessService
 
         var nodeDeletionsRaw = await Task.WhenAll(tasks);
 
+        bool isOnlyOccluders = true;
         List<AxlRemovalNodeDeletion> nodeDeletions = new();
         foreach (var nodeDeletion in nodeDeletionsRaw)
         {
             if (nodeDeletion != null)
             {
                 nodeDeletions.Add(nodeDeletion);
+                if (!nodeDeletion.Type.ToLower().Contains("occluder"))
+                {
+                    isOnlyOccluders = false;
+                }
             }
         }
         
@@ -250,6 +265,11 @@ public class ProcessService
             return (true, "No Nodes Intersect with Box.", null);
         }
 
+        if (_settings.NukeOccludersAggressively == false && _settings.NukeOccluders && isOnlyOccluders)
+        {
+            return (true, "No Nodes Intersect with Box.", null);
+        }
+        
         var result = new AxlRemovalSector()
         {
             NodeDeletions = nodeDeletions,
