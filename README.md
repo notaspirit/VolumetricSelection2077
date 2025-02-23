@@ -15,7 +15,7 @@ Roadmeshes and occluder resources are expected to fail, as well as any modded re
 - RedHotTools ([GitHub](https://github.com/psiberx/cp2077-red-hot-tools))
 - .NET Runtime 8.0.0+ ([Microsoft](https://dotnet.microsoft.com/en-us/download/dotnet/8.0))
 
-### Recommended Mods
+### Recommended
 CET Window Manager ([GitHub](https://github.com/notaspirit/CET-Window-Manager) | [Nexus](https://www.nexusmods.com/cyberpunk2077/mods/18448)): to hide the CET windows that you aren't using so you can better see the selection
 
 ## Instructions
