@@ -40,6 +40,72 @@ public class ProcessService
         async Task<AxlRemovalNodeDeletion?> ProcessNodeAsync(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index)
         {
             var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
+
+            if (_settings.NukeOccluders && nodeEntry.Type.ToLower().Contains("occluder"))
+            {
+                return new AxlRemovalNodeDeletion()
+                {
+                    Type = nodeEntry.Type,
+                    Index = index,
+                    DebugName = nodeEntry.DebugName
+                };
+            }
+            
+            bool? matchesDebugFilter = null;
+            bool? matchesResourceFilter = null;
+            
+            if (_settings.DebugNameFilter.Count > 0)
+            {
+                matchesDebugFilter = false;
+                foreach (var filter in _settings.DebugNameFilter)
+                {
+                    if (Regex.IsMatch(nodeEntry.DebugName?.ToLower() ?? "", filter))
+                    {
+                        matchesDebugFilter = true;
+                        break;
+                    }
+                }
+                
+            }
+            
+            if (_settings.ResourceNameFilter.Count > 0)
+            {
+                matchesResourceFilter = false;
+                foreach (var filter in _settings.ResourceNameFilter)
+                {
+                    if (Regex.IsMatch(nodeEntry.ResourcePath?.ToLower() ?? "", filter))
+                    {
+                        matchesResourceFilter = true;
+                        break;
+                    }
+                }
+            }
+
+            if (matchesDebugFilter != null && matchesResourceFilter != null)
+            {
+                if (_settings.FilterModeOr)
+                {
+                    if (!((bool)matchesDebugFilter || (bool)matchesResourceFilter))
+                    {
+                        return null;
+                    }
+                }
+                else
+                {
+                    if (!((bool)matchesDebugFilter && (bool)matchesResourceFilter))
+                    {
+                        return null;
+                    }
+                }
+            } 
+            else if (matchesDebugFilter.HasValue && matchesDebugFilter == false)
+            {
+                return null;
+            }
+            else if (matchesResourceFilter.HasValue && matchesResourceFilter == false)
+            {
+                return null;
+            }
             
             int nodeTypeTableIndex = NodeTypeProcessingOptions.NodeTypeOptions.IndexOf(nodeEntry.Type);
             if (nodeTypeTableIndex == -1)
@@ -55,7 +121,7 @@ public class ProcessService
             }
             
             CollisionCheck.Types entryType = CollisionCheck.Types.Default;
-            if (nodeEntry.MeshDepotPath != null)
+            if ((nodeEntry.ResourcePath?.EndsWith(@".mesh") ?? false) || (nodeEntry.ResourcePath?.EndsWith(@".w2mesh") ?? false))
             {
                 entryType = CollisionCheck.Types.Mesh;
             } 
@@ -67,10 +133,10 @@ public class ProcessService
             switch (entryType)
             {
                 case CollisionCheck.Types.Mesh:
-                    var mesh = _gameFileService.GetCMesh(nodeEntry.MeshDepotPath);
+                    var mesh = _gameFileService.GetCMesh(nodeEntry.ResourcePath);
                     if (mesh == null)
                     {
-                        Logger.Warning($"Failed to get CMesh from {nodeEntry.MeshDepotPath}");
+                        Logger.Warning($"Failed to get CMesh from {nodeEntry.ResourcePath}");
                         return null;
                     }
                     bool isInside = CollisionCheckService.IsMeshInsideBox(mesh,
@@ -180,12 +246,17 @@ public class ProcessService
 
         var nodeDeletionsRaw = await Task.WhenAll(tasks);
 
+        bool isOnlyOccluders = true;
         List<AxlRemovalNodeDeletion> nodeDeletions = new();
         foreach (var nodeDeletion in nodeDeletionsRaw)
         {
             if (nodeDeletion != null)
             {
                 nodeDeletions.Add(nodeDeletion);
+                if (!nodeDeletion.Type.ToLower().Contains("occluder"))
+                {
+                    isOnlyOccluders = false;
+                }
             }
         }
         
@@ -194,6 +265,11 @@ public class ProcessService
             return (true, "No Nodes Intersect with Box.", null);
         }
 
+        if (_settings.NukeOccludersAggressively == false && _settings.NukeOccluders && isOnlyOccluders)
+        {
+            return (true, "No Nodes Intersect with Box.", null);
+        }
+        
         var result = new AxlRemovalSector()
         {
             NodeDeletions = nodeDeletions,

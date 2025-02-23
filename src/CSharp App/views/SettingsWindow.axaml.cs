@@ -1,7 +1,6 @@
 using Avalonia.Controls;
 using VolumetricSelection2077.ViewModels;
 using System;
-using System.Linq;
 using VolumetricSelection2077.ViewStructures;
 
 namespace VolumetricSelection2077
@@ -14,7 +13,7 @@ namespace VolumetricSelection2077
             InitializeComponent();
             DataContext = new SettingsViewModel();
             _settingsViewModel = DataContext as SettingsViewModel;
-            this.Closed += new EventHandler(OnSettingsWindowClosed);
+            Closed += OnSettingsWindowClosed;
         }
         
         private void OnSettingsWindowClosed(object? sender, EventArgs e)
@@ -60,8 +59,6 @@ namespace VolumetricSelection2077
             {
                 item.NotifyChange(_settingsViewModel.Settings.NodeTypeFilter);
             }
-
-           // _settingsViewModel.CheckedCount = _settingsViewModel.NodeTypeFilterItems.Count(item => item.IsChecked);
         }
         
         private void Label_Click(object sender, Avalonia.Input.PointerPressedEventArgs e)

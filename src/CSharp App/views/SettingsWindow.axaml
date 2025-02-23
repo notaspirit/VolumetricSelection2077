@@ -23,6 +23,8 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200" />
@@ -80,6 +82,23 @@
                 Margin="5"
                 Text="Extend Existing File"
                 ToolTip.Tip="{Binding Descriptions.ExtendExistingFileTooltip}"
+                VerticalAlignment="Center" />
+            <TextBlock
+                Grid.Column="0"
+                Grid.Row="6"
+                HorizontalAlignment="Left"
+                Margin="5"
+                Text="Nuke Occluders"
+                ToolTip.Tip="{Binding Descriptions.NukeOccludersTooltip}"
+                VerticalAlignment="Center" />
+            <TextBlock
+                Grid.Column="0"
+                Grid.Row="7"
+                HorizontalAlignment="Left"
+                IsVisible="{Binding NukeOccludersBoolSettings}"
+                Margin="5"
+                Text="Aggressively"
+                ToolTip.Tip="{Binding Descriptions.NukeOccludersAggressivelyTooltip}"
                 VerticalAlignment="Center" />
 
             <!--  Second Row: Setting Control (e.g., ToggleSwitch)  -->
@@ -182,6 +201,21 @@
                 Grid.Column="1"
                 Grid.Row="5"
                 IsChecked="{Binding Settings.ExtendExistingFile}"
+                Margin="5"
+                OffContent=""
+                OnContent="" />
+            <ToggleSwitch
+                Grid.Column="1"
+                Grid.Row="6"
+                IsChecked="{Binding NukeOccludersBoolSettings}"
+                Margin="5"
+                OffContent=""
+                OnContent="" />
+            <ToggleSwitch
+                Grid.Column="1"
+                Grid.Row="7"
+                IsChecked="{Binding Settings.NukeOccludersAggressively}"
+                IsVisible="{Binding NukeOccludersBoolSettings}"
                 Margin="5"
                 OffContent=""
                 OnContent="" />

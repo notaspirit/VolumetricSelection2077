@@ -1,10 +1,12 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using VolumetricSelection2077.Resources;
 
 namespace VolumetricSelection2077.Services;
 public class SettingsService
@@ -29,6 +31,11 @@ public class SettingsService
         SaveAsYaml = false;
         AllowOverwrite = false;
         ExtendExistingFile = false;
+        ResourceNameFilter = new();
+        DebugNameFilter = new();
+        FilterModeOr = true;
+        NukeOccluders = false;
+        NukeOccludersAggressively = false;
     }
     
     public static SettingsService Instance
@@ -73,6 +80,12 @@ public class SettingsService
     
     public bool AllowOverwrite { get; set; }
     public bool ExtendExistingFile { get; set; }
+    public List<string> ResourceNameFilter { get; set; }
+    public List<string> DebugNameFilter { get; set; }
+    
+    public bool FilterModeOr { get; set; }
+    public bool NukeOccluders { get; set; }
+    public bool NukeOccludersAggressively { get; set; }
     
     // Methods for loading and saving settings
     public void LoadSettings()
@@ -100,6 +113,11 @@ public class SettingsService
                     SaveAsYaml = settings.SaveAsYaml;
                     AllowOverwrite = settings.AllowOverwrite;
                     ExtendExistingFile = settings.ExtendExistingFile;
+                    ResourceNameFilter = settings.ResourceNameFilter;
+                    DebugNameFilter = settings.DebugNameFilter;
+                    FilterModeOr = settings.FilterModeOr;
+                    NukeOccluders = settings.NukeOccluders;
+                    NukeOccludersAggressively = settings.NukeOccludersAggressively;
                 }
             }
             catch (Exception ex)

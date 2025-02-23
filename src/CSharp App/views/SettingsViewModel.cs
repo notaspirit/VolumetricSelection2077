@@ -65,6 +65,19 @@ namespace VolumetricSelection2077.ViewModels
             }
         }
         public int TotalCount => NodeTypeFilterItems.Count();
+
+        public bool NukeOccludersBoolSettings
+        {
+            get => Settings.NukeOccluders;
+            set
+            {
+                if (value != Settings.NukeOccluders)
+                {
+                    Settings.NukeOccluders = value;
+                    OnPropertyChanged(nameof(NukeOccludersBoolSettings));
+                }
+            }
+        }
         
         public SettingsViewModel() 
         { 

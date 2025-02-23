@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using VolumetricSelection2077.Views;
 using VolumetricSelection2077.Services;
 using System;
+using System.Collections.ObjectModel;
 using System.IO;
 using Avalonia.Interactivity;
 using System.Threading.Tasks;
@@ -11,13 +12,20 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Avalonia.Styling;
 using Avalonia;
+using Avalonia.Controls.Primitives;
+using Avalonia.Input;
 using Microsoft.VisualBasic.CompilerServices;
+using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.TestingStuff;
+using WolvenKit.Interfaces.Extensions;
 
 namespace VolumetricSelection2077;
 public partial class MainWindow : Window
 {
-    private readonly SettingsService _settings;
+
+    private string _resourcePathWatermark = " Resource Path Filters";
+    private string _debugNameWatermark = " Debug Name Filters";
+    public SettingsService _settings { get;  }
     private readonly ProcessService _processService;
         private bool _isProcessing;
 
@@ -32,15 +40,54 @@ public partial class MainWindow : Window
         set => SetValue(IsProcessingProperty, value);
     }
 
+    public ObservableCollection<string> ResourceNameFilters { get; set; }
+    public ObservableCollection<string> DebugNameFilters { get; set; }
+    private int _resourcePathFilterCount;
+    private int _debugNameFilterCount;
     public MainWindow()
     {
         InitializeComponent();
         _settings = SettingsService.Instance;
         _processService = new ProcessService();
-        DataContext = _settings;
+        DataContext = this;
+        _settings = SettingsService.Instance;
         InitializeLogger();
+        ResourceNameFilters = new(_settings.ResourceNameFilter);
+        DebugNameFilters = new (_settings.DebugNameFilter);
+        _resourcePathFilterCount = ResourceNameFilters.Count;
+        _debugNameFilterCount = DebugNameFilters.Count;
+        DebugNameFilterTextBox.Watermark = _debugNameFilterCount + _debugNameWatermark;
+        ResourceFilterTextBox.Watermark = _resourcePathFilterCount + _resourcePathWatermark;
+        SwitchModeButton.Content = _settings.FilterModeOr ? "Or" : "And";
     }
 
+    public int ResourcePathFilterCount
+    {
+        get => _resourcePathFilterCount;
+        set
+        {
+            if (_resourcePathFilterCount != value)
+            {
+                _resourcePathFilterCount = value;
+                OnPropertyChanged(nameof(ResourcePathFilterCount));
+            }
+        }
+    }
+    
+    public int DebugNameFilterCount
+    {
+        get => _debugNameFilterCount;
+        set
+        {
+            if (_debugNameFilterCount != value)
+            {
+                _debugNameFilterCount = value;
+                OnPropertyChanged(nameof(DebugNameFilterCount));
+            }
+        }
+    }
+    
+    
     private void InitializeLogger()
     {
         var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -84,13 +131,23 @@ public partial class MainWindow : Window
         try
         {
             IsProcessing = true;
-            var (success, error) = await Task.Run(() =>
-            { 
-                return _processService.MainProcessTask();
-            });
-            if (!success)
+            _settings.OutputFilename = UtilService.SanitizeFilePath(_settings.OutputFilename);
+            OutputFilenameTextBox.Text = _settings.OutputFilename;
+            _settings.SaveSettings();
+            if (!string.IsNullOrEmpty(_settings.OutputFilename))
             {
-                Logger.Error($"Process failed: {error}");
+                var (success, error) = await Task.Run(() =>
+                { 
+                    return _processService.MainProcessTask();
+                });
+                if (!success)
+                {
+                    Logger.Error($"Process failed: {error}");
+                }
+            }
+            else
+            {
+                Logger.Error("Output filename is empty");
             }
         }
         catch (Exception ex)
@@ -113,6 +170,9 @@ public partial class MainWindow : Window
         try
         {
             IsProcessing = true;
+            _settings.OutputFilename = UtilService.SanitizeFilePath(_settings.OutputFilename);
+            OutputFilenameTextBox.Text = _settings.OutputFilename;
+            _settings.SaveSettings();
             await Task.Run(() => Benchmarking.Instance.RunBenchmarks());
         }
         catch (Exception ex)
@@ -120,5 +180,95 @@ public partial class MainWindow : Window
             Logger.Error($"Benchmarking failed: {ex}");
         }
         IsProcessing = false;
+    }
+    
+    private void ResourceFilterTextBox_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && sender is TextBox textBox)
+        {
+            string text = textBox.Text?.Trim();
+            if (!string.IsNullOrEmpty(text))
+            {
+                ResourceNameFilters.Add(text.ToLower());
+                textBox.Text = string.Empty;
+                _settings.ResourceNameFilter.Add(text.ToLower());
+                _settings.SaveSettings();
+                ResourcePathFilterCount = _settings.ResourceNameFilter.Count;
+                ResourceFilterTextBox.Watermark = _resourcePathFilterCount + _resourcePathWatermark;
+                
+            }
+        }
+    }
+    
+    private void RemoveResourceNameFilter_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is string item)
+        {
+            ResourceNameFilters.Remove(item.ToLower());
+            _settings.ResourceNameFilter.Remove(item.ToLower());
+            _settings.SaveSettings();
+            ResourcePathFilterCount = _settings.ResourceNameFilter.Count;
+            ResourceFilterTextBox.Watermark = _resourcePathFilterCount + _resourcePathWatermark;
+        }
+    }
+    private void ResourceFilterTextBox_GotFocus(object? sender, GotFocusEventArgs e)
+    {
+        if (sender is TextBox textBox)
+        {
+            FlyoutBase.ShowAttachedFlyout(textBox);
+        }
+    }
+    
+    private void DebugNameFilterTextBox_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && sender is TextBox textBox)
+        {
+            string text = textBox.Text?.Trim();
+            if (!string.IsNullOrEmpty(text))
+            {
+                DebugNameFilters.Add(text.ToLower());
+                textBox.Text = string.Empty;
+                _settings.DebugNameFilter.Add(text.ToLower());
+                _settings.SaveSettings();
+                DebugNameFilterCount = _settings.DebugNameFilter.Count;
+                DebugNameFilterTextBox.Watermark = _debugNameFilterCount + _debugNameWatermark;
+            }
+        }
+    }
+    
+    private void RemoveDebugNameFilter_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is string item)
+        {
+            DebugNameFilters.Remove(item.ToLower());
+            _settings.DebugNameFilter.Remove(item.ToLower());
+            _settings.SaveSettings();
+            DebugNameFilterCount = _settings.DebugNameFilter.Count;
+            DebugNameFilterTextBox.Watermark = _debugNameFilterCount + _debugNameWatermark;
+        }
+    }
+    private void DebugNameFilterTextBox_GotFocus(object? sender, GotFocusEventArgs e)
+    {
+        if (sender is TextBox textBox)
+        {
+            FlyoutBase.ShowAttachedFlyout(textBox);
+        }
+    }
+
+    private void SwitchFilterModeButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button)
+        {
+            _settings.FilterModeOr = !_settings.FilterModeOr;
+            _settings.SaveSettings();
+            SwitchModeButton.Content = _settings.FilterModeOr ? "Or" : "And";
+        }
+    }
+    
+    public event PropertyChangedEventHandler? PropertyChanged;
+        
+    protected virtual void OnPropertyChanged(string propertyName)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

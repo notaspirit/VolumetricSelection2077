@@ -32,33 +32,48 @@ public class DirectAbbrSectorParser
             var type = node.Chunk?.GetType().Name ?? "Unknown";
             ulong? sectorHash = null;
             AbbrCollisionActors[]? actors = null;
-            string? meshPath = null;
+            string? resourcePath = null;
             
             switch (node.Chunk)
             {
                 case worldMeshNode meshNode:
-                    meshPath = meshNode.Mesh.DepotPath;
+                    resourcePath = meshNode.Mesh.DepotPath;
                     break;
                 case worldInstancedMeshNode instancedMeshNode:
-                    meshPath = instancedMeshNode.Mesh.DepotPath;
+                    resourcePath = instancedMeshNode.Mesh.DepotPath;
                     break;
                 case worldInstancedOccluderNode instancedOccluderNode:
-                    meshPath = instancedOccluderNode.Mesh.DepotPath;
+                    resourcePath = instancedOccluderNode.Mesh.DepotPath;
                     break;
                 case worldTerrainMeshNode terrainMeshNode:
-                    meshPath = terrainMeshNode.MeshRef.DepotPath;
+                    resourcePath = terrainMeshNode.MeshRef.DepotPath;
                     break;
                 case worldBendedMeshNode bendedMeshNode:
-                    meshPath = bendedMeshNode.Mesh.DepotPath;
+                    resourcePath = bendedMeshNode.Mesh.DepotPath;
                     break;
                 case worldPhysicalDestructionNode destructionNode:
-                    meshPath = destructionNode.Mesh.DepotPath;
+                    resourcePath = destructionNode.Mesh.DepotPath;
                     break;
                 case worldFoliageNode foliageNode:
-                    meshPath = foliageNode.Mesh.DepotPath;
+                    resourcePath = foliageNode.Mesh.DepotPath;
                     break;
                 case worldStaticOccluderMeshNode staticOccluderMeshNode:
-                    meshPath = staticOccluderMeshNode.Mesh.DepotPath;
+                    resourcePath = staticOccluderMeshNode.Mesh.DepotPath;
+                    break;
+                case worldStaticDecalNode staticDecalNode:
+                    resourcePath = staticDecalNode.Material.DepotPath;
+                    break;
+                case worldEffectNode effectNode:
+                    resourcePath = effectNode.Effect.DepotPath;
+                    break;
+                case worldStaticParticleNode staticParticleNode:
+                    resourcePath = staticParticleNode.ParticleSystem.DepotPath;
+                    break;
+                case worldPrefabNode prefabNode:
+                    resourcePath = prefabNode.Prefab.DepotPath;
+                    break;
+                case worldEntityNode entityNode:
+                    resourcePath = entityNode.EntityTemplate.DepotPath;
                     break;
                 case worldCollisionNode collisionNode:
                     sectorHash = collisionNode.SectorHash;
@@ -125,7 +140,7 @@ public class DirectAbbrSectorParser
                 SectorHash = sectorHash,
                 Actors = actors,
                 DebugName = debugName,
-                MeshDepotPath = meshPath,
+                ResourcePath = resourcePath,
                 Type = type
             };
             
