@@ -9,6 +9,15 @@ Note that the versioning is epoch semantic => [Epoch * 1000 + MAJOR].MINOR.PATCH
 
 Roadmeshes and occluder resources are expected to fail, as well as any modded resources, if anything else fails or you have any other feedback please open an issue for it on GitHub.
 
+## Requirements
+- CyberEngineTweaks ([GitHub](https://github.com/maximegmd/CyberEngineTweaks) | [Nexus](https://www.nexusmods.com/cyberpunk2077/mods/107))
+- ArchiveXL ([GitHub](https://github.com/psiberx/cp2077-archive-xl) | [Nexus](https://www.nexusmods.com/cyberpunk2077/mods/4198))
+- RedHotTools ([GitHub](https://github.com/psiberx/cp2077-red-hot-tools))
+- .NET Runtime 8.0.0+ ([Microsoft](https://dotnet.microsoft.com/en-us/download/dotnet/8.0))
+
+### Recommended Mods
+CET Window Manager ([GitHub](https://github.com/notaspirit/CET-Window-Manager) | [Nexus](https://www.nexusmods.com/cyberpunk2077/mods/18448)): to hide the CET windows that you aren't using so you can better see the selection
+
 ## Instructions
 1. Installation
     1. CET Mod
@@ -32,10 +41,7 @@ Roadmeshes and occluder resources are expected to fail, as well as any modded re
    To apply the changes you can either:
     1. restart your game
     2. use Red Hot Tools to reload archive extensions and reload the save
-
-## Recommended Mods
-CET Window Manager ([GitHub](https://github.com/notaspirit/CET-Window-Manager) | [Nexus](https://www.nexusmods.com/cyberpunk2077/mods/18448)): to hide the CET windows that you aren't using so you can better see the selection
-
+       
 ## Credits
 - [keanuWheeze](https://github.com/justarandomguyintheinternet) for the cube mesh and the material
 - [WolvenKit](https://github.com/WolvenKit/WolvenKit) for publishing the core functionality of WolvenKit on nuget
