@@ -17,77 +17,28 @@ using Avalonia.Input;
 using Microsoft.VisualBasic.CompilerServices;
 using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.TestingStuff;
+using VolumetricSelection2077.ViewModels;
 using WolvenKit.Interfaces.Extensions;
 
 namespace VolumetricSelection2077;
 public partial class MainWindow : Window
 {
-
-    private string _resourcePathWatermark = " Resource Path Filters";
-    private string _debugNameWatermark = " Debug Name Filters";
-    public SettingsService _settings { get;  }
+    private SettingsService _settings;
+    
     private readonly ProcessService _processService;
-        private bool _isProcessing;
-
-    // Define the AvaloniaProperty for IsProcessing
-    public static readonly StyledProperty<bool> IsProcessingProperty =
-        AvaloniaProperty.Register<MainWindow, bool>(nameof(IsProcessing));
-
-    // Property wrapper
-    public bool IsProcessing
-    {
-        get => GetValue(IsProcessingProperty);
-        set => SetValue(IsProcessingProperty, value);
-    }
-
-    public ObservableCollection<string> ResourceNameFilters { get; set; }
-    public ObservableCollection<string> DebugNameFilters { get; set; }
-    private int _resourcePathFilterCount;
-    private int _debugNameFilterCount;
+    private MainWindowViewModel _mainWindowViewModel;
+    
     public MainWindow()
     {
         InitializeComponent();
+        DataContext = new MainWindowViewModel();
+        _mainWindowViewModel = DataContext as MainWindowViewModel;
+        InitializeLogger();
         _settings = SettingsService.Instance;
         _processService = new ProcessService();
-        DataContext = this;
-        _settings = SettingsService.Instance;
-        InitializeLogger();
-        ResourceNameFilters = new(_settings.ResourceNameFilter);
-        DebugNameFilters = new (_settings.DebugNameFilter);
-        _resourcePathFilterCount = ResourceNameFilters.Count;
-        _debugNameFilterCount = DebugNameFilters.Count;
-        DebugNameFilterTextBox.Watermark = _debugNameFilterCount + _debugNameWatermark;
-        ResourceFilterTextBox.Watermark = _resourcePathFilterCount + _resourcePathWatermark;
-        SwitchModeButton.Content = _settings.FilterModeOr ? "Or" : "And";
+        
     }
 
-    public int ResourcePathFilterCount
-    {
-        get => _resourcePathFilterCount;
-        set
-        {
-            if (_resourcePathFilterCount != value)
-            {
-                _resourcePathFilterCount = value;
-                OnPropertyChanged(nameof(ResourcePathFilterCount));
-            }
-        }
-    }
-    
-    public int DebugNameFilterCount
-    {
-        get => _debugNameFilterCount;
-        set
-        {
-            if (_debugNameFilterCount != value)
-            {
-                _debugNameFilterCount = value;
-                OnPropertyChanged(nameof(DebugNameFilterCount));
-            }
-        }
-    }
-    
-    
     private void InitializeLogger()
     {
         var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -110,7 +61,7 @@ public partial class MainWindow : Window
         settingsWindow.ShowDialog(this);
     }
 
-    private void OutputFilename_PropertyChanged(object? sender, Avalonia.AvaloniaPropertyChangedEventArgs e)
+    private void OutputFilename_PropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
         if (e.Property.Name == "Text")
         {
@@ -126,11 +77,11 @@ public partial class MainWindow : Window
 
     private async void FindSelectedButton_Click(object? sender, RoutedEventArgs e)
     {
-        if (IsProcessing) return;
+        if (_mainWindowViewModel.IsProcessing) return;
         Stopwatch stopwatch = Stopwatch.StartNew();
         try
         {
-            IsProcessing = true;
+            _mainWindowViewModel.IsProcessing = true;
             _settings.OutputFilename = UtilService.SanitizeFilePath(_settings.OutputFilename);
             OutputFilenameTextBox.Text = _settings.OutputFilename;
             _settings.SaveSettings();
@@ -153,23 +104,22 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             Logger.Error($"Critical error: {ex}");
-            IsProcessing = false;
         }
         finally
         {
             stopwatch.Stop();
             string formattedTime = UtilService.FormatElapsedTime(stopwatch.Elapsed);
             Logger.Info($"Process finished after: {formattedTime}");
-            IsProcessing = false;
+            _mainWindowViewModel.IsProcessing = false;
         }
     }
 
     private async void Benchmark_Click(object? sender, RoutedEventArgs e)
     {
-        if (IsProcessing) return;
+        if (_mainWindowViewModel.IsProcessing) return;
         try
         {
-            IsProcessing = true;
+            _mainWindowViewModel.IsProcessing = true;
             _settings.OutputFilename = UtilService.SanitizeFilePath(_settings.OutputFilename);
             OutputFilenameTextBox.Text = _settings.OutputFilename;
             _settings.SaveSettings();
@@ -179,7 +129,7 @@ public partial class MainWindow : Window
         {
             Logger.Error($"Benchmarking failed: {ex}");
         }
-        IsProcessing = false;
+        _mainWindowViewModel.IsProcessing = false;
     }
     
     private void ResourceFilterTextBox_KeyDown(object? sender, KeyEventArgs e)
@@ -189,13 +139,9 @@ public partial class MainWindow : Window
             string text = textBox.Text?.Trim();
             if (!string.IsNullOrEmpty(text))
             {
-                ResourceNameFilters.Add(text.ToLower());
                 textBox.Text = string.Empty;
                 _settings.ResourceNameFilter.Add(text.ToLower());
                 _settings.SaveSettings();
-                ResourcePathFilterCount = _settings.ResourceNameFilter.Count;
-                ResourceFilterTextBox.Watermark = _resourcePathFilterCount + _resourcePathWatermark;
-                
             }
         }
     }
@@ -204,11 +150,8 @@ public partial class MainWindow : Window
     {
         if (sender is Button button && button.DataContext is string item)
         {
-            ResourceNameFilters.Remove(item.ToLower());
             _settings.ResourceNameFilter.Remove(item.ToLower());
             _settings.SaveSettings();
-            ResourcePathFilterCount = _settings.ResourceNameFilter.Count;
-            ResourceFilterTextBox.Watermark = _resourcePathFilterCount + _resourcePathWatermark;
         }
     }
     private void ResourceFilterTextBox_GotFocus(object? sender, GotFocusEventArgs e)
@@ -226,12 +169,9 @@ public partial class MainWindow : Window
             string text = textBox.Text?.Trim();
             if (!string.IsNullOrEmpty(text))
             {
-                DebugNameFilters.Add(text.ToLower());
                 textBox.Text = string.Empty;
                 _settings.DebugNameFilter.Add(text.ToLower());
                 _settings.SaveSettings();
-                DebugNameFilterCount = _settings.DebugNameFilter.Count;
-                DebugNameFilterTextBox.Watermark = _debugNameFilterCount + _debugNameWatermark;
             }
         }
     }
@@ -240,11 +180,8 @@ public partial class MainWindow : Window
     {
         if (sender is Button button && button.DataContext is string item)
         {
-            DebugNameFilters.Remove(item.ToLower());
             _settings.DebugNameFilter.Remove(item.ToLower());
             _settings.SaveSettings();
-            DebugNameFilterCount = _settings.DebugNameFilter.Count;
-            DebugNameFilterTextBox.Watermark = _debugNameFilterCount + _debugNameWatermark;
         }
     }
     private void DebugNameFilterTextBox_GotFocus(object? sender, GotFocusEventArgs e)
@@ -261,14 +198,7 @@ public partial class MainWindow : Window
         {
             _settings.FilterModeOr = !_settings.FilterModeOr;
             _settings.SaveSettings();
-            SwitchModeButton.Content = _settings.FilterModeOr ? "Or" : "And";
+            _mainWindowViewModel.FilterModeOr = _settings.FilterModeOr;
         }
-    }
-    
-    public event PropertyChangedEventHandler? PropertyChanged;
-        
-    protected virtual void OnPropertyChanged(string propertyName)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }

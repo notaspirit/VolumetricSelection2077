@@ -8,13 +8,17 @@
     d:DesignWidth="800"
     mc:Ignorable="d"
     x:Class="VolumetricSelection2077.MainWindow"
-    x:DataType="local:MainWindow"
+    x:DataType="viewModels:MainWindowViewModel"
     xmlns="https://github.com/avaloniaui"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:VolumetricSelection2077"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:resources="clr-namespace:VolumetricSelection2077.Resources"
+    xmlns:viewModels="clr-namespace:VolumetricSelection2077.ViewModels"
     xmlns:views="clr-namespace:VolumetricSelection2077.Views"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Window.DataContext>
+        <viewModels:MainWindowViewModel />
+    </Window.DataContext>
     <Border Margin="5">
         <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*">
             <TextBlock
@@ -22,7 +26,7 @@
                 FontWeight="Bold"
                 Grid.Row="0"
                 Margin="5"
-                Text="VolumetricSelection2077" />
+                Text="{x:Static resources:Labels.VS2077}" />
 
             <TextBox
                 Grid.Row="1"
@@ -30,9 +34,9 @@
                 Margin="5"
                 Name="OutputFilenameTextBox"
                 PropertyChanged="OutputFilename_PropertyChanged"
-                Text="{Binding _settings.OutputFilename}"
-                ToolTip.Tip="Enter the output filename, without extension, supports sub folders"
-                Watermark="Output Filename" />
+                Text="{Binding Settings.OutputFilename}"
+                ToolTip.Tip="{x:Static resources:ToolTips.OutputFilename}"
+                Watermark="{x:Static resources:Watermarks.OutputFilename}" />
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -46,16 +50,13 @@
                     KeyDown="ResourceFilterTextBox_KeyDown"
                     Margin="5"
                     Name="ResourceFilterTextBox"
-                    ToolTip.Tip="Filter by resource path, supports regex and partial matching, backslashes must be escaped in paths.">
-                    <TextBox.Watermark>
-                        <MultiBinding StringFormat=" {0} Resource Path Filters ">
-                            <Binding Path="ResourcePathFilterCount" />
-                        </MultiBinding>
-                    </TextBox.Watermark>
+                    ToolTip.Tip="{x:Static resources:ToolTips.ResourceFilter}"
+                    Watermark="{Binding ResourcePathFilterCount, StringFormat='{}{0:N0} Resource Path Filters', FallbackValue='Error'}">
+
                     <FlyoutBase.AttachedFlyout>
                         <Flyout Placement="BottomEdgeAlignedLeft" ShowMode="Transient">
                             <ScrollViewer MaxHeight="300">
-                                <ItemsControl ItemsSource="{Binding ResourceNameFilters}">
+                                <ItemsControl ItemsSource="{Binding Settings.ResourceNameFilter}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <Grid ColumnDefinitions="Auto,*" Margin="0,2">
@@ -107,12 +108,12 @@
                     KeyDown="DebugNameFilterTextBox_KeyDown"
                     Margin="5,5,5,5"
                     Name="DebugNameFilterTextBox"
-                    ToolTip.Tip="Filter by debug name, supports regex and partial matching, backslashes must be escaped in paths."
-                    Watermark="{Binding DebugNameFilterCount, StringFormat='{}{0:N0} Debug Name Filters', FallbackValue='Error', UpdateSourceTrigger=PropertyChanged}">
+                    ToolTip.Tip="{x:Static resources:ToolTips.DebugNameFilter}"
+                    Watermark="{Binding DebugNameFilterCount, StringFormat='{}{0:N0} Debug Name Filters', FallbackValue='Error'}">
                     <FlyoutBase.AttachedFlyout>
                         <Flyout Placement="BottomEdgeAlignedLeft" ShowMode="Transient">
                             <ScrollViewer MaxHeight="300">
-                                <ItemsControl ItemsSource="{Binding DebugNameFilters}">
+                                <ItemsControl ItemsSource="{Binding Settings.DebugNameFilter}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <Grid ColumnDefinitions="Auto,*" Margin="0,2">
@@ -165,14 +166,14 @@
                     <StackPanel Orientation="Horizontal" Spacing="5">
                         <TextBlock
                             FontSize="10"
-                            Text="Clear Log"
+                            Text="{x:Static resources:Labels.ClearLog}"
                             VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
                 <Button
                     Background="#6b82b2"
                     Click="SettingsButton_Click"
-                    Content="Settings"
+                    Content="{x:Static resources:Labels.Settings}"
                     Grid.Column="2">
                     <Button.Styles>
                         <Style Selector="Button:pointerover /template/ ContentPresenter">
@@ -183,9 +184,9 @@
                 <Button
                     Background="#6b82b2"
                     Click="Benchmark_Click"
-                    Content="Benchmark"
+                    Content="{x:Static resources:Labels.Benchmark}"
                     Grid.Column="3"
-                    IsVisible="{Binding _settings.DebugMode}"
+                    IsVisible="{Binding Settings.DebugMode}"
                     Margin="5,0,0,0">
                     <Button.Styles>
                         <Style Selector="Button:pointerover /template/ ContentPresenter">
@@ -208,7 +209,7 @@
                 <Button
                     Background="#5755d9"
                     Click="FindSelectedButton_Click"
-                    Content="Find Selected"
+                    Content="{x:Static resources:Labels.FindSelected}"
                     Grid.Column="4"
                     Margin="5,0,0,0">
                     <Button.Styles>
@@ -229,7 +230,7 @@
                 Grid.Row="5"
                 HorizontalAlignment="Right"
                 Margin="5"
-                Text="{Binding _settings.ProgramVersion}"
+                Text="{Binding Settings.ProgramVersion}"
                 VerticalAlignment="Bottom" />
         </Grid>
     </Border>

@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Net.Mime;
 using System.Windows.Input;
 using VolumetricSelection2077.Services;
 using VolumetricSelection2077.Resources;
@@ -14,7 +15,6 @@ namespace VolumetricSelection2077.ViewModels
         private ObservableCollection<NodeTypeFilterItem> _nodeTypeFilterItems;
         private ObservableCollection<NodeTypeFilterItem> _filteredNodeTypeFilterItems;
         private int _checkedCount;
-        public Descriptions Descriptions { get; } 
         public SettingsService Settings { get; }
         public ObservableCollection<NodeTypeFilterItem> NodeTypeFilterItems
         {
@@ -81,7 +81,6 @@ namespace VolumetricSelection2077.ViewModels
         
         public SettingsViewModel() 
         { 
-            Descriptions = new Descriptions(); 
             Settings = SettingsService.Instance;
             _nodeTypeFilterItems = new();
             for (int i = 0; i < NodeTypeProcessingOptions.NodeTypeOptions.Length; i++)

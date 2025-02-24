@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -80,8 +81,8 @@ public class SettingsService
     
     public bool AllowOverwrite { get; set; }
     public bool ExtendExistingFile { get; set; }
-    public List<string> ResourceNameFilter { get; set; }
-    public List<string> DebugNameFilter { get; set; }
+    public ObservableCollection<string> ResourceNameFilter { get; set; }
+    public ObservableCollection<string> DebugNameFilter { get; set; }
     
     public bool FilterModeOr { get; set; }
     public bool NukeOccluders { get; set; }
