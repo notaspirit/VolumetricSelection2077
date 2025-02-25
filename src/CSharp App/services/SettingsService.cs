@@ -114,8 +114,16 @@ public class SettingsService
                     SaveAsYaml = settings.SaveAsYaml;
                     AllowOverwrite = settings.AllowOverwrite;
                     ExtendExistingFile = settings.ExtendExistingFile;
-                    ResourceNameFilter = settings.ResourceNameFilter;
-                    DebugNameFilter = settings.DebugNameFilter;
+                    ResourceNameFilter.Clear();
+                    foreach (var rpfilter in settings.ResourceNameFilter)
+                    {
+                        ResourceNameFilter.Add(rpfilter);
+                    }
+                    DebugNameFilter.Clear();
+                    foreach (var dnfilter in settings.DebugNameFilter)
+                    {
+                        DebugNameFilter.Add(dnfilter);
+                    }
                     FilterModeOr = settings.FilterModeOr;
                     NukeOccluders = settings.NukeOccluders;
                     NukeOccludersAggressively = settings.NukeOccludersAggressively;

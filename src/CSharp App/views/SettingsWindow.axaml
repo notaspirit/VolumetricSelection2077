@@ -9,12 +9,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:local="clr-namespace:VolumetricSelection2077"
     xmlns:resources="clr-namespace:VolumetricSelection2077.Resources"
-    xmlns:vm="using:VolumetricSelection2077.ViewModels"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Window.DataContext>
-        <vm:SettingsViewModel />
-    </Window.DataContext>
-
     <Border Margin="5">
         <Grid>
             <Grid.RowDefinitions>

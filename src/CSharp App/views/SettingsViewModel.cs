@@ -1,8 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
-using System.Net.Mime;
-using System.Windows.Input;
 using VolumetricSelection2077.Services;
 using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.ViewStructures;

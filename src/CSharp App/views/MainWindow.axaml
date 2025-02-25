@@ -16,9 +16,6 @@
     xmlns:viewModels="clr-namespace:VolumetricSelection2077.ViewModels"
     xmlns:views="clr-namespace:VolumetricSelection2077.Views"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Window.DataContext>
-        <viewModels:MainWindowViewModel />
-    </Window.DataContext>
     <Border Margin="5">
         <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*">
             <TextBlock
@@ -33,8 +30,7 @@
                 Height="30"
                 Margin="5"
                 Name="OutputFilenameTextBox"
-                PropertyChanged="OutputFilename_PropertyChanged"
-                Text="{Binding Settings.OutputFilename}"
+                Text="{Binding OutputFilename}"
                 ToolTip.Tip="{x:Static resources:ToolTips.OutputFilename}"
                 Watermark="{x:Static resources:Watermarks.OutputFilename}" />
             <Grid Grid.Row="2">
@@ -51,7 +47,7 @@
                     Margin="5"
                     Name="ResourceFilterTextBox"
                     ToolTip.Tip="{x:Static resources:ToolTips.ResourceFilter}"
-                    Watermark="{Binding ResourcePathFilterCount, StringFormat='{}{0:N0} Resource Path Filters', FallbackValue='Error'}">
+                    Watermark="{Binding ResourcePathFilterCount, StringFormat='{}{0:N0} Resource Path Filters', FallbackValue='Error', UpdateSourceTrigger=PropertyChanged}">
 
                     <FlyoutBase.AttachedFlyout>
                         <Flyout Placement="BottomEdgeAlignedLeft" ShowMode="Transient">
@@ -88,6 +84,7 @@
                 <Button
                     Background="#6b82b2"
                     Click="SwitchFilterModeButton_Click"
+                    Content="{Binding FilterModeText}"
                     Grid.Column="1"
                     HorizontalAlignment="Center"
                     HorizontalContentAlignment="Center"
@@ -109,7 +106,7 @@
                     Margin="5,5,5,5"
                     Name="DebugNameFilterTextBox"
                     ToolTip.Tip="{x:Static resources:ToolTips.DebugNameFilter}"
-                    Watermark="{Binding DebugNameFilterCount, StringFormat='{}{0:N0} Debug Name Filters', FallbackValue='Error'}">
+                    Watermark="{Binding DebugNameFilterCount, StringFormat='{}{0:N0} Debug Name Filters', FallbackValue='Error', UpdateSourceTrigger=PropertyChanged}">
                     <FlyoutBase.AttachedFlyout>
                         <Flyout Placement="BottomEdgeAlignedLeft" ShowMode="Transient">
                             <ScrollViewer MaxHeight="300">
