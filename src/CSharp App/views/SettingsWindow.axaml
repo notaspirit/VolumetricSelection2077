@@ -8,12 +8,8 @@
     x:DataType="local:ViewModels.SettingsViewModel"
     xmlns="https://github.com/avaloniaui"
     xmlns:local="clr-namespace:VolumetricSelection2077"
-    xmlns:vm="using:VolumetricSelection2077.ViewModels"
+    xmlns:resources="clr-namespace:VolumetricSelection2077.Resources"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Window.DataContext>
-        <vm:SettingsViewModel />
-    </Window.DataContext>
-
     <Border Margin="5">
         <Grid>
             <Grid.RowDefinitions>
@@ -39,7 +35,7 @@
                 Grid.Row="0"
                 HorizontalAlignment="Left"
                 Margin="5"
-                Text="Settings" />
+                Text="{x:Static resources:Labels.Settings}" />
 
             <!--  First Row: Label  -->
 
@@ -49,7 +45,7 @@
                 HorizontalAlignment="Left"
                 Margin="5"
                 Text="Game Directory"
-                ToolTip.Tip="{Binding Descriptions.GameDirectoryTooltip}"
+                ToolTip.Tip="{x:Static resources:ToolTips.GameDirectory}"
                 VerticalAlignment="Center" />
             <TextBlock
                 Grid.Column="0"
@@ -57,7 +53,7 @@
                 HorizontalAlignment="Left"
                 Margin="5"
                 Text="Node Filter"
-                ToolTip.Tip="{Binding Descriptions.NodeFilterTooltip}"
+                ToolTip.Tip="{x:Static resources:ToolTips.NodeFilter}"
                 VerticalAlignment="Center" />
             <TextBlock
                 Grid.Column="0"
@@ -65,7 +61,7 @@
                 HorizontalAlignment="Left"
                 Margin="5"
                 Text="Save As Yaml"
-                ToolTip.Tip="{Binding Descriptions.SaveAsYamlToolTip}"
+                ToolTip.Tip="{x:Static resources:ToolTips.SaveAsYaml}"
                 VerticalAlignment="Center" />
             <TextBlock
                 Grid.Column="0"
@@ -73,7 +69,7 @@
                 HorizontalAlignment="Left"
                 Margin="5"
                 Text="Allow Output File Overwrite"
-                ToolTip.Tip="{Binding Descriptions.AllowOverwriteTooltip}"
+                ToolTip.Tip="{x:Static resources:ToolTips.AllowOverwrite}"
                 VerticalAlignment="Center" />
             <TextBlock
                 Grid.Column="0"
@@ -81,7 +77,7 @@
                 HorizontalAlignment="Left"
                 Margin="5"
                 Text="Extend Existing File"
-                ToolTip.Tip="{Binding Descriptions.ExtendExistingFileTooltip}"
+                ToolTip.Tip="{x:Static resources:ToolTips.ExtendExistingFile}"
                 VerticalAlignment="Center" />
             <TextBlock
                 Grid.Column="0"
@@ -89,7 +85,7 @@
                 HorizontalAlignment="Left"
                 Margin="5"
                 Text="Nuke Occluders"
-                ToolTip.Tip="{Binding Descriptions.NukeOccludersTooltip}"
+                ToolTip.Tip="{x:Static resources:ToolTips.NukeOccluders}"
                 VerticalAlignment="Center" />
             <TextBlock
                 Grid.Column="0"
@@ -98,7 +94,7 @@
                 IsVisible="{Binding NukeOccludersBoolSettings}"
                 Margin="5"
                 Text="Aggressively"
-                ToolTip.Tip="{Binding Descriptions.NukeOccludersAggressivelyTooltip}"
+                ToolTip.Tip="{x:Static resources:ToolTips.NukeOccludersAggressively}"
                 VerticalAlignment="Center" />
 
             <!--  Second Row: Setting Control (e.g., ToggleSwitch)  -->
@@ -107,7 +103,7 @@
                 Grid.Row="1"
                 Margin="5"
                 Text="{Binding Settings.GameDirectory}"
-                Watermark="Path to game directory"
+                Watermark="{x:Static resources:Watermarks.GameDirectory}"
                 x:Name="GameDirectoryTextBox" />
 
             <Button
@@ -137,7 +133,7 @@
                                 <Button
                                     Background="#6b82b2"
                                     Click="SelectAllClick"
-                                    Content="Select All"
+                                    Content="{x:Static resources:Labels.SelectAll}"
                                     HorizontalContentAlignment="Center"
                                     Margin="5"
                                     Width="100">
@@ -150,7 +146,7 @@
                                 <Button
                                     Background="#6b82b2"
                                     Click="DeselectAllClick"
-                                    Content="Deselect All"
+                                    Content="{x:Static resources:Labels.DeselectAll}"
                                     HorizontalContentAlignment="Center"
                                     Margin="5"
                                     Width="100">
@@ -164,7 +160,7 @@
                             <TextBox
                                 HorizontalAlignment="Stretch"
                                 Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
-                                Watermark="Search..." />
+                                Watermark="{x:Static resources:Watermarks.Search}" />
                             <ItemsControl ItemsSource="{Binding FilteredNodeTypeFilterItems}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>

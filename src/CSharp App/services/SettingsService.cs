@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -80,8 +81,8 @@ public class SettingsService
     
     public bool AllowOverwrite { get; set; }
     public bool ExtendExistingFile { get; set; }
-    public List<string> ResourceNameFilter { get; set; }
-    public List<string> DebugNameFilter { get; set; }
+    public ObservableCollection<string> ResourceNameFilter { get; set; }
+    public ObservableCollection<string> DebugNameFilter { get; set; }
     
     public bool FilterModeOr { get; set; }
     public bool NukeOccluders { get; set; }
@@ -113,8 +114,16 @@ public class SettingsService
                     SaveAsYaml = settings.SaveAsYaml;
                     AllowOverwrite = settings.AllowOverwrite;
                     ExtendExistingFile = settings.ExtendExistingFile;
-                    ResourceNameFilter = settings.ResourceNameFilter;
-                    DebugNameFilter = settings.DebugNameFilter;
+                    ResourceNameFilter.Clear();
+                    foreach (var rpfilter in settings.ResourceNameFilter)
+                    {
+                        ResourceNameFilter.Add(rpfilter);
+                    }
+                    DebugNameFilter.Clear();
+                    foreach (var dnfilter in settings.DebugNameFilter)
+                    {
+                        DebugNameFilter.Add(dnfilter);
+                    }
                     FilterModeOr = settings.FilterModeOr;
                     NukeOccluders = settings.NukeOccluders;
                     NukeOccludersAggressively = settings.NukeOccludersAggressively;
