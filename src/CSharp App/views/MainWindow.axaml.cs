@@ -195,6 +195,14 @@ public partial class MainWindow : Window
         }
     }
     
+    public void ToggleParameterVisibility_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button)
+        {
+            _mainWindowViewModel.ParameterSelectionVisibility = !_mainWindowViewModel.ParameterSelectionVisibility;
+        }
+    }
+    
     private void SelectAllClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         for (int i = 0; i < _mainWindowViewModel.FilteredNodeTypeFilterItems.Count; i++)

@@ -38,7 +38,6 @@
                 Text="{x:Static resources:Labels.Settings}" />
 
             <!--  First Row: Label  -->
-
             <TextBlock
                 Grid.Column="0"
                 Grid.Row="1"
@@ -47,31 +46,6 @@
                 Text="Game Directory"
                 ToolTip.Tip="{x:Static resources:ToolTips.GameDirectory}"
                 VerticalAlignment="Center" />
-            <TextBlock
-                Grid.Column="0"
-                Grid.Row="3"
-                HorizontalAlignment="Left"
-                Margin="5"
-                Text="Save As Yaml"
-                ToolTip.Tip="{x:Static resources:ToolTips.SaveAsYaml}"
-                VerticalAlignment="Center" />
-            <TextBlock
-                Grid.Column="0"
-                Grid.Row="4"
-                HorizontalAlignment="Left"
-                Margin="5"
-                Text="Allow Output File Overwrite"
-                ToolTip.Tip="{x:Static resources:ToolTips.AllowOverwrite}"
-                VerticalAlignment="Center" />
-            <TextBlock
-                Grid.Column="0"
-                Grid.Row="5"
-                HorizontalAlignment="Left"
-                Margin="5"
-                Text="Extend Existing File"
-                ToolTip.Tip="{x:Static resources:ToolTips.ExtendExistingFile}"
-                VerticalAlignment="Center" />
-
             <!--  Second Row: Setting Control (e.g., ToggleSwitch)  -->
             <TextBox
                 Grid.Column="1"
@@ -80,27 +54,6 @@
                 Text="{Binding Settings.GameDirectory}"
                 Watermark="{x:Static resources:Watermarks.GameDirectory}"
                 x:Name="GameDirectoryTextBox" />
-            <ToggleSwitch
-                Grid.Column="1"
-                Grid.Row="3"
-                IsChecked="{Binding Settings.SaveAsYaml}"
-                Margin="5"
-                OffContent=""
-                OnContent="" />
-            <ToggleSwitch
-                Grid.Column="1"
-                Grid.Row="4"
-                IsChecked="{Binding Settings.AllowOverwrite}"
-                Margin="5"
-                OffContent=""
-                OnContent="" />
-            <ToggleSwitch
-                Grid.Column="1"
-                Grid.Row="5"
-                IsChecked="{Binding Settings.ExtendExistingFile}"
-                Margin="5"
-                OffContent=""
-                OnContent="" />
         </Grid>
     </Border>
 </Window>

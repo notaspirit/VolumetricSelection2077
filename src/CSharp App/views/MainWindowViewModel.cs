@@ -1,8 +1,7 @@
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
-using Avalonia;
-using DynamicData;
 using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.Services;
 using VolumetricSelection2077.ViewStructures;
@@ -66,6 +65,20 @@ namespace VolumetricSelection2077.ViewModels
                 Settings.SaveSettings();
             }
         }
+        
+        public ObservableCollection<SaveFileMode.Enum> SaveFileModes { get; set; }
+
+        public SaveFileMode.Enum SelectedSaveFileMode
+        {
+            get => Settings.SaveMode;
+            set
+            {
+                Settings.SaveMode = value;
+                OnPropertyChanged(nameof(SelectedSaveFileMode));
+                Settings.SaveSettings();
+            }
+        }
+        
         public MainWindowViewModel()
         {
             Settings = SettingsService.Instance;
@@ -81,6 +94,8 @@ namespace VolumetricSelection2077.ViewModels
             }
             _filteredNodeTypeFilterItems = _nodeTypeFilterItems;
             CheckedCount = NodeTypeFilterItems.Count(item => item.IsChecked);
+            
+            SaveFileModes = new ObservableCollection<SaveFileMode.Enum>(Enum.GetValues(typeof(SaveFileMode.Enum)).Cast<SaveFileMode.Enum>());
         }
         private void ResourceNameFilter_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
@@ -185,6 +200,20 @@ namespace VolumetricSelection2077.ViewModels
                 }
             }
         }
+        
+        public string ParametersSectionButtonLabel => Labels.ParametersCollapseButton + (ParameterSelectionVisibility ? " \u02c5" : " \u02c4");
+        public bool ParameterSelectionVisibility
+        {
+            get => Settings.IsParametersMWVisible;
+            set
+            {
+                Settings.IsParametersMWVisible = value;
+                OnPropertyChanged(nameof(ParameterSelectionVisibility));
+                OnPropertyChanged(nameof(ParametersSectionButtonLabel));
+                Settings.SaveSettings();
+            }
+        }
+        
         private void OnNodeTypeFilterItemChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(NodeTypeFilterItem.IsChecked))

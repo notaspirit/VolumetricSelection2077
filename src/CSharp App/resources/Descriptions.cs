@@ -17,6 +17,7 @@ namespace VolumetricSelection2077.Resources
 
             public static string DebugNameFilter { get; } =
                 "Filter by debug name, supports regex and partial matching, backslashes must be escaped in paths.";
+            public static string FileSaveMode { get; } = "How to handle if the filename already exists";
         }
 
         public static class Watermarks
@@ -38,6 +39,9 @@ namespace VolumetricSelection2077.Resources
             public static string ResourceFilter { get; } = " Resource Path Filters";
             public static string DebugNameFilter { get; } = " Debug Name Filters";
             public static string FilterCollapseButton = "Filters";
+            public static string ParametersCollapseButton = "Optional Parameters";
+            public static string SaveAsYaml { get; } = "Output Format";
+            public static string FileSaveMode { get; } = "File Save Mode";
 
         }
 }

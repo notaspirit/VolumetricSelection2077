@@ -30,14 +30,14 @@ public class SettingsService
         NodeTypeFilter = new BitArray(122, true);
         ProgramVersion = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion?.Split("+")[0] ?? "Version not found.";
         SaveAsYaml = false;
-        AllowOverwrite = false;
-        ExtendExistingFile = false;
         ResourceNameFilter = new();
         DebugNameFilter = new();
         FilterModeOr = true;
         NukeOccluders = false;
         NukeOccludersAggressively = false;
         IsFiltersMWVisible = false;
+        IsParametersMWVisible = false;
+        SaveMode = SaveFileMode.Enum.New;
     }
     
     public static SettingsService Instance
@@ -80,8 +80,6 @@ public class SettingsService
     
     public bool SaveAsYaml { get; set; }
     
-    public bool AllowOverwrite { get; set; }
-    public bool ExtendExistingFile { get; set; }
     public ObservableCollection<string> ResourceNameFilter { get; set; }
     public ObservableCollection<string> DebugNameFilter { get; set; }
     
@@ -89,6 +87,8 @@ public class SettingsService
     public bool NukeOccluders { get; set; }
     public bool NukeOccludersAggressively { get; set; }
     public bool IsFiltersMWVisible { get; set; }
+    public bool IsParametersMWVisible { get; set; }
+    public SaveFileMode.Enum SaveMode { get; set; }
     
     // Methods for loading and saving settings
     public void LoadSettings()
@@ -114,8 +114,6 @@ public class SettingsService
                     DebugMode = settings.DebugMode;
                     NodeTypeFilter = settings.NodeTypeFilter;
                     SaveAsYaml = settings.SaveAsYaml;
-                    AllowOverwrite = settings.AllowOverwrite;
-                    ExtendExistingFile = settings.ExtendExistingFile;
                     ResourceNameFilter.Clear();
                     foreach (var rpfilter in settings.ResourceNameFilter)
                     {
@@ -130,6 +128,8 @@ public class SettingsService
                     NukeOccluders = settings.NukeOccluders;
                     NukeOccludersAggressively = settings.NukeOccludersAggressively;
                     IsFiltersMWVisible = settings.IsFiltersMWVisible;
+                    IsParametersMWVisible = settings.IsParametersMWVisible;
+                    SaveMode = settings.SaveMode;
                 }
             }
             catch (Exception ex)

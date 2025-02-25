@@ -402,7 +402,7 @@ public class ProcessService
                 axlFilePath = customRemovalDirectory + $"\\{fileName}.xl";
             }
             
-            if (_settings.ExtendExistingFile && File.Exists(axlFilePath))
+            if (_settings.SaveMode == SaveFileMode.Enum.Extend && File.Exists(axlFilePath))
             {
                 string fileContent = File.ReadAllText(axlFilePath);
                 var exisitngRemovalFile = UtilService.TryParseAxlRemovalFile(fileContent);
@@ -462,14 +462,14 @@ public class ProcessService
                     return;
                 }
 
-                if (_settings.ExtendExistingFile)
+                if (_settings.SaveMode == SaveFileMode.Enum.Extend)
                 {
                     File.WriteAllText(outputFilePath, outputContent);
                     Logger.Info($"Extended file {outputFilePath}");
                     return;
                 }
                 
-                if (_settings.AllowOverwrite)
+                if (_settings.SaveMode == SaveFileMode.Enum.Overwrite)
                 {
                     File.WriteAllText(outputFilePath, outputContent);
                     Logger.Info($"Overwrote file {outputFilePath}");

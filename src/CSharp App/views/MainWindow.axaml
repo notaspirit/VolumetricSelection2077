@@ -1,6 +1,6 @@
 <Window
     Background="#171c26"
-    Height="400"
+    Height="600"
     Icon="../assets/redCube.ico"
     Title="VolumetricSelection2077"
     Width="900"
@@ -17,7 +17,7 @@
     xmlns:views="clr-namespace:VolumetricSelection2077.Views"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border Margin="5">
-        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,*">
             <TextBlock
                 FontSize="32"
                 FontWeight="Bold"
@@ -289,7 +289,80 @@
                         OnContent="" />
                 </Grid>
             </Grid>
-            <Grid Grid.Row="4" Margin="5">
+            <Grid ColumnDefinitions="*" Grid.Row="4">
+                <Button
+                    Background="#6b82b2"
+                    Click="ToggleParameterVisibility_Click"
+                    Content="{Binding ParametersSectionButtonLabel}"
+                    Grid.Column="0"
+                    Height="30"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Margin="5"
+                    VerticalContentAlignment="Center">
+                    <Button.Styles>
+                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                            <Setter Property="Background" Value="#455472" />
+                        </Style>
+                    </Button.Styles>
+                </Button>
+            </Grid>
+            <Grid Grid.Row="5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>Auto,Auto</Grid.RowDefinitions>
+                    <TextBlock
+                        Grid.Column="0"
+                        Grid.Row="0"
+                        HorizontalAlignment="Left"
+                        IsVisible="{Binding ParameterSelectionVisibility}"
+                        Margin="5"
+                        Text="{x:Static resources:Labels.SaveAsYaml}"
+                        ToolTip.Tip="{x:Static resources:ToolTips.SaveAsYaml}"
+                        VerticalAlignment="Center" />
+                    <ToggleSwitch
+                        Grid.Column="1"
+                        Grid.Row="0"
+                        IsChecked="{Binding Settings.SaveAsYaml}"
+                        IsVisible="{Binding ParameterSelectionVisibility}"
+                        Margin="5"
+                        OffContent="JSON"
+                        OnContent="YAML" />
+                </Grid>
+                <Grid Grid.Column="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>Auto,Auto</Grid.RowDefinitions>
+                    <TextBlock
+                        Grid.Column="0"
+                        Grid.Row="0"
+                        HorizontalAlignment="Left"
+                        IsVisible="{Binding ParameterSelectionVisibility}"
+                        Margin="5"
+                        Text="{x:Static resources:Labels.FileSaveMode}"
+                        ToolTip.Tip="{x:Static resources:ToolTips.FileSaveMode}"
+                        VerticalAlignment="Center" />
+                    <ComboBox
+                        Grid.Column="1"
+                        Grid.Row="0"
+                        HorizontalAlignment="Stretch"
+                        IsVisible="{Binding ParameterSelectionVisibility}"
+                        ItemsSource="{Binding SaveFileModes}"
+                        Margin="5"
+                        SelectedItem="{Binding SelectedSaveFileMode, Mode=TwoWay}" />
+                </Grid>
+            </Grid>
+            <Grid Grid.Row="6" Margin="5">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
@@ -365,15 +438,15 @@
                     </Button.Styles>
                 </Button>
             </Grid>
-            <ContentControl Grid.Row="5" x:Name="SettingsContent" />
+            <ContentControl Grid.Row="7" x:Name="SettingsContent" />
             <views:LogViewer
-                Grid.Row="5"
+                Grid.Row="7"
                 Margin="5"
                 x:Name="LogViewer" />
             <TextBlock
                 FontSize="10"
                 Foreground="White"
-                Grid.Row="5"
+                Grid.Row="7"
                 HorizontalAlignment="Right"
                 Margin="5"
                 Text="{Binding Settings.ProgramVersion}"
