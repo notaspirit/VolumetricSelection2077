@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using Avalonia;
 using DynamicData;
+using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.Services;
 
 namespace VolumetricSelection2077.ViewModels
@@ -49,13 +50,25 @@ namespace VolumetricSelection2077.ViewModels
                 Settings.SaveSettings();
             }
         }
+
+        public string FilterSectionButtonLabel => Labels.FilterCollapseButton + (FilterSelectionVisibility ? " \u02c5" : " \u02c4");
+        public bool FilterSelectionVisibility
+        {
+            get => Settings.IsFiltersMWVisible;
+            set
+            {
+                Settings.IsFiltersMWVisible = value;
+                OnPropertyChanged(nameof(FilterSelectionVisibility));
+                OnPropertyChanged(nameof(FilterSectionButtonLabel));
+                Settings.SaveSettings();
+            }
+        }
         public MainWindowViewModel()
         {
             Settings = SettingsService.Instance;
             _resourceNameFilter = Settings.ResourceNameFilter;
             _resourceNameFilter.CollectionChanged += ResourceNameFilter_CollectionChanged;
             Settings.DebugNameFilter.CollectionChanged += DebugNameFilter_CollectionChanged;
-            Logger.Info(Settings.OutputFilename);
         }
         private void ResourceNameFilter_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {

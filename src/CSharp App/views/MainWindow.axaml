@@ -33,7 +33,25 @@
                 Text="{Binding OutputFilename}"
                 ToolTip.Tip="{x:Static resources:ToolTips.OutputFilename}"
                 Watermark="{x:Static resources:Watermarks.OutputFilename}" />
-            <Grid Grid.Row="2">
+            <Grid ColumnDefinitions="*" Grid.Row="2">
+                <Button
+                    Background="#6b82b2"
+                    Click="ToggleFilterVisibility_Click"
+                    Content="{Binding FilterSectionButtonLabel}"
+                    Grid.Column="0"
+                    Height="30"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Margin="5"
+                    VerticalContentAlignment="Center">
+                    <Button.Styles>
+                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                            <Setter Property="Background" Value="#455472" />
+                        </Style>
+                    </Button.Styles>
+                </Button>
+            </Grid>
+            <Grid Grid.Row="3">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
@@ -43,6 +61,7 @@
                     GotFocus="ResourceFilterTextBox_GotFocus"
                     Grid.Column="0"
                     Height="30"
+                    IsVisible="{Binding FilterSelectionVisibility}"
                     KeyDown="ResourceFilterTextBox_KeyDown"
                     Margin="5"
                     Name="ResourceFilterTextBox"
@@ -88,6 +107,7 @@
                     Grid.Column="1"
                     HorizontalAlignment="Center"
                     HorizontalContentAlignment="Center"
+                    IsVisible="{Binding FilterSelectionVisibility}"
                     Name="SwitchModeButton"
                     VerticalAlignment="Center"
                     VerticalContentAlignment="Center"
@@ -102,6 +122,7 @@
                     GotFocus="DebugNameFilterTextBox_GotFocus"
                     Grid.Column="2"
                     Height="30"
+                    IsVisible="{Binding FilterSelectionVisibility}"
                     KeyDown="DebugNameFilterTextBox_KeyDown"
                     Margin="5,5,5,5"
                     Name="DebugNameFilterTextBox"
@@ -140,7 +161,7 @@
                     </FlyoutBase.AttachedFlyout>
                 </TextBox>
             </Grid>
-            <Grid Grid.Row="3" Margin="5">
+            <Grid Grid.Row="4" Margin="5">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
@@ -216,7 +237,7 @@
                     </Button.Styles>
                 </Button>
             </Grid>
-            <ContentControl Grid.Row="4" x:Name="SettingsContent" />
+            <ContentControl Grid.Row="5" x:Name="SettingsContent" />
             <views:LogViewer
                 Grid.Row="5"
                 Margin="5"

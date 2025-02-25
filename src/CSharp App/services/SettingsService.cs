@@ -37,6 +37,7 @@ public class SettingsService
         FilterModeOr = true;
         NukeOccluders = false;
         NukeOccludersAggressively = false;
+        IsFiltersMWVisible = false;
     }
     
     public static SettingsService Instance
@@ -87,6 +88,7 @@ public class SettingsService
     public bool FilterModeOr { get; set; }
     public bool NukeOccluders { get; set; }
     public bool NukeOccludersAggressively { get; set; }
+    public bool IsFiltersMWVisible { get; set; }
     
     // Methods for loading and saving settings
     public void LoadSettings()
@@ -127,6 +129,7 @@ public class SettingsService
                     FilterModeOr = settings.FilterModeOr;
                     NukeOccluders = settings.NukeOccluders;
                     NukeOccludersAggressively = settings.NukeOccludersAggressively;
+                    IsFiltersMWVisible = settings.IsFiltersMWVisible;
                 }
             }
             catch (Exception ex)

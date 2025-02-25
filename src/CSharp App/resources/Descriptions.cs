@@ -37,6 +37,7 @@ namespace VolumetricSelection2077.Resources
             public static string ClearLog { get; } = "Clear Log";
             public static string ResourceFilter { get; } = " Resource Path Filters";
             public static string DebugNameFilter { get; } = " Debug Name Filters";
+            public static string FilterCollapseButton = "Filters";
 
         }
 }

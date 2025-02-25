@@ -164,7 +164,6 @@ public partial class MainWindow : Window
     {
         if (sender is Button button && button.DataContext is string item)
         {
-            Logger.Info($"Collection instance in UI: {_mainWindowViewModel.Settings.DebugNameFilter.GetHashCode()}");
             _mainWindowViewModel.Settings.DebugNameFilter.Remove(item.ToLower());
             _mainWindowViewModel.Settings.SaveSettings();
         }
@@ -184,6 +183,14 @@ public partial class MainWindow : Window
             _mainWindowViewModel.Settings.FilterModeOr = !_mainWindowViewModel.Settings.FilterModeOr;
             _mainWindowViewModel.Settings.SaveSettings();
             _mainWindowViewModel.FilterModeOr = _mainWindowViewModel.Settings.FilterModeOr;
+        }
+    }
+
+    private void ToggleFilterVisibility_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button)
+        {
+            _mainWindowViewModel.FilterSelectionVisibility = !_mainWindowViewModel.FilterSelectionVisibility;
         }
     }
 }
