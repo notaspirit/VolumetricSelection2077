@@ -62,6 +62,7 @@ namespace VolumetricSelection2077.ViewModels
                 Settings.IsFiltersMWVisible = value;
                 OnPropertyChanged(nameof(FilterSelectionVisibility));
                 OnPropertyChanged(nameof(FilterSectionButtonLabel));
+                OnPropertyChanged(nameof(NukeOccluderBoolSettingsAggressiveVisibility));
                 Settings.SaveSettings();
             }
         }
@@ -158,6 +159,32 @@ namespace VolumetricSelection2077.ViewModels
             }
         }
 
+        public bool NukeOccludersBoolSettings
+        {
+            get => Settings.NukeOccluders;
+            set
+            {
+                if (value != Settings.NukeOccluders)
+                {
+                    Settings.NukeOccluders = value;
+                    OnPropertyChanged(nameof(NukeOccludersBoolSettings));
+                    OnPropertyChanged(nameof(NukeOccluderBoolSettingsAggressiveVisibility));
+                }
+            }
+        }
+
+        public bool NukeOccluderBoolSettingsAggressiveVisibility
+        {
+            get => (Settings.NukeOccluders && FilterSelectionVisibility);
+            set
+            {
+                if (value != Settings.NukeOccluders)
+                {
+                    Settings.NukeOccluders = value;
+                    OnPropertyChanged(nameof(NukeOccludersBoolSettings));
+                }
+            }
+        }
         private void OnNodeTypeFilterItemChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(NodeTypeFilterItem.IsChecked))
