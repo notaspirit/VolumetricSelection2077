@@ -12,6 +12,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using VolumetricSelection2077.TestingStuff;
 using VolumetricSelection2077.ViewModels;
+using VolumetricSelection2077.ViewStructures;
 
 namespace VolumetricSelection2077;
 public partial class MainWindow : Window
@@ -191,6 +192,54 @@ public partial class MainWindow : Window
         if (sender is Button)
         {
             _mainWindowViewModel.FilterSelectionVisibility = !_mainWindowViewModel.FilterSelectionVisibility;
+        }
+    }
+    
+    private void SelectAllClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        for (int i = 0; i < _mainWindowViewModel.FilteredNodeTypeFilterItems.Count; i++)
+        {
+            var item = _mainWindowViewModel.FilteredNodeTypeFilterItems[i];
+            var globalIndex = _mainWindowViewModel.NodeTypeFilterItems.IndexOf(item);
+            _mainWindowViewModel.Settings.NodeTypeFilter[globalIndex] = true;
+            item.IsChecked = true;
+        }
+        RefreshItems();
+    }
+
+    private void DeselectAllClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        for (int i = 0; i < _mainWindowViewModel.FilteredNodeTypeFilterItems.Count; i++)
+        {
+            var item = _mainWindowViewModel.FilteredNodeTypeFilterItems[i];
+            var globalIndex = _mainWindowViewModel.NodeTypeFilterItems.IndexOf(item);
+            _mainWindowViewModel.Settings.NodeTypeFilter[globalIndex] = false;
+            item.IsChecked = false;
+        }
+        RefreshItems();
+    }
+
+    private void RefreshItems()
+    {
+        foreach (var item in _mainWindowViewModel.FilteredNodeTypeFilterItems)
+        {
+            item.NotifyChange(_mainWindowViewModel.Settings.NodeTypeFilter);
+        }
+        
+        foreach (var item in _mainWindowViewModel.NodeTypeFilterItems)
+        {
+            item.NotifyChange(_mainWindowViewModel.Settings.NodeTypeFilter);
+        }
+    }
+    
+    private void Label_Click(object sender, Avalonia.Input.PointerPressedEventArgs e)
+    {
+        var label = sender as Label;
+        var item = label?.DataContext as NodeTypeFilterItem;
+
+        if (item != null)
+        {
+            item.IsChecked = !item.IsChecked;
         }
     }
 }

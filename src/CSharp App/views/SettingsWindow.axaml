@@ -49,14 +49,6 @@
                 VerticalAlignment="Center" />
             <TextBlock
                 Grid.Column="0"
-                Grid.Row="2"
-                HorizontalAlignment="Left"
-                Margin="5"
-                Text="Node Filter"
-                ToolTip.Tip="{x:Static resources:ToolTips.NodeFilter}"
-                VerticalAlignment="Center" />
-            <TextBlock
-                Grid.Column="0"
                 Grid.Row="3"
                 HorizontalAlignment="Left"
                 Margin="5"
@@ -105,80 +97,6 @@
                 Text="{Binding Settings.GameDirectory}"
                 Watermark="{x:Static resources:Watermarks.GameDirectory}"
                 x:Name="GameDirectoryTextBox" />
-
-            <Button
-                Background="#6b82b2"
-                Grid.Column="1"
-                Grid.Row="2"
-                Margin="5"
-                x:Name="NodeTypeFilter">
-                <Button.Content>
-                    <MultiBinding StringFormat="[ {0} / {1} ]">
-                        <Binding Path="CheckedCount" />
-                        <Binding Path="TotalCount" />
-                    </MultiBinding>
-                </Button.Content>
-                <Button.Styles>
-                    <Style Selector="Button:pointerover /template/ ContentPresenter">
-                        <Setter Property="Background" Value="#455472" />
-                    </Style>
-                </Button.Styles>
-                <Button.Flyout>
-                    <Flyout>
-                        <StackPanel>
-                            <StackPanel
-                                HorizontalAlignment="Center"
-                                Margin="0,0,0,5"
-                                Orientation="Horizontal">
-                                <Button
-                                    Background="#6b82b2"
-                                    Click="SelectAllClick"
-                                    Content="{x:Static resources:Labels.SelectAll}"
-                                    HorizontalContentAlignment="Center"
-                                    Margin="5"
-                                    Width="100">
-                                    <Button.Styles>
-                                        <Style Selector="Button:pointerover /template/ ContentPresenter">
-                                            <Setter Property="Background" Value="#455472" />
-                                        </Style>
-                                    </Button.Styles>
-                                </Button>
-                                <Button
-                                    Background="#6b82b2"
-                                    Click="DeselectAllClick"
-                                    Content="{x:Static resources:Labels.DeselectAll}"
-                                    HorizontalContentAlignment="Center"
-                                    Margin="5"
-                                    Width="100">
-                                    <Button.Styles>
-                                        <Style Selector="Button:pointerover /template/ ContentPresenter">
-                                            <Setter Property="Background" Value="#455472" />
-                                        </Style>
-                                    </Button.Styles>
-                                </Button>
-                            </StackPanel>
-                            <TextBox
-                                HorizontalAlignment="Stretch"
-                                Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
-                                Watermark="{x:Static resources:Watermarks.Search}" />
-                            <ItemsControl ItemsSource="{Binding FilteredNodeTypeFilterItems}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" Width="400">
-                                            <CheckBox IsChecked="{Binding IsChecked}" x:Name="FilterItemCheckBox" />
-                                            <Label
-                                                Content="{Binding Label}"
-                                                Margin="5,0,0,0"
-                                                PointerPressed="Label_Click"
-                                                VerticalAlignment="Center" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-                    </Flyout>
-                </Button.Flyout>
-            </Button>
             <ToggleSwitch
                 Grid.Column="1"
                 Grid.Row="3"
