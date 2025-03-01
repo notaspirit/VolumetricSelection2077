@@ -106,4 +106,9 @@ public class GameFileService
         }
         return DirectAbbrSectorParser.ParseFromCR2W(rawSector);
     }
+
+    public CR2WFile? GetCr2WFile(string path)
+    {
+        return _archiveManager.GetCR2WFile(path);
+    }
 }
