@@ -15,6 +15,8 @@ using WolvenKit.Common.Conversion;
 using WolvenKit.Common.FNV1A;
 using WolvenKit.Common.PhysX;
 using WolvenKit.Modkit.RED4.Tools;
+using WolvenKit.Modkit.Scripting;
+using WolvenKit.RED4.Archive;
 using WolvenKit.RED4.Archive.CR2W;
 using WolvenKit.RED4.CR2W.JSON;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -110,5 +112,16 @@ public class GameFileService
     public CR2WFile? GetCr2WFile(string path)
     {
         return _archiveManager.GetCR2WFile(path);
+    }
+
+    public void CountMeshFiles()
+    {
+        var sf = new ScriptFunctions(_loggerService, _archiveManager, _red4ParserService);
+        int count = 0;
+        foreach (FileEntry file in sf.GetArchiveFiles())
+        {
+            if (file.Name.EndsWith(".mesh")) count++;
+        }
+        Logger.Info($"Total mesh count: {count}");
     }
 }
