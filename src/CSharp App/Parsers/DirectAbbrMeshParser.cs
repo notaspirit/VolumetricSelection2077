@@ -118,6 +118,7 @@ public class DirectAbbrMeshParser
                 vertsOut[indexVertex] = new SharpDX.Vector3(x, y, z);
             }
 
+            br.BaseStream.Position = rendBlob.Header.IndexBufferOffset + rendInfo.ChunkIndices.TeOffset;
             for (int indexIndex = 0; indexIndex < rendInfo.NumIndices; indexIndex++)
             {
                 indicesOut[indexIndex] = br.ReadUInt16();
