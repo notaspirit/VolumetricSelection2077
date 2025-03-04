@@ -57,7 +57,7 @@ public class GameFileService
     private void Initialize()
     {
         var gameExePath = new FileInfo(_settingsService.GameDirectory + @"\bin\x64\Cyberpunk2077.exe");
-        _archiveManager.Initialize(gameExePath);
+        _archiveManager.Initialize(gameExePath, true);
     }
     
     public static GameFileService Instance
