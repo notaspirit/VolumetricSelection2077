@@ -52,7 +52,7 @@ namespace VolumetricSelection2077.ViewModels
             }
         }
 
-        public string FilterSectionButtonLabel => Labels.FilterCollapseButton + (FilterSelectionVisibility ? " \u02c5" : " \u02c4");
+        public string FilterSectionButtonLabel => Labels.FilterCollapseButton + $" [ {(Settings.DebugNameFilter.Count == 0 ? 0 : 1) + (Settings.ResourceNameFilter.Count == 0 ? 0 : 1) + (Settings.NukeOccluders ? 1 : 0) + (Settings.NodeTypeFilter.Cast<bool>().Count( b => b) == 122 ? 0 : 1)} / 4 ]" +  (FilterSelectionVisibility ? " \u02c5" : " \u02c4");
         public bool FilterSelectionVisibility
         {
             get => Settings.IsFiltersMWVisible;
@@ -100,11 +100,13 @@ namespace VolumetricSelection2077.ViewModels
         private void ResourceNameFilter_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             OnPropertyChanged(nameof(ResourcePathFilterCount));
+            OnPropertyChanged(nameof(FilterSectionButtonLabel));
         }
 
         private void DebugNameFilter_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
             OnPropertyChanged(nameof(DebugNameFilterCount));
+            OnPropertyChanged(nameof(FilterSectionButtonLabel));
         }
         
         private string _searchQuery;
@@ -119,6 +121,7 @@ namespace VolumetricSelection2077.ViewModels
                 if (_nodeTypeFilterItems == value) return;
                 _nodeTypeFilterItems = value;
                 OnPropertyChanged(nameof(NodeTypeFilterItems));
+                OnPropertyChanged(nameof(FilterSectionButtonLabel));
                 CheckedCount = NodeTypeFilterItems.Count(item => item.IsChecked);
             }
         }
@@ -131,6 +134,7 @@ namespace VolumetricSelection2077.ViewModels
                 if (_filteredNodeTypeFilterItems == value) return;
                 _filteredNodeTypeFilterItems = value;
                 OnPropertyChanged(nameof(FilteredNodeTypeFilterItems));
+                OnPropertyChanged(nameof(FilterSectionButtonLabel));
                 CheckedCount = NodeTypeFilterItems.Count(item => item.IsChecked);
             }
         }
@@ -156,6 +160,7 @@ namespace VolumetricSelection2077.ViewModels
                 {
                     _checkedCount = value;
                     OnPropertyChanged(nameof(CheckedCount)); // Notify the UI that CheckedCount has changed
+                    OnPropertyChanged(nameof(FilterSectionButtonLabel));
                 }
             }
         }
@@ -184,6 +189,7 @@ namespace VolumetricSelection2077.ViewModels
                     Settings.NukeOccluders = value;
                     OnPropertyChanged(nameof(NukeOccludersBoolSettings));
                     OnPropertyChanged(nameof(NukeOccluderBoolSettingsAggressiveVisibility));
+                    OnPropertyChanged(nameof(FilterSectionButtonLabel));
                 }
             }
         }
