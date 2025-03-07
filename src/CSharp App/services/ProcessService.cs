@@ -282,7 +282,7 @@ public class ProcessService
     public async Task<(bool success, string error)> MainProcessTask(string? customRemovalFile = null, string? customRemovalDirectory = null)
     {
         Logger.Info($"Version: {_settings.ProgramVersion}");
-        TestCache.Run();
+        await TestCache.Run();
         return (true, "");
         
         Logger.Info("Validating inputs...");

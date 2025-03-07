@@ -91,12 +91,14 @@ public class GameFileService
 
     public async Task<AbbrMesh?> GetCMesh(string path)
     {
+        /*
         var cachedMesh = await _cacheService.GetEntry(new ReadRequest(path));
+        Logger.Info($"Cached value is {cachedMesh}");
         if (cachedMesh != null)
         {
-            Logger.Info($"{cachedMesh}");
             return MessagePackSerializer.Deserialize<AbbrMesh>(cachedMesh);
         }
+        */
         var rawMesh = _archiveManager.GetCR2WFile(path);
         if (rawMesh == null)
         {
@@ -110,9 +112,9 @@ public class GameFileService
     public async Task<AbbrSector?> GetSector(string path)
     {
         var cachedSector = await _cacheService.GetEntry(new ReadRequest(path));
+        Logger.Info($"Cached value is {cachedSector}");
         if (cachedSector != null)
         {
-            Logger.Info($"{cachedSector}");
             return MessagePackSerializer.Deserialize<AbbrSector>(cachedSector);;
         }
         var rawSector = _archiveManager.GetCR2WFile(path);

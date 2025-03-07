@@ -45,13 +45,12 @@ public class CacheService
     private static CacheService? _instance;
     private SettingsService _settings;
     private LightningEnvironment _env;
-    private static readonly int BatchDelay = 1000;
+    private static readonly int BatchDelay = 10;
     private static readonly int MaxReaders = 512;
     private SemaphoreSlim _semaphore;
     static ConcurrentQueue<(ReadRequest key, TaskCompletionSource<byte[]?> tcs)> _requestReadQueue = new();
     static ConcurrentQueue<WriteRequest> _requestWriteQueue = new();
     private static bool IsProcessing { get; set; } = false;
-    
     
     private CacheService()
     {
@@ -64,6 +63,7 @@ public class CacheService
             MapSize = 10485760 * 100, // 1gb (should be more for actual use prob but for testing it will do)
             MaxReaders = MaxReaders
         };
+
     }
     public static CacheService Instance
     {
@@ -79,20 +79,27 @@ public class CacheService
 
     public void StartListening()
     {
+        if (_env.IsOpened == false) _env.Open();
         IsProcessing = true;
         _ = Task.Run(() => ProcessReadQueue());
+
     }
 
     public void StopListening()
     {
         IsProcessing = false;
     }
+
+    // only call this at the end of the program once it's certain that the env never has to be accessed in the lifecycle
+    public void DesposeEnv()
+    {
+        _env.Dispose();
+    }
     
     public Task<byte[]?> GetEntry(ReadRequest request)
     {
         var tcs = new TaskCompletionSource<byte[]?>(TaskCreationOptions.RunContinuationsAsynchronously);
         _requestReadQueue.Enqueue((request, tcs));
-        Logger.Info($"tcs.Task IsCompleted: {tcs.Task.IsCompleted}");
         return tcs.Task;
     }
     
@@ -101,58 +108,43 @@ public class CacheService
     {
         while (IsProcessing || _requestReadQueue.Count > 0)
         {
-            Logger.Info("Running read queue");
             await Task.Delay(BatchDelay);
-            if (_requestReadQueue.Count == 0) continue;
-            Logger.Info("found requests");
-
-            var guess = _requestReadQueue.TryDequeue(out var guessResult);
-            guessResult.tcs.SetResult(null);
-            Logger.Info("Processed requests");
-            /*
-            foreach (var (key, tcs) in _requestReadQueue)
+            var requestArray = _requestReadQueue.ToArray();
+            _requestReadQueue.Clear();
+            
+            try
             {
-                tcs.SetResult(null);
-                Logger.Info("Responeded.");
-            }
-            */
-            /*
-            await _semaphore.WaitAsync();
-            _ = Task.Run(() =>
-            {
-                try
+                using var tx = _env.BeginTransaction();
+                // temporarily treat all as vanilla files
+                using var db = tx.OpenDatabase(CacheDatabases.Vanilla.ToString(), new DatabaseConfiguration
                 {
-                    using var tx = _env.BeginTransaction();
-                    // temporarily treat all as vanilla files
-                    using var db = tx.OpenDatabase(CacheDatabases.Vanilla.ToString(), new DatabaseConfiguration
+                    Flags = DatabaseOpenFlags.Create
+                });
+                foreach (var request in requestArray)
+                {
+                    try
                     {
-                        Flags = DatabaseOpenFlags.Create
-                    });
-                    foreach (var request in _requestReadQueue)
-                    {
-                        try
+                        var (code, _, value) = tx.Get(db, Encoding.UTF8.GetBytes(request.key.Key));
+                        if (code == MDBResultCode.Success)
                         {
-                            var value = tx.Get(db, Encoding.UTF8.GetBytes(request.key.Key));
-                            request.tcs.SetResult(value.value.CopyToNewArray());
+                            request.tcs.SetResult(value.CopyToNewArray());
                         }
-                        catch (Exception ex)
+                        else
                         {
                             request.tcs.SetResult(null);
                         }
                     }
-                    tx.Commit();
+                    catch (Exception ex)
+                    {
+                        request.tcs.SetResult(null);
+                    }
                 }
-                catch (Exception e)
-                {
-                    Logger.Error($"Failed to process read queue: {e}");
-                }
-                finally
-                {
-                    _semaphore.Release();
-                }
-            });
-        }
-        */
+                tx.Commit();
+            }
+            catch (Exception e)
+            {
+                Logger.Error($"Failed to process read queue: {e}");
+            }
         }
     }
     public void WriteEntry(WriteRequest request)
@@ -164,45 +156,33 @@ public class CacheService
         while (IsProcessing || _requestWriteQueue.Count > 0)
         {
             await Task.Delay(BatchDelay);
-            if (_requestReadQueue.Count == 0) continue;
-
-            await _semaphore.WaitAsync();
-            
             var requestArray = _requestWriteQueue.ToArray();
             _requestWriteQueue.Clear();
-            
-            _ = Task.Run(() =>
+            try
             {
-                try
+                using var tx = _env.BeginTransaction();
+                // temporarily treat all as vanilla files
+                using var db = tx.OpenDatabase(CacheDatabases.Vanilla.ToString(), new DatabaseConfiguration
                 {
-                    using var tx = _env.BeginTransaction();
-                    // temporarily treat all as vanilla files
-                    using var db = tx.OpenDatabase(CacheDatabases.Vanilla.ToString(), new DatabaseConfiguration
+                    Flags = DatabaseOpenFlags.Create
+                });
+                foreach (var request in requestArray)
+                {
+                    try
                     {
-                        Flags = DatabaseOpenFlags.Create
-                    });
-                    foreach (var request in requestArray)
-                    {
-                        try
-                        {
-                            tx.Put(db,Encoding.UTF8.GetBytes(request.Key), request.Data);
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Error($"Failed to write entry: {request.Key} with error: {ex}");
-                        }
+                        tx.Put(db,Encoding.UTF8.GetBytes(request.Key), request.Data);
                     }
-                    tx.Commit();
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"Failed to write entry: {request.Key} with error: {ex}");
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Logger.Error($"Failed to write batch to cache with error: {ex}");
-                }
-                finally
-                {
-                    _semaphore.Release();
-                }
-            });
+                tx.Commit();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to write batch to cache with error: {ex}");
+            }
         }
     }
 
