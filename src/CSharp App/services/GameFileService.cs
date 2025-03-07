@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using MessagePack;
 using WolvenKit;
 using WolvenKit.Common.Services;
 using WolvenKit.Core.Interfaces;
@@ -33,6 +34,7 @@ public class GameFileService
     private readonly HookService _hookService;
     private readonly Red4ParserService _red4ParserService;
     private readonly GeometryCacheService _geometryCacheService;
+    private CacheService _cacheService;
     
     private GameFileService()
     {
@@ -53,11 +55,12 @@ public class GameFileService
             _archiveManager,
             _red4ParserService
         );
+        _cacheService = CacheService.Instance;
     }
     private void Initialize()
     {
         var gameExePath = new FileInfo(_settingsService.GameDirectory + @"\bin\x64\Cyberpunk2077.exe");
-        _archiveManager.Initialize(gameExePath, true);
+        _archiveManager.Initialize(gameExePath, false);
     }
     
     public static GameFileService Instance
@@ -86,24 +89,40 @@ public class GameFileService
         return DirectAbbrMeshParser.ParseFromPhysX(rawMesh);
     }
 
-    public AbbrMesh? GetCMesh(string path)
+    public async Task<AbbrMesh?> GetCMesh(string path)
     {
+        var cachedMesh = await _cacheService.GetEntry(new ReadRequest(path));
+        if (cachedMesh != null)
+        {
+            Logger.Info($"{cachedMesh}");
+            return MessagePackSerializer.Deserialize<AbbrMesh>(cachedMesh);
+        }
         var rawMesh = _archiveManager.GetCR2WFile(path);
         if (rawMesh == null)
         {
             return null;
         }
-        
-        return DirectAbbrMeshParser.ParseFromCR2W(rawMesh);
+        var parsedMesh = DirectAbbrMeshParser.ParseFromCR2W(rawMesh);
+        _cacheService.WriteEntry(new WriteRequest(path, MessagePackSerializer.Serialize(parsedMesh)));
+        return parsedMesh;
     }
 
-    public AbbrSector? GetSector(string path)
+    public async Task<AbbrSector?> GetSector(string path)
     {
+        var cachedSector = await _cacheService.GetEntry(new ReadRequest(path));
+        if (cachedSector != null)
+        {
+            Logger.Info($"{cachedSector}");
+            return MessagePackSerializer.Deserialize<AbbrSector>(cachedSector);;
+        }
         var rawSector = _archiveManager.GetCR2WFile(path);
         if (rawSector == null)
         {
             return null;
         }
-        return DirectAbbrSectorParser.ParseFromCR2W(rawSector);
+
+        var parsedSector = DirectAbbrSectorParser.ParseFromCR2W(rawSector);
+        _cacheService.WriteEntry(new WriteRequest(path, MessagePackSerializer.Serialize(parsedSector)));
+        return parsedSector;
     }
 }
