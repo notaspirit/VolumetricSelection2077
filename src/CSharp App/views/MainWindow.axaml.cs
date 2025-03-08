@@ -264,6 +264,23 @@ public partial class MainWindow : Window
     {
         base.OnOpened(e);
         _mainWindowViewModel.IsProcessing = true;
+        try
+        {
+            Logger.Info("Checking for Updates...");
+            var updateExists = await UpdateService.CheckUpdates();
+            if (updateExists.Item1)
+            {
+                Logger.Warning($"Update to {updateExists.Item2} is available");
+            }
+            else
+            {
+                Logger.Info("No updates found");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"An error occured during the update check: {ex}");
+        }
         await Task.Run(() => GameFileService.Instance.Initialize());
         _mainWindowViewModel.IsProcessing = false;
     }

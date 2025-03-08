@@ -54,6 +54,14 @@
                 Text="Modded Resources"
                 ToolTip.Tip="{x:Static resources:ToolTips.ModdedResources}"
                 VerticalAlignment="Center" />
+            <TextBlock
+                Grid.Column="0"
+                Grid.Row="4"
+                HorizontalAlignment="Left"
+                Margin="5"
+                Text="Auto Update"
+                ToolTip.Tip="{x:Static resources:ToolTips.AutoUpdate}"
+                VerticalAlignment="Center" />
             <!--  Second Row: Setting Control (e.g., ToggleSwitch)  -->
             <TextBox
                 Grid.Column="1"
@@ -87,6 +95,13 @@
                     </Style>
                 </Button.Styles>
             </Button>
+            <ToggleSwitch
+                Grid.Column="1"
+                Grid.Row="4"
+                IsChecked="{Binding Settings.AutoUpdate}"
+                Margin="5"
+                OffContent=""
+                OnContent="" />
         </Grid>
     </Border>
 </Window>

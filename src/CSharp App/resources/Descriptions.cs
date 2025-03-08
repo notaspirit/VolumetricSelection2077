@@ -19,6 +19,7 @@ namespace VolumetricSelection2077.Resources
                 "Filter by debug name, supports regex and partial matching, backslashes must be escaped in paths.";
             public static string FileSaveMode { get; } = "How to handle if the filename already exists";
             public static string ModdedResources { get; } = "Index and query modded resources, can cause significant increase in loading time, processing time is unaffected. Requires program restart to take effect.";
+            public static string AutoUpdate { get; } = "Auto Update on startup if update is available";
         }
 
         public static class Watermarks

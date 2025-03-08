@@ -39,7 +39,7 @@ public class SettingsService
         IsParametersMWVisible = false;
         SaveMode = SaveFileMode.Enum.New;
         SupportModdedResources = false;
-        
+        AutoUpdate = true;
     }
     
     public static SettingsService Instance
@@ -92,6 +92,7 @@ public class SettingsService
     public bool IsFiltersMWVisible { get; set; }
     public bool IsParametersMWVisible { get; set; }
     public SaveFileMode.Enum SaveMode { get; set; }
+    public bool AutoUpdate { get; set; }
     
     // Methods for loading and saving settings
     public void LoadSettings()
@@ -134,6 +135,7 @@ public class SettingsService
                     IsParametersMWVisible = settings.IsParametersMWVisible;
                     SaveMode = settings.SaveMode;
                     SupportModdedResources = settings.SupportModdedResources;
+                    AutoUpdate = settings.AutoUpdate;
                 }
             }
             catch (Exception ex)
