@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using VolumetricSelection2077.Views;
 using VolumetricSelection2077.Services;
 using System;
+using System.ComponentModel;
 using System.IO;
 using Avalonia.Interactivity;
 using System.Threading.Tasks;
@@ -249,5 +250,13 @@ public partial class MainWindow : Window
         {
             item.IsChecked = !item.IsChecked;
         }
+    }
+
+    protected override async void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+        _mainWindowViewModel.IsProcessing = true;
+        await Task.Run(() => GameFileService.Instance.Initialize());
+        _mainWindowViewModel.IsProcessing = false;
     }
 }

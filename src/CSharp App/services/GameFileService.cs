@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -27,15 +28,39 @@ public class GameFileService
     private static readonly object _lock = new object();
     private readonly ILoggerService _loggerService = new SerilogWrapper();
     private readonly IProgressService<double> _progressService = new ProgressService<double>();
-    private readonly ArchiveManager _archiveManager;
+    private ArchiveManager? _archiveManager;
     private readonly SettingsService _settingsService;
-    private readonly HashService _hashService;
-    private readonly HookService _hookService;
-    private readonly Red4ParserService _red4ParserService;
-    private readonly GeometryCacheService _geometryCacheService;
+    private HashService? _hashService;
+    private HookService? _hookService;
+    private Red4ParserService? _red4ParserService;
+    private GeometryCacheService? _geometryCacheService;
+    private bool _initialized;
+
+    public bool IsInitialized
+    {
+        get => _initialized;
+    }
+    
+    
+    
     
     private GameFileService()
     {
+        _settingsService = SettingsService.Instance;
+    }
+    public void Initialize()
+    {
+        if (_initialized) return;
+        if (_settingsService.SupportModdedResources)
+        {
+            Logger.Info($"Initializing Game File Service with modded resources, this may take a while...");
+        }
+        else
+        {
+            Logger.Info($"Initializing Game File Service...");
+        }
+
+        var sw = Stopwatch.StartNew();
         _hashService = new HashService();
         _hookService = new HookService();
         _red4ParserService = new Red4ParserService(
@@ -47,19 +72,17 @@ public class GameFileService
             _red4ParserService,
             _loggerService,
             _progressService
-            );
-        _settingsService = SettingsService.Instance;
+        );
         _geometryCacheService = new GeometryCacheService(
             _archiveManager,
             _red4ParserService
         );
-    }
-    private void Initialize()
-    {
         var gameExePath = new FileInfo(_settingsService.GameDirectory + @"\bin\x64\Cyberpunk2077.exe");
-        _archiveManager.Initialize(gameExePath, true);
+        _archiveManager.Initialize(gameExePath, _settingsService.SupportModdedResources);
+        _initialized = true;
+        sw.Stop();
+        Logger.Success($"Initialized Game File Service in {UtilService.FormatElapsedTime(sw.Elapsed)}");
     }
-    
     public static GameFileService Instance
     {
         get
@@ -69,7 +92,6 @@ public class GameFileService
                 if (_instance == null)
                 {
                     _instance = new GameFileService();
-                    _instance.Initialize();
                 }
                 return _instance;
             }
@@ -77,6 +99,7 @@ public class GameFileService
     }
     public async Task<AbbrMesh?> GetPhysXMesh(ulong sectorHash, ulong actorHash)
     {
+        if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetPhysXMesh.");
         var rawMesh = await _geometryCacheService.GetEntryAsync(sectorHash, actorHash);
         if (rawMesh == null)
         {
@@ -88,6 +111,7 @@ public class GameFileService
 
     public AbbrMesh? GetCMesh(string path)
     {
+        if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
         var rawMesh = _archiveManager.GetCR2WFile(path);
         if (rawMesh == null)
         {
@@ -99,6 +123,7 @@ public class GameFileService
 
     public AbbrSector? GetSector(string path)
     {
+        if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetSector.");
         var rawSector = _archiveManager.GetCR2WFile(path);
         if (rawSector == null)
         {

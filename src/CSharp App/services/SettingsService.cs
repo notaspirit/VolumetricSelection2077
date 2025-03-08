@@ -38,6 +38,8 @@ public class SettingsService
         IsFiltersMWVisible = false;
         IsParametersMWVisible = false;
         SaveMode = SaveFileMode.Enum.New;
+        SupportModdedResources = false;
+        
     }
     
     public static SettingsService Instance
@@ -64,6 +66,7 @@ public class SettingsService
     public string OutputDirectory { get; set; }
     public string OutputFilename { get; set; }
     public bool DebugMode { get; set; }
+    public bool SupportModdedResources { get; set; }
     
     [JsonIgnore]
     public BitArray NodeTypeFilter { get; set; }
@@ -130,6 +133,7 @@ public class SettingsService
                     IsFiltersMWVisible = settings.IsFiltersMWVisible;
                     IsParametersMWVisible = settings.IsParametersMWVisible;
                     SaveMode = settings.SaveMode;
+                    SupportModdedResources = settings.SupportModdedResources;
                 }
             }
             catch (Exception ex)
