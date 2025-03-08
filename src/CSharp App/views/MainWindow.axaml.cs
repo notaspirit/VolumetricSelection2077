@@ -51,6 +51,12 @@ public partial class MainWindow : Window
         if (_mainWindowViewModel.IsProcessing) return;
         _mainWindowViewModel.SettingsOpen = true;
         var settingsWindow = new SettingsWindow();
+        settingsWindow.Opened += (_, _) =>
+        {
+            var x = this.Position.X + 10;
+            var y = this.Position.Y + 41;
+            settingsWindow.Position = new PixelPoint(x, y);
+        };
         await settingsWindow.ShowDialog(this);
         _mainWindowViewModel.SettingsOpen = false;
     }
