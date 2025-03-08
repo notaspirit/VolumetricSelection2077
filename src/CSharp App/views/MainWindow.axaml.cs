@@ -46,11 +46,13 @@ public partial class MainWindow : Window
         Logger.AddSink(new LogViewerSink(logViewer, "[{Timestamp:yyyy-MM-dd HH:mm:ss}] {Message:lj}{NewLine}{Exception}"));
     }
 
-    private void SettingsButton_Click(object? sender, RoutedEventArgs e)
+    private async void SettingsButton_Click(object? sender, RoutedEventArgs e)
     {
         if (_mainWindowViewModel.IsProcessing) return;
+        _mainWindowViewModel.SettingsOpen = true;
         var settingsWindow = new SettingsWindow();
-        settingsWindow.ShowDialog(this);
+        await settingsWindow.ShowDialog(this);
+        _mainWindowViewModel.SettingsOpen = false;
     }
     private void ClearLogButton_Click(object? sender, RoutedEventArgs e)
     {
@@ -64,7 +66,7 @@ public partial class MainWindow : Window
         Stopwatch stopwatch = Stopwatch.StartNew();
         try
         {
-            _mainWindowViewModel.IsProcessing = true;
+            _mainWindowViewModel.MainTaskProcessing = true;
             _mainWindowViewModel.Settings.OutputFilename = UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.OutputFilename);
             OutputFilenameTextBox.Text = _mainWindowViewModel.Settings.OutputFilename;
             _mainWindowViewModel.Settings.SaveSettings();
@@ -93,7 +95,7 @@ public partial class MainWindow : Window
             stopwatch.Stop();
             string formattedTime = UtilService.FormatElapsedTime(stopwatch.Elapsed);
             Logger.Info($"Process finished after: {formattedTime}");
-            _mainWindowViewModel.IsProcessing = false;
+            _mainWindowViewModel.MainTaskProcessing = false;
         }
     }
 
@@ -102,7 +104,7 @@ public partial class MainWindow : Window
         if (_mainWindowViewModel.IsProcessing) return;
         try
         {
-            _mainWindowViewModel.IsProcessing = true;
+            _mainWindowViewModel.BenchmarkProcessing = true;
             _mainWindowViewModel.Settings.OutputFilename = UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.OutputFilename);
             OutputFilenameTextBox.Text = _mainWindowViewModel.Settings.OutputFilename;
             _mainWindowViewModel.Settings.SaveSettings();
@@ -112,7 +114,7 @@ public partial class MainWindow : Window
         {
             Logger.Error($"Benchmarking failed: {ex}");
         }
-        _mainWindowViewModel.IsProcessing = false;
+        _mainWindowViewModel.BenchmarkProcessing = false;
     }
     
     private void ResourceFilterTextBox_KeyDown(object? sender, KeyEventArgs e)

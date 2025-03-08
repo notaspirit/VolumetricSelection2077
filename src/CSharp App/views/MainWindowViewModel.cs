@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using Avalonia.Markup.Xaml.MarkupExtensions;
 using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.Services;
 using VolumetricSelection2077.ViewStructures;
@@ -20,9 +21,51 @@ namespace VolumetricSelection2077.ViewModels
             {
                 _isProcesing = value;
                 OnPropertyChanged(nameof(IsProcessing));
+                OnPropertyChanged(nameof(ButtonsAvailable));
             }
         }
 
+        public bool ButtonsAvailable
+        {
+            get => !_isProcesing;
+        }
+
+        private bool _mainTaskprocessing { get; set; }
+        public bool MainTaskProcessing
+        {
+            get => _mainTaskprocessing;
+            set
+            {
+                _mainTaskprocessing = value;
+                IsProcessing = _mainTaskprocessing;
+                OnPropertyChanged(nameof(MainTaskProcessing));
+            }
+        }
+        
+        private bool _benchmarkProcessing { get; set; }
+        public bool BenchmarkProcessing
+        {
+            get => _benchmarkProcessing;
+            set
+            {
+                _benchmarkProcessing = value;
+                IsProcessing = _benchmarkProcessing;
+                OnPropertyChanged(nameof(BenchmarkProcessing));
+            }
+        }
+        
+        private bool _settingsOpen { get; set; }
+        public bool SettingsOpen
+        {
+            get => _settingsOpen;
+            set
+            {
+                _settingsOpen = value;
+                IsProcessing = _settingsOpen;
+                OnPropertyChanged(nameof(SettingsOpen));
+            }
+        }
+        
         public int ResourcePathFilterCount => Settings.ResourceNameFilter.Count;
         public int DebugNameFilterCount => Settings.DebugNameFilter.Count;
 
@@ -52,7 +95,11 @@ namespace VolumetricSelection2077.ViewModels
             }
         }
 
-        public string FilterSectionButtonLabel => Labels.FilterCollapseButton + $" [ {(Settings.DebugNameFilter.Count == 0 ? 0 : 1) + (Settings.ResourceNameFilter.Count == 0 ? 0 : 1) + (Settings.NukeOccluders ? 1 : 0) + (Settings.NodeTypeFilter.Cast<bool>().Count( b => b) == 122 ? 0 : 1)} / 4 ]" +  (FilterSelectionVisibility ? " \u02c5" : " \u02c4");
+        public string FilterSectionButtonLabel => Labels.FilterCollapseButton +
+                                                  $" [ {(Settings.DebugNameFilter.Count == 0 ? 0 : 1) 
+                                                        + (Settings.ResourceNameFilter.Count == 0 ? 0 : 1) 
+                                                        + (Settings.NukeOccluders ? 1 : 0) + (Settings.NodeTypeFilter.Cast<bool>().Count( b => b) == 122 ? 0 : 1)} / 4 ]" 
+                                                        + (FilterSelectionVisibility ? " \u02c5" : " \u02c4");
         public bool FilterSelectionVisibility
         {
             get => Settings.IsFiltersMWVisible;
