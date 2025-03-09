@@ -75,7 +75,7 @@ public partial class MainWindow : Window
             _mainWindowViewModel.MainTaskProcessing = true;
             _mainWindowViewModel.Settings.OutputFilename = UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.OutputFilename);
             OutputFilenameTextBox.Text = _mainWindowViewModel.Settings.OutputFilename;
-            _mainWindowViewModel.Settings.SaveSettings();
+            AddQueuedFilters();
             if (!string.IsNullOrEmpty(_mainWindowViewModel.Settings.OutputFilename))
             {
                 var (success, error) = await Task.Run(() =>
@@ -113,7 +113,7 @@ public partial class MainWindow : Window
             _mainWindowViewModel.BenchmarkProcessing = true;
             _mainWindowViewModel.Settings.OutputFilename = UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.OutputFilename);
             OutputFilenameTextBox.Text = _mainWindowViewModel.Settings.OutputFilename;
-            _mainWindowViewModel.Settings.SaveSettings();
+            AddQueuedFilters();
             await Task.Run(() => Benchmarking.Instance.RunBenchmarks());
         }
         catch (Exception ex)
@@ -201,6 +201,7 @@ public partial class MainWindow : Window
         if (sender is Button)
         {
             _mainWindowViewModel.FilterSelectionVisibility = !_mainWindowViewModel.FilterSelectionVisibility;
+            AddQueuedFilters();
         }
     }
     
@@ -260,6 +261,21 @@ public partial class MainWindow : Window
         }
     }
 
+    private void AddQueuedFilters()
+    {
+        if (!string.IsNullOrEmpty(ResourceFilterTextBox.Text?.Trim()))
+        {
+            _mainWindowViewModel.Settings.ResourceNameFilter.Add(ResourceFilterTextBox.Text.ToLower());
+            ResourceFilterTextBox.Text = string.Empty;
+        }
+        if (!string.IsNullOrEmpty(DebugNameFilterTextBox.Text?.Trim()))
+        {
+            _mainWindowViewModel.Settings.DebugNameFilter.Add(DebugNameFilterTextBox.Text.ToLower());
+            DebugNameFilterTextBox.Text = string.Empty;
+        }
+        _mainWindowViewModel.Settings.SaveSettings();
+    }
+    
     protected override async void OnOpened(EventArgs e)
     {
         base.OnOpened(e);

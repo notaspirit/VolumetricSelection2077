@@ -76,7 +76,7 @@
                                 <ItemsControl ItemsSource="{Binding Settings.ResourceNameFilter}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Grid ColumnDefinitions="Auto,*" Margin="0,2">
+                                            <Grid ColumnDefinitions="Auto,*, 21" Margin="0,2">
                                                 <Button
                                                     Background="#ad0002"
                                                     Click="RemoveResourceNameFilter_Click"
@@ -136,7 +136,7 @@
                                 <ItemsControl ItemsSource="{Binding Settings.DebugNameFilter}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Grid ColumnDefinitions="Auto,*" Margin="0,2">
+                                            <Grid ColumnDefinitions="Auto,*, 21" Margin="0,2">
                                                 <Button
                                                     Background="#ad0002"
                                                     Click="RemoveDebugNameFilter_Click"
