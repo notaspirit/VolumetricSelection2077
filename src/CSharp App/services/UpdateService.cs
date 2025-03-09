@@ -18,8 +18,8 @@ public class UpdateService
             output[2] = int.Parse(rawDot[2].Split("-")[0]);
             if (rawDash.Length == 1)
             {
-                output[3] = 0;
-                output[4] = 0;
+                output[3] = 1000;
+                output[4] = 1000;
             }
             else
             {
