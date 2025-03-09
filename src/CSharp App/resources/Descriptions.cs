@@ -20,6 +20,7 @@ namespace VolumetricSelection2077.Resources
             public static string FileSaveMode { get; } = "How to handle if the filename already exists";
             public static string ModdedResources { get; } = "Index and query modded resources, can cause significant increase in loading time, processing time is unaffected. Requires program restart to take effect.";
             public static string AutoUpdate { get; } = "Auto Update on startup if update is available";
+            public static string CETInstallLocation { get; } = "Folder where updates to the VS2077 CET part should be installed to, if left empty will use game directory.";
         }
 
         public static class Watermarks
@@ -27,6 +28,7 @@ namespace VolumetricSelection2077.Resources
             public static string GameDirectory { get; } = "Path to game directory";
             public static string Search { get; } = "Search...";
             public static string OutputFilename { get; } = "Output Filename";
+            public static string CETInstallLocation { get;  } ="VS2077 CET installation directory";
         }
 
         public static class Labels

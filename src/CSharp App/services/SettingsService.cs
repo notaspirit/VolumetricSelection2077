@@ -41,6 +41,7 @@ public class SettingsService
         SupportModdedResources = false;
         AutoUpdate = true;
         DidUpdate = false;
+        CETInstallLocation = "";
     }
     
     public static SettingsService Instance
@@ -95,7 +96,7 @@ public class SettingsService
     public SaveFileMode.Enum SaveMode { get; set; }
     public bool AutoUpdate { get; set; }
     public bool DidUpdate { get; set; }
-    
+    public string CETInstallLocation { get; set; }
     
     // Methods for loading and saving settings
     public void LoadSettings()
@@ -140,6 +141,7 @@ public class SettingsService
                     SupportModdedResources = settings.SupportModdedResources;
                     AutoUpdate = settings.AutoUpdate;
                     DidUpdate = settings.DidUpdate;
+                    CETInstallLocation = settings.CETInstallLocation;
                 }
             }
             catch (Exception ex)

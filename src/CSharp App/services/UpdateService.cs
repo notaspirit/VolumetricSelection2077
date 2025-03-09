@@ -78,26 +78,49 @@ public class UpdateService
     }
     public static async Task Update()
     {
-        var client = new GitHubClient(new ProductHeaderValue("VolumetricSelection2077"));
-        var release = await client.Repository.Release.GetLatest("notaspirit", "VolumetricSelection2077");
-        string? downloadUrl = null;
-        foreach (var asset in release.Assets)
+        
+        string? downloadUrlApp = null;
+        string? downloadUrlCet = null;
+        
+        try
         {
-            if (asset.Name.Contains("portable"))
+            var client = new GitHubClient(new ProductHeaderValue("VolumetricSelection2077"));
+            var release = await client.Repository.Release.GetLatest("notaspirit", "VolumetricSelection2077");
+            foreach (var asset in release.Assets)
             {
-                downloadUrl = asset.BrowserDownloadUrl;
+                if (asset.Name.Contains("portable"))
+                {
+                    downloadUrlApp = asset.BrowserDownloadUrl;
+                }
+
+                if (asset.Name.Contains("cet"))
+                {
+                    downloadUrlCet = asset.BrowserDownloadUrl;
+                }
+            }
+
+            if (downloadUrlApp == null)
+            {
+                throw new Exception($"Did not find portable release asset for {release.Name}");
+            }
+
+            if (downloadUrlCet == null)
+            {
+                throw new Exception($"Did not find cet release asset for {release.Name}");
             }
         }
-
-        if (downloadUrl == null)
+        catch (Exception e)
         {
-            throw new Exception($"Did not find portable release asset for {release.Name}");
+            throw new Exception($"Failed find remote update location or could not find all required assets", e);
         }
+
+        
 
         string rootTempPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "VolumetricSelection2077", "temp");
         Directory.CreateDirectory(rootTempPath);
-        string downloadPath = Path.Combine(rootTempPath, "latest-release.zip");
+        string downloadPathApp = Path.Combine(rootTempPath, "latest-release-app.zip");
+        string downloadPathCet = Path.Combine(rootTempPath, "latest-release-cet.zip");
         string unzipPath = Path.Combine(rootTempPath, "unzip");
         Directory.CreateDirectory(unzipPath);
         
@@ -106,9 +129,13 @@ public class UpdateService
             var httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Add("User-Agent", "VolumetricSelection2077");
 
-            var response = await httpClient.GetAsync(downloadUrl);
-            response.EnsureSuccessStatusCode();
-            await File.WriteAllBytesAsync(downloadPath, await response.Content.ReadAsByteArrayAsync());
+            var responseApp = await httpClient.GetAsync(downloadUrlApp);
+            responseApp.EnsureSuccessStatusCode();
+            await File.WriteAllBytesAsync(downloadPathApp, await responseApp.Content.ReadAsByteArrayAsync());
+            
+            var responseCet = await httpClient.GetAsync(downloadUrlCet);
+            responseCet.EnsureSuccessStatusCode();
+            await File.WriteAllBytesAsync(downloadPathCet, await responseCet.Content.ReadAsByteArrayAsync());
         }
         catch (Exception ex)
         {
@@ -117,7 +144,23 @@ public class UpdateService
         
         try
         {
-            ZipFile.ExtractToDirectory(downloadPath, unzipPath, true);
+            string unzipPathCet;
+            if (string.IsNullOrEmpty(SettingsService.Instance.CETInstallLocation))
+            {
+                if (!ValidationService.ValidateGamePath(SettingsService.Instance.GameDirectory))
+                {
+                    Logger.Error("Could not find valid target location to install VS2077 CET. Please set the game path or custom directory in the settings and restart the application to try again.");
+                    throw new Exception();
+                }
+                unzipPathCet = SettingsService.Instance.GameDirectory;
+            }
+            else
+            {
+                unzipPathCet = SettingsService.Instance.CETInstallLocation;
+            }
+            Directory.CreateDirectory(unzipPath);
+            ZipFile.ExtractToDirectory(downloadPathApp, unzipPath, true);
+            ZipFile.ExtractToDirectory(downloadPathCet, unzipPathCet, true);
         }
         catch (Exception ex)
         {
