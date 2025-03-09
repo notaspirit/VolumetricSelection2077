@@ -161,4 +161,11 @@ objShell.Run ""powershell.exe -ExecutionPolicy Bypass -File """"{scriptPath}""""
         SettingsService.Instance.SaveSettings();
         Environment.Exit(0);
     }
+
+    public static async Task<(string, string)> GetChangelog()
+    {
+        var client = new GitHubClient(new ProductHeaderValue("VolumetricSelection2077"));
+        var release = await client.Repository.Release.GetLatest("notaspirit", "VolumetricSelection2077");
+        return (release.TagName.Replace("v", ""), release.Body);
+    }
 }

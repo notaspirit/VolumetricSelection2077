@@ -266,20 +266,32 @@ public partial class MainWindow : Window
         _mainWindowViewModel.IsProcessing = true;
         try
         {
-            Logger.Info("Checking for Updates...");
-            var updateExists = await UpdateService.CheckUpdates();
-            if (updateExists.Item1)
+            if (_mainWindowViewModel.Settings.DidUpdate)
             {
-                Logger.Warning($"Update to {updateExists.Item2} is available");
+                var changelog = await UpdateService.GetChangelog();
+                Logger.Success($"Successfully updated to {changelog.Item1}");
+                Logger.Info($"Changelog:" +
+                            $"\n{changelog.Item2}");
+                _mainWindowViewModel.Settings.DidUpdate = false;
+                _mainWindowViewModel.Settings.SaveSettings();
             }
             else
             {
-                Logger.Info("No updates found");
-            }
+                Logger.Info("Checking for Updates...");
+                var updateExists = await UpdateService.CheckUpdates();
+                if (updateExists.Item1)
+                {
+                    Logger.Warning($"Update to {updateExists.Item2} is available");
+                }
+                else
+                {
+                    Logger.Info("No updates found");
+                }
 
-            if (updateExists.Item1 && _mainWindowViewModel.Settings.AutoUpdate)
-            {
-                await UpdateService.Update();
+                if (updateExists.Item1 && _mainWindowViewModel.Settings.AutoUpdate)
+                {
+                    await UpdateService.Update();
+                }
             }
         }
         catch (Exception ex)
