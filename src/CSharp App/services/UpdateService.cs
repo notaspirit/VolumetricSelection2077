@@ -1,4 +1,8 @@
 using System;
+using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Octokit;
@@ -71,5 +75,90 @@ public class UpdateService
             }
         }
         return (false, null);
+    }
+    public static async Task Update()
+    {
+        var client = new GitHubClient(new ProductHeaderValue("VolumetricSelection2077"));
+        var release = await client.Repository.Release.GetLatest("notaspirit", "VolumetricSelection2077");
+        string? downloadUrl = null;
+        foreach (var asset in release.Assets)
+        {
+            if (asset.Name.Contains("portable"))
+            {
+                downloadUrl = asset.BrowserDownloadUrl;
+            }
+        }
+
+        if (downloadUrl == null)
+        {
+            throw new Exception($"Did not find portable release asset for {release.Name}");
+        }
+
+        string rootTempPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "VolumetricSelection2077", "temp");
+        Directory.CreateDirectory(rootTempPath);
+        string downloadPath = Path.Combine(rootTempPath, "latest-release.zip");
+        string unzipPath = Path.Combine(rootTempPath, "unzip");
+        Directory.CreateDirectory(unzipPath);
+        
+        try
+        {
+            var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Add("User-Agent", "VolumetricSelection2077");
+
+            var response = await httpClient.GetAsync(downloadUrl);
+            response.EnsureSuccessStatusCode();
+            await File.WriteAllBytesAsync(downloadPath, await response.Content.ReadAsByteArrayAsync());
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Failed to download latest release", ex);
+        }
+        
+        try
+        {
+            ZipFile.ExtractToDirectory(downloadPath, unzipPath, true);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Failed to unzip latest release", ex);
+        }
+        
+        var exePath = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "VolumetricSelection2077.exe");
+        var scriptPath = Path.Combine(rootTempPath, "update.ps1");
+        var vbsScriptPath = Path.Combine(rootTempPath, "update.vbs");
+        Logger.Info(exePath);
+        File.WriteAllText(scriptPath, $@"
+$exePath = ""{exePath}""
+$unzipPath = ""{unzipPath}""
+$appBaseDir = ""{AppContext.BaseDirectory}""
+$rootTempPath = ""{rootTempPath}""
+
+while (Get-Process -Name (Split-Path $exePath -LeafBase) -ErrorAction SilentlyContinue) {{
+    Start-Sleep -Seconds 1
+}}
+
+Remove-Item -Path $appBaseDir -Recurse -Force -ErrorAction SilentlyContinue
+Copy-Item -Path ""$unzipPath\*"" -Destination $appBaseDir -Recurse -Force
+
+Start-Process -FilePath $exePath
+
+Remove-Item -Path $rootTempPath -Recurse -Force -ErrorAction SilentlyContinue
+
+");
+        
+        File.WriteAllText(vbsScriptPath, $@"Set objShell = CreateObject(""WScript.Shell"")
+objShell.Run ""powershell.exe -ExecutionPolicy Bypass -File """"{scriptPath}"""""", 0, False
+");
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = "wscript.exe",
+            Arguments = $"\"{vbsScriptPath}\"",
+            UseShellExecute = true
+        });
+        
+        SettingsService.Instance.DidUpdate = true;
+        SettingsService.Instance.SaveSettings();
+        Environment.Exit(0);
     }
 }

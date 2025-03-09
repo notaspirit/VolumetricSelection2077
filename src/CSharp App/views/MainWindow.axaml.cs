@@ -276,6 +276,11 @@ public partial class MainWindow : Window
             {
                 Logger.Info("No updates found");
             }
+
+            if (updateExists.Item1 && _mainWindowViewModel.Settings.AutoUpdate)
+            {
+                await UpdateService.Update();
+            }
         }
         catch (Exception ex)
         {
