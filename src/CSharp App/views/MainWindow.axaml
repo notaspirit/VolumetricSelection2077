@@ -404,7 +404,11 @@
                     </Button.Styles>
                 </Button>
                 <Grid Grid.Column="2" IsVisible="{Binding SettingsOpen}">
-                    <li:LoadingIndicator Foreground="White" IsActive="True" />
+                    <li:LoadingIndicator
+                        Foreground="White"
+                        Height="30"
+                        IsActive="True"
+                        Width="30" />
                 </Grid>
                 <Button
                     Background="#6b82b2"
@@ -421,7 +425,11 @@
                     </Button.Styles>
                 </Button>
                 <Grid Grid.Column="3" IsVisible="{Binding BenchmarkProcessing}">
-                    <li:LoadingIndicator Foreground="White" IsActive="True" />
+                    <li:LoadingIndicator
+                        Foreground="White"
+                        Height="30"
+                        IsActive="True"
+                        Width="30" />
                 </Grid>
                 <!--
                 <Button Grid.Column="3"
@@ -449,7 +457,11 @@
                     </Button.Styles>
                 </Button>
                 <Grid Grid.Column="4" IsVisible="{Binding MainTaskProcessing}">
-                    <li:LoadingIndicator Foreground="White" IsActive="True" />
+                    <li:LoadingIndicator
+                        Foreground="White"
+                        Height="30"
+                        IsActive="True"
+                        Width="30" />
                 </Grid>
             </Grid>
             <ContentControl Grid.Row="7" x:Name="SettingsContent" />
