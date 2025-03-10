@@ -129,11 +129,13 @@ public class GameFileService
             return null;
         }
         CacheDatabases db = CacheDatabases.Vanilla;
-        
-        var fileLookup = _archiveManager.Lookup(path, ArchiveManagerScope.Mods);
-        if (fileLookup != null)
+        if (_settingsService.SupportModdedResources && _settingsService.CacheModdedResources)
         {
-            db = CacheDatabases.Modded;
+            var fileLookup = _archiveManager.Lookup(path, ArchiveManagerScope.Mods);
+            if (fileLookup != null)
+            {
+                db = CacheDatabases.Modded;
+            }
         }
         var parsedMesh = DirectAbbrMeshParser.ParseFromCR2W(rawMesh);
         _cacheService.WriteMeshEntry(path, parsedMesh, db);
@@ -158,10 +160,13 @@ public class GameFileService
             return null;
         }
         CacheDatabases db = CacheDatabases.Vanilla;
-        var fileLookup = _archiveManager.Lookup(path, ArchiveManagerScope.Mods);
-        if (fileLookup != null)
+        if (_settingsService.SupportModdedResources && _settingsService.CacheModdedResources)
         {
-            db = CacheDatabases.Modded;
+            var fileLookup = _archiveManager.Lookup(path, ArchiveManagerScope.Mods);
+            if (fileLookup != null)
+            {
+                db = CacheDatabases.Modded;
+            }
         }
         var parsedSector = DirectAbbrSectorParser.ParseFromCR2W(rawSector);
         _cacheService.WriteSectorEntry(path, parsedSector, db);
