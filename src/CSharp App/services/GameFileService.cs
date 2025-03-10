@@ -113,13 +113,13 @@ public class GameFileService
     {
         if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
         var sw = Stopwatch.StartNew();
-        var cachedMesh = _cacheService.GetEntry(new ReadRequest(path));
+        var cachedMesh = _cacheService.GetEntry(new ReadRequest(path,CacheDatabases.Vanilla));
         sw.Stop();
         // Logger.Info($"Took to {sw.ElapsedMilliseconds}ms to get raw cache entry.");
         // Logger.Info($"Cached mesh is: {cachedMesh}");
-        if (cachedMesh != null || cachedMesh?.Length <= 0)
+        if (cachedMesh != null)
         {
-            // Logger.Info($"Got cached mesh: {cachedMesh}");
+            Logger.Info($"Got cached mesh: {cachedMesh}");
             return MessagePackSerializer.Deserialize<AbbrMesh>(cachedMesh);
         }
         var rawMesh = _archiveManager.GetCR2WFile(path);
@@ -129,7 +129,8 @@ public class GameFileService
         }
 
         var parsedMesh = DirectAbbrMeshParser.ParseFromCR2W(rawMesh);
-        _cacheService.WriteEntry(new WriteRequest(path, MessagePackSerializer.Serialize(parsedMesh)));
+        _cacheService.WriteEntry(new WriteRequest(path, MessagePackSerializer.Serialize(parsedMesh), CacheDatabases.Vanilla));
+        Logger.Info("Got mesh from archive files");
         return parsedMesh;
     }
 
@@ -137,13 +138,13 @@ public class GameFileService
     {
         if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetSector.");
         var sw = Stopwatch.StartNew();
-        var cachedSector = _cacheService.GetEntry(new ReadRequest(path));
+        var cachedSector = _cacheService.GetEntry(new ReadRequest(path, CacheDatabases.Vanilla));
         sw.Stop();
         // Logger.Info($"Took to {sw.ElapsedMilliseconds}ms to get raw cache entry.");
         // Logger.Info($"Cached sector is: {cachedSector}");
-        if (cachedSector != null || cachedSector?.Length <= 0)
+        if (cachedSector != null)
         {
-            // Logger.Info($"Got cached sector: {cachedSector}");
+            Logger.Info($"Got cached sector: {cachedSector}");
             return MessagePackSerializer.Deserialize<AbbrSector>(cachedSector);
         }
         var rawSector = _archiveManager.GetCR2WFile(path);
@@ -152,7 +153,8 @@ public class GameFileService
             return null;
         }
         var parsedSector = DirectAbbrSectorParser.ParseFromCR2W(rawSector);
-        _cacheService.WriteEntry(new WriteRequest(path, MessagePackSerializer.Serialize(parsedSector)));
+        _cacheService.WriteEntry(new WriteRequest(path, MessagePackSerializer.Serialize(parsedSector), CacheDatabases.Vanilla));
+        Logger.Info("Got sector from archive files");
         return parsedSector;
     }
 }

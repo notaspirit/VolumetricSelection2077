@@ -49,9 +49,9 @@ public class CacheService
     private static readonly int BatchDelay = 1;
     private static readonly int MaxReaders = 512;
     static ConcurrentQueue<WriteRequest> _requestWriteQueue = new();
-    private LightningDatabase _vanillaDb;
-    private LightningDatabase _moddedDb;
     private readonly object _lock = new object();
+    private LightningDatabase _vanillaDatabase;
+    private LightningDatabase _moddedDatabase;
     private static bool IsProcessing { get; set; } = false;
     
     private CacheService()
@@ -67,15 +67,9 @@ public class CacheService
         };
         _env.Open();
         using var tx = _env.BeginTransaction();
-        // temporarily treat all as vanilla files
-        _vanillaDb = tx.OpenDatabase(CacheDatabases.Vanilla.ToString(), new DatabaseConfiguration()
-        {
-            Flags = DatabaseOpenFlags.Create
-        });
-        _moddedDb = tx.OpenDatabase(CacheDatabases.Modded.ToString(), new DatabaseConfiguration()
-        {
-            Flags = DatabaseOpenFlags.Create
-        });
+        _moddedDatabase = tx.OpenDatabase(CacheDatabases.Modded.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
+        _vanillaDatabase = tx.OpenDatabase(CacheDatabases.Vanilla.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
+        tx.Commit();
     }
     public static CacheService Instance
     {
@@ -108,17 +102,21 @@ public class CacheService
     
     public byte[]? GetEntry(ReadRequest request)
     {
-        using var tx = _env.BeginTransaction(TransactionBeginFlags.ReadOnly);
+        using var tx = _env.BeginTransaction();
         LightningDatabase db;
-        if (request.Database == CacheDatabases.Vanilla)
+        switch (request.Database)
         {
-            db = _vanillaDb;
+            case CacheDatabases.Vanilla:
+                db = _vanillaDatabase;
+                break;
+            case CacheDatabases.Modded:
+                db = _moddedDatabase;
+                break;
+            default:
+                return null;
         }
-        else
-        {
-            db = _moddedDb;
-        }
-        var (code, _, value) = tx.Get(db, Encoding.UTF8.GetBytes(request.Key));
+        var (code, _, value) = tx.Get(_vanillaDatabase, Encoding.UTF8.GetBytes(request.Key));
+        Logger.Info($"Code : {code}");
         if (code == MDBResultCode.Success)
         {
             return value.CopyToNewArray();
@@ -126,6 +124,21 @@ public class CacheService
         return null;
     }
 
+    public void WriteSingleEntry(WriteRequest request)
+    {
+        using var tx = _env.BeginTransaction();
+        switch (request.Database)
+        {
+            case CacheDatabases.Vanilla:
+                tx.Put(_vanillaDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
+                break;
+            case CacheDatabases.Modded:
+                tx.Put(_moddedDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
+                break;
+        }
+        tx.Commit();
+    }
+    
     public void WriteEntry(WriteRequest request)
     {
         _requestWriteQueue.Enqueue(request);
@@ -136,7 +149,7 @@ public class CacheService
         while (IsProcessing || _requestWriteQueue.Count > 0)
         {
             await Task.Delay(BatchDelay);
-            if (!IsProcessing && !wroteExitLog)
+            if (!IsProcessing && !wroteExitLog && _requestWriteQueue.Count > 0)
             {
                 Logger.Info($"Continuing to write {_requestWriteQueue.Count} entries to cache, do not close the application...");
                 wroteExitLog = true;
@@ -167,26 +180,63 @@ public class CacheService
             }
             
             using var tx = _env.BeginTransaction();
-            foreach (var request in requestsModded)
+            if (requestsModded.Count > 0)
             {
-                tx.Put(_moddedDb,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                foreach (var request in requestsModded)
+                {
+                    var code = tx.Put(_moddedDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    Logger.Info($"Write Code : {code}, {request.Key}, {request.Database}");
+                }
             }
-            foreach (var request in requestsVanilla)
+            
+            if (requestsVanilla.Count > 0)
             {
-                tx.Put(_vanillaDb,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                foreach (var request in requestsVanilla)
+                {
+                    var code = tx.Put(_vanillaDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    Logger.Info($"Write Code : {code}, {request.Key}, {request.Database}");
+                }
             }
+
             tx.Commit();
         }
-        Logger.Success("Finished writing all queued entries to cache");
+
+        if (wroteExitLog)
+        {
+            Logger.Success("Finished writing all queued entries to cache");
+        }
     }
     
-    public void DropDatabase(CacheDatabases database)
+    public void ClearDatabase(CacheDatabases database)
     {
         try
         {
             using var tx = _env.BeginTransaction();
-            using var db = tx.OpenDatabase(database.ToString());
-            tx.DropDatabase(db);
+            switch (database)
+            {
+                case CacheDatabases.Vanilla:
+                    using (var cursor = tx.CreateCursor(_vanillaDatabase))
+                    {
+                        cursor.First();
+                        for (int i = 0;  i < cursor.AsEnumerable().Count(); i++)
+                        {
+                            cursor.Delete();
+                            cursor.Next();
+                        }
+                    }
+                    break;
+                case CacheDatabases.Modded:
+                    using (var cursor = tx.CreateCursor(_vanillaDatabase))
+                    {
+                        cursor.First();
+                        for (int i = 0;  i < cursor.AsEnumerable().Count(); i++)
+                        {
+                            cursor.Delete();
+                            cursor.Next();
+                        }
+                    }
+                    break;
+            }
             tx.Commit();
         }
         catch (Exception ex)

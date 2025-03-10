@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Controls.Documents;
 using Serilog;
@@ -19,11 +20,9 @@ public class TestCache
         string testMeshPath = @"base\environment\decoration\medical\accessories\medkit\medkit_d_mobile.mesh";
         string testSectorPath = @"base\worlds\03_night_city\_compiled\default\exterior_-4_-8_0_4.streamingsector";
 
-        string testMesh2 =
-            @"ep1\worlds\03_night_city\sectors\_external\proxy\1930979112\hill_park_totem.mesh";
-        
         cs.StartListening();
-        cs.DropDatabase(CacheDatabases.Vanilla);
+        cs.ClearDatabase(CacheDatabases.Modded);
+        cs.ClearDatabase(CacheDatabases.Vanilla);
         
         Logger.Info("Getting CMesh without cache...");
         var swGetMeshReg = new Stopwatch();
@@ -74,9 +73,48 @@ public class TestCache
         swGetSectorCache.Stop();
         Logger.Info($"Got Sector cached time: {swGetSectorCache.ElapsedMilliseconds} ms");
         Logger.Info($"cached sector is correct: {cachedSector == regularSector}");
+        
+        cs.WriteEntry(new WriteRequest("YesSIR", Encoding.UTF8.GetBytes("value"), CacheDatabases.Vanilla));
+        Task.Delay(1000).Wait();
+        var result = cs.GetEntry(new ReadRequest("YesSIR", CacheDatabases.Vanilla));
+        if (result == null)
+        {
+            Logger.Error("Failed to get entry");
+        }
+        else
+        {
+            Logger.Success("Got test entry");
+        }
+        cs.StopListening();
 
-        cs.DropDatabase(CacheDatabases.Vanilla);
+        
         cs.StopListening();
         Logger.Info("Reset Database and concluded tests");
+    }
+
+    public static void Run2()
+    {
+        var cs = CacheService.Instance;
+        cs.StartListening();
+        cs.WriteEntry(new WriteRequest("YesSIR", Encoding.UTF8.GetBytes("value"), CacheDatabases.Vanilla));
+        Task.Delay(1000).Wait();
+        var result = cs.GetEntry(new ReadRequest("YesSIR", CacheDatabases.Vanilla));
+        if (result == null)
+        {
+            Logger.Error("Failed to get entry");
+        }
+        else
+        {
+            Logger.Success("Got test entry");
+        }
+        cs.StopListening();
+
+        var testSector = cs.GetEntry(
+            new ReadRequest("base\\worlds\\03_night_city\\_compiled\\default\\exterior_-4_-8_0_4.streamingsector"));
+        Logger.Info($"{testSector?.Length ?? null}");
+        
+        var testMesh = cs.GetEntry(
+            new ReadRequest("base\\environment\\decoration\\medical\\accessories\\medkit\\medkit_d_mobile.mesh"));
+        Logger.Info($"{testMesh?.Length ?? null}");
     }
 }
