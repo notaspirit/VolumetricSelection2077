@@ -10,7 +10,9 @@
     x:Class="VolumetricSelection2077.MainWindow"
     x:DataType="viewModels:MainWindowViewModel"
     xmlns="https://github.com/avaloniaui"
+    xmlns:avalonia="clr-namespace:LoadingIndicators.Avalonia;assembly=LoadingIndicators.Avalonia"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:li="using:LoadingIndicators.Avalonia"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:resources="clr-namespace:VolumetricSelection2077.Resources"
     xmlns:viewModels="clr-namespace:VolumetricSelection2077.ViewModels"
@@ -74,7 +76,7 @@
                                 <ItemsControl ItemsSource="{Binding Settings.ResourceNameFilter}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Grid ColumnDefinitions="Auto,*" Margin="0,2">
+                                            <Grid ColumnDefinitions="Auto,*, 21" Margin="0,2">
                                                 <Button
                                                     Background="#ad0002"
                                                     Click="RemoveResourceNameFilter_Click"
@@ -134,7 +136,7 @@
                                 <ItemsControl ItemsSource="{Binding Settings.DebugNameFilter}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Grid ColumnDefinitions="Auto,*" Margin="0,2">
+                                            <Grid ColumnDefinitions="Auto,*, 21" Margin="0,2">
                                                 <Button
                                                     Background="#ad0002"
                                                     Click="RemoveDebugNameFilter_Click"
@@ -393,18 +395,27 @@
                     Background="#6b82b2"
                     Click="SettingsButton_Click"
                     Content="{x:Static resources:Labels.Settings}"
-                    Grid.Column="2">
+                    Grid.Column="2"
+                    IsEnabled="{Binding ButtonsAvailable}">
                     <Button.Styles>
                         <Style Selector="Button:pointerover /template/ ContentPresenter">
                             <Setter Property="Background" Value="#455472" />
                         </Style>
                     </Button.Styles>
                 </Button>
+                <Grid Grid.Column="2" IsVisible="{Binding SettingsOpen}">
+                    <li:LoadingIndicator
+                        Foreground="White"
+                        Height="30"
+                        IsActive="True"
+                        Width="30" />
+                </Grid>
                 <Button
                     Background="#6b82b2"
                     Click="Benchmark_Click"
                     Content="{x:Static resources:Labels.Benchmark}"
                     Grid.Column="3"
+                    IsEnabled="{Binding ButtonsAvailable}"
                     IsVisible="{Binding Settings.DebugMode}"
                     Margin="5,0,0,0">
                     <Button.Styles>
@@ -413,6 +424,13 @@
                         </Style>
                     </Button.Styles>
                 </Button>
+                <Grid Grid.Column="3" IsVisible="{Binding BenchmarkProcessing}">
+                    <li:LoadingIndicator
+                        Foreground="White"
+                        Height="30"
+                        IsActive="True"
+                        Width="30" />
+                </Grid>
                 <!--
                 <Button Grid.Column="3"
                        Content="Merge Output"
@@ -430,6 +448,7 @@
                     Click="FindSelectedButton_Click"
                     Content="{x:Static resources:Labels.FindSelected}"
                     Grid.Column="4"
+                    IsEnabled="{Binding ButtonsAvailable}"
                     Margin="5,0,0,0">
                     <Button.Styles>
                         <Style Selector="Button:pointerover /template/ ContentPresenter">
@@ -437,6 +456,13 @@
                         </Style>
                     </Button.Styles>
                 </Button>
+                <Grid Grid.Column="4" IsVisible="{Binding MainTaskProcessing}">
+                    <li:LoadingIndicator
+                        Foreground="White"
+                        Height="30"
+                        IsActive="True"
+                        Width="30" />
+                </Grid>
             </Grid>
             <ContentControl Grid.Row="7" x:Name="SettingsContent" />
             <views:LogViewer

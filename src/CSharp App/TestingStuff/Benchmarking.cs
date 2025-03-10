@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using VolumetricSelection2077.Services;
 using WolvenKit.RED4.Types;
@@ -43,7 +44,7 @@ public class Benchmarking
     
     
     
-    public async void RunBenchmarks()
+    public async Task RunBenchmarks()
     {
         Logger.Info("Starting Benchmarks");
         var processingService = new ProcessService();

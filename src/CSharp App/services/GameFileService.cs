@@ -1,8 +1,8 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
-using MessagePack;
 using WolvenKit;
 using WolvenKit.Common.Services;
 using WolvenKit.Core.Interfaces;
@@ -28,16 +28,39 @@ public class GameFileService
     private static readonly object _lock = new object();
     private readonly ILoggerService _loggerService = new SerilogWrapper();
     private readonly IProgressService<double> _progressService = new ProgressService<double>();
-    private readonly ArchiveManager _archiveManager;
+    private ArchiveManager? _archiveManager;
     private readonly SettingsService _settingsService;
-    private readonly HashService _hashService;
-    private readonly HookService _hookService;
-    private readonly Red4ParserService _red4ParserService;
-    private readonly GeometryCacheService _geometryCacheService;
-    private CacheService _cacheService;
+    private HashService? _hashService;
+    private HookService? _hookService;
+    private Red4ParserService? _red4ParserService;
+    private GeometryCacheService? _geometryCacheService;
+    private bool _initialized;
+
+    public bool IsInitialized
+    {
+        get => _initialized;
+    }
+    
+    
+    
     
     private GameFileService()
     {
+        _settingsService = SettingsService.Instance;
+    }
+    public void Initialize()
+    {
+        if (_initialized) return;
+        if (_settingsService.SupportModdedResources)
+        {
+            Logger.Info($"Initializing Game File Service with modded resources, this may take a while...");
+        }
+        else
+        {
+            Logger.Info($"Initializing Game File Service...");
+        }
+
+        var sw = Stopwatch.StartNew();
         _hashService = new HashService();
         _hookService = new HookService();
         _red4ParserService = new Red4ParserService(
@@ -49,20 +72,17 @@ public class GameFileService
             _red4ParserService,
             _loggerService,
             _progressService
-            );
-        _settingsService = SettingsService.Instance;
+        );
         _geometryCacheService = new GeometryCacheService(
             _archiveManager,
             _red4ParserService
         );
-        _cacheService = CacheService.Instance;
-    }
-    private void Initialize()
-    {
         var gameExePath = new FileInfo(_settingsService.GameDirectory + @"\bin\x64\Cyberpunk2077.exe");
-        _archiveManager.Initialize(gameExePath, false);
+        _archiveManager.Initialize(gameExePath, _settingsService.SupportModdedResources);
+        _initialized = true;
+        sw.Stop();
+        Logger.Success($"Initialized Game File Service in {UtilService.FormatElapsedTime(sw.Elapsed)}");
     }
-    
     public static GameFileService Instance
     {
         get
@@ -72,7 +92,6 @@ public class GameFileService
                 if (_instance == null)
                 {
                     _instance = new GameFileService();
-                    _instance.Initialize();
                 }
                 return _instance;
             }
@@ -80,6 +99,7 @@ public class GameFileService
     }
     public async Task<AbbrMesh?> GetPhysXMesh(ulong sectorHash, ulong actorHash)
     {
+        if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetPhysXMesh.");
         var rawMesh = await _geometryCacheService.GetEntryAsync(sectorHash, actorHash);
         if (rawMesh == null)
         {
@@ -89,42 +109,26 @@ public class GameFileService
         return DirectAbbrMeshParser.ParseFromPhysX(rawMesh);
     }
 
-    public async Task<AbbrMesh?> GetCMesh(string path)
+    public AbbrMesh? GetCMesh(string path)
     {
-        /*
-        var cachedMesh = await _cacheService.GetEntry(new ReadRequest(path));
-        Logger.Info($"Cached value is {cachedMesh}");
-        if (cachedMesh != null)
-        {
-            return MessagePackSerializer.Deserialize<AbbrMesh>(cachedMesh);
-        }
-        */
+        if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
         var rawMesh = _archiveManager.GetCR2WFile(path);
         if (rawMesh == null)
         {
             return null;
         }
-        var parsedMesh = DirectAbbrMeshParser.ParseFromCR2W(rawMesh);
-        _cacheService.WriteEntry(new WriteRequest(path, MessagePackSerializer.Serialize(parsedMesh)));
-        return parsedMesh;
+        
+        return DirectAbbrMeshParser.ParseFromCR2W(rawMesh);
     }
 
-    public async Task<AbbrSector?> GetSector(string path)
+    public AbbrSector? GetSector(string path)
     {
-        var cachedSector = await _cacheService.GetEntry(new ReadRequest(path));
-        Logger.Info($"Cached value is {cachedSector}");
-        if (cachedSector != null)
-        {
-            return MessagePackSerializer.Deserialize<AbbrSector>(cachedSector);;
-        }
+        if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetSector.");
         var rawSector = _archiveManager.GetCR2WFile(path);
         if (rawSector == null)
         {
             return null;
         }
-
-        var parsedSector = DirectAbbrSectorParser.ParseFromCR2W(rawSector);
-        _cacheService.WriteEntry(new WriteRequest(path, MessagePackSerializer.Serialize(parsedSector)));
-        return parsedSector;
+        return DirectAbbrSectorParser.ParseFromCR2W(rawSector);
     }
 }

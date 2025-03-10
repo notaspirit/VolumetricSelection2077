@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using VolumetricSelection2077.Views;
 using VolumetricSelection2077.Services;
 using System;
+using System.ComponentModel;
 using System.IO;
 using Avalonia.Interactivity;
 using System.Threading.Tasks;
@@ -45,11 +46,19 @@ public partial class MainWindow : Window
         Logger.AddSink(new LogViewerSink(logViewer, "[{Timestamp:yyyy-MM-dd HH:mm:ss}] {Message:lj}{NewLine}{Exception}"));
     }
 
-    private void SettingsButton_Click(object? sender, RoutedEventArgs e)
+    private async void SettingsButton_Click(object? sender, RoutedEventArgs e)
     {
         if (_mainWindowViewModel.IsProcessing) return;
+        _mainWindowViewModel.SettingsOpen = true;
         var settingsWindow = new SettingsWindow();
-        settingsWindow.ShowDialog(this);
+        settingsWindow.Opened += (_, _) =>
+        {
+            var x = this.Position.X + 10;
+            var y = this.Position.Y + 41;
+            settingsWindow.Position = new PixelPoint(x, y);
+        };
+        await settingsWindow.ShowDialog(this);
+        _mainWindowViewModel.SettingsOpen = false;
     }
     private void ClearLogButton_Click(object? sender, RoutedEventArgs e)
     {
@@ -63,10 +72,10 @@ public partial class MainWindow : Window
         Stopwatch stopwatch = Stopwatch.StartNew();
         try
         {
-            _mainWindowViewModel.IsProcessing = true;
+            _mainWindowViewModel.MainTaskProcessing = true;
             _mainWindowViewModel.Settings.OutputFilename = UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.OutputFilename);
             OutputFilenameTextBox.Text = _mainWindowViewModel.Settings.OutputFilename;
-            _mainWindowViewModel.Settings.SaveSettings();
+            AddQueuedFilters();
             if (!string.IsNullOrEmpty(_mainWindowViewModel.Settings.OutputFilename))
             {
                 var (success, error) = await Task.Run(() =>
@@ -92,7 +101,7 @@ public partial class MainWindow : Window
             stopwatch.Stop();
             string formattedTime = UtilService.FormatElapsedTime(stopwatch.Elapsed);
             Logger.Info($"Process finished after: {formattedTime}");
-            _mainWindowViewModel.IsProcessing = false;
+            _mainWindowViewModel.MainTaskProcessing = false;
         }
     }
 
@@ -101,17 +110,17 @@ public partial class MainWindow : Window
         if (_mainWindowViewModel.IsProcessing) return;
         try
         {
-            _mainWindowViewModel.IsProcessing = true;
+            _mainWindowViewModel.BenchmarkProcessing = true;
             _mainWindowViewModel.Settings.OutputFilename = UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.OutputFilename);
             OutputFilenameTextBox.Text = _mainWindowViewModel.Settings.OutputFilename;
-            _mainWindowViewModel.Settings.SaveSettings();
+            AddQueuedFilters();
             await Task.Run(() => Benchmarking.Instance.RunBenchmarks());
         }
         catch (Exception ex)
         {
             Logger.Error($"Benchmarking failed: {ex}");
         }
-        _mainWindowViewModel.IsProcessing = false;
+        _mainWindowViewModel.BenchmarkProcessing = false;
     }
     
     private void ResourceFilterTextBox_KeyDown(object? sender, KeyEventArgs e)
@@ -192,6 +201,7 @@ public partial class MainWindow : Window
         if (sender is Button)
         {
             _mainWindowViewModel.FilterSelectionVisibility = !_mainWindowViewModel.FilterSelectionVisibility;
+            AddQueuedFilters();
         }
     }
     
@@ -249,5 +259,62 @@ public partial class MainWindow : Window
         {
             item.IsChecked = !item.IsChecked;
         }
+    }
+
+    private void AddQueuedFilters()
+    {
+        if (!string.IsNullOrEmpty(ResourceFilterTextBox.Text?.Trim()))
+        {
+            _mainWindowViewModel.Settings.ResourceNameFilter.Add(ResourceFilterTextBox.Text.ToLower());
+            ResourceFilterTextBox.Text = string.Empty;
+        }
+        if (!string.IsNullOrEmpty(DebugNameFilterTextBox.Text?.Trim()))
+        {
+            _mainWindowViewModel.Settings.DebugNameFilter.Add(DebugNameFilterTextBox.Text.ToLower());
+            DebugNameFilterTextBox.Text = string.Empty;
+        }
+        _mainWindowViewModel.Settings.SaveSettings();
+    }
+    
+    protected override async void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+        _mainWindowViewModel.IsProcessing = true;
+        try
+        {
+            if (_mainWindowViewModel.Settings.DidUpdate)
+            {
+                var changelog = await UpdateService.GetChangelog();
+                Logger.Success($"Successfully updated to {changelog.Item1}");
+                Logger.Info($"Changelog:" +
+                            $"\n{changelog.Item2}");
+                _mainWindowViewModel.Settings.DidUpdate = false;
+                _mainWindowViewModel.Settings.SaveSettings();
+            }
+            else
+            {
+                Logger.Info("Checking for Updates...");
+                var updateExists = await UpdateService.CheckUpdates();
+                if (updateExists.Item1)
+                {
+                    Logger.Warning($"Update to {updateExists.Item2} is available");
+                }
+                else
+                {
+                    Logger.Info("No updates found");
+                }
+
+                if (updateExists.Item1 && _mainWindowViewModel.Settings.AutoUpdate)
+                {
+                    await UpdateService.Update();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"An error occured during the update check: {ex}");
+        }
+        await Task.Run(() => GameFileService.Instance.Initialize());
+        _mainWindowViewModel.IsProcessing = false;
     }
 }

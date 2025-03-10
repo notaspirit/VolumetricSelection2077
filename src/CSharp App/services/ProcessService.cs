@@ -133,7 +133,7 @@ public class ProcessService
             switch (entryType)
             {
                 case CollisionCheck.Types.Mesh:
-                    var mesh = await _gameFileService.GetCMesh(nodeEntry.ResourcePath);
+                    var mesh = _gameFileService.GetCMesh(nodeEntry.ResourcePath);
                     if (mesh == null)
                     {
                         Logger.Warning($"Failed to get CMesh from {nodeEntry.ResourcePath}");
@@ -282,8 +282,8 @@ public class ProcessService
     public async Task<(bool success, string error)> MainProcessTask(string? customRemovalFile = null, string? customRemovalDirectory = null)
     {
         Logger.Info($"Version: {_settings.ProgramVersion}");
-        await TestCache.Run();
-        return (true, "");
+        
+        _gameFileService.Initialize();
         
         Logger.Info("Validating inputs...");
         
@@ -336,7 +336,7 @@ public class ProcessService
             try
             {
                 string streamingSectorNameFix = Regex.Replace(streamingSectorName, @"\\{2}", @"\");
-                var sector = await _gameFileService.GetSector(streamingSectorNameFix);
+                var sector = _gameFileService.GetSector(streamingSectorNameFix);
                 if (sector == null)
                 {
                     Logger.Warning($"Failed to find sector {streamingSectorNameFix}");
