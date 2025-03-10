@@ -7,13 +7,16 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using LightningDB;
+using MessagePack;
+using VolumetricSelection2077.Models;
 
 namespace VolumetricSelection2077.Services;
 
 public enum CacheDatabases
 {
     Vanilla,
-    Modded
+    Modded,
+    All
 }
 
 public class ReadRequest
@@ -103,23 +106,29 @@ public class CacheService
     public byte[]? GetEntry(ReadRequest request)
     {
         using var tx = _env.BeginTransaction();
-        LightningDatabase db;
+        LightningDatabase[] dbs;
         switch (request.Database)
         {
             case CacheDatabases.Vanilla:
-                db = _vanillaDatabase;
+                dbs = new[] { _vanillaDatabase };
                 break;
             case CacheDatabases.Modded:
-                db = _moddedDatabase;
+                dbs = new[] { _moddedDatabase };
+                break;
+            case CacheDatabases.All:
+                dbs = new[] { _vanillaDatabase, _moddedDatabase };
                 break;
             default:
-                return null;
+                throw new ArgumentException("Unknown Database");
         }
-        var (code, _, value) = tx.Get(_vanillaDatabase, Encoding.UTF8.GetBytes(request.Key));
-        Logger.Info($"Code : {code}");
-        if (code == MDBResultCode.Success)
+
+        foreach (LightningDatabase db in dbs)
         {
-            return value.CopyToNewArray();
+            var (code, _, value) = tx.Get(db, Encoding.UTF8.GetBytes(request.Key));
+            if (code == MDBResultCode.Success)
+            {
+                return value.CopyToNewArray();
+            }
         }
         return null;
     }
@@ -138,11 +147,22 @@ public class CacheService
         }
         tx.Commit();
     }
+
+    public void WriteSectorEntry(string path, AbbrSector sector, CacheDatabases database)
+    {
+        _ = Task.Run(() => WriteSingleEntry(new WriteRequest(path, MessagePackSerializer.Serialize(sector), database)));
+    }
+    
+    public void WriteMeshEntry(string path, AbbrMesh mesh, CacheDatabases database)
+    {
+        _ = Task.Run(() => WriteSingleEntry(new WriteRequest(path, MessagePackSerializer.Serialize(mesh), database)));
+    }
     
     public void WriteEntry(WriteRequest request)
     {
         _requestWriteQueue.Enqueue(request);
     }
+    
     private async Task ProcessWriteQueue()
     {
         bool wroteExitLog = false;
@@ -151,7 +171,7 @@ public class CacheService
             await Task.Delay(BatchDelay);
             if (!IsProcessing && !wroteExitLog && _requestWriteQueue.Count > 0)
             {
-                Logger.Info($"Continuing to write {_requestWriteQueue.Count} entries to cache, do not close the application...");
+                Logger.Warning($"Continuing to write {_requestWriteQueue.Count} entries to cache, do not close the application...");
                 wroteExitLog = true;
             }
 
@@ -184,8 +204,7 @@ public class CacheService
             {
                 foreach (var request in requestsModded)
                 {
-                    var code = tx.Put(_moddedDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
-                    Logger.Info($"Write Code : {code}, {request.Key}, {request.Database}");
+                    tx.Put(_moddedDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
                 }
             }
             
@@ -193,8 +212,7 @@ public class CacheService
             {
                 foreach (var request in requestsVanilla)
                 {
-                    var code = tx.Put(_vanillaDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
-                    Logger.Info($"Write Code : {code}, {request.Key}, {request.Database}");
+                    tx.Put(_vanillaDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
                 }
             }
 

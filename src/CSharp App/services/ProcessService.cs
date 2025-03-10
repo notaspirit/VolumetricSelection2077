@@ -284,11 +284,6 @@ public class ProcessService
         Logger.Info($"Version: {_settings.ProgramVersion}");
         
         // _gameFileService.Initialize();
-
-         
-        await TestCache.Run();
-        TestCache.Run2();
-        return (true, string.Empty);
         
         Logger.Info("Validating inputs...");
         

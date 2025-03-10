@@ -13,6 +13,7 @@ using WolvenKit.RED4.CR2W;
 using SharpGLTF.Schema2;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Parsers;
+using WolvenKit.Common;
 using WolvenKit.Common.Conversion;
 using WolvenKit.Common.FNV1A;
 using WolvenKit.Common.PhysX;
@@ -37,7 +38,7 @@ public class GameFileService
     private GeometryCacheService? _geometryCacheService;
     private CacheService? _cacheService;
     private bool _initialized;
-
+    private CacheDatabases? _readCacheTarget;
     public bool IsInitialized
     {
         get => _initialized;
@@ -79,6 +80,7 @@ public class GameFileService
         var gameExePath = new FileInfo(_settingsService.GameDirectory + @"\bin\x64\Cyberpunk2077.exe");
         _archiveManager.Initialize(gameExePath, _settingsService.SupportModdedResources);
         _cacheService = CacheService.Instance;
+        _readCacheTarget = _settingsService.SupportModdedResources ? CacheDatabases.All : CacheDatabases.Vanilla;
         _initialized = true;
         sw.Stop();
         Logger.Success($"Initialized Game File Service in {UtilService.FormatElapsedTime(sw.Elapsed)}");
@@ -119,7 +121,6 @@ public class GameFileService
         // Logger.Info($"Cached mesh is: {cachedMesh}");
         if (cachedMesh != null)
         {
-            Logger.Info($"Got cached mesh: {cachedMesh}");
             return MessagePackSerializer.Deserialize<AbbrMesh>(cachedMesh);
         }
         var rawMesh = _archiveManager.GetCR2WFile(path);
@@ -127,10 +128,15 @@ public class GameFileService
         {
             return null;
         }
-
+        CacheDatabases db = CacheDatabases.Vanilla;
+        
+        var fileLookup = _archiveManager.Lookup(path, ArchiveManagerScope.Mods);
+        if (fileLookup != null)
+        {
+            db = CacheDatabases.Modded;
+        }
         var parsedMesh = DirectAbbrMeshParser.ParseFromCR2W(rawMesh);
-        _cacheService.WriteEntry(new WriteRequest(path, MessagePackSerializer.Serialize(parsedMesh), CacheDatabases.Vanilla));
-        Logger.Info("Got mesh from archive files");
+        _cacheService.WriteMeshEntry(path, parsedMesh, db);
         return parsedMesh;
     }
 
@@ -144,7 +150,6 @@ public class GameFileService
         // Logger.Info($"Cached sector is: {cachedSector}");
         if (cachedSector != null)
         {
-            Logger.Info($"Got cached sector: {cachedSector}");
             return MessagePackSerializer.Deserialize<AbbrSector>(cachedSector);
         }
         var rawSector = _archiveManager.GetCR2WFile(path);
@@ -152,9 +157,14 @@ public class GameFileService
         {
             return null;
         }
+        CacheDatabases db = CacheDatabases.Vanilla;
+        var fileLookup = _archiveManager.Lookup(path, ArchiveManagerScope.Mods);
+        if (fileLookup != null)
+        {
+            db = CacheDatabases.Modded;
+        }
         var parsedSector = DirectAbbrSectorParser.ParseFromCR2W(rawSector);
-        _cacheService.WriteEntry(new WriteRequest(path, MessagePackSerializer.Serialize(parsedSector), CacheDatabases.Vanilla));
-        Logger.Info("Got sector from archive files");
+        _cacheService.WriteSectorEntry(path, parsedSector, db);
         return parsedSector;
     }
 }

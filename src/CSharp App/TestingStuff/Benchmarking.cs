@@ -47,9 +47,6 @@ public class Benchmarking
     public async Task RunBenchmarks()
     {
         Logger.Info("Starting Benchmarks");
-        CacheService.Instance.ClearDatabase(CacheDatabases.Modded);
-        CacheService.Instance.ClearDatabase(CacheDatabases.Vanilla);
-        return;
         // CacheService.Instance.DropDatabase(CacheDatabases.Vanilla);
         var processingService = new ProcessService();
         string benchFileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
