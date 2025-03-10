@@ -23,7 +23,7 @@ public class TestCache
             @"ep1\worlds\03_night_city\sectors\_external\proxy\1930979112\hill_park_totem.mesh";
         
         cs.StartListening();
-        cs.DropDatabases(CacheDatabases.Vanilla);
+        cs.DropDatabase(CacheDatabases.Vanilla);
         
         Logger.Info("Getting CMesh without cache...");
         var swGetMeshReg = new Stopwatch();
@@ -32,7 +32,7 @@ public class TestCache
         AbbrMesh? regularCMesh = null;
         try
         { 
-            regularCMesh = await gfs.GetCMesh(testMeshPath);
+            regularCMesh = gfs.GetCMesh(testMeshPath);
         }
         catch (Exception e)
         {
@@ -48,27 +48,17 @@ public class TestCache
         var swGetMeshCache = new Stopwatch();
         swGetMeshCache.Start();
         
-        var cachedCMesh = await gfs.GetCMesh(testMeshPath);
+        var cachedCMesh = gfs.GetCMesh(testMeshPath);
 
         swGetMeshCache.Stop();
-        Logger.Info($"Got Sector regular time: {swGetMeshCache.ElapsedMilliseconds} ms");
+        Logger.Info($"Got CMesh cached time: {swGetMeshCache.ElapsedMilliseconds} ms");
         Logger.Info($"cached mesh is correct: {cachedCMesh == regularCMesh}");
-        
-        Logger.Info("Getting CMesh2 without cache...");
-        var swGetMeshCache2 = new Stopwatch();
-        swGetMeshCache2.Start();
-        
-        var cachedCMesh2 = await gfs.GetCMesh(testMeshPath);
-
-        swGetMeshCache2.Stop();
-        Logger.Info($"Got Sector regular time: {swGetMeshCache2.ElapsedMilliseconds} ms");
-        
         
         Logger.Info("Getting Sector without cache...");
         var swGetSectorReg = new Stopwatch();
         swGetSectorReg.Start();
         
-        var regularSector = await gfs.GetSector(testSectorPath);
+        var regularSector = gfs.GetSector(testSectorPath);
 
         swGetSectorReg.Stop();
         Logger.Info($"Got Sector regular time: {swGetSectorReg.ElapsedMilliseconds} ms");
@@ -79,13 +69,13 @@ public class TestCache
         var swGetSectorCache = new Stopwatch();
         swGetSectorCache.Start();
         
-        var cachedSector = await gfs.GetSector(testSectorPath);
+        var cachedSector = gfs.GetSector(testSectorPath);
 
         swGetSectorCache.Stop();
-        Logger.Info($"Got Sector regular time: {swGetSectorCache.ElapsedMilliseconds} ms");
+        Logger.Info($"Got Sector cached time: {swGetSectorCache.ElapsedMilliseconds} ms");
         Logger.Info($"cached sector is correct: {cachedSector == regularSector}");
 
-        cs.DropDatabases(CacheDatabases.Vanilla);
+        cs.DropDatabase(CacheDatabases.Vanilla);
         cs.StopListening();
         Logger.Info("Reset Database and concluded tests");
     }

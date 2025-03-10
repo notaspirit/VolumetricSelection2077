@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,25 +18,25 @@ public enum CacheDatabases
 
 public class ReadRequest
 {
-    public string Database { get; set; }
+    public CacheDatabases Database { get; set; }
     public string Key { get; set; }
     public ReadRequest(string key, CacheDatabases database = CacheDatabases.Vanilla)
     {
         Key = key;
-        Database = database.ToString();
+        Database = database;
     }
 }
 
 public class WriteRequest
 {
-    public string Database { get; set; }
+    public CacheDatabases Database { get; set; }
     public string Key { get; set; }
     public byte[] Data { get; set; }
     public WriteRequest(string key, byte[] data, CacheDatabases database = CacheDatabases.Vanilla)
     {
         Key = key;
         Data = data;
-        Database = database.ToString();
+        Database = database;
     }
 }
 
@@ -45,11 +46,12 @@ public class CacheService
     private static CacheService? _instance;
     private SettingsService _settings;
     private LightningEnvironment _env;
-    private static readonly int BatchDelay = 10;
+    private static readonly int BatchDelay = 1;
     private static readonly int MaxReaders = 512;
-    private SemaphoreSlim _semaphore;
-    static ConcurrentQueue<(ReadRequest key, TaskCompletionSource<byte[]?> tcs)> _requestReadQueue = new();
     static ConcurrentQueue<WriteRequest> _requestWriteQueue = new();
+    private LightningDatabase _vanillaDb;
+    private LightningDatabase _moddedDb;
+    private readonly object _lock = new object();
     private static bool IsProcessing { get; set; } = false;
     
     private CacheService()
@@ -63,7 +65,17 @@ public class CacheService
             MapSize = 10485760 * 100, // 1gb (should be more for actual use prob but for testing it will do)
             MaxReaders = MaxReaders
         };
-
+        _env.Open();
+        using var tx = _env.BeginTransaction();
+        // temporarily treat all as vanilla files
+        _vanillaDb = tx.OpenDatabase(CacheDatabases.Vanilla.ToString(), new DatabaseConfiguration()
+        {
+            Flags = DatabaseOpenFlags.Create
+        });
+        _moddedDb = tx.OpenDatabase(CacheDatabases.Modded.ToString(), new DatabaseConfiguration()
+        {
+            Flags = DatabaseOpenFlags.Create
+        });
     }
     public static CacheService Instance
     {
@@ -79,114 +91,96 @@ public class CacheService
 
     public void StartListening()
     {
-        if (_env.IsOpened == false) _env.Open();
         IsProcessing = true;
-        _ = Task.Run(() => ProcessReadQueue());
-
+        _ = Task.Run(() => ProcessWriteQueue());
     }
 
     public void StopListening()
     {
         IsProcessing = false;
     }
-
+    
     // only call this at the end of the program once it's certain that the env never has to be accessed in the lifecycle
-    public void DesposeEnv()
+    public void DisposeEnv()
     {
         _env.Dispose();
     }
     
-    public Task<byte[]?> GetEntry(ReadRequest request)
+    public byte[]? GetEntry(ReadRequest request)
     {
-        var tcs = new TaskCompletionSource<byte[]?>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _requestReadQueue.Enqueue((request, tcs));
-        return tcs.Task;
-    }
-    
-
-    private async Task ProcessReadQueue()
-    {
-        while (IsProcessing || _requestReadQueue.Count > 0)
+        using var tx = _env.BeginTransaction(TransactionBeginFlags.ReadOnly);
+        LightningDatabase db;
+        if (request.Database == CacheDatabases.Vanilla)
         {
-            await Task.Delay(BatchDelay);
-            var requestArray = _requestReadQueue.ToArray();
-            _requestReadQueue.Clear();
-            
-            try
-            {
-                using var tx = _env.BeginTransaction();
-                // temporarily treat all as vanilla files
-                using var db = tx.OpenDatabase(CacheDatabases.Vanilla.ToString(), new DatabaseConfiguration
-                {
-                    Flags = DatabaseOpenFlags.Create
-                });
-                foreach (var request in requestArray)
-                {
-                    try
-                    {
-                        var (code, _, value) = tx.Get(db, Encoding.UTF8.GetBytes(request.key.Key));
-                        if (code == MDBResultCode.Success)
-                        {
-                            request.tcs.SetResult(value.CopyToNewArray());
-                        }
-                        else
-                        {
-                            request.tcs.SetResult(null);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        request.tcs.SetResult(null);
-                    }
-                }
-                tx.Commit();
-            }
-            catch (Exception e)
-            {
-                Logger.Error($"Failed to process read queue: {e}");
-            }
+            db = _vanillaDb;
         }
+        else
+        {
+            db = _moddedDb;
+        }
+        var (code, _, value) = tx.Get(db, Encoding.UTF8.GetBytes(request.Key));
+        if (code == MDBResultCode.Success)
+        {
+            return value.CopyToNewArray();
+        }
+        return null;
     }
+
     public void WriteEntry(WriteRequest request)
     {
         _requestWriteQueue.Enqueue(request);
     }
     private async Task ProcessWriteQueue()
     {
+        bool wroteExitLog = false;
         while (IsProcessing || _requestWriteQueue.Count > 0)
         {
             await Task.Delay(BatchDelay);
-            var requestArray = _requestWriteQueue.ToArray();
-            _requestWriteQueue.Clear();
-            try
+            if (!IsProcessing && !wroteExitLog)
             {
-                using var tx = _env.BeginTransaction();
-                // temporarily treat all as vanilla files
-                using var db = tx.OpenDatabase(CacheDatabases.Vanilla.ToString(), new DatabaseConfiguration
-                {
-                    Flags = DatabaseOpenFlags.Create
-                });
-                foreach (var request in requestArray)
-                {
-                    try
-                    {
-                        tx.Put(db,Encoding.UTF8.GetBytes(request.Key), request.Data);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error($"Failed to write entry: {request.Key} with error: {ex}");
-                    }
-                }
-                tx.Commit();
+                Logger.Info($"Continuing to write {_requestWriteQueue.Count} entries to cache, do not close the application...");
+                wroteExitLog = true;
             }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to write batch to cache with error: {ex}");
-            }
-        }
-    }
 
-    public void DropDatabases(CacheDatabases database)
+            if (!(_requestWriteQueue.Count > 0)) continue;
+            WriteRequest[] requests;
+    
+            lock (_lock)
+            {
+                requests = _requestWriteQueue.ToArray();
+                _requestWriteQueue.Clear();
+            }
+            
+            List<WriteRequest> requestsModded = new();
+            List<WriteRequest> requestsVanilla = new();
+            foreach (var request in requests)
+            {
+                switch (request.Database)
+                {
+                    case CacheDatabases.Vanilla:
+                        requestsVanilla.Add(request);
+                        break;
+                    case CacheDatabases.Modded:
+                        requestsModded.Add(request);
+                        break;
+                }
+            }
+            
+            using var tx = _env.BeginTransaction();
+            foreach (var request in requestsModded)
+            {
+                tx.Put(_moddedDb,Encoding.UTF8.GetBytes(request.Key), request.Data);
+            }
+            foreach (var request in requestsVanilla)
+            {
+                tx.Put(_vanillaDb,Encoding.UTF8.GetBytes(request.Key), request.Data);
+            }
+            tx.Commit();
+        }
+        Logger.Success("Finished writing all queued entries to cache");
+    }
+    
+    public void DropDatabase(CacheDatabases database)
     {
         try
         {

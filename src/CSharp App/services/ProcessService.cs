@@ -283,8 +283,12 @@ public class ProcessService
     {
         Logger.Info($"Version: {_settings.ProgramVersion}");
         
-        _gameFileService.Initialize();
-        
+        // _gameFileService.Initialize();
+
+        /*
+        await TestCache.Run();
+        return (true, string.Empty);
+        */
         Logger.Info("Validating inputs...");
         
         if (!ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename))
@@ -293,6 +297,8 @@ public class ProcessService
         }
         
         Logger.Info("Starting Process...");
+        
+        CacheService.Instance.StartListening();
         
         bool customRemovalFileProvided = customRemovalFile != null;
         bool customRemovalDirectoryProvided = customRemovalDirectory != null;
@@ -364,6 +370,7 @@ public class ProcessService
 
         var sectorsOutputRaw = await Task.WhenAll(tasks);
 
+        CacheService.Instance.StopListening();
         List<AxlRemovalSector> sectors = new();
         foreach (var sector in sectorsOutputRaw)
         {

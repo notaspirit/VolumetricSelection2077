@@ -47,6 +47,7 @@ public class Benchmarking
     public async Task RunBenchmarks()
     {
         Logger.Info("Starting Benchmarks");
+        // CacheService.Instance.DropDatabase(CacheDatabases.Vanilla);
         var processingService = new ProcessService();
         string benchFileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "VolumetricSelection2077", "benchmarks");

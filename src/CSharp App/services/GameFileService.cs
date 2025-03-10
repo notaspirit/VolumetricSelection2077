@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using MessagePack;
 using WolvenKit;
 using WolvenKit.Common.Services;
 using WolvenKit.Core.Interfaces;
@@ -34,15 +35,13 @@ public class GameFileService
     private HookService? _hookService;
     private Red4ParserService? _red4ParserService;
     private GeometryCacheService? _geometryCacheService;
+    private CacheService? _cacheService;
     private bool _initialized;
 
     public bool IsInitialized
     {
         get => _initialized;
     }
-    
-    
-    
     
     private GameFileService()
     {
@@ -79,6 +78,7 @@ public class GameFileService
         );
         var gameExePath = new FileInfo(_settingsService.GameDirectory + @"\bin\x64\Cyberpunk2077.exe");
         _archiveManager.Initialize(gameExePath, _settingsService.SupportModdedResources);
+        _cacheService = CacheService.Instance;
         _initialized = true;
         sw.Stop();
         Logger.Success($"Initialized Game File Service in {UtilService.FormatElapsedTime(sw.Elapsed)}");
@@ -112,23 +112,47 @@ public class GameFileService
     public AbbrMesh? GetCMesh(string path)
     {
         if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
+        var sw = Stopwatch.StartNew();
+        var cachedMesh = _cacheService.GetEntry(new ReadRequest(path));
+        sw.Stop();
+        // Logger.Info($"Took to {sw.ElapsedMilliseconds}ms to get raw cache entry.");
+        // Logger.Info($"Cached mesh is: {cachedMesh}");
+        if (cachedMesh != null || cachedMesh?.Length <= 0)
+        {
+            // Logger.Info($"Got cached mesh: {cachedMesh}");
+            return MessagePackSerializer.Deserialize<AbbrMesh>(cachedMesh);
+        }
         var rawMesh = _archiveManager.GetCR2WFile(path);
         if (rawMesh == null)
         {
             return null;
         }
-        
-        return DirectAbbrMeshParser.ParseFromCR2W(rawMesh);
+
+        var parsedMesh = DirectAbbrMeshParser.ParseFromCR2W(rawMesh);
+        _cacheService.WriteEntry(new WriteRequest(path, MessagePackSerializer.Serialize(parsedMesh)));
+        return parsedMesh;
     }
 
     public AbbrSector? GetSector(string path)
     {
         if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetSector.");
+        var sw = Stopwatch.StartNew();
+        var cachedSector = _cacheService.GetEntry(new ReadRequest(path));
+        sw.Stop();
+        // Logger.Info($"Took to {sw.ElapsedMilliseconds}ms to get raw cache entry.");
+        // Logger.Info($"Cached sector is: {cachedSector}");
+        if (cachedSector != null || cachedSector?.Length <= 0)
+        {
+            // Logger.Info($"Got cached sector: {cachedSector}");
+            return MessagePackSerializer.Deserialize<AbbrSector>(cachedSector);
+        }
         var rawSector = _archiveManager.GetCR2WFile(path);
         if (rawSector == null)
         {
             return null;
         }
-        return DirectAbbrSectorParser.ParseFromCR2W(rawSector);
+        var parsedSector = DirectAbbrSectorParser.ParseFromCR2W(rawSector);
+        _cacheService.WriteEntry(new WriteRequest(path, MessagePackSerializer.Serialize(parsedSector)));
+        return parsedSector;
     }
 }
