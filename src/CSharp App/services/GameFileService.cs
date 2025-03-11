@@ -11,6 +11,7 @@ using WolvenKit.Core.Services;
 using WolvenKit.RED4.CR2W.Archive;
 using WolvenKit.RED4.CR2W;
 using SharpGLTF.Schema2;
+using VolumetricSelection2077.Helpers;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Parsers;
 using WolvenKit.Common;
@@ -20,6 +21,7 @@ using WolvenKit.Common.PhysX;
 using WolvenKit.Modkit.RED4.Tools;
 using WolvenKit.RED4.Archive.CR2W;
 using WolvenKit.RED4.CR2W.JSON;
+using WolvenKit.RED4.Types;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace VolumetricSelection2077.Services;
@@ -38,7 +40,7 @@ public class GameFileService
     private GeometryCacheService? _geometryCacheService;
     private CacheService? _cacheService;
     private bool _initialized;
-    private CacheDatabases? _readCacheTarget;
+    private CacheDatabases _readCacheTarget;
     public bool IsInitialized
     {
         get => _initialized;
@@ -110,32 +112,21 @@ public class GameFileService
         
         return DirectAbbrMeshParser.ParseFromPhysX(rawMesh);
     }
-
     public AbbrMesh? GetCMesh(string path)
     {
         if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
-        var sw = Stopwatch.StartNew();
-        var cachedMesh = _cacheService.GetEntry(new ReadRequest(path,CacheDatabases.Vanilla));
-        sw.Stop();
-        // Logger.Info($"Took to {sw.ElapsedMilliseconds}ms to get raw cache entry.");
-        // Logger.Info($"Cached mesh is: {cachedMesh}");
-        if (cachedMesh != null)
+        if (_settingsService.CacheEnabled)
         {
-            return MessagePackSerializer.Deserialize<AbbrMesh>(cachedMesh);
+            var cachedMesh = _cacheService.GetEntry(new ReadRequest(path, _readCacheTarget));
+            if (MessagePackHelper.TryDeserialize<AbbrMesh>(cachedMesh, out var mesh)) return mesh;
         }
         var rawMesh = _archiveManager.GetCR2WFile(path);
-        if (rawMesh == null)
-        {
-            return null;
-        }
+        if (rawMesh == null) return null;
         CacheDatabases db = CacheDatabases.Vanilla;
-        if (_settingsService.SupportModdedResources && _settingsService.CacheModdedResources)
+        if (_settingsService.SupportModdedResources && _settingsService.CacheModdedResources && _settingsService.CacheEnabled)
         {
             var fileLookup = _archiveManager.Lookup(path, ArchiveManagerScope.Mods);
-            if (fileLookup != null)
-            {
-                db = CacheDatabases.Modded;
-            }
+            if (fileLookup != null) db = CacheDatabases.Modded;
         }
         var parsedMesh = DirectAbbrMeshParser.ParseFromCR2W(rawMesh);
         _cacheService.WriteMeshEntry(path, parsedMesh, db);
@@ -144,29 +135,19 @@ public class GameFileService
 
     public AbbrSector? GetSector(string path)
     {
-        if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetSector.");
-        var sw = Stopwatch.StartNew();
-        var cachedSector = _cacheService.GetEntry(new ReadRequest(path, CacheDatabases.Vanilla));
-        sw.Stop();
-        // Logger.Info($"Took to {sw.ElapsedMilliseconds}ms to get raw cache entry.");
-        // Logger.Info($"Cached sector is: {cachedSector}");
-        if (cachedSector != null)
+        if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
+        if (_settingsService.CacheEnabled)
         {
-            return MessagePackSerializer.Deserialize<AbbrSector>(cachedSector);
+            var cachedSector = _cacheService.GetEntry(new ReadRequest(path, _readCacheTarget));
+            if (MessagePackHelper.TryDeserialize<AbbrSector>(cachedSector, out var mesh)) return mesh;
         }
         var rawSector = _archiveManager.GetCR2WFile(path);
-        if (rawSector == null)
-        {
-            return null;
-        }
+        if (rawSector == null) return null;
         CacheDatabases db = CacheDatabases.Vanilla;
-        if (_settingsService.SupportModdedResources && _settingsService.CacheModdedResources)
+        if (_settingsService.SupportModdedResources && _settingsService.CacheModdedResources && _settingsService.CacheEnabled)
         {
             var fileLookup = _archiveManager.Lookup(path, ArchiveManagerScope.Mods);
-            if (fileLookup != null)
-            {
-                db = CacheDatabases.Modded;
-            }
+            if (fileLookup != null) db = CacheDatabases.Modded;
         }
         var parsedSector = DirectAbbrSectorParser.ParseFromCR2W(rawSector);
         _cacheService.WriteSectorEntry(path, parsedSector, db);
