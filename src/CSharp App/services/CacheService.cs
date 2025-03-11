@@ -50,7 +50,7 @@ public class CacheService
     private LightningEnvironment _env;
     private static readonly int BatchDelay = 1;
     private static readonly int MaxReaders = 512;
-    private static int MapSize = 10485760 * 100; // 1gb (should be more for actual use prob but for testing it will do)
+    private static readonly int MapSize = 10485760 * 100; // 1gb (should be more for actual use prob but for testing it will do)
     static ConcurrentQueue<WriteRequest> _requestWriteQueue = new();
     private readonly object _lock = new object();
     private LightningDatabase _vanillaDatabase;
@@ -111,14 +111,10 @@ public class CacheService
     {
         IsProcessing = false;
     }
-    
-    public void DisposeEnv()
-    {
-        _env.Dispose();
-    }
-    
+
     public byte[]? GetEntry(ReadRequest request)
     {
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling GetEntry");
         using var tx = _env.BeginTransaction();
         LightningDatabase[] dbs;
         switch (request.Database)
@@ -149,6 +145,7 @@ public class CacheService
 
     public void WriteSingleEntry(WriteRequest request)
     {
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling WriteSingleEntry");
         using var tx = _env.BeginTransaction();
         switch (request.Database)
         {
@@ -164,21 +161,25 @@ public class CacheService
 
     public void WriteSectorEntry(string path, AbbrSector sector, CacheDatabases database)
     {
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling WriteSectorEntry");
         _ = Task.Run(() => WriteSingleEntry(new WriteRequest(path, MessagePackSerializer.Serialize(sector), database)));
     }
     
     public void WriteMeshEntry(string path, AbbrMesh mesh, CacheDatabases database)
     {
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling WriteMeshEntry");
         _ = Task.Run(() => WriteSingleEntry(new WriteRequest(path, MessagePackSerializer.Serialize(mesh), database)));
     }
     
     public void WriteEntry(WriteRequest request)
     {
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling WriteEntry");
         _requestWriteQueue.Enqueue(request);
     }
     
     private async Task ProcessWriteQueue()
     {
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling ProcessWriteQueue");
         bool wroteExitLog = false;
         while (IsProcessing || _requestWriteQueue.Count > 0)
         {
@@ -241,7 +242,7 @@ public class CacheService
 
     public void ResizeEnvironment()
     {
-        if (!_isInitialized) return;
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling ResizeEnvironment");
         _isInitialized = false;
         
         string tempCacheDir = Path.Combine(_settings.CacheDirectory, $"temp_{Guid.NewGuid().ToString()}");
@@ -301,6 +302,7 @@ public class CacheService
     
     public void ClearDatabase(CacheDatabases database, bool resize = false)
     {
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling ClearDatabase");
         try
         {
             using var tx = _env.BeginTransaction();
@@ -309,22 +311,18 @@ public class CacheService
                 case CacheDatabases.Vanilla:
                     using (var cursor = tx.CreateCursor(_vanillaDatabase))
                     {
-                        cursor.First();
-                        for (int i = 0; i < cursor.AsEnumerable().Count(); i++)
+                        while (cursor.Next() == MDBResultCode.Success)
                         {
                             cursor.Delete();
-                            cursor.Next();
                         }
                     }
                     break;
                 case CacheDatabases.Modded:
                     using (var cursor = tx.CreateCursor(_vanillaDatabase))
                     {
-                        cursor.First();
-                        for (int i = 0; i < cursor.AsEnumerable().Count(); i++)
+                        while (cursor.Next() == MDBResultCode.Success)
                         {
                             cursor.Delete();
-                            cursor.Next();
                         }
                     }
                     break;
@@ -354,38 +352,38 @@ public class CacheService
 
     public DataBaseSample GetSample(int sampleSize)
     {
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling GetSample");
         var moddedSample = new string[sampleSize];
         var vanillaSample = new string[sampleSize];
-        int moddedCount = 0;
-        int vanillaCount = 0;
+        int moddedCount;
+        int vanillaCount;
         
         using var tx = _env.BeginTransaction();
         using (var cursor = tx.CreateCursor(_vanillaDatabase))
         {
+            int i = 0;
+            while (cursor.Next() == MDBResultCode.Success)
+            {
+                if (i == sampleSize) break;
+                var entry = cursor.GetCurrent();
+                vanillaSample[i] = $"{BitConverter.ToString(entry.Item2.CopyToNewArray())} : {BitConverter.ToString(entry.Item3.CopyToNewArray())}";
+                i++;
+            }
             cursor.First();
             vanillaCount = cursor.AsEnumerable().Count();
-            int vanillaI = 0;
-            cursor.First();
-            for (int i = 0; i < vanillaCount; i++)
-            {
-                if (vanillaI == sampleSize) break;
-                var entry = cursor.GetCurrent();
-                vanillaSample[vanillaI] = $"{BitConverter.ToString(entry.Item2.CopyToNewArray())} : {BitConverter.ToString(entry.Item3.CopyToNewArray())}";
-                vanillaI++;
-                cursor.Next();
-            }
         }
         using (var cursor = tx.CreateCursor(_moddedDatabase))
         {
+            int i = 0;
+            while (cursor.Next() == MDBResultCode.Success)
+            {
+                if (i == sampleSize) break;
+                var entry = cursor.GetCurrent();
+                moddedSample[i] = $"{BitConverter.ToString(entry.Item2.CopyToNewArray())} : {BitConverter.ToString(entry.Item3.CopyToNewArray())}";
+                i++;
+            }
             cursor.First();
             moddedCount = cursor.AsEnumerable().Count();
-            int moddedI = 0;
-            foreach (var entry in cursor.AsEnumerable())
-            {
-                if (moddedI == sampleSize) break;
-                moddedSample[moddedI] = $"{BitConverter.ToString(entry.Item1.CopyToNewArray())} : {BitConverter.ToString(entry.Item2.CopyToNewArray())}";
-                moddedI++;
-            }
         }
         return new DataBaseSample(moddedCount, vanillaCount, moddedSample, vanillaSample);
     }
