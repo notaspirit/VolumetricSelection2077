@@ -285,6 +285,9 @@ public class ProcessService
         
         // _gameFileService.Initialize();
         
+        TestCacheResizing.Run();
+        return (true, string.Empty);
+        
         Logger.Info("Validating inputs...");
         
         if (!ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename))

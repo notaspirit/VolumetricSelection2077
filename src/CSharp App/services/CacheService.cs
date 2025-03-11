@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using LightningDB;
 using MessagePack;
@@ -51,28 +50,22 @@ public class CacheService
     private LightningEnvironment _env;
     private static readonly int BatchDelay = 1;
     private static readonly int MaxReaders = 512;
+    private static int MapSize = 10485760 * 100; // 1gb (should be more for actual use prob but for testing it will do)
     static ConcurrentQueue<WriteRequest> _requestWriteQueue = new();
     private readonly object _lock = new object();
     private LightningDatabase _vanillaDatabase;
     private LightningDatabase _moddedDatabase;
+    private bool _isInitialized;
+
+    public bool IsInitialized
+    {
+        get => _isInitialized;
+    }
     private static bool IsProcessing { get; set; } = false;
     
     private CacheService()
     {
-        _settings = SettingsService.Instance;
-        string cacheDir = Path.Combine(_settings.CacheDirectory, "cache");
-        Directory.CreateDirectory(cacheDir);
-        _env = new LightningEnvironment(cacheDir)
-        {
-            MaxDatabases = 2,
-            MapSize = 10485760 * 100, // 1gb (should be more for actual use prob but for testing it will do)
-            MaxReaders = MaxReaders
-        };
-        _env.Open();
-        using var tx = _env.BeginTransaction();
-        _moddedDatabase = tx.OpenDatabase(CacheDatabases.Modded.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
-        _vanillaDatabase = tx.OpenDatabase(CacheDatabases.Vanilla.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
-        tx.Commit();
+        Initialize();
     }
     public static CacheService Instance
     {
@@ -81,11 +74,33 @@ public class CacheService
             if (_instance == null)
             {
                 _instance = new CacheService();
+                _instance.Initialize();
             }
             return _instance;
         }
     }
 
+    public void Initialize()
+    {
+        if (_isInitialized) return;
+        _settings = SettingsService.Instance;
+        string cacheDir = Path.Combine(_settings.CacheDirectory, "cache");
+        Directory.CreateDirectory(cacheDir);
+        _env = new LightningEnvironment(cacheDir)
+        {
+            MaxDatabases = 2,
+            MapSize = MapSize,
+            MaxReaders = MaxReaders
+        };
+        _env.Open();
+        using var tx = _env.BeginTransaction();
+        _moddedDatabase = tx.OpenDatabase(CacheDatabases.Modded.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
+        _vanillaDatabase = tx.OpenDatabase(CacheDatabases.Vanilla.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
+        tx.Commit();
+        _isInitialized = true;
+    }
+    
+    
     public void StartListening()
     {
         IsProcessing = true;
@@ -97,7 +112,6 @@ public class CacheService
         IsProcessing = false;
     }
     
-    // only call this at the end of the program once it's certain that the env never has to be accessed in the lifecycle
     public void DisposeEnv()
     {
         _env.Dispose();
@@ -224,8 +238,68 @@ public class CacheService
             Logger.Success("Finished writing all queued entries to cache");
         }
     }
+
+    public void ResizeEnvironment()
+    {
+        if (!_isInitialized) return;
+        _isInitialized = false;
+        
+        string tempCacheDir = Path.Combine(_settings.CacheDirectory, $"temp_{Guid.NewGuid().ToString()}");
+        Directory.CreateDirectory(tempCacheDir);
+        var tempEnv = new LightningEnvironment(tempCacheDir)
+        {
+            MaxDatabases = 2,
+            MapSize = MapSize,
+            MaxReaders = MaxReaders
+        };
+        tempEnv.Open();
+        var databases = new [] { CacheDatabases.Vanilla.ToString(), CacheDatabases.Modded.ToString() };
+
+        foreach (var database in databases)
+        {
+            // Create the destination database first with a separate transaction
+            using (var createTxn = tempEnv.BeginTransaction())
+            {
+                using (var db = createTxn.OpenDatabase(database, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
+                {
+                    // Just create the database
+                }
+                createTxn.Commit();
+            }
+
+        }
+        var srcTxn = _env.BeginTransaction();
+        var dstTxn = tempEnv.BeginTransaction();
+        foreach (var dbName in databases)
+        {
+            var srcDb = srcTxn.OpenDatabase(dbName);
+            var dstDb = dstTxn.OpenDatabase(dbName, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+            using (var cursor = srcTxn.CreateCursor(srcDb))
+            {
+                while (cursor.Next() == MDBResultCode.Success)
+                {
+                    dstTxn.Put(dstDb, cursor.GetCurrent().key.CopyToNewArray(), cursor.GetCurrent().value.CopyToNewArray());
+                }
+            }
+        }
+        var destCode = dstTxn.Commit();
+        var srcCode = srcTxn.Commit();
+        Logger.Info($"Dest code: {destCode}, src code: {srcCode}");
+        
+        _env.Dispose();
+        tempEnv.Dispose();
+        
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        
+        string cacheDir = Path.Combine(_settings.CacheDirectory, "cache");
+        Directory.Delete(cacheDir, true);
+        Directory.Move(tempCacheDir, cacheDir);
+        Initialize();
+    }
     
-    public void ClearDatabase(CacheDatabases database)
+    
+    public void ClearDatabase(CacheDatabases database, bool resize = false)
     {
         try
         {
@@ -236,7 +310,7 @@ public class CacheService
                     using (var cursor = tx.CreateCursor(_vanillaDatabase))
                     {
                         cursor.First();
-                        for (int i = 0;  i < cursor.AsEnumerable().Count(); i++)
+                        for (int i = 0; i < cursor.AsEnumerable().Count(); i++)
                         {
                             cursor.Delete();
                             cursor.Next();
@@ -247,7 +321,7 @@ public class CacheService
                     using (var cursor = tx.CreateCursor(_vanillaDatabase))
                     {
                         cursor.First();
-                        for (int i = 0;  i < cursor.AsEnumerable().Count(); i++)
+                        for (int i = 0; i < cursor.AsEnumerable().Count(); i++)
                         {
                             cursor.Delete();
                             cursor.Next();
@@ -256,10 +330,63 @@ public class CacheService
                     break;
             }
             tx.Commit();
+            if (resize) ResizeEnvironment();
         }
         catch (Exception ex)
         {
             Logger.Error($"Failed to drop database {database} with error: {ex}");
         }
+    }
+    public class DataBaseSample
+    {
+        public int moddedEntriesCount { get; set; }
+        public int vanillaEntriesCount { get; set; }
+        public string[] moddedEntriesSample { get; set; }
+        public string[] vanillaEntriesSample { get; set; }
+        public DataBaseSample(int moddedEntriesCount, int vanillaEntriesCount, string[] moddedEntriesSample, string[] vanillaEntriesSample)
+        {
+            this.moddedEntriesCount = moddedEntriesCount;
+            this.vanillaEntriesCount = vanillaEntriesCount;
+            this.moddedEntriesSample = moddedEntriesSample;
+            this.vanillaEntriesSample = vanillaEntriesSample;
+        }
+    }
+
+    public DataBaseSample GetSample(int sampleSize)
+    {
+        var moddedSample = new string[sampleSize];
+        var vanillaSample = new string[sampleSize];
+        int moddedCount = 0;
+        int vanillaCount = 0;
+        
+        using var tx = _env.BeginTransaction();
+        using (var cursor = tx.CreateCursor(_vanillaDatabase))
+        {
+            cursor.First();
+            vanillaCount = cursor.AsEnumerable().Count();
+            int vanillaI = 0;
+            cursor.First();
+            for (int i = 0; i < vanillaCount; i++)
+            {
+                if (vanillaI == sampleSize) break;
+                var entry = cursor.GetCurrent();
+                vanillaSample[vanillaI] = $"{BitConverter.ToString(entry.Item2.CopyToNewArray())} : {BitConverter.ToString(entry.Item3.CopyToNewArray())}";
+                vanillaI++;
+                cursor.Next();
+            }
+        }
+        using (var cursor = tx.CreateCursor(_moddedDatabase))
+        {
+            cursor.First();
+            moddedCount = cursor.AsEnumerable().Count();
+            int moddedI = 0;
+            foreach (var entry in cursor.AsEnumerable())
+            {
+                if (moddedI == sampleSize) break;
+                moddedSample[moddedI] = $"{BitConverter.ToString(entry.Item1.CopyToNewArray())} : {BitConverter.ToString(entry.Item2.CopyToNewArray())}";
+                moddedI++;
+            }
+        }
+        return new DataBaseSample(moddedCount, vanillaCount, moddedSample, vanillaSample);
     }
 }
