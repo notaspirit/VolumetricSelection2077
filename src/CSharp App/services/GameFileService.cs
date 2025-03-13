@@ -134,13 +134,17 @@ public class GameFileService
         var rawMesh = _archiveManager.GetCR2WFile(path);
         if (rawMesh == null) return null;
         CacheDatabases db = CacheDatabases.Vanilla;
-        if (_settingsService.SupportModdedResources && _settingsService.CacheModdedResources && _settingsService.CacheEnabled)
+        if (_settingsService.SupportModdedResources && _settingsService.CacheEnabled)
         {
             var fileLookup = _archiveManager.Lookup(path, ArchiveManagerScope.Mods);
             if (fileLookup != null) db = CacheDatabases.Modded;
         }
         var parsedMesh = DirectAbbrMeshParser.ParseFromCR2W(rawMesh);
-        _cacheService.WriteMeshEntry(path, parsedMesh, db);
+        if (_settingsService.CacheEnabled)
+        {
+            if (!_settingsService.CacheModdedResources && db == CacheDatabases.Modded) return parsedMesh;
+            _cacheService.WriteMeshEntry(path, parsedMesh, db); 
+        }
         return parsedMesh;
     }
 
@@ -155,13 +159,17 @@ public class GameFileService
         var rawSector = _archiveManager.GetCR2WFile(path);
         if (rawSector == null) return null;
         CacheDatabases db = CacheDatabases.Vanilla;
-        if (_settingsService.SupportModdedResources && _settingsService.CacheModdedResources && _settingsService.CacheEnabled)
+        if (_settingsService.SupportModdedResources  && _settingsService.CacheEnabled)
         {
             var fileLookup = _archiveManager.Lookup(path, ArchiveManagerScope.Mods);
             if (fileLookup != null) db = CacheDatabases.Modded;
         }
         var parsedSector = DirectAbbrSectorParser.ParseFromCR2W(rawSector);
-        _cacheService.WriteSectorEntry(path, parsedSector, db);
+        if (_settingsService.CacheEnabled)
+        {
+            if (!_settingsService.CacheModdedResources && db == CacheDatabases.Modded) return parsedSector;
+            _cacheService.WriteSectorEntry(path, parsedSector, db);
+        }
         return parsedSector;
     }
 }
