@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using System.IO;
 using System;
+using System.Diagnostics;
 using VolumetricSelection2077.Models;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -130,6 +131,26 @@ namespace VolumetricSelection2077.Services
                                 ValidateOutputDirectory(_settingsService.OutputDirectory);
                                 
             return syncValidations;
+        }
+
+        public static bool ValidateCache(CacheService.CacheDatabaseMetadata metadata, string gamePath, string minimumProgramVersion)
+        {
+            var gameExePath = Path.Combine(gamePath, "bin", "x64", "Cyberpunk2077.exe");
+            if (!File.Exists(gameExePath))
+            {
+                throw new Exception("Could not find Game Executable.");
+            }
+            var fileVerInfo = FileVersionInfo.GetVersionInfo(gameExePath);
+            if (fileVerInfo.ProductVersion != metadata.GameVersion)
+            {
+                return false;
+            }
+
+            if (metadata.VS2077Version != minimumProgramVersion)
+            {
+                return false;
+            }
+            return true;
         }
     }
 }

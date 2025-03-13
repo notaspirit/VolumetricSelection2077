@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using LightningDB;
 using MessagePack;
@@ -42,7 +44,6 @@ public class WriteRequest
     }
 }
 
-
 public class CacheService
 {
     private static CacheService? _instance;
@@ -74,7 +75,6 @@ public class CacheService
             if (_instance == null)
             {
                 _instance = new CacheService();
-                _instance.Initialize();
             }
             return _instance;
         }
@@ -82,22 +82,39 @@ public class CacheService
 
     public void Initialize()
     {
-        if (_isInitialized) return;
         _settings = SettingsService.Instance;
-        string cacheDir = Path.Combine(_settings.CacheDirectory, "cache");
-        Directory.CreateDirectory(cacheDir);
-        _env = new LightningEnvironment(cacheDir)
+        if (_isInitialized) return;
+        if (_settings.CacheEnabled == false) return;
+        
+        Directory.CreateDirectory(_settings.CacheDirectory);
+        _env = new LightningEnvironment(_settings.CacheDirectory)
         {
             MaxDatabases = 2,
             MapSize = MapSize,
             MaxReaders = MaxReaders
         };
         _env.Open();
-        using var tx = _env.BeginTransaction();
+        
+        var tx = _env.BeginTransaction();
         _moddedDatabase = tx.OpenDatabase(CacheDatabases.Modded.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
         _vanillaDatabase = tx.OpenDatabase(CacheDatabases.Vanilla.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
         tx.Commit();
-        _isInitialized = true;
+        
+        try
+        {
+            var metaData = GetMetadata();
+            if (!ValidationService.ValidateCache(metaData, _settings.GameDirectory, _settings.MinimumCacheVersion))
+            {
+                Logger.Warning("Cache is stale, resetting database");
+                ClearDatabase(CacheDatabases.All, true, true);
+            }
+            _isInitialized = true;
+        }
+        catch (Exception e)
+        {
+            Logger.Error($"Could not initialize CacheService: {e}");
+        }
+        
     }
     
     
@@ -240,12 +257,12 @@ public class CacheService
         }
     }
 
-    public void ResizeEnvironment()
+    public void ResizeEnvironment(bool bypass = false)
     {
-        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling ResizeEnvironment");
+        if (!_isInitialized && !bypass) throw new Exception("Cache service must be initialized before calling ResizeEnvironment");
         _isInitialized = false;
         
-        string tempCacheDir = Path.Combine(_settings.CacheDirectory, $"temp_{Guid.NewGuid().ToString()}");
+        string tempCacheDir = Path.Combine(Directory.GetParent(_settings.CacheDirectory)?.FullName, $"temp_cache_{Guid.NewGuid().ToString()}");
         Directory.CreateDirectory(tempCacheDir);
         var tempEnv = new LightningEnvironment(tempCacheDir)
         {
@@ -258,7 +275,6 @@ public class CacheService
 
         foreach (var database in databases)
         {
-            // Create the destination database first with a separate transaction
             using (var createTxn = tempEnv.BeginTransaction())
             {
                 using (var db = createTxn.OpenDatabase(database, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
@@ -283,9 +299,8 @@ public class CacheService
                 }
             }
         }
-        var destCode = dstTxn.Commit();
-        var srcCode = srcTxn.Commit();
-        Logger.Info($"Dest code: {destCode}, src code: {srcCode}");
+        dstTxn.Commit(); 
+        srcTxn.Commit();
         
         _env.Dispose();
         tempEnv.Dispose();
@@ -293,16 +308,15 @@ public class CacheService
         GC.Collect();
         GC.WaitForPendingFinalizers();
         
-        string cacheDir = Path.Combine(_settings.CacheDirectory, "cache");
-        Directory.Delete(cacheDir, true);
-        Directory.Move(tempCacheDir, cacheDir);
+        Directory.Delete(_settings.CacheDirectory, true);
+        Directory.Move(tempCacheDir, _settings.CacheDirectory);
         Initialize();
     }
     
     
-    public void ClearDatabase(CacheDatabases database, bool resize = false)
+    public void ClearDatabase(CacheDatabases database, bool resize = false, bool bypass = false)
     {
-        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling ClearDatabase");
+        if (!_isInitialized && !bypass) throw new Exception("Cache service must be initialized before calling ClearDatabase");
         try
         {
             using var tx = _env.BeginTransaction();
@@ -326,9 +340,25 @@ public class CacheService
                         }
                     }
                     break;
+                case CacheDatabases.All:
+                    using (var cursor = tx.CreateCursor(_vanillaDatabase))
+                    {
+                        while (cursor.Next() == MDBResultCode.Success)
+                        {
+                            cursor.Delete();
+                        }
+                    }
+                    using (var cursor = tx.CreateCursor(_vanillaDatabase))
+                    {
+                        while (cursor.Next() == MDBResultCode.Success)
+                        {
+                            cursor.Delete();
+                        }
+                    }
+                    break;
             }
             tx.Commit();
-            if (resize) ResizeEnvironment();
+            if (resize) ResizeEnvironment(bypass);
         }
         catch (Exception ex)
         {
@@ -386,5 +416,44 @@ public class CacheService
             moddedCount = cursor.AsEnumerable().Count();
         }
         return new DataBaseSample(moddedCount, vanillaCount, moddedSample, vanillaSample);
+    }
+
+    public class CacheDatabaseMetadata
+    {
+        public string VS2077Version { get; set; }
+        public string GameVersion { get; set; }
+        public CacheDatabaseMetadata(string vs2077Version, string gameVersion)
+        {
+            VS2077Version = vs2077Version;
+            GameVersion = gameVersion;
+        }
+    }
+
+    public CacheDatabaseMetadata GetMetadata()
+    {
+        string filePath = Path.Combine(_settings.CacheDirectory, "metadata.json");
+        if (File.Exists(filePath))
+        {
+            string json = File.ReadAllText(filePath);
+            var metadata = JsonSerializer.Deserialize<CacheDatabaseMetadata>(json);
+            if (metadata != null) return metadata;
+        }
+        
+        var gameExePath = Path.Combine(_settings.GameDirectory, "bin", "x64", "Cyberpunk2077.exe");
+        if (!File.Exists(gameExePath))
+        {
+            throw new Exception("Could not find Game Executable.");
+        }
+        var fileVerInfo = FileVersionInfo.GetVersionInfo(gameExePath);
+        string? version = fileVerInfo.ProductVersion;
+        if (version == null)
+        {
+            Logger.Warning($"{version}");
+            throw new Exception("Could not find Game Executable.");
+        }
+        var newMetadata = new CacheDatabaseMetadata(_settings.MinimumCacheVersion, version);
+        Directory.CreateDirectory(_settings.CacheDirectory);
+        File.WriteAllText(filePath, JsonSerializer.Serialize(newMetadata));
+        return newMetadata;
     }
 }
