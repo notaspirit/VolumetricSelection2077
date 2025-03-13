@@ -63,31 +63,31 @@ namespace VolumetricSelection2077.Services
             Logger.Success("Output filename is valid");
             return true;
         }
-        public static bool ValidateGamePath(string gamePath)
+
+        public enum GamePathResult
+        {
+            NotSet = 0,
+            InvalidGamePath = 1,
+            CetNotFound = 2,
+            Valid = 3
+        }
+        
+        public static GamePathResult ValidateGamePath(string gamePath)
         {
             if (string.IsNullOrWhiteSpace(gamePath))
-            {
-                Logger.Error("Game path is not set in settings");
-                return false;
-            }            
+                return GamePathResult.NotSet;
+            
             string archiveContentPath = Path.Combine(gamePath, "archive", "pc", "content");
             string archiveEp1Path = Path.Combine(gamePath, "archive", "pc", "ep1");
             string CETModPath = Path.Combine(gamePath, "bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "VolumetricSelection2077", "data");
 
             if (!Directory.Exists(archiveContentPath) || !Directory.Exists(archiveEp1Path))
-            {
-                Logger.Error("Archive folder not found, game path is invalid");
-                return false;
-            }
+                return GamePathResult.InvalidGamePath;
             if (!Directory.Exists(CETModPath))
-            {
-                Logger.Error("CET mod is not installed");
-                return false;
-            }
-
-            Logger.Success("Game path is valid");
-            return true;
+                return GamePathResult.CetNotFound;
+            return GamePathResult.Valid;
         }
+        
         public static bool ValidateSelectionFile(string gamePath)
         {
             string selectionFilePath = Path.Combine(gamePath, "bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "VolumetricSelection2077", "data", "selection.json");
@@ -126,7 +126,7 @@ namespace VolumetricSelection2077.Services
         }
         public static bool ValidateInput(string gamePath, string outputFilename)
         {
-            var syncValidations = ValidateGamePath(gamePath) && 
+            var syncValidations = ValidateGamePath(gamePath) == GamePathResult.Valid && 
                                 ValidateSelectionFile(gamePath) &&
                                 ValidateOutputDirectory(_settingsService.OutputDirectory);
                                 

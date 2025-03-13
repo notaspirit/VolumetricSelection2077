@@ -279,7 +279,17 @@ public partial class MainWindow : Window
     protected override async void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
+        Logger.Info($"VS2077 Version: {_mainWindowViewModel.Settings.ProgramVersion}");
         _mainWindowViewModel.IsProcessing = true;
+        var validationResult = ValidationService.ValidateGamePath(_mainWindowViewModel.Settings.GameDirectory);
+        if (!(validationResult == ValidationService.GamePathResult.Valid ||
+              validationResult == ValidationService.GamePathResult.CetNotFound))
+        {
+            Logger.Error("Failed to initialize VS2077! Invalid Game Path, update it in the settings and restart the application.");
+            _mainWindowViewModel.AppInitialized = false;
+            _mainWindowViewModel.IsProcessing = false;
+            return;
+        }
         try
         {
             if (_mainWindowViewModel.Settings.DidUpdate)
@@ -315,6 +325,7 @@ public partial class MainWindow : Window
             Logger.Error($"An error occured during the update check: {ex}");
         }
         await Task.Run(() => GameFileService.Instance.Initialize());
+        _mainWindowViewModel.AppInitialized = true;
         _mainWindowViewModel.IsProcessing = false;
     }
 }

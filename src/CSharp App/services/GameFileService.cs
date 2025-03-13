@@ -3,7 +3,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Xml.XPath;
 using MessagePack;
+using Microsoft.EntityFrameworkCore;
 using WolvenKit;
 using WolvenKit.Common.Services;
 using WolvenKit.Core.Interfaces;
@@ -61,31 +63,40 @@ public class GameFileService
         {
             Logger.Info($"Initializing Game File Service...");
         }
-
+        
         var sw = Stopwatch.StartNew();
-        _hashService = new HashService();
-        _hookService = new HookService();
-        _red4ParserService = new Red4ParserService(
-            _hashService,
-            _loggerService,
-            _hookService);
-        _archiveManager = new ArchiveManager(
-            _hashService,
-            _red4ParserService,
-            _loggerService,
-            _progressService
-        );
-        _geometryCacheService = new GeometryCacheService(
-            _archiveManager,
-            _red4ParserService
-        );
-        var gameExePath = new FileInfo(_settingsService.GameDirectory + @"\bin\x64\Cyberpunk2077.exe");
-        _archiveManager.Initialize(gameExePath, _settingsService.SupportModdedResources);
-        _cacheService = CacheService.Instance;
-        _readCacheTarget = _settingsService.SupportModdedResources ? CacheDatabases.All : CacheDatabases.Vanilla;
-        _initialized = true;
-        sw.Stop();
-        Logger.Success($"Initialized Game File Service in {UtilService.FormatElapsedTime(sw.Elapsed)}");
+        try
+        {
+            _hashService = new HashService();
+            _hookService = new HookService();
+            _red4ParserService = new Red4ParserService(
+                _hashService,
+                _loggerService,
+                _hookService);
+            _archiveManager = new ArchiveManager(
+                _hashService,
+                _red4ParserService,
+                _loggerService,
+                _progressService
+            );
+            _geometryCacheService = new GeometryCacheService(
+                _archiveManager,
+                _red4ParserService
+            );
+            var gameExePath = new FileInfo(_settingsService.GameDirectory + @"\bin\x64\Cyberpunk2077.exe");
+            _archiveManager.Initialize(gameExePath, _settingsService.SupportModdedResources);
+            _cacheService = CacheService.Instance;
+            _readCacheTarget = _settingsService.SupportModdedResources ? CacheDatabases.All : CacheDatabases.Vanilla;
+            _initialized = true;
+            sw.Stop();
+            Logger.Success($"Initialized Game File Service in {UtilService.FormatElapsedTime(sw.Elapsed)}");
+        }
+        catch (Exception e)
+        {
+            sw.Stop();
+            Logger.Error($"Initializing Game File Service failed : {e}");
+        }
+
     }
     public static GameFileService Instance
     {

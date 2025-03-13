@@ -448,7 +448,7 @@
                     Click="FindSelectedButton_Click"
                     Content="{x:Static resources:Labels.FindSelected}"
                     Grid.Column="4"
-                    IsEnabled="{Binding ButtonsAvailable}"
+                    IsEnabled="{Binding MainTaskAvailable}"
                     Margin="5,0,0,0">
                     <Button.Styles>
                         <Style Selector="Button:pointerover /template/ ContentPresenter">

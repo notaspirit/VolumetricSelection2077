@@ -171,7 +171,7 @@ public class UpdateService
             string unzipPathCet;
             if (string.IsNullOrEmpty(SettingsService.Instance.CETInstallLocation))
             {
-                if (!ValidationService.ValidateGamePath(SettingsService.Instance.GameDirectory))
+                if (ValidationService.ValidateGamePath(SettingsService.Instance.GameDirectory) != ValidationService.GamePathResult.Valid)
                 {
                     Logger.Error("Could not find valid target location to install VS2077 CET. Please set the game path or custom directory in the settings and restart the application to try again.");
                     throw new Exception();
