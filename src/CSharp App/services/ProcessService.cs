@@ -283,10 +283,10 @@ public class ProcessService
     {
         Logger.Info($"Version: {_settings.ProgramVersion}");
         _gameFileService.Initialize();
-        
+        /*
         TestAdvMeshCol.Run();
         return (true, string.Empty);
-        
+        */
         Logger.Info("Validating inputs...");
         
         if (!ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename))

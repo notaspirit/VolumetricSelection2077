@@ -59,13 +59,14 @@ public static class CollisionCheckService
         }
         */
         
-        Vector3[] axes = new Vector3[12];
+        Vector3[] axes = new Vector3[13];
+
+        axes[0] = triangleNormal;
+        axes[1] = obbAxes[0];
+        axes[2] = obbAxes[1];
+        axes[3] = obbAxes[2];
         
-        axes[0] = obbAxes[0];
-        axes[1] = obbAxes[1];
-        axes[2] = obbAxes[2];
-        
-        int axisIndex = 3;
+        int axisIndex = 4;
 
         
         Vector3[] edgeAxes =
@@ -160,22 +161,37 @@ public static class CollisionCheckService
             ContainmentType aabbContainment = selectionAabb.Contains(transformedAabb);
             if (aabbContainment != ContainmentType.Disjoint)
             {
-                /*
-                foreach (var vertex in submesh.Vertices)
+                if ((submesh.IsConvexCollider != null && (bool)submesh.IsConvexCollider) || submesh.Indices.Length == 0)
                 {
-                    Vector4 translatedVectorTest = Vector4.Transform(new(vertex, 1f), transform);
-                    ContainmentType vertexContained = selectionObb.Contains(Vec4toVec3(translatedVectorTest));
-                    if (vertexContained != ContainmentType.Disjoint)
+                    foreach (var vertex in submesh.Vertices)
                     {
-                        return true;
+                        Vector4 translatedVectorTest = Vector4.Transform(new(vertex, 1f), transform);
+                        ContainmentType vertexContained = selectionObb.Contains(Vec4toVec3(translatedVectorTest));
+                        if (vertexContained != ContainmentType.Disjoint)
+                        {
+                            return true;
+                        }
                     }
                 }
-                */
-                if (submesh.Indices.Length % 3 != 0) throw new Exception("Invalid submesh indices.");
-                for (int i = 0; i < submesh.Indices.Length; i += 3)
+                else
                 {
-                    if (CheckIntersectionBoxTri(new Vector3[]{submesh.Vertices[submesh.Indices[i]], submesh.Vertices[submesh.Indices[i + 1]], submesh.Vertices[submesh.Indices[i + 2]]}, baseObb))
-                        return true;
+                    if (submesh.Indices.Length % 3 != 0) throw new Exception("Invalid submesh indices.");
+                    for (int i = 0; i < submesh.Indices.Length; i += 3)
+                    {
+                        var triangle = new Vector3[]
+                        {
+                            submesh.Vertices[submesh.Indices[i]],
+                            submesh.Vertices[submesh.Indices[i + 1]],
+                            submesh.Vertices[submesh.Indices[i + 2]]
+                        };
+                        for (int j = 0; j < triangle.Length; j++)
+                        {
+                            Vector4 translatedVertex = Vector4.Transform(new(triangle[j], 1f), transform);
+                            triangle[j] = Vec4toVec3(translatedVertex);
+                        }
+                        if (CheckIntersectionBoxTri(triangle, selectionObb))
+                            return true;
+                    }
                 }
             }
             return false;
