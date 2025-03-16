@@ -5,13 +5,22 @@ namespace VolumetricSelection2077.Models;
 
 public class AbbrMesh
 {
-    public required AbbrSubMeshes[] SubMeshes { get; set; }
+    public required AbbrSubMesh[] SubMeshes { get; set; }
 }
 
-public class AbbrSubMeshes
+public class AbbrSubMesh
+{
+    public required BoundingBox BoundingBox { get; set; }
+}
+
+public class TriangleSubMesh : AbbrSubMesh
 {
     public required Vector3[] Vertices { get; set; }
     public required uint[] Indices { get; set; }
-    public required BoundingBox BoundingBox { get; set; }
-    public bool? IsConvexCollider { get; set; }
+}
+
+public class ConvexSubMesh : AbbrSubMesh
+{
+    public required Vector3[] Vertices { get; set; }
+    public required Plane[] Planes { get; set; }
 }

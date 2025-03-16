@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using BulletSharp;
+using DynamicData;
 using Microsoft.ClearScript.Util.Web;
 using SharpDX;
+using VolumetricSelection2077.Converters;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
 using WolvenKit.Common.PhysX;
@@ -18,13 +20,19 @@ public class DirectAbbrMeshParser
     private static AbbrMesh ParseConvexMesh(ConvexMesh convexMesh)
     {
         var vertsOut = convexMesh.HullData.HullVertices.ToArray();
-        var subMeshesOut = new AbbrSubMeshes[1];
-        subMeshesOut[0] = new AbbrSubMeshes()
+        var planes = new SharpDX.Plane[convexMesh.HullData.Polygons.Count];
+        int i = 0;
+        foreach (var polygon in convexMesh.HullData.Polygons)
         {
-            Vertices = vertsOut,
-            Indices = new uint[0],
+            planes[i] = WolvenkitToSharpDX.Plane(polygon.Plane);
+            i++;
+        }
+        var subMeshesOut = new AbbrSubMesh[1];
+        subMeshesOut[0] = new ConvexSubMesh()
+        {
             BoundingBox = new BoundingBox(convexMesh.HullData.AABB.Minimum, convexMesh.HullData.AABB.Maximum),
-            IsConvexCollider = true
+            Vertices = vertsOut,
+            Planes = planes
         };
         return new AbbrMesh()
         {
@@ -44,8 +52,8 @@ public class DirectAbbrMeshParser
             indiciesOut[i+2] = triangle[2];
             i += 3;
         }
-        var subMeshesOut = new AbbrSubMeshes[1];
-        subMeshesOut[0] = new AbbrSubMeshes()
+        var subMeshesOut = new AbbrSubMesh[1];
+        subMeshesOut[0] = new TriangleSubMesh()
         {
             Vertices = vertsOut,
             Indices = indiciesOut,
@@ -97,7 +105,7 @@ public class DirectAbbrMeshParser
             rendBlob.Header.QuantizationOffset.Z,
             rendBlob.Header.QuantizationOffset.W);
 
-        List<AbbrSubMeshes> submeshesOut = new();
+        List<AbbrSubMesh> submeshesOut = new();
         
         for(int indexSubMesh = 0; indexSubMesh < rendInfos.Count; indexSubMesh++)
         {
@@ -124,7 +132,7 @@ public class DirectAbbrMeshParser
                 indicesOut[indexIndex] = br.ReadUInt16();
             }
             
-            submeshesOut.Add(new AbbrSubMeshes()
+            submeshesOut.Add(new TriangleSubMesh()
             {
                 Vertices = vertsOut,
                 Indices = indicesOut,
