@@ -1,8 +1,6 @@
 using SharpDX;
-using System.Collections.Generic;
 
 namespace VolumetricSelection2077.Models;
-
 public class AbbrMesh
 {
     public required AbbrSubMesh[] SubMeshes { get; set; }
@@ -11,16 +9,11 @@ public class AbbrMesh
 public class AbbrSubMesh
 {
     public required BoundingBox BoundingBox { get; set; }
+    public required Polygon[] Polygons { get; set; }
 }
 
-public class TriangleSubMesh : AbbrSubMesh
+public class Polygon
 {
     public required Vector3[] Vertices { get; set; }
-    public required uint[] Indices { get; set; }
-}
-
-public class ConvexSubMesh : AbbrSubMesh
-{
-    public required Vector3[] Vertices { get; set; }
-    public required Plane[] Planes { get; set; }
+    public required Plane Plane { get; set; }
 }

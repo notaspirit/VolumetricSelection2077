@@ -9,6 +9,7 @@ using HelixToolkit.Wpf.SharpDX;
 using SharpGLTF.IO;
 using WolvenKit.Common.PhysX;
 using Geometry3D = HelixToolkit.SharpDX.Core.Geometry3D;
+using Polygon = VolumetricSelection2077.Models.Polygon;
 
 namespace VolumetricSelection2077.Services;
 
@@ -18,13 +19,19 @@ public static class CollisionCheckService
 
     private static Vector3[] GetObbAxes(OrientedBoundingBox obb)
     {
+        var x = new Vector3(obb.Transformation.M11, obb.Transformation.M12, obb.Transformation.M13);
+        var y = new Vector3(obb.Transformation.M21, obb.Transformation.M22, obb.Transformation.M23);
+        var z = new Vector3(obb.Transformation.M31, obb.Transformation.M32, obb.Transformation.M33);
+        x.Normalize();
+        y.Normalize();
+        z.Normalize();
+        
         return new[]
         {
-            new Vector3(obb.Transformation.M11, obb.Transformation.M12, obb.Transformation.M13), // X axis
-            new Vector3(obb.Transformation.M21, obb.Transformation.M22, obb.Transformation.M23), // Y axis
-            new Vector3(obb.Transformation.M31, obb.Transformation.M32, obb.Transformation.M33)  // Z axis
+            x, y, z
         };
     }
+    /*
     public static bool CheckIntersectionBoxTri(Vector3[] triangle, OrientedBoundingBox obb)
     {
         if (triangle == null || triangle.Length != 3)
@@ -65,7 +72,7 @@ public static class CollisionCheckService
             return false;
         }
         */
-        
+        /*
         Vector3[] axes = new Vector3[13];
 
         axes[0] = triangleNormal;
@@ -129,6 +136,7 @@ public static class CollisionCheckService
                               $"{Vector3.Dot(obbAxes[2] * halfExtents.Z, axis)}");
             // ********************  DEBUGGING ********************
             */
+    /*
             if (triMax < boxMin - Epsilon || triMin > boxMax + Epsilon)
             {
                 // Logger.Info("Returned False");
@@ -149,10 +157,13 @@ public static class CollisionCheckService
 
         foreach (var polygon in convexSubMesh.Planes)
         {
-            axesToTest.Add(polygon.Normal);
+            var normal = polygon.Normal;
+            normal.Normalize();
+            axesToTest.Add(normal);
         }
         
         AddEdgeCrossProductAxes(convexSubMesh.Vertices, obbAxes, axesToTest);
+        
         foreach (Vector3 axis in axesToTest)
         {
             // Skip degenerate axes
@@ -173,7 +184,7 @@ public static class CollisionCheckService
         // No separating axis found, shapes must be intersecting
         return true;
     }
-
+*/
     private static void AddEdgeCrossProductAxes(
         Vector3[] meshVertices, 
         Vector3[] obbAxes, 
@@ -200,7 +211,7 @@ public static class CollisionCheckService
                         crossAxis.Normalize();
                         
                         bool isDuplicate = axesToTest.Any(a => 
-                            Math.Abs(Vector3.Dot(a, crossAxis)) > 0.99f);
+                            Math.Abs(Vector3.Dot(a, crossAxis)) > 0.9999f);
                             
                         if (!isDuplicate)
                         {
@@ -211,6 +222,96 @@ public static class CollisionCheckService
             }
         }
     }
+
+    public static bool CheckOverlapPolygonBox(Polygon polygon, OrientedBoundingBox obb)
+    {
+        var obbAxes = GetObbAxes(obb);
+        var obbCorners = obb.GetCorners();
+        List<Vector3> axes = new List<Vector3>();
+        axes.AddRange(obbAxes);
+        axes.Add(polygon.Plane.Normal);
+        
+        
+        // AddEdgeCrossProductAxes(verts, obbAxes, axes);
+        
+        
+        for (int i = 0; i < polygon.Vertices.Length; i++)
+        {
+            Vector3 edge = polygon.Vertices[(i + 1) % polygon.Vertices.Length] - polygon.Vertices[i];
+            foreach (var obbAxis in obbAxes)
+            {
+                Vector3 crossAxis = Vector3.Cross(edge, obbAxis);
+                if (crossAxis.LengthSquared() > 1e-6f) // Avoid near-zero vectors
+                    axes.Add(Vector3.Normalize(crossAxis));
+            }
+        }
+        
+        foreach (Vector3 axis in axes)
+        {
+            if (axis.LengthSquared() < 0.001f)
+                continue;
+            ProjectionInterval obbInterval = ProjectShapeOntoAxis(obbCorners, axis);
+            ProjectionInterval meshInterval = ProjectShapeOntoAxis(polygon.Vertices, axis);
+            
+            if (!obbInterval.Overlaps(meshInterval))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    public static bool CheckOverlapSubMeshBox(AbbrSubMesh submesh, OrientedBoundingBox obb)
+    {
+        // var obbAxes = GetObbAxes(obb);
+        foreach (var poly in submesh.Polygons)
+        {
+            if (CheckOverlapPolygonBox(poly, obb))
+                return true;
+            
+            /*
+            List<Vector3> axes = new List<Vector3>();
+            axes.AddRange(obbAxes);
+            axes.Add(poly.Plane.Normal);
+
+            var verts = poly.Indices.Select(index => submesh.Vertices[index]).ToArray();
+            
+            AddEdgeCrossProductAxes(verts, obbAxes, axes);
+            
+            /*
+            for (int i = 0; i < poly.Indices.Length; i++)
+            {
+                uint currentIndex = poly.Indices[i];
+                uint nextIndex = poly.Indices[(i + 1) % poly.Indices.Length];
+
+                Vector3 edge = submesh.Vertices[nextIndex] - submesh.Vertices[currentIndex];
+
+                foreach (var obbAxis in obbAxes)
+                {
+                    Vector3 crossAxis = Vector3.Cross(edge, obbAxis);
+                    if (crossAxis.LengthSquared() > 1e-6f)
+                        axes.Add(Vector3.Normalize(crossAxis));
+                }
+            }
+            */
+            /*
+            foreach (Vector3 axis in axes)
+            {
+                if (axis.LengthSquared() < 0.001f)
+                    continue;
+                ProjectionInterval obbInterval = ProjectShapeOntoAxis(obb.GetCorners(), axis);
+                ProjectionInterval meshInterval = ProjectShapeOntoAxis(verts, axis);
+                
+                if (!obbInterval.Overlaps(meshInterval))
+                {
+                    return false;
+                }
+            }
+            */
+        }
+        return false;
+    }
+    
     private struct ProjectionInterval
     {
         public float Min { get; }
@@ -242,7 +343,6 @@ public static class CollisionCheckService
         
         return new ProjectionInterval(min, max);
     }
-
     
     private static Vector3 Vec4toVec3(Vector4 v)
     {
@@ -261,7 +361,6 @@ public static class CollisionCheckService
         }
         return result;
     }
-    
     public static bool IsMeshInsideBox(AbbrMesh mesh, OrientedBoundingBox selectionBoxOBB, BoundingBox selectionBoxAabb, AbbrSectorTransform[]? transforms, Matrix? matrixTransform = null)
     {
         static bool IsInsidePrivate(AbbrSubMesh submesh, OrientedBoundingBox selectionObb, BoundingBox selectionAabb, Matrix transform)
@@ -273,10 +372,30 @@ public static class CollisionCheckService
             ContainmentType aabbContainment = selectionAabb.Contains(transformedAabb);
             if (aabbContainment != ContainmentType.Disjoint)
             {
+                var adjustedSubmesh = submesh;
+                for (int i = 0; i < adjustedSubmesh.Polygons.Length; i++)
+                {
+                    var adjustedPolygon = adjustedSubmesh.Polygons[i];
+                    for (int j = 0; j < adjustedPolygon.Vertices.Length; j++)
+                    {
+                        Vector4 translatedVertex = Vector4.Transform(new(adjustedPolygon.Vertices[j], 1f), transform);
+                        adjustedPolygon.Vertices[j] = Vec4toVec3(translatedVertex);
+                    }
+                    adjustedSubmesh.Polygons[i] = adjustedPolygon;
+                }
+                if (CheckOverlapSubMeshBox(adjustedSubmesh, selectionObb))
+                    return true;
+                /*
                 switch (submesh)
                 {
                     case ConvexSubMesh convexSubMesh:
-                        if (CheckIntersectionBoxConvex(convexSubMesh, selectionObb))
+                        var adjSubMesh = convexSubMesh;
+                        for (int j = 0; j < adjSubMesh.Vertices.Length; j++)
+                        {
+                            Vector4 translatedVertex = Vector4.Transform(new(adjSubMesh.Vertices[j], 1f), transform);
+                            adjSubMesh.Vertices[j] = Vec4toVec3(translatedVertex);
+                        }
+                        if (CheckIntersectionBoxConvex(adjSubMesh, selectionObb))
                             return true;
                         break;
                     case TriangleSubMesh triangleSubMesh:
@@ -302,6 +421,7 @@ public static class CollisionCheckService
                     default:
                         throw new Exception("Invalid submesh type.");
                 }
+                */
             }
             return false;
         }
