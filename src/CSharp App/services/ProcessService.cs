@@ -34,6 +34,49 @@ public class ProcessService
         _gameFileService = GameFileService.Instance;
     }
     
+    private void SaveFile(string outputFilePath, string outputContent)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
+                
+        if (!File.Exists(outputFilePath))
+        {
+            File.WriteAllText(outputFilePath, outputContent);
+            Logger.Info($"Created file {outputFilePath}");
+            return;
+        }
+
+        if (_settings.SaveMode == SaveFileMode.Enum.Extend)
+        {
+            File.WriteAllText(outputFilePath, outputContent);
+            Logger.Info($"Extended file {outputFilePath}");
+            return;
+        }
+                
+        if (_settings.SaveMode == SaveFileMode.Enum.Overwrite)
+        {
+            File.WriteAllText(outputFilePath, outputContent);
+            Logger.Info($"Overwrote file {outputFilePath}");
+            return;
+        }
+                
+        int totalCount = 1;
+        string outputFilePathWithoutExtension = outputFilePath.Split('.').First();
+        foreach (var file in Directory.GetFiles(Path.GetDirectoryName(outputFilePath), "*.*",
+                     SearchOption.AllDirectories))
+        {
+            if (!file.StartsWith(outputFilePathWithoutExtension)) continue;
+            if (Int32.TryParse(file.Split("+").Last().Split(".").First(), out int count))
+            {
+                if (count >= totalCount) 
+                    totalCount = count + 1;
+            }
+        }
+                
+        string newOutputFilePath = $"{outputFilePathWithoutExtension.Split("+").First()}+{totalCount}.xl";
+        File.WriteAllText(newOutputFilePath, outputContent);
+        Logger.Info($"Created file {newOutputFilePath}");
+    }
+    
     // also returns null if none of the nodes in the sector are inside the box
     private async Task<(bool success, string error, AxlRemovalSector? result)> ProcessStreamingsector(AbbrSector sector, string sectorPath, SelectionInput selectionBox)
     {
@@ -479,50 +522,7 @@ public class ProcessService
                         { NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented });
             }
             
-            void SaveFile(string outputFilePath)
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
-                
-                if (!File.Exists(outputFilePath))
-                {
-                    File.WriteAllText(outputFilePath, outputContent);
-                    Logger.Info($"Created file {outputFilePath}");
-                    return;
-                }
-
-                if (_settings.SaveMode == SaveFileMode.Enum.Extend)
-                {
-                    File.WriteAllText(outputFilePath, outputContent);
-                    Logger.Info($"Extended file {outputFilePath}");
-                    return;
-                }
-                
-                if (_settings.SaveMode == SaveFileMode.Enum.Overwrite)
-                {
-                    File.WriteAllText(outputFilePath, outputContent);
-                    Logger.Info($"Overwrote file {outputFilePath}");
-                    return;
-                }
-                
-                int totalCount = 1;
-                string outputFilePathWithoutExtension = outputFilePath.Split('.').First();
-                foreach (var file in Directory.GetFiles(Path.GetDirectoryName(outputFilePath), "*.*",
-                             SearchOption.AllDirectories))
-                {
-                    if (!file.StartsWith(outputFilePathWithoutExtension)) continue;
-                    if (Int32.TryParse(file.Split("+").Last().Split(".").First(), out int count))
-                    {
-                        if (count >= totalCount) 
-                            totalCount = count + 1;
-                    }
-                }
-                
-                string newOutputFilePath = $"{outputFilePathWithoutExtension.Split("+").First()}+{totalCount}.xl";
-                File.WriteAllText(newOutputFilePath, outputContent);
-                Logger.Info($"Created file {newOutputFilePath}");
-            }
-            
-            SaveFile(axlFilePath);
+            SaveFile(axlFilePath, outputContent);
         }
         return (true, string.Empty);
     }
