@@ -424,8 +424,29 @@ public class ProcessService
                     {
                         if (mergedDict.TryGetValue(newSector.Path, out AxlRemovalSector existingSector))
                         {
-                            existingSector.NodeDeletions.AddRange(newSector.NodeDeletions);
-                            existingSector.NodeDeletions = existingSector.NodeDeletions.Distinct().ToList();
+                            Dictionary<int, AxlRemovalNodeDeletion> mergedNodes =
+                                existingSector.NodeDeletions.ToDictionary(x => x.Index);
+                            foreach (var newNode in newSector.NodeDeletions)
+                            {
+                                if (mergedNodes.TryGetValue(newNode.Index, out AxlRemovalNodeDeletion existingNode))
+                                {
+                                    if (newNode.ActorDeletions != null || 
+                                        newNode.ActorDeletions?.Count > 0 ||
+                                        existingNode.ActorDeletions?.Count != null ||
+                                        existingNode.ActorDeletions?.Count > 0)
+                                    {
+                                        existingNode.ExpectedActors =  newNode.ExpectedActors ?? existingNode.ExpectedActors;
+                                        HashSet<int> actorSet = new HashSet<int>(newNode.ActorDeletions ?? new List<int>());
+                                        actorSet.UnionWith(existingNode.ActorDeletions ?? new List<int>());
+                                        existingNode.ActorDeletions = actorSet.ToList();
+                                    }
+                                }
+                                else
+                                {
+                                    mergedNodes[newNode.Index] = newNode;
+                                }
+                            }
+                            newSector.NodeDeletions = mergedNodes.Values.ToList();
                         }
                         else
                         {
