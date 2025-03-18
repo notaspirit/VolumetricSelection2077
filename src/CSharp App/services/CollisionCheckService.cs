@@ -134,13 +134,21 @@ public static class CollisionCheckService
             ContainmentType aabbContainment = selectionAabb.Contains(transformedAabb);
             if (aabbContainment != ContainmentType.Disjoint)
             {
-                var adjustedSubmesh = submesh;
+                var adjustedSubmesh = new AbbrSubMesh()
+                {
+                    BoundingBox = submesh.BoundingBox,
+                    Polygons = new Polygon[submesh.Polygons.Length]
+                };
                 for (int i = 0; i < adjustedSubmesh.Polygons.Length; i++)
                 {
-                    var adjustedPolygon = adjustedSubmesh.Polygons[i];
+                    var adjustedPolygon = new Polygon()
+                    {
+                        Plane = submesh.Polygons[i].Plane,
+                        Vertices = new Vector3[submesh.Polygons[i].Vertices.Length]
+                    };
                     for (int j = 0; j < adjustedPolygon.Vertices.Length; j++)
                     {
-                        Vector4 translatedVertex = Vector4.Transform(new(adjustedPolygon.Vertices[j], 1f), transform);
+                        Vector4 translatedVertex = Vector4.Transform(new(submesh.Polygons[i].Vertices[j], 1f), transform);
                         adjustedPolygon.Vertices[j] = Vec4toVec3(translatedVertex);
                     }
                     adjustedSubmesh.Polygons[i] = adjustedPolygon;
