@@ -21,18 +21,16 @@ public class DirectAbbrMeshParser
     public static List<SharpDX.Vector3> GetPolygonVertices(HullPolygonData polygon, ConvexHullData hullData)
     {
         List<SharpDX.Vector3> vertices = new List<SharpDX.Vector3>();
-
-        // Ensure VRef8 is within range
+        
         if (polygon.VRef8 >= hullData.VertexData8.Length)
         {
             Logger.Error($"VRef8 {polygon.VRef8} is bigger or equals to {hullData.VertexData8.Length}");
             return vertices; 
         }
         
-        // Read the vertex indices from VertexData8
         for (int i = 0; i < polygon.NbVerts; i++)
         {
-            int index = hullData.VertexData8[polygon.VRef8 + i]; // 8-bit index into HullVertices
+            int index = hullData.VertexData8[polygon.VRef8 + i];
 
             if (index < hullData.HullVertices.Count)
             {
@@ -45,22 +43,10 @@ public class DirectAbbrMeshParser
     
     private static AbbrMesh ParseConvexMesh(ConvexMesh convexMesh)
     {
-        var vertsOut = convexMesh.HullData.HullVertices.ToArray();
         var polygons = new Polygon[convexMesh.HullData.Polygons.Count];
         int i = 0;
         foreach (var hullPolygonData in convexMesh.HullData.Polygons)
         {
-            /*
-            var indices = new uint[hullPolygonData.NbVerts];
-            
-            for (uint j = 0; j < hullPolygonData.NbVerts; j++)
-            {
-                uint vertexIndex = hullPolygonData.MinIndex + j;
-                // Logger.Info($"Vertex index: {vertexIndex}, min index: {hullPolygonData.MinIndex}, total indices / verts: {vertsOut.Length}");
-                indices[j] = vertexIndex;
-            }
-            */
-            
             var polygon = new Polygon()
             {
                 Plane = WolvenkitToSharpDX.Plane(hullPolygonData.Plane),
@@ -120,7 +106,7 @@ public class DirectAbbrMeshParser
             case BV4TriangleMesh triangleMesh:
                 return ParseTriangleMesh(triangleMesh);
             default:
-                throw new ApplicationException("Invalid physics mesh");
+                throw new ArgumentException("Invalid physics mesh");
         }
     }
 
