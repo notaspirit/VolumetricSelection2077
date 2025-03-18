@@ -510,9 +510,10 @@ public class ProcessService
                              SearchOption.AllDirectories))
                 {
                     if (!file.StartsWith(outputFilePathWithoutExtension)) continue;
-                    if (Int32.TryParse(file.Split("+").Last(), out int count))
+                    if (Int32.TryParse(file.Split("+").Last().Split(".").First(), out int count))
                     {
-                        if (count > totalCount) totalCount = count;
+                        if (count >= totalCount) 
+                            totalCount = count + 1;
                     }
                 }
                 
