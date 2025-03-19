@@ -16,14 +16,7 @@ public class AbbrSubMesh
     [Key(0)]
     public required BoundingBox BoundingBox { get; set; }
     [Key(1)]
-    public required Polygon[] Polygons { get; set; }
-}
-
-[MessagePackObject]
-public class Polygon
-{
-    [Key(0)]
     public required Vector3[] Vertices { get; set; }
-    [Key(1)]
-    public required Plane Plane { get; set; }
+    [Key(2)]
+    public required uint[][] PolygonIndices { get; set; }
 }

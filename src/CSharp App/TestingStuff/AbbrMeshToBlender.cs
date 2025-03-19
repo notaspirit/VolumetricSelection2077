@@ -11,13 +11,15 @@ namespace VolumetricSelection2077.TestingStuff;
 
 public class AbbrMeshToBlender
 {
+    /* NOT YET UPDATED FOR OPTIMIZED ABBRMESH STRUCTURE
+     
     public static async void Run()
     {
         var gfs = GameFileService.Instance;
-        /*
+        
         var testMeshPath = @"ep1\worlds\03_night_city\sectors\_external\proxy\1930979112\hill_park_totem.mesh";
         var mesh = gfs.GetCMesh(testMeshPath);
-        */
+        
         ulong testsector = 1506287456064029993;
         ulong testMesh = 5884246486332581384;
         var mesh = await gfs.GetPhysXMesh(testsector, testMesh);
@@ -88,4 +90,5 @@ public class AbbrMeshToBlender
 
         return script.ToString();
     }
+    */
 }
