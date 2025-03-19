@@ -17,4 +17,9 @@ public class WolvenkitToSharpDX
     {
         return new Quaternion(quaternion.I, quaternion.J, quaternion.K, quaternion.R);
     }
+
+    public static Plane Plane(WolvenKit.Common.PhysX.Plane plane)
+    {
+        return new Plane(plane.N, plane.D);
+    }
 }
