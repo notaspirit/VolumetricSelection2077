@@ -34,15 +34,24 @@ public class ProcessService
         _gameFileService = GameFileService.Instance;
     }
 
-    private List<AxlRemovalSector>? MergeSectors(string filepath, AxlRemovalFile newRemovals)
+    class MergeChanges
     {
+        public int newSectors { get; set; } = 0;
+        public int newNodes { get; set; } = 0;
+        public int newActors { get; set; } = 0;
+    }
+    
+    private (List<AxlRemovalSector>?,MergeChanges?)  MergeSectors(string filepath, AxlRemovalFile newRemovals)
+    {
+        var changeCount = new MergeChanges();
+        
         string fileContent = File.ReadAllText(filepath);
         var exisitngRemovalFile = UtilService.TryParseAxlRemovalFile(fileContent);
         if (exisitngRemovalFile != null)
         {
             var newSectors = newRemovals.Streaming.Sectors;
             var oldSectors = exisitngRemovalFile.Streaming.Sectors;
-                
+            
             Dictionary<string, AxlRemovalSector> mergedDict = oldSectors.ToDictionary(x => x.Path);
 
             foreach (var newSector in newSectors)
@@ -64,25 +73,32 @@ public class ProcessService
                                 HashSet<int> actorSet = new HashSet<int>(newNode.ActorDeletions ?? new List<int>());
                                 actorSet.UnionWith(existingNode.ActorDeletions ?? new List<int>());
                                 existingNode.ActorDeletions = actorSet.ToList();
+                                changeCount.newActors += actorSet.Count - existingNode.ActorDeletions.Count;
                             }
                         }
                         else
                         {
                             mergedNodes[newNode.Index] = newNode;
+                            changeCount.newNodes++;
+                            changeCount.newActors += newNode.ActorDeletions?.Count ?? 0;
                         }
                     }
-                    newSector.NodeDeletions = mergedNodes.Values.ToList();
+                    existingSector.NodeDeletions = mergedNodes.Values.ToList();
                 }
                 else
                 {
                     mergedDict[newSector.Path] = newSector;
+                    changeCount.newSectors++;
+                    changeCount.newNodes += newSector.NodeDeletions?.Count ?? 0;
+                    foreach (var newNode in newSector.NodeDeletions)
+                        changeCount.newActors += newNode.ActorDeletions?.Count ?? 0;
                 }
             }
             var mergedSectors = mergedDict.Values.ToList();
-            return mergedSectors;
+            return (mergedSectors, changeCount);
         }
         Logger.Error($"Failed to parse existing removal file {filepath}");
-        return null;
+        return (null, null);
     }
     
     private void SaveFile(AxlRemovalFile removalFile, string? customRemovalDirectory = null, string? customRemovalFilename = null)
@@ -90,21 +106,28 @@ public class ProcessService
         string outputFilePath;
         if (customRemovalDirectory == null || customRemovalFilename == null)
         {
-            outputFilePath = Path.Combine(_settings.GameDirectory, "archive", "pc", "mod", _settings.OutputFilename) + ".xl";
-            
+            if (_settings.SaveToArchiveMods)
+                outputFilePath = Path.Combine(_settings.GameDirectory, "archive", "pc", "mod", _settings.OutputFilename) + ".xl";
+            else if (!string.IsNullOrEmpty(_settings.OutputDirectory))
+                outputFilePath = Path.Combine(_settings.OutputDirectory, _settings.OutputFilename) + ".xl";
+            else
+                throw new Exception(
+                    $"Failed to save output file! Saving to output directory is enabled but no output directory is set!");
         }
         else
         {
             string fileName = Path.GetFileNameWithoutExtension(customRemovalFilename);
             outputFilePath = Path.Combine(customRemovalDirectory, fileName) + ".xl";
         }
-        
+
+        MergeChanges mergeChanges = new();
         if (_settings.SaveMode == SaveFileMode.Enum.Extend && File.Exists(outputFilePath))
         {
            var mergedSectors = MergeSectors(outputFilePath, removalFile);
-           if (mergedSectors != null)
+           if (mergedSectors.Item1 != null)
            {
-               removalFile.Streaming.Sectors = mergedSectors;
+               removalFile.Streaming.Sectors = mergedSectors.Item1;
+               mergeChanges = mergedSectors.Item2;
            }
         }
         
@@ -138,7 +161,10 @@ public class ProcessService
         if (_settings.SaveMode == SaveFileMode.Enum.Extend)
         {
             File.WriteAllText(outputFilePath, outputContent);
-            Logger.Info($"Extended file {outputFilePath}");
+            var newSectorS = mergeChanges?.newSectors != 1 ? "s" : "";
+            var newNodesS = mergeChanges?.newNodes != 1 ? "s" : "";
+            var newActorsS = mergeChanges?.newActors != 1 ? "s" : "";
+            Logger.Info($"Extended file {outputFilePath} with {mergeChanges.newSectors} new sector{newSectorS}, {mergeChanges.newNodes} new node{newNodesS}, {mergeChanges.newActors} new actor{newActorsS}.");
             return;
         }
                 
