@@ -28,6 +28,7 @@ public partial class MainWindow : Window
         DataContext = new MainWindowViewModel();
         _mainWindowViewModel = DataContext as MainWindowViewModel;
         _processService = new ProcessService();
+        Closed += OnMainWindowClosed;
     }
 
     private void InitializeLogger()
@@ -316,5 +317,10 @@ public partial class MainWindow : Window
         }
         await Task.Run(() => GameFileService.Instance.Initialize());
         _mainWindowViewModel.IsProcessing = false;
+    }
+
+    private void OnMainWindowClosed(object? sender, EventArgs e)
+    {
+        _mainWindowViewModel.Settings.SaveSettings();
     }
 }
