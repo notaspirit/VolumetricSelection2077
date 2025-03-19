@@ -3,7 +3,7 @@
     Icon="../assets/redCube.ico"
     SizeToContent="Height"
     Title="VolumetricSelection2077"
-    Width="500"
+    Width="750"
     x:Class="VolumetricSelection2077.SettingsWindow"
     x:DataType="local:ViewModels.SettingsViewModel"
     xmlns="https://github.com/avaloniaui"
