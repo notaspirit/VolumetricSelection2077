@@ -103,7 +103,7 @@ namespace VolumetricSelection2077.Services
         {
             if (string.IsNullOrWhiteSpace(outputDirectory))
             {
-                Logger.Info("Output directory is not set in settings, using default");
+                Logger.Warning("Output directory is not set in settings, using default");
                 outputDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "output");
                 Directory.CreateDirectory(outputDirectory);
                 _settingsService.OutputDirectory = outputDirectory;

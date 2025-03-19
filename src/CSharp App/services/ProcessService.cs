@@ -33,9 +33,122 @@ public class ProcessService
         _settings = SettingsService.Instance;
         _gameFileService = GameFileService.Instance;
     }
-    
-    private void SaveFile(string outputFilePath, string outputContent)
+
+    class MergeChanges
     {
+        public int newSectors { get; set; } = 0;
+        public int newNodes { get; set; } = 0;
+        public int newActors { get; set; } = 0;
+    }
+    
+    private (List<AxlRemovalSector>?,MergeChanges?)  MergeSectors(string filepath, AxlRemovalFile newRemovals)
+    {
+        var changeCount = new MergeChanges();
+        
+        string fileContent = File.ReadAllText(filepath);
+        var exisitngRemovalFile = UtilService.TryParseAxlRemovalFile(fileContent);
+        if (exisitngRemovalFile != null)
+        {
+            var newSectors = newRemovals.Streaming.Sectors;
+            var oldSectors = exisitngRemovalFile.Streaming.Sectors;
+            
+            Dictionary<string, AxlRemovalSector> mergedDict = oldSectors.ToDictionary(x => x.Path);
+
+            foreach (var newSector in newSectors)
+            {
+                if (mergedDict.TryGetValue(newSector.Path, out AxlRemovalSector existingSector))
+                {
+                    Dictionary<int, AxlRemovalNodeDeletion> mergedNodes =
+                        existingSector.NodeDeletions.ToDictionary(x => x.Index);
+                    foreach (var newNode in newSector.NodeDeletions)
+                    {
+                        if (mergedNodes.TryGetValue(newNode.Index, out AxlRemovalNodeDeletion existingNode))
+                        {
+                            if (newNode.ActorDeletions != null || 
+                                newNode.ActorDeletions?.Count > 0 ||
+                                existingNode.ActorDeletions?.Count != null ||
+                                existingNode.ActorDeletions?.Count > 0)
+                            {
+                                existingNode.ExpectedActors =  newNode.ExpectedActors ?? existingNode.ExpectedActors;
+                                HashSet<int> actorSet = new HashSet<int>(newNode.ActorDeletions ?? new List<int>());
+                                actorSet.UnionWith(existingNode.ActorDeletions ?? new List<int>());
+                                existingNode.ActorDeletions = actorSet.ToList();
+                                changeCount.newActors += actorSet.Count - existingNode.ActorDeletions.Count;
+                            }
+                        }
+                        else
+                        {
+                            mergedNodes[newNode.Index] = newNode;
+                            changeCount.newNodes++;
+                            changeCount.newActors += newNode.ActorDeletions?.Count ?? 0;
+                        }
+                    }
+                    existingSector.NodeDeletions = mergedNodes.Values.ToList();
+                }
+                else
+                {
+                    mergedDict[newSector.Path] = newSector;
+                    changeCount.newSectors++;
+                    changeCount.newNodes += newSector.NodeDeletions?.Count ?? 0;
+                    foreach (var newNode in newSector.NodeDeletions)
+                        changeCount.newActors += newNode.ActorDeletions?.Count ?? 0;
+                }
+            }
+            var mergedSectors = mergedDict.Values.ToList();
+            return (mergedSectors, changeCount);
+        }
+        Logger.Error($"Failed to parse existing removal file {filepath}");
+        return (null, null);
+    }
+    
+    private void SaveFile(AxlRemovalFile removalFile, string? customRemovalDirectory = null, string? customRemovalFilename = null)
+    {
+        string outputFilePath;
+        if (customRemovalDirectory == null || customRemovalFilename == null)
+        {
+            if (_settings.SaveToArchiveMods)
+                outputFilePath = Path.Combine(_settings.GameDirectory, "archive", "pc", "mod", _settings.OutputFilename) + ".xl";
+            else if (!string.IsNullOrEmpty(_settings.OutputDirectory))
+                outputFilePath = Path.Combine(_settings.OutputDirectory, _settings.OutputFilename) + ".xl";
+            else
+                throw new Exception(
+                    $"Failed to save output file! Saving to output directory is enabled but no output directory is set!");
+        }
+        else
+        {
+            string fileName = Path.GetFileNameWithoutExtension(customRemovalFilename);
+            outputFilePath = Path.Combine(customRemovalDirectory, fileName) + ".xl";
+        }
+
+        MergeChanges mergeChanges = new();
+        if (_settings.SaveMode == SaveFileMode.Enum.Extend && File.Exists(outputFilePath))
+        {
+           var mergedSectors = MergeSectors(outputFilePath, removalFile);
+           if (mergedSectors.Item1 != null)
+           {
+               removalFile.Streaming.Sectors = mergedSectors.Item1;
+               mergeChanges = mergedSectors.Item2;
+           }
+        }
+        
+        string outputContent;
+        if (_settings.SaveAsYaml)
+        {
+            var serializer = new SerializerBuilder()
+                .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
+                .Build();
+
+            outputContent = serializer.Serialize(removalFile);
+        }
+        else
+        {
+            outputContent = JsonConvert.SerializeObject(removalFile,
+                new JsonSerializerSettings()
+                    { NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented });
+        }
+        
+        
         Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
                 
         if (!File.Exists(outputFilePath))
@@ -48,7 +161,10 @@ public class ProcessService
         if (_settings.SaveMode == SaveFileMode.Enum.Extend)
         {
             File.WriteAllText(outputFilePath, outputContent);
-            Logger.Info($"Extended file {outputFilePath}");
+            var newSectorS = mergeChanges?.newSectors != 1 ? "s" : "";
+            var newNodesS = mergeChanges?.newNodes != 1 ? "s" : "";
+            var newActorsS = mergeChanges?.newActors != 1 ? "s" : "";
+            Logger.Info($"Extended file {outputFilePath} with {mergeChanges.newSectors} new sector{newSectorS}, {mergeChanges.newNodes} new node{newNodesS}, {mergeChanges.newActors} new actor{newActorsS}.");
             return;
         }
                 
@@ -441,88 +557,7 @@ public class ProcessService
             }
             Logger.Success($"Found {nodeCount} nodes across {sectors.Count} sectors.");
             
-            string axlFilePath;
-            if (customRemovalDirectory == null)
-            {
-                axlFilePath = _settings.GameDirectory + @"\archive\pc\mod\" + _settings.OutputFilename + ".xl";   
-            }
-            else
-            {
-                string fileName = Path.GetFileNameWithoutExtension(customRemovalFile);
-                axlFilePath = customRemovalDirectory + $"\\{fileName}.xl";
-            }
-            
-            if (_settings.SaveMode == SaveFileMode.Enum.Extend && File.Exists(axlFilePath))
-            {
-                string fileContent = File.ReadAllText(axlFilePath);
-                var exisitngRemovalFile = UtilService.TryParseAxlRemovalFile(fileContent);
-                if (exisitngRemovalFile != null)
-                {
-                    var newSectors = removalFile.Streaming.Sectors;
-                    var oldSectors = exisitngRemovalFile.Streaming.Sectors;
-                        
-                    Dictionary<string, AxlRemovalSector> mergedDict = oldSectors.ToDictionary(x => x.Path);
-
-                    foreach (var newSector in newSectors)
-                    {
-                        if (mergedDict.TryGetValue(newSector.Path, out AxlRemovalSector existingSector))
-                        {
-                            Dictionary<int, AxlRemovalNodeDeletion> mergedNodes =
-                                existingSector.NodeDeletions.ToDictionary(x => x.Index);
-                            foreach (var newNode in newSector.NodeDeletions)
-                            {
-                                if (mergedNodes.TryGetValue(newNode.Index, out AxlRemovalNodeDeletion existingNode))
-                                {
-                                    if (newNode.ActorDeletions != null || 
-                                        newNode.ActorDeletions?.Count > 0 ||
-                                        existingNode.ActorDeletions?.Count != null ||
-                                        existingNode.ActorDeletions?.Count > 0)
-                                    {
-                                        existingNode.ExpectedActors =  newNode.ExpectedActors ?? existingNode.ExpectedActors;
-                                        HashSet<int> actorSet = new HashSet<int>(newNode.ActorDeletions ?? new List<int>());
-                                        actorSet.UnionWith(existingNode.ActorDeletions ?? new List<int>());
-                                        existingNode.ActorDeletions = actorSet.ToList();
-                                    }
-                                }
-                                else
-                                {
-                                    mergedNodes[newNode.Index] = newNode;
-                                }
-                            }
-                            newSector.NodeDeletions = mergedNodes.Values.ToList();
-                        }
-                        else
-                        {
-                            mergedDict[newSector.Path] = newSector;
-                        }
-                    }
-                    var mergedSectors = mergedDict.Values.ToList();
-                    removalFile.Streaming.Sectors = mergedSectors;
-                }
-                else
-                {
-                    Logger.Error($"Failed to parse existing removal file {axlFilePath}");
-                }
-            }
-            
-            string outputContent;
-            if (_settings.SaveAsYaml)
-            {
-                var serializer = new SerializerBuilder()
-                    .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                    .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
-                    .Build();
-
-                outputContent = serializer.Serialize(removalFile);
-            }
-            else
-            {
-                outputContent = JsonConvert.SerializeObject(removalFile,
-                    new JsonSerializerSettings()
-                        { NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented });
-            }
-            
-            SaveFile(axlFilePath, outputContent);
+            SaveFile(removalFile, customRemovalDirectory, customRemovalFile);
         }
         return (true, string.Empty);
     }
