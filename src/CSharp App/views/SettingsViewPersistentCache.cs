@@ -26,7 +26,7 @@ public class SettingsViewPersistentCache
     private string InitialGamePath { get; }
     public string InitialCachePath { get; set; }
 
-    public bool CacheChanged
+    public bool CachePathChanged
     {
         get => InitialCachePath != _settings.CacheDirectory;
     }

@@ -3,7 +3,6 @@ using VolumetricSelection2077.ViewModels;
 using System;
 using System.Diagnostics;
 using System.IO;
-using Avalonia.Interactivity;
 using VolumetricSelection2077.Services;
 
 namespace VolumetricSelection2077
@@ -29,8 +28,7 @@ namespace VolumetricSelection2077
         private void OnSettingsWindowClosed(object? sender, EventArgs e)
         {
             _settingsViewModel?.Settings.SaveSettings();
-
-            if ((bool)_settingsViewModel?.PersistentCache.CacheChanged)
+            if ((bool)_settingsViewModel?.PersistentCache.CachePathChanged)
             {
                 bool successMove = false;
                 try
@@ -42,15 +40,20 @@ namespace VolumetricSelection2077
                 {
                     Logger.Error($"Failed to move Cache {ex}");
                 }
+
                 if (successMove)
+                {
                     _settingsViewModel.PersistentCache.InitialCachePath = _settingsViewModel?.Settings.CacheDirectory;
+                }
                 else
                 {
                     _settingsViewModel.Settings.CacheDirectory = _settingsViewModel?.PersistentCache.InitialCachePath;
                     _settingsViewModel?.Settings.SaveSettings();
                 }
-
             }
+
+            if ((bool)_settingsViewModel?.Settings.CacheEnabled)
+                CacheService.Instance.Initialize();
             
             if ((bool)_settingsViewModel?.PersistentCache.RequiresRestart)
                 RestartApp();

@@ -24,6 +24,7 @@ namespace VolumetricSelection2077.Resources
             public static string CustomOutputDirectory { get; } = $"Alternative location to save files to, can be enabled in \"Optional Parameters\", defaults to {@"%AppData%\VolumetricSelection2077\output\"}";
             public static string SaveToArchiveMods { get; } = $"Where to save the output files to, custom directory defaults to {@"%AppData%\VolumetricSelection2077\output\"}";
             public static string CacheDirectory { get; } = $"Where the cache is saved to, can be upto 100GB in size, defaults to {@"%AppData%\VolumetricSelection2077\cache\"}";
+            public static string CacheEnabled { get; } = "Caches uncooked game files, significantly improving processing time";
         }
 
         public static class Watermarks

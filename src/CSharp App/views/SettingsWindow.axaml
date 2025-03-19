@@ -21,6 +21,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200" />
@@ -83,6 +84,14 @@
                 Grid.Row="7"
                 HorizontalAlignment="Left"
                 Margin="5"
+                Text="Cache Uncooked Resources"
+                ToolTip.Tip="{x:Static resources:ToolTips.CacheEnabled}"
+                VerticalAlignment="Center" />
+            <TextBlock
+                Grid.Column="0"
+                Grid.Row="8"
+                HorizontalAlignment="Left"
+                Margin="5"
                 Text="Cache Directory"
                 ToolTip.Tip="{x:Static resources:ToolTips.CacheDirectory}"
                 VerticalAlignment="Center" />
@@ -120,9 +129,16 @@
                 Margin="5"
                 Text="{Binding Settings.OutputDirectory}"
                 Watermark="{x:Static resources:Watermarks.CustomOutputDirectory}" />
-            <TextBox
+            <ToggleSwitch
                 Grid.Column="1"
                 Grid.Row="7"
+                IsChecked="{Binding Settings.CacheEnabled}"
+                Margin="5"
+                OffContent=""
+                OnContent="" />
+            <TextBox
+                Grid.Column="1"
+                Grid.Row="8"
                 Margin="5"
                 Text="{Binding Settings.CacheDirectory}"
                 Watermark="{x:Static resources:Watermarks.CacheDirectory}" />
