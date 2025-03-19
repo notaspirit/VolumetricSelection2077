@@ -325,8 +325,12 @@ public partial class MainWindow : Window
         {
             Logger.Error($"An error occured during the update check: {ex}");
         }
-        await Task.Run(() => GameFileService.Instance.Initialize());
-        _mainWindowViewModel.AppInitialized = true;
+        var success = await Task.Run(() =>
+        {
+            return GameFileService.Instance.Initialize();
+        });
+        if (success)
+            _mainWindowViewModel.AppInitialized = true;
         _mainWindowViewModel.IsProcessing = false;
     }
 

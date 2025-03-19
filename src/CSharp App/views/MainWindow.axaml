@@ -432,7 +432,7 @@
                     Click="Benchmark_Click"
                     Content="{x:Static resources:Labels.Benchmark}"
                     Grid.Column="3"
-                    IsEnabled="{Binding ButtonsAvailable}"
+                    IsEnabled="{Binding MainTaskAvailable}"
                     IsVisible="{Binding Settings.DebugMode}"
                     Margin="5,0,0,0">
                     <Button.Styles>

@@ -52,9 +52,9 @@ public class GameFileService
     {
         _settingsService = SettingsService.Instance;
     }
-    public void Initialize()
+    public bool Initialize()
     {
-        if (_initialized) return;
+        if (_initialized) return true;
         if (_settingsService.SupportModdedResources)
         {
             Logger.Info($"Initializing Game File Service with modded resources, this may take a while...");
@@ -90,11 +90,13 @@ public class GameFileService
             _initialized = true;
             sw.Stop();
             Logger.Success($"Initialized Game File Service in {UtilService.FormatElapsedTime(sw.Elapsed)}");
+            return true;
         }
         catch (Exception e)
         {
             sw.Stop();
             Logger.Error($"Initializing Game File Service failed : {e}");
+            return false;
         }
 
     }

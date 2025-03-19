@@ -22,6 +22,7 @@ namespace VolumetricSelection2077.ViewModels
                 _isProcesing = value;
                 OnPropertyChanged(nameof(IsProcessing));
                 OnPropertyChanged(nameof(ButtonsAvailable));
+                OnPropertyChanged(nameof(MainTaskAvailable));
             }
         }
 
