@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using Avalonia.Interactivity;
+using VolumetricSelection2077.Services;
 
 namespace VolumetricSelection2077
 {
@@ -25,16 +26,33 @@ namespace VolumetricSelection2077
             Environment.Exit(0);
         }
         
-        private void RestartApplication_Click(object? sender, RoutedEventArgs e)
-        {
-            _settingsViewModel?.Settings.SaveSettings();
-            RestartApp();
-        }
-        
         private void OnSettingsWindowClosed(object? sender, EventArgs e)
         {
             _settingsViewModel?.Settings.SaveSettings();
-            if ((bool)_settingsViewModel?.Cache.RequiresRestart)
+
+            if ((bool)_settingsViewModel?.PersistentCache.CacheChanged)
+            {
+                bool successMove = false;
+                try
+                {
+                    successMove = CacheService.Instance.Move(_settingsViewModel?.PersistentCache.InitialCachePath,
+                        _settingsViewModel?.Settings.CacheDirectory);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Failed to move Cache {ex}");
+                }
+                if (successMove)
+                    _settingsViewModel.PersistentCache.InitialCachePath = _settingsViewModel?.Settings.CacheDirectory;
+                else
+                {
+                    _settingsViewModel.Settings.CacheDirectory = _settingsViewModel?.PersistentCache.InitialCachePath;
+                    _settingsViewModel?.Settings.SaveSettings();
+                }
+
+            }
+            
+            if ((bool)_settingsViewModel?.PersistentCache.RequiresRestart)
                 RestartApp();
         }
     };

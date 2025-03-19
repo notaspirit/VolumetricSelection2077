@@ -24,7 +24,13 @@ public class SettingsViewPersistentCache
 
     private bool InitialModdedResourceValue { get; }
     private string InitialGamePath { get; }
+    public string InitialCachePath { get; set; }
 
+    public bool CacheChanged
+    {
+        get => InitialCachePath != _settings.CacheDirectory;
+    }
+    
     public bool RequiresRestart
     {
         get => (InitialModdedResourceValue != _settings.SupportModdedResources) || (InitialGamePath != _settings.GameDirectory);
@@ -35,5 +41,6 @@ public class SettingsViewPersistentCache
        _settings = SettingsService.Instance;
        InitialModdedResourceValue = _settings.SupportModdedResources;
        InitialGamePath = _settings.GameDirectory;
+       InitialCachePath = _settings.CacheDirectory;
     }
 }

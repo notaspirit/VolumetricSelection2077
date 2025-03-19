@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using LightningDB;
 using MessagePack;
+using Microsoft.ClearScript.Util.Web;
 using VolumetricSelection2077.Models;
 
 namespace VolumetricSelection2077.Services;
@@ -365,6 +366,33 @@ public class CacheService
             Logger.Error($"Failed to drop database {database} with error: {ex}");
         }
     }
+
+    public bool Move(string fromPath, string toPath)
+    {
+        _isInitialized = false;
+
+        if (!Directory.Exists(fromPath))
+        {
+            Logger.Error($"Directory {fromPath} does not exist");
+            return false;
+        }
+        
+        if (Directory.Exists(toPath))
+            if (Directory.EnumerateFiles(toPath, "*.*", SearchOption.AllDirectories).Any())
+            {
+                Logger.Error($"Directory {toPath} already exists and is not empty");
+                return false;
+            }
+            else
+                Directory.Delete(toPath, true);
+        
+        _env.Dispose();
+        
+        Directory.Move(fromPath, toPath);
+        Initialize();
+        return true;
+    }
+    
     public class DataBaseSample
     {
         public int moddedEntriesCount { get; set; }

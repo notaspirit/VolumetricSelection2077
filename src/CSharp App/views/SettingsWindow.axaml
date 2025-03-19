@@ -78,6 +78,14 @@
                 Text="Custom Output Directory"
                 ToolTip.Tip="{x:Static resources:ToolTips.CustomOutputDirectory}"
                 VerticalAlignment="Center" />
+            <TextBlock
+                Grid.Column="0"
+                Grid.Row="7"
+                HorizontalAlignment="Left"
+                Margin="5"
+                Text="Cache Directory"
+                ToolTip.Tip="{x:Static resources:ToolTips.CacheDirectory}"
+                VerticalAlignment="Center" />
             <!--  Second Row: Setting Control (e.g., ToggleSwitch)  -->
             <TextBox
                 Grid.Column="1"
@@ -112,6 +120,12 @@
                 Margin="5"
                 Text="{Binding Settings.OutputDirectory}"
                 Watermark="{x:Static resources:Watermarks.CustomOutputDirectory}" />
+            <TextBox
+                Grid.Column="1"
+                Grid.Row="7"
+                Margin="5"
+                Text="{Binding Settings.CacheDirectory}"
+                Watermark="{x:Static resources:Watermarks.CacheDirectory}" />
         </Grid>
     </Border>
 </Window>

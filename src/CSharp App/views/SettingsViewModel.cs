@@ -8,12 +8,12 @@ namespace VolumetricSelection2077.ViewModels
     { 
         public SettingsService Settings { get; set; }
 
-        public SettingsViewPersistentCache Cache { get; private set; }
+        public SettingsViewPersistentCache PersistentCache { get; }
         
         public SettingsViewModel() 
         { 
             Settings = SettingsService.Instance;
-            Cache = SettingsViewPersistentCache.Instance;
+            PersistentCache = SettingsViewPersistentCache.Instance;
         }
         
         public event PropertyChangedEventHandler? PropertyChanged;
