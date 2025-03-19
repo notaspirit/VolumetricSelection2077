@@ -89,28 +89,10 @@
             <ToggleSwitch
                 Grid.Column="1"
                 Grid.Row="2"
-                IsChecked="{Binding ModdedResourceSupportSW}"
+                IsChecked="{Binding Settings.SupportModdedResources}"
                 Margin="5"
                 OffContent=""
                 OnContent="" />
-            <Button
-                Background="#6b82b2"
-                Click="RestartApplication_Click"
-                Content="Restart Application"
-                Grid.Column="1"
-                Grid.Row="3"
-                Height="30"
-                HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Center"
-                IsVisible="{Binding ModdedStatusChanged}"
-                Margin="5"
-                VerticalContentAlignment="Center">
-                <Button.Styles>
-                    <Style Selector="Button:pointerover /template/ ContentPresenter">
-                        <Setter Property="Background" Value="#455472" />
-                    </Style>
-                </Button.Styles>
-            </Button>
             <ToggleSwitch
                 Grid.Column="1"
                 Grid.Row="4"

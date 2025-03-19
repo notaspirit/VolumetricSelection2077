@@ -22,11 +22,18 @@ public class SettingsViewPersistentCache
         }
     }
 
-    public bool initialModdedResourceValue { get; private set; }
+    private bool InitialModdedResourceValue { get; }
+    private string InitialGamePath { get; }
 
+    public bool RequiresRestart
+    {
+        get => (InitialModdedResourceValue != _settings.SupportModdedResources) || (InitialGamePath != _settings.GameDirectory);
+    }
+    
     private SettingsViewPersistentCache()
     {
        _settings = SettingsService.Instance;
-       initialModdedResourceValue = _settings.SupportModdedResources;
+       InitialModdedResourceValue = _settings.SupportModdedResources;
+       InitialGamePath = _settings.GameDirectory;
     }
 }
