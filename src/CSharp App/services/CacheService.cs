@@ -54,7 +54,7 @@ public class CacheService
     private LightningEnvironment _env;
     private static readonly int BatchDelay = 1;
     private static readonly int MaxReaders = 512;
-    private static readonly int MapSize = 10485760 * 100; // 1gb (should be more for actual use prob but for testing it will do)
+    private static readonly long MapSize = 400L * 1024 * 1024 * 1024;
     static ConcurrentQueue<WriteRequest> _requestWriteQueue = new();
     private readonly object _lock = new object();
     private LightningDatabase _vanillaDatabase;
