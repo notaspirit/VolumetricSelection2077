@@ -3,6 +3,7 @@ using VolumetricSelection2077.ViewModels;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using Avalonia.Interactivity;
 using VolumetricSelection2077.Services;
 
@@ -28,14 +29,27 @@ namespace VolumetricSelection2077
             Environment.Exit(0);
         }
 
-        private void ClearVanillaCache_Click(object sender, RoutedEventArgs e)
+        private void UpdateCacheStats()
         {
-            _cacheService.ClearDatabase(CacheDatabases.Vanilla, true);
+            try
+            {
+                _settingsViewModel.CacheStats = _cacheService.GetStats();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to get stats for cache: {ex}");
+            }
+        }
+        private async void ClearVanillaCache_Click(object sender, RoutedEventArgs e)
+        {
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Vanilla, true));
+            UpdateCacheStats();
         }
         
-        private void ClearModdedCache_Click(object sender, RoutedEventArgs e)
+        private async void ClearModdedCache_Click(object sender, RoutedEventArgs e)
         {
-            _cacheService.ClearDatabase(CacheDatabases.Modded, true);
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Modded, true));
+            UpdateCacheStats();
         }
         
         private void OnSettingsWindowClosed(object? sender, EventArgs e)

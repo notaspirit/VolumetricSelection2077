@@ -393,6 +393,54 @@ public class CacheService
         Initialize();
         return true;
     }
+
+    public class CacheStats
+    {
+        public int VanillaEntries { get; set; }
+        public double EstVanillaSize { get; set; }
+        public int ModdedEntries { get; set; }
+        public double EstModdedSize { get; set; }
+
+        public CacheStats()
+        {
+            VanillaEntries = 0;
+            EstVanillaSize = 0;
+            ModdedEntries = 0;
+            EstModdedSize = 0;
+        }
+    }
+
+    public CacheStats GetStats()
+    {
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling ClearDatabase");
+        DirectoryInfo dirInfo = new DirectoryInfo(_settings.CacheDirectory);
+        var totalSize = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length) / (1024.0 * 1024.0 * 1024.0);
+        int vanillaEntries = 0;
+        int moddedEntries = 0;
+        using var tx = _env.BeginTransaction();
+        using (var cursor = tx.CreateCursor(_vanillaDatabase))
+        {
+            while (cursor.Next() == MDBResultCode.Success)
+                vanillaEntries++;
+        }
+        using (var cursor = tx.CreateCursor(_moddedDatabase))
+        {
+            while (cursor.Next() == MDBResultCode.Success)
+                moddedEntries++;
+        }
+
+        var estVanillaSize = totalSize / (vanillaEntries + moddedEntries) * vanillaEntries;
+        var estModdedSize = totalSize / (vanillaEntries + moddedEntries) * moddedEntries;
+        
+        
+        return new CacheStats()
+        {
+            VanillaEntries = vanillaEntries,
+            ModdedEntries = moddedEntries,
+            EstVanillaSize = double.IsNaN(estVanillaSize) ? 0 : estVanillaSize,
+            EstModdedSize = double.IsNaN(estModdedSize) ? 0 : estModdedSize,
+        };
+    }
     
     public class DataBaseSample
     {
