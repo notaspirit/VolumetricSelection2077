@@ -22,6 +22,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200" />
@@ -95,6 +96,14 @@
                 Text="Cache Directory"
                 ToolTip.Tip="{x:Static resources:ToolTips.CacheDirectory}"
                 VerticalAlignment="Center" />
+            <TextBlock
+                Grid.Column="0"
+                Grid.Row="9"
+                HorizontalAlignment="Left"
+                Margin="5"
+                Text="Clear Cache"
+                ToolTip.Tip="{x:Static resources:ToolTips.ClearCache}"
+                VerticalAlignment="Center" />
             <!--  Second Row: Setting Control (e.g., ToggleSwitch)  -->
             <TextBox
                 Grid.Column="1"
@@ -142,6 +151,37 @@
                 Margin="5"
                 Text="{Binding Settings.CacheDirectory}"
                 Watermark="{x:Static resources:Watermarks.CacheDirectory}" />
+            <Grid Grid.Column="1" Grid.Row="9">
+                <Grid.ColumnDefinitions>*, *</Grid.ColumnDefinitions>
+                <Button
+                    Background="#ad0002"
+                    Click="ClearVanillaCache_Click"
+                    Content="{x:Static resources:Labels.ClearVanillaCache}"
+                    Grid.Column="0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Margin="5,0,0,0">
+                    <Button.Styles>
+                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                            <Setter Property="Background" Value="DarkRed" />
+                        </Style>
+                    </Button.Styles>
+                </Button>
+                <Button
+                    Background="#ad0002"
+                    Click="ClearModdedCache_Click"
+                    Content="{x:Static resources:Labels.ClearModdedCache}"
+                    Grid.Column="1"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Margin="5,0,0,0">
+                    <Button.Styles>
+                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                            <Setter Property="Background" Value="DarkRed" />
+                        </Style>
+                    </Button.Styles>
+                </Button>
+            </Grid>
         </Grid>
     </Border>
 </Window>

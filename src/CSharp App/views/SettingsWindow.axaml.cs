@@ -3,6 +3,7 @@ using VolumetricSelection2077.ViewModels;
 using System;
 using System.Diagnostics;
 using System.IO;
+using Avalonia.Interactivity;
 using VolumetricSelection2077.Services;
 
 namespace VolumetricSelection2077
@@ -10,11 +11,13 @@ namespace VolumetricSelection2077
     public partial class SettingsWindow : Window
     {
         private SettingsViewModel? _settingsViewModel;
+        private CacheService _cacheService;
         public SettingsWindow()
         {
             InitializeComponent();
             DataContext = new SettingsViewModel();
             _settingsViewModel = DataContext as SettingsViewModel;
+            _cacheService = CacheService.Instance;
             Closed += OnSettingsWindowClosed;
         }
 
@@ -23,6 +26,16 @@ namespace VolumetricSelection2077
             var exePath = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "VolumetricSelection2077.exe");
             Process.Start(exePath);
             Environment.Exit(0);
+        }
+
+        private void ClearVanillaCache_Click(object sender, RoutedEventArgs e)
+        {
+            _cacheService.ClearDatabase(CacheDatabases.Vanilla, true);
+        }
+        
+        private void ClearModdedCache_Click(object sender, RoutedEventArgs e)
+        {
+            _cacheService.ClearDatabase(CacheDatabases.Modded, true);
         }
         
         private void OnSettingsWindowClosed(object? sender, EventArgs e)

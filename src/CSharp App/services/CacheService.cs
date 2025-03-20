@@ -320,6 +320,7 @@ public class CacheService
         if (!_isInitialized && !bypass) throw new Exception("Cache service must be initialized before calling ClearDatabase");
         try
         {
+            
             using var tx = _env.BeginTransaction();
             switch (database)
             {
@@ -333,7 +334,7 @@ public class CacheService
                     }
                     break;
                 case CacheDatabases.Modded:
-                    using (var cursor = tx.CreateCursor(_vanillaDatabase))
+                    using (var cursor = tx.CreateCursor(_moddedDatabase))
                     {
                         while (cursor.Next() == MDBResultCode.Success)
                         {
@@ -349,7 +350,7 @@ public class CacheService
                             cursor.Delete();
                         }
                     }
-                    using (var cursor = tx.CreateCursor(_vanillaDatabase))
+                    using (var cursor = tx.CreateCursor(_moddedDatabase))
                     {
                         while (cursor.Next() == MDBResultCode.Success)
                         {
