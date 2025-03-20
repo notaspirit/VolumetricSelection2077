@@ -10,7 +10,9 @@ using System.Threading.Tasks;
 using LightningDB;
 using MessagePack;
 using Microsoft.ClearScript.Util.Web;
+using Microsoft.VisualBasic.FileIO;
 using VolumetricSelection2077.Models;
+using SearchOption = System.IO.SearchOption;
 
 namespace VolumetricSelection2077.Services;
 
@@ -388,8 +390,7 @@ public class CacheService
                 Directory.Delete(toPath, true);
         
         _env.Dispose();
-        
-        Directory.Move(fromPath, toPath);
+        FileSystem.MoveDirectory(fromPath, toPath, UIOption.OnlyErrorDialogs);
         Initialize();
         return true;
     }
