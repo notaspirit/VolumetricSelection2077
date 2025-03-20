@@ -193,11 +193,11 @@ public class ProcessService
         {
             var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
 
-            if (_settings.NukeOccluders && nodeEntry.Type.ToLower().Contains("occluder"))
+            if (_settings.NukeOccluders && nodeEntry.Type.ToString().ToLower().Contains("occluder"))
             {
                 return new AxlRemovalNodeDeletion()
                 {
-                    Type = nodeEntry.Type,
+                    Type = nodeEntry.Type.ToString(),
                     Index = index,
                     DebugName = nodeEntry.DebugName
                 };
@@ -259,7 +259,7 @@ public class ProcessService
                 return null;
             }
             
-            int nodeTypeTableIndex = NodeTypeProcessingOptions.NodeTypeOptions.IndexOf(nodeEntry.Type);
+            int nodeTypeTableIndex = NodeTypeProcessingOptions.NodeTypeOptions.IndexOf(nodeEntry.Type.ToString());
             if (nodeTypeTableIndex == -1)
             {
                 Logger.Warning($"Node {nodeEntry.Type} is not part of the assumed node type set! Please report this issue. Processing node regardless.");
@@ -301,7 +301,7 @@ public class ProcessService
                         return new AxlRemovalNodeDeletion()
                         {
                             Index = index,
-                            Type = nodeEntry.Type,
+                            Type = nodeEntry.Type.ToString(),
                             DebugName = nodeEntry.DebugName
                         };
                     }
@@ -374,7 +374,7 @@ public class ProcessService
                         return new AxlRemovalNodeDeletion()
                             {
                                 Index = index,
-                                Type = nodeEntry.Type,
+                                Type = nodeEntry.Type.ToString(),
                                 ActorDeletions = actorRemoval,
                                 ExpectedActors = nodeEntry.Actors.Length,
                                 DebugName = nodeEntry.DebugName
@@ -390,7 +390,7 @@ public class ProcessService
                             return new AxlRemovalNodeDeletion()
                             {
                                 Index = index,
-                                Type = nodeEntry.Type,
+                                Type = nodeEntry.Type.ToString(),
                                 DebugName = nodeEntry.DebugName
                             };
                         }

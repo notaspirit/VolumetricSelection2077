@@ -31,6 +31,10 @@ public class DirectAbbrSectorParser
         {
             var debugName = node.Chunk?.DebugName;
             var type = node.Chunk?.GetType().Name ?? "Unknown";
+            var parsedTypeSuccess = NodeTypeProcessingOptions.Enum.TryParse(type, out NodeTypeProcessingOptions.Enum parsedType);
+            if (!parsedTypeSuccess)
+                Logger.Error($"Invalid node type: {type}");
+            
             ulong? sectorHash = null;
             AbbrCollisionActors[]? actors = null;
             string? resourcePath = null;
@@ -146,7 +150,7 @@ public class DirectAbbrSectorParser
                 Actors = actors,
                 DebugName = debugName,
                 ResourcePath = resourcePath,
-                Type = type
+                Type = parsedType
             };
             
             nodeIndex++;

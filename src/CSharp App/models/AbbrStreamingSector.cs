@@ -1,5 +1,6 @@
 using MessagePack;
 using SharpDX;
+using VolumetricSelection2077.Resources;
 
 namespace VolumetricSelection2077.Models
 {
@@ -40,7 +41,7 @@ namespace VolumetricSelection2077.Models
     public class AbbrStreamingSectorNodesEntry
     {
         [Key(0)]
-        public required string Type { get; set; }
+        public required NodeTypeProcessingOptions.Enum Type { get; set; }
     
         [Key(1)]
         public string? ResourcePath { get; set; }
