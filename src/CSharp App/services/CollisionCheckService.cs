@@ -3,7 +3,11 @@ using SharpDX;
 using VolumetricSelection2077.Models;
 using System.Collections.Generic;
 using System.Linq;
+using HelixToolkit.Wpf.SharpDX;
+using WolvenKit.RED4.Types;
 using Plane = SharpDX.Plane;
+using Vector3 = SharpDX.Vector3;
+using Vector4 = SharpDX.Vector4;
 
 namespace VolumetricSelection2077.Services;
 
@@ -264,5 +268,27 @@ public static class CollisionCheckService
             }
         }
         return isInside;
+    }
+
+    public static bool IsCollisionSphereInsideSelectionBox(AbbrActorShapes shape, AbbrSectorTransform actorTransform,
+        OrientedBoundingBox selectionBoxObb)
+    {
+        // only working way to apply actor and shape transform
+        Matrix shapeTransformMatrix = Matrix.Scaling(new Vector3(1,1,1)) * 
+                                      Matrix.RotationQuaternion(shape.Transform.Rotation) * 
+                                      Matrix.Translation(shape.Transform.Position);
+
+        Matrix actorTransformMatrix = Matrix.Scaling(actorTransform.Scale) * 
+                                      Matrix.RotationQuaternion(actorTransform.Rotation) * 
+                                      Matrix.Translation(actorTransform.Position);
+
+        Matrix transformMatrix = shapeTransformMatrix * actorTransformMatrix;
+        
+        var collisionSphere = new BoundingSphere(shape.Transform.Position, shape.Transform.Scale.X);
+        collisionSphere.TransformBoundingSphere(transformMatrix);
+        Vector3 obbHalfExtends = selectionBoxObb.Size / 2;
+        Vector3 closestPoint = Vector3.Clamp(collisionSphere.Center, -obbHalfExtends, obbHalfExtends);
+        
+        return collisionSphere.Contains(ref closestPoint) != ContainmentType.Disjoint;
     }
 }

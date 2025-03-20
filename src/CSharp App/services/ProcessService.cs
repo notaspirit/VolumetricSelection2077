@@ -1,25 +1,18 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime;
-using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading;
-using Avalonia.Controls.Shapes;
 using DynamicData;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Parsers;
 using Newtonsoft.Json;
 using SharpDX;
 using VolumetricSelection2077.Resources;
-using VolumetricSelection2077.TestingStuff;
+using WolvenKit.RED4.Types;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 using Path = System.IO.Path;
 
 namespace VolumetricSelection2077.Services;
@@ -321,48 +314,55 @@ public class ProcessService
                         var shapeIntersects = false;
                         var sectorHash = nodeEntry.SectorHash;
                         var transformActor = actor.Transform;
+                        
                         foreach (var shape in actor.Shapes)
                         {
-                            
-                            if (shape.ShapeType.Contains("Mesh"))
+                            switch (shape.ShapeType)
                             {
-                                var collisionMesh = await _gameFileService.GetPhysXMesh((ulong)sectorHash, (ulong)shape.Hash);
-                                if (collisionMesh == null)
-                                {
-                                    Logger.Warning($"Failed to get PhysX Mesh from {sectorHash} : {shape.Hash}");
-                                    continue;
-                                }
-                                bool isCollisionMeshInsideBox = CollisionCheckService.IsCollisonMeshInsideSelectionBox(collisionMesh, selectionBox.Obb, selectionBox.Aabb, transformActor, shape.Transform);
-                                if (isCollisionMeshInsideBox)
-                                {
-                                    shapeIntersects = true;
+                                case Enums.physicsShapeType.TriangleMesh:
+                                case Enums.physicsShapeType.ConvexMesh:
+                                    var collisionMesh = await _gameFileService.GetPhysXMesh((ulong)sectorHash, (ulong)shape.Hash);
+                                    if (collisionMesh == null)
+                                    {
+                                        Logger.Warning($"Failed to get PhysX Mesh from {sectorHash} : {shape.Hash}");
+                                        continue;
+                                    }
+                                    bool isCollisionMeshInsideBox = CollisionCheckService.IsCollisonMeshInsideSelectionBox(collisionMesh, selectionBox.Obb, selectionBox.Aabb, transformActor, shape.Transform);
+                                    if (isCollisionMeshInsideBox)
+                                    {
+                                        shapeIntersects = true;
+                                        goto breakShapeLoop;
+                                    }
                                     break;
-                                }
-                            }
-                            
-                            if (shape.ShapeType == "Box")
-                            {
-                                string collectionName = sectorPath.Split(@"\")[^1] + " " + index + " " + actorIndex; // just for testing so it's easy to identify the source of the shapes
-                                bool isCollisionBoxInsideBox = CollisionCheckService.IsCollisionBoxInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb, collectionName);
-                                if (isCollisionBoxInsideBox)
-                                {
-                                    shapeIntersects = true;
+                                case Enums.physicsShapeType.Box:
+                                    string collectionName = sectorPath.Split(@"\")[^1] + " " + index + " " + actorIndex; // just for testing so it's easy to identify the source of the shapes
+                                    bool isCollisionBoxInsideBox = CollisionCheckService.IsCollisionBoxInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb, collectionName);
+                                    if (isCollisionBoxInsideBox)
+                                    {
+                                        shapeIntersects = true;
+                                        goto breakShapeLoop;
+                                    }
                                     break;
-                                }
-                            }
-                            
-                            if (shape.ShapeType == "Capsule")
-                            {
-                                bool isCollisionCapsuleInsideBox = CollisionCheckService.IsCollisionCapsuleInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb);
-                                if (isCollisionCapsuleInsideBox)
-                                {
-                                    shapeIntersects = true;
+                                case Enums.physicsShapeType.Capsule:
+                                    bool isCollisionCapsuleInsideBox = CollisionCheckService.IsCollisionCapsuleInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb);
+                                    if (isCollisionCapsuleInsideBox)
+                                    {
+                                        shapeIntersects = true;
+                                        goto breakShapeLoop;
+                                    }
                                     break;
-                                }
+                                case Enums.physicsShapeType.Sphere:
+                                    bool intersects = CollisionCheckService.IsCollisionSphereInsideSelectionBox(shape, transformActor, selectionBox.Obb);
+                                    if (intersects)
+                                    {
+                                        shapeIntersects = true;
+                                        goto breakShapeLoop;
+                                    }
+                                    break;
                             }
-                            
                         }
-
+                        
+                        breakShapeLoop:
                         if (shapeIntersects)
                         {
                             actorRemoval.Add(actorIndex);

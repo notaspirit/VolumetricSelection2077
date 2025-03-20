@@ -4,6 +4,7 @@ using DynamicData;
 using SharpDX.Direct3D9;
 using VolumetricSelection2077.Converters;
 using VolumetricSelection2077.Models;
+using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.Services;
 using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.Archive.CR2W;
@@ -89,7 +90,7 @@ public class DirectAbbrSectorParser
                         int shapesIndex = 0;
                         foreach (var shape in actor.Shapes)
                         {
-                            var shapeType = shape.ShapeType.ToString();
+                            var shapeTypeString = shape.ShapeType.ToString();
                             var shapePosition = WolvenkitToSharpDX.Vector3(shape.Position);
                             var shapeRotation = WolvenkitToSharpDX.Quaternion(shape.Rotation);
                             var shapeScale = new SharpDX.Vector3(1,1,1);
@@ -105,6 +106,10 @@ public class DirectAbbrSectorParser
                                     break;
                             }
 
+                            var parsedShapeType = Enums.physicsShapeType.TryParse(shapeTypeString, out Enums.physicsShapeType shapeType);
+                            if (!parsedShapeType)
+                                Logger.Error($"Invalid shape type: {shapeTypeString}");
+                            
                             shapes[shapesIndex] = new AbbrActorShapes()
                             {
                                 ShapeType = shapeType,

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using MessagePack;
 using SharpDX;
 
@@ -76,7 +75,7 @@ namespace VolumetricSelection2077.Models
         public ulong? Hash { get; set; }
     
         [Key(2)]
-        public required string ShapeType { get; set; }
+        public required WolvenKit.RED4.Types.Enums.physicsShapeType ShapeType { get; set; }
     }
 
 }
