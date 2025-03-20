@@ -2,14 +2,12 @@ using System;
 using SharpDX;
 using VolumetricSelection2077.Models;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Text.Json;
 using HelixToolkit.Wpf.SharpDX;
-using SharpGLTF.IO;
-using WolvenKit.Common.PhysX;
-using Geometry3D = HelixToolkit.SharpDX.Core.Geometry3D;
-using Polygon = VolumetricSelection2077.Models.Polygon;
+using WolvenKit.RED4.Types;
+using Plane = SharpDX.Plane;
+using Vector3 = SharpDX.Vector3;
+using Vector4 = SharpDX.Vector4;
 
 namespace VolumetricSelection2077.Services;
 
@@ -20,28 +18,27 @@ public static class CollisionCheckService
         var x = new Vector3(obb.Transformation.M11, obb.Transformation.M12, obb.Transformation.M13);
         var y = new Vector3(obb.Transformation.M21, obb.Transformation.M22, obb.Transformation.M23);
         var z = new Vector3(obb.Transformation.M31, obb.Transformation.M32, obb.Transformation.M33);
-        x.Normalize();
-        y.Normalize();
-        z.Normalize();
         
         return new[]
         {
             x, y, z
         };
     }
-    public static bool CheckOverlapPolygonBox(Polygon polygon, OrientedBoundingBox obb)
+    public static bool CheckOverlapPolygonBox(uint[] polygon, Vector3[] vertices, OrientedBoundingBox obb)
     {
+        var polyVerts = polygon.Select(index => vertices[index]).ToArray();
+        
         var obbAxes = GetObbAxes(obb);
         var obbHalfExtends = obb.Size / 2;
         List<Vector3> axes = new List<Vector3>();
-        axes.AddRange(obbAxes);
-        var planeNormal = polygon.Plane.Normal;
-        planeNormal.Normalize();
-        axes.Add(planeNormal);
         
-        for (int i = 0; i < polygon.Vertices.Length; i++)
+        axes.AddRange(obbAxes);
+        var plane = new Plane(polyVerts[0], polyVerts[1], polyVerts[2]);
+        axes.Add(plane.Normal);
+        
+        for (int i = 0; i < polyVerts.Length; i++)
         {
-            Vector3 edge = polygon.Vertices[(i + 1) % polygon.Vertices.Length] - polygon.Vertices[i];
+            Vector3 edge = polyVerts[(i + 1) % polyVerts.Length] - polyVerts[i];
             foreach (var obbAxis in obbAxes)
             {
                 Vector3 crossAxis = Vector3.Cross(edge, obbAxis);
@@ -64,7 +61,7 @@ public static class CollisionCheckService
             float minPoly = float.MaxValue;
             float maxPoly = float.MinValue;
         
-            foreach (Vector3 vertex in polygon.Vertices)
+            foreach (Vector3 vertex in polyVerts)
             {
                 float projection = Vector3.Dot(vertex - obb.Center, axis);
                 minPoly = Math.Min(minPoly, projection);
@@ -82,9 +79,9 @@ public static class CollisionCheckService
     
     public static bool CheckOverlapSubMeshBox(AbbrSubMesh submesh, OrientedBoundingBox obb)
     {
-        foreach (var poly in submesh.Polygons)
+        foreach (var poly in submesh.PolygonIndices)
         {
-            if (CheckOverlapPolygonBox(poly, obb))
+            if (CheckOverlapPolygonBox(poly, submesh.Vertices, obb))
                 return true;
         }
         return false;
@@ -137,21 +134,13 @@ public static class CollisionCheckService
                 var adjustedSubmesh = new AbbrSubMesh()
                 {
                     BoundingBox = submesh.BoundingBox,
-                    Polygons = new Polygon[submesh.Polygons.Length]
+                    Vertices = new Vector3[submesh.Vertices.Length],
+                    PolygonIndices = submesh.PolygonIndices
                 };
-                for (int i = 0; i < adjustedSubmesh.Polygons.Length; i++)
+                for (int i = 0; i < submesh.Vertices.Length; i++)
                 {
-                    var adjustedPolygon = new Polygon()
-                    {
-                        Plane = submesh.Polygons[i].Plane,
-                        Vertices = new Vector3[submesh.Polygons[i].Vertices.Length]
-                    };
-                    for (int j = 0; j < adjustedPolygon.Vertices.Length; j++)
-                    {
-                        Vector4 translatedVertex = Vector4.Transform(new(submesh.Polygons[i].Vertices[j], 1f), transform);
-                        adjustedPolygon.Vertices[j] = Vec4toVec3(translatedVertex);
-                    }
-                    adjustedSubmesh.Polygons[i] = adjustedPolygon;
+                    Vector4 translatedVertex = Vector4.Transform(new(submesh.Vertices[i], 1f), transform);
+                    adjustedSubmesh.Vertices[i] = Vec4toVec3(translatedVertex);
                 }
                 if (CheckOverlapSubMeshBox(adjustedSubmesh, selectionObb))
                     return true;
@@ -279,5 +268,27 @@ public static class CollisionCheckService
             }
         }
         return isInside;
+    }
+
+    public static bool IsCollisionSphereInsideSelectionBox(AbbrActorShapes shape, AbbrSectorTransform actorTransform,
+        OrientedBoundingBox selectionBoxObb)
+    {
+        // only working way to apply actor and shape transform
+        Matrix shapeTransformMatrix = Matrix.Scaling(new Vector3(1,1,1)) * 
+                                      Matrix.RotationQuaternion(shape.Transform.Rotation) * 
+                                      Matrix.Translation(shape.Transform.Position);
+
+        Matrix actorTransformMatrix = Matrix.Scaling(actorTransform.Scale) * 
+                                      Matrix.RotationQuaternion(actorTransform.Rotation) * 
+                                      Matrix.Translation(actorTransform.Position);
+
+        Matrix transformMatrix = shapeTransformMatrix * actorTransformMatrix;
+        
+        var collisionSphere = new BoundingSphere(shape.Transform.Position, shape.Transform.Scale.X);
+        collisionSphere.TransformBoundingSphere(transformMatrix);
+        Vector3 obbHalfExtends = selectionBoxObb.Size / 2;
+        Vector3 closestPoint = Vector3.Clamp(collisionSphere.Center, -obbHalfExtends, obbHalfExtends);
+        
+        return collisionSphere.Contains(ref closestPoint) != ContainmentType.Disjoint;
     }
 }

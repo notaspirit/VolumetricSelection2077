@@ -23,6 +23,9 @@ namespace VolumetricSelection2077.Resources
             public static string CETInstallLocation { get; } = "Folder where updates to the VS2077 CET part should be installed to, if left empty will use game directory.";
             public static string CustomOutputDirectory { get; } = $"Alternative location to save files to, can be enabled in \"Optional Parameters\", defaults to {@"%AppData%\VolumetricSelection2077\output\"}";
             public static string SaveToArchiveMods { get; } = $"Where to save the output files to, custom directory defaults to {@"%AppData%\VolumetricSelection2077\output\"}";
+            public static string CacheDirectory { get; } = $"Where the cache is saved to, can be upto 100GB in size, defaults to {@"%AppData%\VolumetricSelection2077\cache\"}";
+            public static string CacheEnabled { get; } = "Caches uncooked game files, significantly improving processing time";
+            public static string ClearCache { get; } = "Clear cached vanilla or modded files.";
         }
 
         public static class Watermarks
@@ -32,6 +35,7 @@ namespace VolumetricSelection2077.Resources
             public static string OutputFilename { get; } = "Output Filename";
             public static string CETInstallLocation { get;  } ="VS2077 CET installation directory";
             public static string CustomOutputDirectory { get; } = "Custom Output Directory";
+            public static string CacheDirectory { get; } = "Cache Directory";
         }
 
         public static class Labels
@@ -50,6 +54,7 @@ namespace VolumetricSelection2077.Resources
             public static string SaveAsYaml { get; } = "Output Format";
             public static string FileSaveMode { get; } = "File Save Mode";
             public static string SaveToArchiveMods { get; } = "Save Files To";
-
+            public static string ClearVanillaCache { get; } = "Vanilla";
+            public static string ClearModdedCache { get; } = "Modded";
         }
 }

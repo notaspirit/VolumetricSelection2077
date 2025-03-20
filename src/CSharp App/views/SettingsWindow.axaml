@@ -3,7 +3,7 @@
     Icon="../assets/redCube.ico"
     SizeToContent="Height"
     Title="VolumetricSelection2077"
-    Width="500"
+    Width="750"
     x:Class="VolumetricSelection2077.SettingsWindow"
     x:DataType="local:ViewModels.SettingsViewModel"
     xmlns="https://github.com/avaloniaui"
@@ -13,6 +13,8 @@
     <Border Margin="5">
         <Grid>
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -78,6 +80,30 @@
                 Text="Custom Output Directory"
                 ToolTip.Tip="{x:Static resources:ToolTips.CustomOutputDirectory}"
                 VerticalAlignment="Center" />
+            <TextBlock
+                Grid.Column="0"
+                Grid.Row="7"
+                HorizontalAlignment="Left"
+                Margin="5"
+                Text="Cache Uncooked Resources"
+                ToolTip.Tip="{x:Static resources:ToolTips.CacheEnabled}"
+                VerticalAlignment="Center" />
+            <TextBlock
+                Grid.Column="0"
+                Grid.Row="8"
+                HorizontalAlignment="Left"
+                Margin="5"
+                Text="Cache Directory"
+                ToolTip.Tip="{x:Static resources:ToolTips.CacheDirectory}"
+                VerticalAlignment="Center" />
+            <TextBlock
+                Grid.Column="0"
+                Grid.Row="9"
+                HorizontalAlignment="Left"
+                Margin="5"
+                Text="Clear Cache"
+                ToolTip.Tip="{x:Static resources:ToolTips.ClearCache}"
+                VerticalAlignment="Center" />
             <!--  Second Row: Setting Control (e.g., ToggleSwitch)  -->
             <TextBox
                 Grid.Column="1"
@@ -112,6 +138,50 @@
                 Margin="5"
                 Text="{Binding Settings.OutputDirectory}"
                 Watermark="{x:Static resources:Watermarks.CustomOutputDirectory}" />
+            <ToggleSwitch
+                Grid.Column="1"
+                Grid.Row="7"
+                IsChecked="{Binding Settings.CacheEnabled}"
+                Margin="5"
+                OffContent=""
+                OnContent="" />
+            <TextBox
+                Grid.Column="1"
+                Grid.Row="8"
+                Margin="5"
+                Text="{Binding Settings.CacheDirectory}"
+                Watermark="{x:Static resources:Watermarks.CacheDirectory}" />
+            <Grid Grid.Column="1" Grid.Row="9">
+                <Grid.ColumnDefinitions>*, *</Grid.ColumnDefinitions>
+                <Button
+                    Background="#ad0002"
+                    Click="ClearVanillaCache_Click"
+                    Content="{Binding ClearVanillaCacheButtonLabel}"
+                    Grid.Column="0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Margin="5,0,0,0">
+                    <Button.Styles>
+                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                            <Setter Property="Background" Value="DarkRed" />
+                        </Style>
+                    </Button.Styles>
+                </Button>
+                <Button
+                    Background="#ad0002"
+                    Click="ClearModdedCache_Click"
+                    Content="{Binding ClearModdedCacheButtonLabel}"
+                    Grid.Column="1"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Margin="5,0,0,0">
+                    <Button.Styles>
+                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                            <Setter Property="Background" Value="DarkRed" />
+                        </Style>
+                    </Button.Styles>
+                </Button>
+            </Grid>
         </Grid>
     </Border>
 </Window>

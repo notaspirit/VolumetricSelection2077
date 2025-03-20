@@ -22,6 +22,7 @@ namespace VolumetricSelection2077.ViewModels
                 _isProcesing = value;
                 OnPropertyChanged(nameof(IsProcessing));
                 OnPropertyChanged(nameof(ButtonsAvailable));
+                OnPropertyChanged(nameof(MainTaskAvailable));
             }
         }
 
@@ -40,6 +41,23 @@ namespace VolumetricSelection2077.ViewModels
                 IsProcessing = _mainTaskprocessing;
                 OnPropertyChanged(nameof(MainTaskProcessing));
             }
+        }
+
+        private bool _AppInitialized { get; set; }
+
+        public bool AppInitialized
+        {
+            get => _AppInitialized;
+            set
+            {
+                _AppInitialized = value;
+                OnPropertyChanged(nameof(AppInitialized));
+            }
+        }
+
+        public bool MainTaskAvailable
+        {
+            get => AppInitialized && ButtonsAvailable;
         }
         
         private bool _benchmarkProcessing { get; set; }

@@ -3,7 +3,7 @@
     Height="600"
     Icon="../assets/redCube.ico"
     Title="VolumetricSelection2077"
-    Width="900"
+    Width="1350"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d"
@@ -432,7 +432,7 @@
                     Click="Benchmark_Click"
                     Content="{x:Static resources:Labels.Benchmark}"
                     Grid.Column="3"
-                    IsEnabled="{Binding ButtonsAvailable}"
+                    IsEnabled="{Binding MainTaskAvailable}"
                     IsVisible="{Binding Settings.DebugMode}"
                     Margin="5,0,0,0">
                     <Button.Styles>
@@ -465,7 +465,7 @@
                     Click="FindSelectedButton_Click"
                     Content="{x:Static resources:Labels.FindSelected}"
                     Grid.Column="4"
-                    IsEnabled="{Binding ButtonsAvailable}"
+                    IsEnabled="{Binding MainTaskAvailable}"
                     Margin="5,0,0,0">
                     <Button.Styles>
                         <Style Selector="Button:pointerover /template/ ContentPresenter">

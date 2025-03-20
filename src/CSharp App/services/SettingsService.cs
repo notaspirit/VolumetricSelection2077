@@ -39,6 +39,7 @@ public class SettingsService
         IsParametersMWVisible = false;
         SaveMode = SaveFileMode.Enum.New;
         SupportModdedResources = false;
+        CacheModdedResources = true;
         AutoUpdate = true;
         DidUpdate = false;
         CETInstallLocation = "";
@@ -97,7 +98,9 @@ public class SettingsService
     public bool AutoUpdate { get; set; }
     public bool DidUpdate { get; set; }
     public string CETInstallLocation { get; set; }
-    
+    public bool CacheModdedResources { get; set; }
+
+    public string MinimumCacheVersion { get; } = "1000.0.0-beta4";
     // Methods for loading and saving settings
     public void LoadSettings()
     {
@@ -142,6 +145,7 @@ public class SettingsService
                     AutoUpdate = settings.AutoUpdate;
                     DidUpdate = settings.DidUpdate;
                     CETInstallLocation = settings.CETInstallLocation;
+                    CacheModdedResources = settings.CacheModdedResources;
                 }
             }
             catch (Exception ex)
