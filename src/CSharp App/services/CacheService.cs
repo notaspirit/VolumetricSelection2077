@@ -12,6 +12,7 @@ using MessagePack;
 using Microsoft.ClearScript.Util.Web;
 using Microsoft.VisualBasic.FileIO;
 using VolumetricSelection2077.Models;
+using WolvenKit.Core.Extensions;
 using SearchOption = System.IO.SearchOption;
 
 namespace VolumetricSelection2077.Services;
@@ -86,26 +87,26 @@ public class CacheService
 
     public void Initialize()
     {
-        _settings = SettingsService.Instance;
-        if (_isInitialized) return;
-        if (_settings.CacheEnabled == false) return;
-        
-        Directory.CreateDirectory(_settings.CacheDirectory);
-        _env = new LightningEnvironment(_settings.CacheDirectory)
-        {
-            MaxDatabases = 2,
-            MapSize = MapSize,
-            MaxReaders = MaxReaders
-        };
-        _env.Open();
-        
-        var tx = _env.BeginTransaction();
-        _moddedDatabase = tx.OpenDatabase(CacheDatabases.Modded.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
-        _vanillaDatabase = tx.OpenDatabase(CacheDatabases.Vanilla.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
-        tx.Commit();
-        
         try
         {
+            _settings = SettingsService.Instance;
+            if (_isInitialized) return;
+            if (_settings.CacheEnabled == false) return;
+        
+            Directory.CreateDirectory(_settings.CacheDirectory);
+            _env = new LightningEnvironment(_settings.CacheDirectory)
+            {
+                MaxDatabases = 2,
+                MapSize = MapSize,
+                MaxReaders = MaxReaders
+            };
+            _env.Open();
+        
+            var tx = _env.BeginTransaction();
+            _moddedDatabase = tx.OpenDatabase(CacheDatabases.Modded.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
+            _vanillaDatabase = tx.OpenDatabase(CacheDatabases.Vanilla.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
+            tx.Commit();
+            
             var metaData = GetMetadata();
             if (!ValidationService.ValidateCache(metaData, _settings.GameDirectory, _settings.MinimumCacheVersion))
             {
@@ -116,9 +117,7 @@ public class CacheService
         }
         catch (Exception e)
         {
-            Logger.Error($"Could not initialize CacheService: {e}");
         }
-        
     }
     
     
@@ -375,25 +374,70 @@ public class CacheService
     {
         _isInitialized = false;
 
-        if (!Directory.Exists(fromPath))
+        if (fromPath == toPath) return true;
+
+        DirectoryInfo fromInfo;
+        DirectoryInfo toInfo;
+
+        bool fromExists;
+        bool toExists;
+        
+        if (!string.IsNullOrEmpty(fromPath))
         {
-            Logger.Error($"Directory {fromPath} does not exist");
-            return false;
+            fromInfo = new DirectoryInfo(fromPath);
+            fromExists = fromInfo.Exists;
+        }
+        else
+        {
+            fromExists = false;
         }
         
-        if (Directory.Exists(toPath))
-            if (Directory.EnumerateFiles(toPath, "*.*", SearchOption.AllDirectories).Any())
+        if (!string.IsNullOrEmpty(toPath))
+        {
+            toInfo = new DirectoryInfo(toPath);
+            toExists = toInfo.Exists;
+        }
+        else
+        {
+            Logger.Error("Cache target directory cannot be empty!");
+            return false;
+        }
+
+        if (toInfo.Parent == null)
+        {
+            Logger.Error("Cache target directory cannot be drive root!");
+            return false;
+        }
+
+        if (toExists)
+        {
+            if (!IsDirEmpty(toPath))
             {
                 Logger.Error($"Directory {toPath} already exists and is not empty");
                 return false;
             }
-            else
-                Directory.Delete(toPath, true);
+            Directory.Delete(toPath, true);
+        }
         
         _env.Dispose();
+        
+        if (!fromExists)
+        {
+            _settings.CacheDirectory = toPath;
+            return true;
+        }
+        
         FileSystem.MoveDirectory(fromPath, toPath, UIOption.OnlyErrorDialogs);
-        Initialize();
         return true;
+
+        bool IsDirEmpty(string path)
+        {
+            if (Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories).Any())
+            {
+                return false;
+            }
+            return true;
+        }
     }
 
     public class CacheStats
@@ -414,7 +458,7 @@ public class CacheService
 
     public CacheStats GetStats()
     {
-        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling ClearDatabase");
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling GetStats");
         DirectoryInfo dirInfo = new DirectoryInfo(_settings.CacheDirectory);
         var totalSize = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
         long estVanillaSize = 0;
