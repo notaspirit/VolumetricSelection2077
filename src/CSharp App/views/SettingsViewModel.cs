@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.Services;
 using VolumetricSelection2077.views;
@@ -34,9 +35,10 @@ namespace VolumetricSelection2077.ViewModels
         { 
             Settings = SettingsService.Instance;
             PersistentCache = SettingsViewPersistentCache.Instance;
+            CacheStats = new CacheService.CacheStats();
             try
             {
-                CacheStats = CacheService.Instance.GetStats();
+                _ = Task.Run(() => CacheStats = CacheService.Instance.GetStats());
             }
             catch (Exception ex)
             {

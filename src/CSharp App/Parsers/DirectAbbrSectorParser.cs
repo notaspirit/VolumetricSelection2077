@@ -85,6 +85,8 @@ public class DirectAbbrSectorParser
                     actors = new AbbrCollisionActors[collisionNode.NumActors];
                     var collisionActorBuffer = collisionNode.CompiledData.Data as CollisionBuffer;
                     int actorIndex = 0;
+                    if (collisionActorBuffer == null)
+                        break;
                     foreach (var actor in collisionActorBuffer.Actors)
                     {
                         var actorPosition = FixedPointVector3Converter.PosBitsToVec3(actor.Position);
@@ -162,7 +164,7 @@ public class DirectAbbrSectorParser
         int nodeDataIndex = 0;
         foreach (var nodeDataEntry in nodeDataBuffer)
         {
-            AbbrSectorTransform[] transforms;
+            AbbrSectorTransform[] transforms = new AbbrSectorTransform[1];
 
             switch (sector.Nodes[nodeDataEntry.NodeIndex].Chunk)
             {
@@ -182,8 +184,12 @@ public class DirectAbbrSectorParser
                     }
                     break;
                 case worldInstancedDestructibleMeshNode instancedDestructibleNode:
+                    if (instancedDestructibleNode == null)
+                        break;
                     transforms = new AbbrSectorTransform[instancedDestructibleNode.CookedInstanceTransforms.NumElements];
                     var transformsInstancedDestructibleBuffer = instancedDestructibleNode.CookedInstanceTransforms.SharedDataBuffer.Chunk.Buffer.Data as CookedInstanceTransformsBuffer;
+                    if (transformsInstancedDestructibleBuffer == null)
+                        break;
                     int transformsInstancedDestructibleIndex = 0;
                     foreach (var transform in transformsInstancedDestructibleBuffer.Transforms.ToArray().AsSpan((int)(uint)instancedDestructibleNode.CookedInstanceTransforms.StartIndex, (int)(uint)instancedDestructibleNode.CookedInstanceTransforms.NumElements))
                     {

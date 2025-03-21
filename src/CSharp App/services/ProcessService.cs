@@ -10,6 +10,7 @@ using VolumetricSelection2077.Parsers;
 using Newtonsoft.Json;
 using SharpDX;
 using VolumetricSelection2077.Resources;
+using VolumetricSelection2077.TestingStuff;
 using WolvenKit.RED4.Types;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -443,10 +444,9 @@ public class ProcessService
         Logger.Info($"Version: {_settings.ProgramVersion}");
         _gameFileService.Initialize();
         
-        /*
-        AbbrMeshToBlender.Run();
+        
+        await TestMaxCacheSize.Run();
         return (true, string.Empty);
-        */
         
         Logger.Info("Validating inputs...");
         

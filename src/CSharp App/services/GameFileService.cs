@@ -34,7 +34,7 @@ public class GameFileService
     private static readonly object _lock = new object();
     private readonly ILoggerService _loggerService = new SerilogWrapper();
     private readonly IProgressService<double> _progressService = new ProgressService<double>();
-    private ArchiveManager? _archiveManager;
+    public ArchiveManager? _archiveManager;
     private readonly SettingsService _settingsService;
     private HashService? _hashService;
     private HookService? _hookService;

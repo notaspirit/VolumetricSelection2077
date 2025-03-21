@@ -52,9 +52,10 @@ public class CacheService
     private static CacheService? _instance;
     private SettingsService _settings;
     private LightningEnvironment _env;
+    private static readonly long GbinBytes = 1024 * 1024 * 1024;
     private static readonly int BatchDelay = 1;
     private static readonly int MaxReaders = 512;
-    private static readonly long MapSize = 400L * 1024 * 1024 * 1024;
+    private static readonly long MapSize = GbinBytes * 400;
     static ConcurrentQueue<WriteRequest> _requestWriteQueue = new();
     private readonly object _lock = new object();
     private LightningDatabase _vanillaDatabase;
@@ -397,9 +398,9 @@ public class CacheService
 
     public class CacheStats
     {
-        public int VanillaEntries { get; set; }
+        public long VanillaEntries { get; set; }
         public double EstVanillaSize { get; set; }
-        public int ModdedEntries { get; set; }
+        public long ModdedEntries { get; set; }
         public double EstModdedSize { get; set; }
 
         public CacheStats()
@@ -413,33 +414,39 @@ public class CacheService
 
     public CacheStats GetStats()
     {
+        Logger.Info($"Getting cache stats... CS is initialized: {_isInitialized}");
         if (!_isInitialized) throw new Exception("Cache service must be initialized before calling ClearDatabase");
-        DirectoryInfo dirInfo = new DirectoryInfo(_settings.CacheDirectory);
-        var totalSize = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length) / (1024.0 * 1024.0 * 1024.0);
-        int vanillaEntries = 0;
-        int moddedEntries = 0;
         using var tx = _env.BeginTransaction();
-        using (var cursor = tx.CreateCursor(_vanillaDatabase))
-        {
-            while (cursor.Next() == MDBResultCode.Success)
-                vanillaEntries++;
-        }
-        using (var cursor = tx.CreateCursor(_moddedDatabase))
-        {
-            while (cursor.Next() == MDBResultCode.Success)
-                moddedEntries++;
-        }
-
-        var estVanillaSize = totalSize / (vanillaEntries + moddedEntries) * vanillaEntries;
-        var estModdedSize = totalSize / (vanillaEntries + moddedEntries) * moddedEntries;
+        var vanillaDbStats = _vanillaDatabase.DatabaseStats;
+        var moddedDbStats = _moddedDatabase.DatabaseStats;
         
+        Logger.Info($"" +
+                    $"Vanilla Entries: {vanillaDbStats.Entries}" +
+                    $"Modded Entries: {moddedDbStats.Entries}" +
+                    $"Size: {vanillaDbStats.PageSize}");
         
+        long estVanillaSize;
+        long estModdedSize;
+        
+        if (!(vanillaDbStats.Entries == 0 && moddedDbStats.Entries == 0))
+        {
+            Logger.Info("Calculating cache est db sizes...");
+            estVanillaSize = vanillaDbStats.PageSize / (vanillaDbStats.Entries + moddedDbStats.Entries) * vanillaDbStats.Entries / GbinBytes;
+            estModdedSize = moddedDbStats.PageSize / (vanillaDbStats.Entries + moddedDbStats.Entries) * moddedDbStats.Entries / GbinBytes;
+        }
+        else
+        {
+            Logger.Info("Defaulting size to 0...");
+            estVanillaSize = 0;
+            estModdedSize = 0;
+        }
+        Logger.Info("Returning cache stats...");
         return new CacheStats()
         {
-            VanillaEntries = vanillaEntries,
-            ModdedEntries = moddedEntries,
-            EstVanillaSize = double.IsNaN(estVanillaSize) ? 0 : estVanillaSize,
-            EstModdedSize = double.IsNaN(estModdedSize) ? 0 : estModdedSize,
+            VanillaEntries = vanillaDbStats.Entries,
+            ModdedEntries = moddedDbStats.Entries,
+            EstVanillaSize = estVanillaSize,
+            EstModdedSize = estModdedSize,
         };
     }
     

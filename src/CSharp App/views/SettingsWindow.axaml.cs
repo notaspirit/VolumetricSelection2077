@@ -43,13 +43,13 @@ namespace VolumetricSelection2077
         private async void ClearVanillaCache_Click(object sender, RoutedEventArgs e)
         {
             await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Vanilla, true));
-            UpdateCacheStats();
+            _ = Task.Run(() => UpdateCacheStats());
         }
         
         private async void ClearModdedCache_Click(object sender, RoutedEventArgs e)
         {
             await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Modded, true));
-            UpdateCacheStats();
+            _ = Task.Run(() => UpdateCacheStats());
         }
         
         private void OnSettingsWindowClosed(object? sender, EventArgs e)
@@ -79,7 +79,7 @@ namespace VolumetricSelection2077
                 }
             }
 
-            if ((bool)_settingsViewModel?.Settings.CacheEnabled)
+            if ((bool)_settingsViewModel?.Settings.CacheEnabled && !CacheService.Instance.IsInitialized)
                 CacheService.Instance.Initialize();
             
             if ((bool)_settingsViewModel?.PersistentCache.RequiresRestart)
