@@ -3,7 +3,7 @@
     Height="600"
     Icon="../assets/redCube.ico"
     Title="VolumetricSelection2077"
-    Width="900"
+    Width="1350"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d"
@@ -320,7 +320,7 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>Auto,Auto</Grid.RowDefinitions>
+                    <Grid.RowDefinitions>Auto,Auto, Auto</Grid.RowDefinitions>
                     <TextBlock
                         Grid.Column="0"
                         Grid.Row="0"
@@ -338,6 +338,23 @@
                         Margin="5"
                         OffContent="JSON"
                         OnContent="YAML" />
+                    <TextBlock
+                        Grid.Column="0"
+                        Grid.Row="1"
+                        HorizontalAlignment="Left"
+                        IsVisible="{Binding ParameterSelectionVisibility}"
+                        Margin="5"
+                        Text="{x:Static resources:Labels.SaveToArchiveMods}"
+                        ToolTip.Tip="{x:Static resources:ToolTips.SaveToArchiveMods}"
+                        VerticalAlignment="Center" />
+                    <ToggleSwitch
+                        Grid.Column="1"
+                        Grid.Row="1"
+                        IsChecked="{Binding Settings.SaveToArchiveMods}"
+                        IsVisible="{Binding ParameterSelectionVisibility}"
+                        Margin="5"
+                        OffContent="Output Directory"
+                        OnContent="Game Directory" />
                 </Grid>
                 <Grid Grid.Column="2">
                     <Grid.ColumnDefinitions>
@@ -415,7 +432,7 @@
                     Click="Benchmark_Click"
                     Content="{x:Static resources:Labels.Benchmark}"
                     Grid.Column="3"
-                    IsEnabled="{Binding ButtonsAvailable}"
+                    IsEnabled="{Binding MainTaskAvailable}"
                     IsVisible="{Binding Settings.DebugMode}"
                     Margin="5,0,0,0">
                     <Button.Styles>
@@ -448,7 +465,7 @@
                     Click="FindSelectedButton_Click"
                     Content="{x:Static resources:Labels.FindSelected}"
                     Grid.Column="4"
-                    IsEnabled="{Binding ButtonsAvailable}"
+                    IsEnabled="{Binding MainTaskAvailable}"
                     Margin="5,0,0,0">
                     <Button.Styles>
                         <Style Selector="Button:pointerover /template/ ContentPresenter">

@@ -1,17 +1,22 @@
+using MessagePack;
 using SharpDX;
-using System.Collections.Generic;
 
 namespace VolumetricSelection2077.Models;
 
+[MessagePackObject]
 public class AbbrMesh
 {
-    public required AbbrSubMeshes[] SubMeshes { get; set; }
+    [Key(0)]
+    public required AbbrSubMesh[] SubMeshes { get; set; }
 }
 
-public class AbbrSubMeshes
+[MessagePackObject]
+public class AbbrSubMesh
 {
-    public required Vector3[] Vertices { get; set; }
-    public required uint[] Indices { get; set; }
+    [Key(0)]
     public required BoundingBox BoundingBox { get; set; }
-    public bool? IsConvexCollider { get; set; }
+    [Key(1)]
+    public required Vector3[] Vertices { get; set; }
+    [Key(2)]
+    public required uint[][] PolygonIndices { get; set; }
 }

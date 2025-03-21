@@ -1,10 +1,9 @@
-using System.Collections.ObjectModel;
+using System;
 using System.ComponentModel;
-using System.Linq;
-using VolumetricSelection2077.Services;
 using VolumetricSelection2077.Resources;
+using VolumetricSelection2077.Services;
 using VolumetricSelection2077.views;
-using VolumetricSelection2077.ViewStructures;
+using YamlDotNet.Core.Tokens;
 
 namespace VolumetricSelection2077.ViewModels
 {
@@ -12,30 +11,38 @@ namespace VolumetricSelection2077.ViewModels
     { 
         public SettingsService Settings { get; set; }
 
-        public SettingsViewPersistentCache Cache { get; private set; }
+        public SettingsViewPersistentCache PersistentCache { get; }
 
-        public bool ModdedStatusChanged
+        private CacheService.CacheStats _cacheStats;
+        public CacheService.CacheStats CacheStats
         {
-            get
-            {
-                return Cache.initialModdedResourceValue != Settings.SupportModdedResources;
-            }
-        }
-        public bool ModdedResourceSupportSW
-        {
-            get => Settings.SupportModdedResources;
+            get => _cacheStats;
             set
             {
-                Settings.SupportModdedResources = value;
-                OnPropertyChanged(nameof(ModdedResourceSupportSW));
-                OnPropertyChanged(nameof(ModdedStatusChanged));
+                _cacheStats = value;
+                OnPropertyChanged(nameof(CacheStats));
+                OnPropertyChanged(nameof(ClearVanillaCacheButtonLabel));
+                OnPropertyChanged(nameof(ClearModdedCacheButtonLabel));
             }
         }
+
+        public string ClearVanillaCacheButtonLabel => Labels.ClearVanillaCache + $" [ {CacheStats.VanillaEntries} files | {CacheStats.EstVanillaSize:F2} GB ]";
+        
+        public string ClearModdedCacheButtonLabel => Labels.ClearModdedCache + $" [ {CacheStats.ModdedEntries} files | {CacheStats.EstModdedSize:F2} GB ]";
         
         public SettingsViewModel() 
         { 
             Settings = SettingsService.Instance;
-            Cache = SettingsViewPersistentCache.Instance;
+            PersistentCache = SettingsViewPersistentCache.Instance;
+            try
+            {
+                CacheStats = CacheService.Instance.GetStats();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to load Cache {ex}");
+                CacheStats = new CacheService.CacheStats();
+            }
         }
         
         public event PropertyChangedEventHandler? PropertyChanged;

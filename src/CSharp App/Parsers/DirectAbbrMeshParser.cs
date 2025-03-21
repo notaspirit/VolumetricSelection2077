@@ -2,29 +2,47 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using BulletSharp;
+using DynamicData;
 using Microsoft.ClearScript.Util.Web;
 using SharpDX;
+using VolumetricSelection2077.Converters;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
 using WolvenKit.Common.PhysX;
 using WolvenKit.RED4.Archive.CR2W;
 using WolvenKit.RED4.Types;
+using Plane = SharpDX.Plane;
 using Vector4 = SharpDX.Vector4;
 
 namespace VolumetricSelection2077.Parsers;
 
 public class DirectAbbrMeshParser
 {
+    public static uint[] GetPolygonIndices(HullPolygonData polygon, ConvexHullData hullData)
+    {
+        var indices = new uint[polygon.NbVerts];
+        for (int i = 0; i < polygon.NbVerts; i++)
+        {
+            indices[i] = hullData.VertexData8[polygon.VRef8 + i];
+        }
+        return indices;
+    }
+    
     private static AbbrMesh ParseConvexMesh(ConvexMesh convexMesh)
     {
-        var vertsOut = convexMesh.HullData.HullVertices.ToArray();
-        var subMeshesOut = new AbbrSubMeshes[1];
-        subMeshesOut[0] = new AbbrSubMeshes()
+        var polygons = new uint[convexMesh.HullData.Polygons.Count][];
+        int i = 0;
+        foreach (var hullPolygonData in convexMesh.HullData.Polygons)
         {
-            Vertices = vertsOut,
-            Indices = new uint[0],
+            polygons[i] = GetPolygonIndices(hullPolygonData, convexMesh.HullData);
+            i++;
+        }
+        var subMeshesOut = new AbbrSubMesh[1];
+        subMeshesOut[0] = new AbbrSubMesh()
+        {
             BoundingBox = new BoundingBox(convexMesh.HullData.AABB.Minimum, convexMesh.HullData.AABB.Maximum),
-            IsConvexCollider = true
+            Vertices = convexMesh.HullData.HullVertices.ToArray(),
+            PolygonIndices = polygons
         };
         return new AbbrMesh()
         {
@@ -34,22 +52,21 @@ public class DirectAbbrMeshParser
 
     private static AbbrMesh ParseTriangleMesh(BV4TriangleMesh triangleMesh)
     {
-        var vertsOut = triangleMesh.Vertices.ToArray();
-        var indiciesOut = new uint[triangleMesh.NbTriangles * 3];
+        var verts = triangleMesh.Vertices.ToArray();
+        var polygons = new uint[triangleMesh.Triangles.Count][];
         int i = 0;
         foreach (var triangle in triangleMesh.Triangles)
         {
-            indiciesOut[i] = triangle[0];
-            indiciesOut[i+1] = triangle[1];
-            indiciesOut[i+2] = triangle[2];
-            i += 3;
+            polygons[i] = triangle.ToArray();
+            i++;
         }
-        var subMeshesOut = new AbbrSubMeshes[1];
-        subMeshesOut[0] = new AbbrSubMeshes()
+        var subMeshesOut = new AbbrSubMesh[1];
+        subMeshesOut[0] = new AbbrSubMesh()
         {
-            Vertices = vertsOut,
-            Indices = indiciesOut,
-            BoundingBox = new BoundingBox(triangleMesh.AABB.Minimum, triangleMesh.AABB.Maximum)
+            BoundingBox = new BoundingBox(triangleMesh.AABB.Minimum, triangleMesh.AABB.Maximum),
+            Vertices = verts,
+            PolygonIndices = polygons
+
         };
         return new AbbrMesh()
         {
@@ -59,16 +76,15 @@ public class DirectAbbrMeshParser
     
     public static AbbrMesh ParseFromPhysX(PhysXMesh inputMesh)
     {
-        if (inputMesh is ConvexMesh convexMesh)
+        switch (inputMesh)
         {
-            return ParseConvexMesh(convexMesh);
+            case ConvexMesh convexMesh:
+                return ParseConvexMesh(convexMesh);
+            case BV4TriangleMesh triangleMesh:
+                return ParseTriangleMesh(triangleMesh);
+            default:
+                throw new ArgumentException("Invalid physics mesh");
         }
-
-        if (inputMesh is BV4TriangleMesh triangleMesh)
-        {
-            return ParseTriangleMesh(triangleMesh);
-        }
-        throw new Exception("Invalid input mesh type");
     }
 
     public static AbbrMesh? ParseFromCR2W(CR2WFile cr2w)
@@ -97,7 +113,7 @@ public class DirectAbbrMeshParser
             rendBlob.Header.QuantizationOffset.Z,
             rendBlob.Header.QuantizationOffset.W);
 
-        List<AbbrSubMeshes> submeshesOut = new();
+        List<AbbrSubMesh> submeshesOut = new();
         
         for(int indexSubMesh = 0; indexSubMesh < rendInfos.Count; indexSubMesh++)
         {
@@ -123,12 +139,23 @@ public class DirectAbbrMeshParser
             {
                 indicesOut[indexIndex] = br.ReadUInt16();
             }
-            
-            submeshesOut.Add(new AbbrSubMeshes()
+
+            var polygons = new uint[rendInfo.NumIndices / 3][];
+            int j = 0;
+            for (int i = 0; i < indicesOut.Length; i += 3)
             {
+                var ti1 = indicesOut[i];
+                var ti2 = indicesOut[i + 1];
+                var ti3 = indicesOut[i + 2];
+                polygons[j] = new[] { ti1, ti2, ti3 };
+                j++;
+            }
+            
+            submeshesOut.Add(new AbbrSubMesh()
+            {
+                BoundingBox = new OrientedBoundingBox(vertsOut).GetBoundingBox(),
                 Vertices = vertsOut,
-                Indices = indicesOut,
-                BoundingBox = new OrientedBoundingBox(vertsOut).GetBoundingBox()
+                PolygonIndices = polygons
             });
         }
         

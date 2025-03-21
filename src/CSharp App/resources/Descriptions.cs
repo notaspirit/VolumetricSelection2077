@@ -21,6 +21,11 @@ namespace VolumetricSelection2077.Resources
             public static string ModdedResources { get; } = "Index and query modded resources, can cause significant increase in loading time, processing time is unaffected. Requires program restart to take effect.";
             public static string AutoUpdate { get; } = "Auto Update on startup if update is available";
             public static string CETInstallLocation { get; } = "Folder where updates to the VS2077 CET part should be installed to, if left empty will use game directory.";
+            public static string CustomOutputDirectory { get; } = $"Alternative location to save files to, can be enabled in \"Optional Parameters\", defaults to {@"%AppData%\VolumetricSelection2077\output\"}";
+            public static string SaveToArchiveMods { get; } = $"Where to save the output files to, custom directory defaults to {@"%AppData%\VolumetricSelection2077\output\"}";
+            public static string CacheDirectory { get; } = $"Where the cache is saved to, can grow upto 100GB in size (all cached vanilla entries total up to 7.6GB), defaults to {@"%AppData%\VolumetricSelection2077\cache\"}";
+            public static string CacheEnabled { get; } = "Caches uncooked game files, significantly improving processing time";
+            public static string ClearCache { get; } = "Clear cached vanilla or modded files.";
         }
 
         public static class Watermarks
@@ -29,6 +34,8 @@ namespace VolumetricSelection2077.Resources
             public static string Search { get; } = "Search...";
             public static string OutputFilename { get; } = "Output Filename";
             public static string CETInstallLocation { get;  } ="VS2077 CET installation directory";
+            public static string CustomOutputDirectory { get; } = "Custom Output Directory";
+            public static string CacheDirectory { get; } = "Cache Directory";
         }
 
         public static class Labels
@@ -42,10 +49,12 @@ namespace VolumetricSelection2077.Resources
             public static string ClearLog { get; } = "Clear Log";
             public static string ResourceFilter { get; } = " Resource Path Filters";
             public static string DebugNameFilter { get; } = " Debug Name Filters";
-            public static string FilterCollapseButton = "Filters";
-            public static string ParametersCollapseButton = "Optional Parameters";
+            public static string FilterCollapseButton { get; } = "Filters";
+            public static string ParametersCollapseButton { get; } = "Optional Parameters";
             public static string SaveAsYaml { get; } = "Output Format";
             public static string FileSaveMode { get; } = "File Save Mode";
-
+            public static string SaveToArchiveMods { get; } = "Save Files To";
+            public static string ClearVanillaCache { get; } = "Vanilla";
+            public static string ClearModdedCache { get; } = "Modded";
         }
 }

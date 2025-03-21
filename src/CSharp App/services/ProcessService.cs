@@ -1,25 +1,18 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime;
-using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading;
-using Avalonia.Controls.Shapes;
 using DynamicData;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Parsers;
 using Newtonsoft.Json;
 using SharpDX;
 using VolumetricSelection2077.Resources;
-using VolumetricSelection2077.TestingStuff;
+using WolvenKit.RED4.Types;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 using Path = System.IO.Path;
 
 namespace VolumetricSelection2077.Services;
@@ -33,6 +26,165 @@ public class ProcessService
         _settings = SettingsService.Instance;
         _gameFileService = GameFileService.Instance;
     }
+
+    class MergeChanges
+    {
+        public int newSectors { get; set; } = 0;
+        public int newNodes { get; set; } = 0;
+        public int newActors { get; set; } = 0;
+    }
+    
+    private (List<AxlRemovalSector>?,MergeChanges?)  MergeSectors(string filepath, AxlRemovalFile newRemovals)
+    {
+        var changeCount = new MergeChanges();
+        
+        string fileContent = File.ReadAllText(filepath);
+        var exisitngRemovalFile = UtilService.TryParseAxlRemovalFile(fileContent);
+        if (exisitngRemovalFile != null)
+        {
+            var newSectors = newRemovals.Streaming.Sectors;
+            var oldSectors = exisitngRemovalFile.Streaming.Sectors;
+            
+            Dictionary<string, AxlRemovalSector> mergedDict = oldSectors.ToDictionary(x => x.Path);
+
+            foreach (var newSector in newSectors)
+            {
+                if (mergedDict.TryGetValue(newSector.Path, out AxlRemovalSector existingSector))
+                {
+                    Dictionary<int, AxlRemovalNodeDeletion> mergedNodes =
+                        existingSector.NodeDeletions.ToDictionary(x => x.Index);
+                    foreach (var newNode in newSector.NodeDeletions)
+                    {
+                        if (mergedNodes.TryGetValue(newNode.Index, out AxlRemovalNodeDeletion existingNode))
+                        {
+                            if (newNode.ActorDeletions != null || 
+                                newNode.ActorDeletions?.Count > 0 ||
+                                existingNode.ActorDeletions?.Count != null ||
+                                existingNode.ActorDeletions?.Count > 0)
+                            {
+                                existingNode.ExpectedActors =  newNode.ExpectedActors ?? existingNode.ExpectedActors;
+                                HashSet<int> actorSet = new HashSet<int>(newNode.ActorDeletions ?? new List<int>());
+                                actorSet.UnionWith(existingNode.ActorDeletions ?? new List<int>());
+                                existingNode.ActorDeletions = actorSet.ToList();
+                                changeCount.newActors += actorSet.Count - existingNode.ActorDeletions.Count;
+                            }
+                        }
+                        else
+                        {
+                            mergedNodes[newNode.Index] = newNode;
+                            changeCount.newNodes++;
+                            changeCount.newActors += newNode.ActorDeletions?.Count ?? 0;
+                        }
+                    }
+                    existingSector.NodeDeletions = mergedNodes.Values.ToList();
+                }
+                else
+                {
+                    mergedDict[newSector.Path] = newSector;
+                    changeCount.newSectors++;
+                    changeCount.newNodes += newSector.NodeDeletions?.Count ?? 0;
+                    foreach (var newNode in newSector.NodeDeletions)
+                        changeCount.newActors += newNode.ActorDeletions?.Count ?? 0;
+                }
+            }
+            var mergedSectors = mergedDict.Values.ToList();
+            return (mergedSectors, changeCount);
+        }
+        Logger.Error($"Failed to parse existing removal file {filepath}");
+        return (null, null);
+    }
+    
+    private void SaveFile(AxlRemovalFile removalFile, string? customRemovalDirectory = null, string? customRemovalFilename = null)
+    {
+        string outputFilePath;
+        if (customRemovalDirectory == null || customRemovalFilename == null)
+        {
+            if (_settings.SaveToArchiveMods)
+                outputFilePath = Path.Combine(_settings.GameDirectory, "archive", "pc", "mod", _settings.OutputFilename) + ".xl";
+            else if (!string.IsNullOrEmpty(_settings.OutputDirectory))
+                outputFilePath = Path.Combine(_settings.OutputDirectory, _settings.OutputFilename) + ".xl";
+            else
+                throw new Exception(
+                    $"Failed to save output file! Saving to output directory is enabled but no output directory is set!");
+        }
+        else
+        {
+            string fileName = Path.GetFileNameWithoutExtension(customRemovalFilename);
+            outputFilePath = Path.Combine(customRemovalDirectory, fileName) + ".xl";
+        }
+
+        MergeChanges mergeChanges = new();
+        if (_settings.SaveMode == SaveFileMode.Enum.Extend && File.Exists(outputFilePath))
+        {
+           var mergedSectors = MergeSectors(outputFilePath, removalFile);
+           if (mergedSectors.Item1 != null)
+           {
+               removalFile.Streaming.Sectors = mergedSectors.Item1;
+               mergeChanges = mergedSectors.Item2;
+           }
+        }
+        
+        string outputContent;
+        if (_settings.SaveAsYaml)
+        {
+            var serializer = new SerializerBuilder()
+                .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
+                .Build();
+
+            outputContent = serializer.Serialize(removalFile);
+        }
+        else
+        {
+            outputContent = JsonConvert.SerializeObject(removalFile,
+                new JsonSerializerSettings()
+                    { NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented });
+        }
+        
+        
+        Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
+                
+        if (!File.Exists(outputFilePath))
+        {
+            File.WriteAllText(outputFilePath, outputContent);
+            Logger.Info($"Created file {outputFilePath}");
+            return;
+        }
+
+        if (_settings.SaveMode == SaveFileMode.Enum.Extend)
+        {
+            File.WriteAllText(outputFilePath, outputContent);
+            var newSectorS = mergeChanges?.newSectors != 1 ? "s" : "";
+            var newNodesS = mergeChanges?.newNodes != 1 ? "s" : "";
+            var newActorsS = mergeChanges?.newActors != 1 ? "s" : "";
+            Logger.Info($"Extended file {outputFilePath} with {mergeChanges.newSectors} new sector{newSectorS}, {mergeChanges.newNodes} new node{newNodesS}, {mergeChanges.newActors} new actor{newActorsS}.");
+            return;
+        }
+                
+        if (_settings.SaveMode == SaveFileMode.Enum.Overwrite)
+        {
+            File.WriteAllText(outputFilePath, outputContent);
+            Logger.Info($"Overwrote file {outputFilePath}");
+            return;
+        }
+                
+        int totalCount = 1;
+        string outputFilePathWithoutExtension = outputFilePath.Split('.').First();
+        foreach (var file in Directory.GetFiles(Path.GetDirectoryName(outputFilePath), "*.*",
+                     SearchOption.AllDirectories))
+        {
+            if (!file.StartsWith(outputFilePathWithoutExtension)) continue;
+            if (Int32.TryParse(file.Split("+").Last().Split(".").First(), out int count))
+            {
+                if (count >= totalCount) 
+                    totalCount = count + 1;
+            }
+        }
+                
+        string newOutputFilePath = $"{outputFilePathWithoutExtension.Split("+").First()}+{totalCount}.xl";
+        File.WriteAllText(newOutputFilePath, outputContent);
+        Logger.Info($"Created file {newOutputFilePath}");
+    }
     
     // also returns null if none of the nodes in the sector are inside the box
     private async Task<(bool success, string error, AxlRemovalSector? result)> ProcessStreamingsector(AbbrSector sector, string sectorPath, SelectionInput selectionBox)
@@ -41,11 +193,11 @@ public class ProcessService
         {
             var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
 
-            if (_settings.NukeOccluders && nodeEntry.Type.ToLower().Contains("occluder"))
+            if (_settings.NukeOccluders && nodeEntry.Type.ToString().ToLower().Contains("occluder"))
             {
                 return new AxlRemovalNodeDeletion()
                 {
-                    Type = nodeEntry.Type,
+                    Type = nodeEntry.Type.ToString(),
                     Index = index,
                     DebugName = nodeEntry.DebugName
                 };
@@ -107,7 +259,7 @@ public class ProcessService
                 return null;
             }
             
-            int nodeTypeTableIndex = NodeTypeProcessingOptions.NodeTypeOptions.IndexOf(nodeEntry.Type);
+            int nodeTypeTableIndex = NodeTypeProcessingOptions.NodeTypeOptions.IndexOf(nodeEntry.Type.ToString());
             if (nodeTypeTableIndex == -1)
             {
                 Logger.Warning($"Node {nodeEntry.Type} is not part of the assumed node type set! Please report this issue. Processing node regardless.");
@@ -149,7 +301,7 @@ public class ProcessService
                         return new AxlRemovalNodeDeletion()
                         {
                             Index = index,
-                            Type = nodeEntry.Type,
+                            Type = nodeEntry.Type.ToString(),
                             DebugName = nodeEntry.DebugName
                         };
                     }
@@ -162,48 +314,55 @@ public class ProcessService
                         var shapeIntersects = false;
                         var sectorHash = nodeEntry.SectorHash;
                         var transformActor = actor.Transform;
+                        
                         foreach (var shape in actor.Shapes)
                         {
-                            
-                            if (shape.ShapeType.Contains("Mesh"))
+                            switch (shape.ShapeType)
                             {
-                                var collisionMesh = await _gameFileService.GetPhysXMesh((ulong)sectorHash, (ulong)shape.Hash);
-                                if (collisionMesh == null)
-                                {
-                                    Logger.Warning($"Failed to get PhysX Mesh from {sectorHash} : {shape.Hash}");
-                                    continue;
-                                }
-                                bool isCollisionMeshInsideBox = CollisionCheckService.IsCollisonMeshInsideSelectionBox(collisionMesh, selectionBox.Obb, selectionBox.Aabb, transformActor, shape.Transform);
-                                if (isCollisionMeshInsideBox)
-                                {
-                                    shapeIntersects = true;
+                                case Enums.physicsShapeType.TriangleMesh:
+                                case Enums.physicsShapeType.ConvexMesh:
+                                    var collisionMesh = await _gameFileService.GetPhysXMesh((ulong)sectorHash, (ulong)shape.Hash);
+                                    if (collisionMesh == null)
+                                    {
+                                        Logger.Warning($"Failed to get PhysX Mesh from {sectorHash} : {shape.Hash}");
+                                        continue;
+                                    }
+                                    bool isCollisionMeshInsideBox = CollisionCheckService.IsCollisonMeshInsideSelectionBox(collisionMesh, selectionBox.Obb, selectionBox.Aabb, transformActor, shape.Transform);
+                                    if (isCollisionMeshInsideBox)
+                                    {
+                                        shapeIntersects = true;
+                                        goto breakShapeLoop;
+                                    }
                                     break;
-                                }
-                            }
-                            
-                            if (shape.ShapeType == "Box")
-                            {
-                                string collectionName = sectorPath.Split(@"\")[^1] + " " + index + " " + actorIndex; // just for testing so it's easy to identify the source of the shapes
-                                bool isCollisionBoxInsideBox = CollisionCheckService.IsCollisionBoxInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb, collectionName);
-                                if (isCollisionBoxInsideBox)
-                                {
-                                    shapeIntersects = true;
+                                case Enums.physicsShapeType.Box:
+                                    string collectionName = sectorPath.Split(@"\")[^1] + " " + index + " " + actorIndex; // just for testing so it's easy to identify the source of the shapes
+                                    bool isCollisionBoxInsideBox = CollisionCheckService.IsCollisionBoxInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb, collectionName);
+                                    if (isCollisionBoxInsideBox)
+                                    {
+                                        shapeIntersects = true;
+                                        goto breakShapeLoop;
+                                    }
                                     break;
-                                }
-                            }
-                            
-                            if (shape.ShapeType == "Capsule")
-                            {
-                                bool isCollisionCapsuleInsideBox = CollisionCheckService.IsCollisionCapsuleInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb);
-                                if (isCollisionCapsuleInsideBox)
-                                {
-                                    shapeIntersects = true;
+                                case Enums.physicsShapeType.Capsule:
+                                    bool isCollisionCapsuleInsideBox = CollisionCheckService.IsCollisionCapsuleInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb);
+                                    if (isCollisionCapsuleInsideBox)
+                                    {
+                                        shapeIntersects = true;
+                                        goto breakShapeLoop;
+                                    }
                                     break;
-                                }
+                                case Enums.physicsShapeType.Sphere:
+                                    bool intersects = CollisionCheckService.IsCollisionSphereInsideSelectionBox(shape, transformActor, selectionBox.Obb);
+                                    if (intersects)
+                                    {
+                                        shapeIntersects = true;
+                                        goto breakShapeLoop;
+                                    }
+                                    break;
                             }
-                            
                         }
-
+                        
+                        breakShapeLoop:
                         if (shapeIntersects)
                         {
                             actorRemoval.Add(actorIndex);
@@ -215,7 +374,7 @@ public class ProcessService
                         return new AxlRemovalNodeDeletion()
                             {
                                 Index = index,
-                                Type = nodeEntry.Type,
+                                Type = nodeEntry.Type.ToString(),
                                 ActorDeletions = actorRemoval,
                                 ExpectedActors = nodeEntry.Actors.Length,
                                 DebugName = nodeEntry.DebugName
@@ -231,7 +390,7 @@ public class ProcessService
                             return new AxlRemovalNodeDeletion()
                             {
                                 Index = index,
-                                Type = nodeEntry.Type,
+                                Type = nodeEntry.Type.ToString(),
                                 DebugName = nodeEntry.DebugName
                             };
                         }
@@ -394,109 +553,7 @@ public class ProcessService
             }
             Logger.Success($"Found {nodeCount} nodes across {sectors.Count} sectors.");
             
-            string axlFilePath;
-            if (customRemovalDirectory == null)
-            {
-                axlFilePath = _settings.GameDirectory + @"\archive\pc\mod\" + _settings.OutputFilename + ".xl";   
-            }
-            else
-            {
-                string fileName = Path.GetFileNameWithoutExtension(customRemovalFile);
-                axlFilePath = customRemovalDirectory + $"\\{fileName}.xl";
-            }
-            
-            if (_settings.SaveMode == SaveFileMode.Enum.Extend && File.Exists(axlFilePath))
-            {
-                string fileContent = File.ReadAllText(axlFilePath);
-                var exisitngRemovalFile = UtilService.TryParseAxlRemovalFile(fileContent);
-                if (exisitngRemovalFile != null)
-                {
-                    var newSectors = removalFile.Streaming.Sectors;
-                    var oldSectors = exisitngRemovalFile.Streaming.Sectors;
-                        
-                    Dictionary<string, AxlRemovalSector> mergedDict = oldSectors.ToDictionary(x => x.Path);
-
-                    foreach (var newSector in newSectors)
-                    {
-                        if (mergedDict.TryGetValue(newSector.Path, out AxlRemovalSector existingSector))
-                        {
-                            existingSector.NodeDeletions.AddRange(newSector.NodeDeletions);
-                            existingSector.NodeDeletions = existingSector.NodeDeletions.Distinct().ToList();
-                        }
-                        else
-                        {
-                            mergedDict[newSector.Path] = newSector;
-                        }
-                    }
-                    var mergedSectors = mergedDict.Values.ToList();
-                    removalFile.Streaming.Sectors = mergedSectors;
-                }
-                else
-                {
-                    Logger.Error($"Failed to parse existing removal file {axlFilePath}");
-                }
-            }
-            
-            string outputContent;
-            if (_settings.SaveAsYaml)
-            {
-                var serializer = new SerializerBuilder()
-                    .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                    .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
-                    .Build();
-
-                outputContent = serializer.Serialize(removalFile);
-            }
-            else
-            {
-                outputContent = JsonConvert.SerializeObject(removalFile,
-                    new JsonSerializerSettings()
-                        { NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented });
-            }
-            
-            void SaveFile(string outputFilePath)
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
-                
-                if (!File.Exists(outputFilePath))
-                {
-                    File.WriteAllText(outputFilePath, outputContent);
-                    Logger.Info($"Created file {outputFilePath}");
-                    return;
-                }
-
-                if (_settings.SaveMode == SaveFileMode.Enum.Extend)
-                {
-                    File.WriteAllText(outputFilePath, outputContent);
-                    Logger.Info($"Extended file {outputFilePath}");
-                    return;
-                }
-                
-                if (_settings.SaveMode == SaveFileMode.Enum.Overwrite)
-                {
-                    File.WriteAllText(outputFilePath, outputContent);
-                    Logger.Info($"Overwrote file {outputFilePath}");
-                    return;
-                }
-                
-                int totalCount = 1;
-                string outputFilePathWithoutExtension = outputFilePath.Split('.').First();
-                foreach (var file in Directory.GetFiles(Path.GetDirectoryName(outputFilePath), "*.*",
-                             SearchOption.AllDirectories))
-                {
-                    if (!file.StartsWith(outputFilePathWithoutExtension)) continue;
-                    if (Int32.TryParse(file.Split("+").Last(), out int count))
-                    {
-                        if (count > totalCount) totalCount = count;
-                    }
-                }
-                
-                string newOutputFilePath = $"{outputFilePathWithoutExtension.Split("+").First()}+{totalCount}.xl";
-                File.WriteAllText(newOutputFilePath, outputContent);
-                Logger.Info($"Created file {newOutputFilePath}");
-            }
-            
-            SaveFile(axlFilePath);
+            SaveFile(removalFile, customRemovalDirectory, customRemovalFile);
         }
         return (true, string.Empty);
     }

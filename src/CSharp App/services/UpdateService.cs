@@ -50,7 +50,31 @@ public class UpdateService
             throw new Exception($"Failed to parse version: {version}", e);
         }
     }
-    
+
+    public enum VersionRelation
+    {
+        Newer,
+        Same,
+        Older
+    }
+    public static VersionRelation IsVersion1Newer(string ver1, string ver2)
+    {
+        var ver1Arr = ParseVersion(ver1);
+        var ver2Arr = ParseVersion(ver2);
+        for (int i = 0; i < ver1Arr.Length; i++)
+        {
+            if (ver1Arr[i] > ver2Arr[i])
+            {
+                return VersionRelation.Newer;
+            }
+
+            if (ver1Arr[i] < ver2Arr[i])
+            {
+                return VersionRelation.Older;
+            }
+        }
+        return VersionRelation.Same;
+    }
     
     public static async Task<(bool, string?)> CheckUpdates()
     {
@@ -147,7 +171,7 @@ public class UpdateService
             string unzipPathCet;
             if (string.IsNullOrEmpty(SettingsService.Instance.CETInstallLocation))
             {
-                if (!ValidationService.ValidateGamePath(SettingsService.Instance.GameDirectory))
+                if (ValidationService.ValidateGamePath(SettingsService.Instance.GameDirectory) != ValidationService.GamePathResult.Valid)
                 {
                     Logger.Error("Could not find valid target location to install VS2077 CET. Please set the game path or custom directory in the settings and restart the application to try again.");
                     throw new Exception();

@@ -1,378 +1,535 @@
-using LightningDB;
 using System;
-using System.IO;
-using System.Threading.Tasks;
-using System.Text;
-using LightningDB.Native;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using LightningDB;
+using MessagePack;
+using Microsoft.ClearScript.Util.Web;
+using Microsoft.VisualBasic.FileIO;
+using VolumetricSelection2077.Models;
+using SearchOption = System.IO.SearchOption;
 
-namespace VolumetricSelection2077.Services
+namespace VolumetricSelection2077.Services;
+
+public enum CacheDatabases
 {
-    public enum CacheDatabase
+    Vanilla,
+    Modded,
+    All
+}
+
+public class ReadRequest
+{
+    public CacheDatabases Database { get; set; }
+    public string Key { get; set; }
+    public ReadRequest(string key, CacheDatabases database = CacheDatabases.Vanilla)
     {
-        FileMap,
-        ExtractedFiles,
-    }
-
-    public class CacheService : IDisposable
-    {
-        private readonly string _cachePath;
-        private readonly string _workingPath;
-        private readonly SettingsService _settings;
-        private readonly LightningEnvironment _env;
-        private static CacheService? _instance;
-        private static readonly object _lock = new object();
-        public static CacheService Instance
-        {
-            get
-            {
-                if (_instance == null)
-                {
-                    lock (_lock)
-                    {
-                        _instance ??= new CacheService();
-                    }
-                }
-                return _instance;
-            }
-        }
-        internal CacheService()
-        {
-            _settings = SettingsService.Instance;
-            string cacheDirectory = Path.Combine(_settings.CacheDirectory, "cache");
-            string workingDirectory = Path.Combine(_settings.CacheDirectory, "working");
-            
-            Logger.Info($"Initializing cache at: {cacheDirectory}");
-            Logger.Info($"Initializing working directory at: {workingDirectory}");
-
-            try
-            {
-                if (!Directory.Exists(cacheDirectory))
-                {
-                    Directory.CreateDirectory(cacheDirectory);
-                    Logger.Info("Created cache directory");
-                }
-                if (!Directory.Exists(workingDirectory))
-                {
-                    Directory.CreateDirectory(workingDirectory);
-                    Logger.Info("Created working directory");
-                }
-                
-                _cachePath = cacheDirectory;
-                _workingPath = workingDirectory;
-
-                _env = new LightningEnvironment(_cachePath)
-                {
-                    MaxDatabases = 10,
-                    MapSize = 10485760 * 100  // 1GB
-                };
-                
-                Logger.Info("Opening LMDB environment...");
-                _env.Open();
-                Logger.Success("LMDB environment opened successfully");
-
-                // Create initial database to ensure it works
-                using (var tx = _env.BeginTransaction())
-                {
-                    using var db = tx.OpenDatabase("FileMap", new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
-                    Logger.Info("Initial database created successfully");
-                    tx.Commit();
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to initialize cache: {ex.Message}");
-                throw; // Re-throw to prevent partially initialized service
-            }
-        }
-
-
-        private bool IsValidDatabase(string database)
-        {
-            return Enum.TryParse<CacheDatabase>(database, true, out _);
-        }
-
-        public (bool success, string error) SaveEntry(string database, string keyname, byte[] data)
-        {
-            if (!IsValidDatabase(database))
-            {
-                return (false, $"Invalid database name: {database}");
-            }
-
-            if (string.IsNullOrEmpty(keyname))
-            {
-                Logger.Error("Cannot save entry with empty key");
-                return (false, "Empty key is not allowed");
-            }
-
-            if (data == null || data.Length == 0)
-            {
-                Logger.Error($"Cannot save empty data for key: {keyname}");
-                return (false, "Empty data is not allowed");
-            }
-
-            try
-            {   
-                using var tx = _env.BeginTransaction();
-                using var db = tx.OpenDatabase(database, new DatabaseConfiguration 
-                { 
-                    Flags = DatabaseOpenFlags.Create 
-                });
-
-                // Clean the key before storing it - matching SaveBatch implementation
-                var cleanKey = new string(keyname.Where(c => !char.IsControl(c)).ToArray());
-                var keyBytes = Encoding.UTF8.GetBytes(cleanKey);
-                
-                tx.Put(db, keyBytes, data);
-                tx.Commit();
-                return (true, string.Empty);
-            }
-            catch (Exception ex)
-            {
-                return (false, ex.Message);
-            }
-        }
-
-        public (bool exists, byte[]? data, string error) GetEntry(string database, string keyname)
-        {
-            if (!IsValidDatabase(database))
-            {
-                return (false, null, $"Invalid database name: {database}");
-            }
-
-            try
-            {
-                using var tx = _env.BeginTransaction(TransactionBeginFlags.ReadOnly);
-                using var db = tx.OpenDatabase(database);
-
-                var keyBytes = Encoding.UTF8.GetBytes(keyname);
-                var (resultCode, _, value) = tx.Get(db, keyBytes);
-                
-                if (resultCode != MDBResultCode.Success)
-                {
-                    return (false, null, "Entry not found");
-                }
-
-                return (true, value.CopyToNewArray(), string.Empty);
-            }
-            catch (LightningException ex) when (ex.Message.Contains("not found"))
-            {
-                return (false, null, "Database not found");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to get entry from database: {ex.Message}");
-                return (false, null, ex.Message);
-            }
-        }
-
-        public bool DropDatabase(string database)
-        {
-            if (!IsValidDatabase(database))
-            {
-                Logger.Error($"Invalid database name: {database}");
-                return false;
-            }
-
-            try
-            {
-                using var tx = _env.BeginTransaction();
-                try
-                {
-                    // Try to open the database first to check if it exists
-                    using var db = tx.OpenDatabase(database);
-                    
-                    // Drop the database
-                    tx.DropDatabase(db);
-                    tx.Commit();
-                    
-                    Logger.Success($"Successfully dropped database: {database}");
-                    return true;
-                }
-                catch (LightningException ex) when (ex.Message.Contains("not found"))
-                {
-                    Logger.Info($"Database {database} doesn't exist, nothing to drop");
-                    return true;
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to drop database: {ex.Message}");
-                return false;
-            }
-        }
-        public (bool success, string error) SaveBatch(string database, IEnumerable<(string key, byte[] value)> entries)
-        {
-            if (!IsValidDatabase(database))
-            {
-                return (false, $"Invalid database name: {database}");
-            }
-
-            try
-            {
-                using var tx = _env.BeginTransaction();
-                using var db = tx.OpenDatabase(database, new DatabaseConfiguration 
-                { 
-                    Flags = DatabaseOpenFlags.Create 
-                });
-
-                foreach (var (key, value) in entries)
-                {
-                    // Clean the key before storing it
-                    var cleanKey = new string(key.Where(c => !char.IsControl(c)).ToArray());
-                    var keyBytes = Encoding.UTF8.GetBytes(cleanKey);
-                    tx.Put(db, keyBytes, value);
-                }
-
-                tx.Commit();
-                return (true, string.Empty);
-            }
-            catch (Exception ex)
-            {
-                return (false, ex.Message);
-            }
-        }
-        public void LogDatabaseSample(string database, int sampleSize = 1000)
-        {
-            if (!IsValidDatabase(database))
-            {
-                Logger.Error($"Invalid database name: {database}");
-                return;
-            }
-
-            try
-            {
-                using var tx = _env.BeginTransaction(TransactionBeginFlags.ReadOnly);
-                using var db = tx.OpenDatabase(database);
-                using var cursor = tx.CreateCursor(db);
-
-                if (cursor.First() == MDBResultCode.Success)
-                {
-                    do
-                    {
-                        var (resultCode, key, value) = cursor.GetCurrent();
-                        if (resultCode != MDBResultCode.Success) break;
-
-                        var keyString = Encoding.UTF8.GetString(key.CopyToNewArray());
-                        
-                        // Only show entries that look like sector paths
-                        if (keyString.Contains("sector", StringComparison.OrdinalIgnoreCase))
-                        {
-                            Logger.Info($"Database entry found:");
-                            Logger.Info($"Full path: {keyString}");
-                            Logger.Info("Characters:");
-                            foreach (char c in keyString)
-                            {
-                                Logger.Info($"  '{c}' (ASCII: {(int)c})");
-                            }
-                            return; // Just show the first sector we find
-                        }
-                    } while (cursor.Next() == MDBResultCode.Success);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to read database: {ex.Message}");
-            }
-        }
-        public class CacheResult
-        {
-            public bool Exists { get; set; }
-            public byte[]? Data { get; set; }
-            public string Error { get; set; } = string.Empty;
-        }
-
-        public Dictionary<string, CacheResult> GetEntries(string database, IEnumerable<string> keys)
-        {
-            var results = new Dictionary<string, CacheResult>();
-            
-            if (!IsValidDatabase(database))
-            {
-                // Return error result for all keys
-                foreach (var key in keys)
-                {
-                    results[key] = new CacheResult 
-                    { 
-                        Exists = false, 
-                        Error = $"Invalid database name: {database}" 
-                    };
-                }
-                return results;
-            }
-
-            try
-            {
-                using var tx = _env.BeginTransaction(TransactionBeginFlags.ReadOnly);
-                using var db = tx.OpenDatabase(database);
-
-                foreach (var key in keys)
-                {
-                    try
-                    {
-                        var keyBytes = Encoding.UTF8.GetBytes(key);
-                        var (resultCode, _, value) = tx.Get(db, keyBytes);
-                        
-                        if (resultCode != MDBResultCode.Success)
-                        {
-                            results[key] = new CacheResult 
-                            { 
-                                Exists = false, 
-                                Error = "Entry not found" 
-                            };
-                            continue;
-                        }
-
-                        results[key] = new CacheResult 
-                        { 
-                            Exists = true, 
-                            Data = value.CopyToNewArray() 
-                        };
-                    }
-                    catch (Exception ex)
-                    {
-                        results[key] = new CacheResult 
-                        { 
-                            Exists = false, 
-                            Error = ex.Message 
-                        };
-                    }
-                }
-
-                return results;
-            }
-            catch (LightningException ex) when (ex.Message.Contains("not found"))
-            {
-                // Database not found, return error for all keys
-                foreach (var key in keys)
-                {
-                    results[key] = new CacheResult 
-                    { 
-                        Exists = false, 
-                        Error = "Database not found" 
-                    };
-                }
-                return results;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to get entries from database: {ex.Message}");
-                // General error, return error for all keys
-                foreach (var key in keys)
-                {
-                    results[key] = new CacheResult 
-                    { 
-                        Exists = false, 
-                        Error = ex.Message 
-                    };
-                }
-                return results;
-            }
-        }
-        public void Dispose()
-        {
-            _env?.Dispose();
-        }
+        Key = key;
+        Database = database;
     }
 }
 
+public class WriteRequest
+{
+    public CacheDatabases Database { get; set; }
+    public string Key { get; set; }
+    public byte[] Data { get; set; }
+    public WriteRequest(string key, byte[] data, CacheDatabases database = CacheDatabases.Vanilla)
+    {
+        Key = key;
+        Data = data;
+        Database = database;
+    }
+}
+
+public class CacheService
+{
+    private static CacheService? _instance;
+    private SettingsService _settings;
+    private LightningEnvironment _env;
+    private static readonly long Gb = 1024 * 1024 * 1024;
+    private static readonly int BatchDelay = 1;
+    private static readonly int MaxReaders = 512;
+    private static readonly long MapSize = Gb * 100;
+    static ConcurrentQueue<WriteRequest> _requestWriteQueue = new();
+    private readonly object _lock = new object();
+    private LightningDatabase _vanillaDatabase;
+    private LightningDatabase _moddedDatabase;
+    private bool _isInitialized;
+
+    public bool IsInitialized
+    {
+        get => _isInitialized;
+    }
+    private static bool IsProcessing { get; set; } = false;
+    
+    private CacheService()
+    {
+        Initialize();
+    }
+    public static CacheService Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = new CacheService();
+            }
+            return _instance;
+        }
+    }
+
+    public void Initialize()
+    {
+        _settings = SettingsService.Instance;
+        if (_isInitialized) return;
+        if (_settings.CacheEnabled == false) return;
+        
+        Directory.CreateDirectory(_settings.CacheDirectory);
+        _env = new LightningEnvironment(_settings.CacheDirectory)
+        {
+            MaxDatabases = 2,
+            MapSize = MapSize,
+            MaxReaders = MaxReaders
+        };
+        _env.Open();
+        
+        var tx = _env.BeginTransaction();
+        _moddedDatabase = tx.OpenDatabase(CacheDatabases.Modded.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
+        _vanillaDatabase = tx.OpenDatabase(CacheDatabases.Vanilla.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
+        tx.Commit();
+        
+        try
+        {
+            var metaData = GetMetadata();
+            if (!ValidationService.ValidateCache(metaData, _settings.GameDirectory, _settings.MinimumCacheVersion))
+            {
+                Logger.Warning("Cache is stale, resetting database");
+                ClearDatabase(CacheDatabases.All, true, true);
+            }
+            _isInitialized = true;
+        }
+        catch (Exception e)
+        {
+            Logger.Error($"Could not initialize CacheService: {e}");
+        }
+        
+    }
+    
+    
+    public void StartListening()
+    {
+        IsProcessing = true;
+        _ = Task.Run(() => ProcessWriteQueue());
+    }
+
+    public void StopListening()
+    {
+        IsProcessing = false;
+    }
+
+    public byte[]? GetEntry(ReadRequest request)
+    {
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling GetEntry");
+        using var tx = _env.BeginTransaction();
+        LightningDatabase[] dbs;
+        switch (request.Database)
+        {
+            case CacheDatabases.Vanilla:
+                dbs = new[] { _vanillaDatabase };
+                break;
+            case CacheDatabases.Modded:
+                dbs = new[] { _moddedDatabase };
+                break;
+            case CacheDatabases.All:
+                dbs = new[] { _vanillaDatabase, _moddedDatabase };
+                break;
+            default:
+                throw new ArgumentException("Unknown Database");
+        }
+
+        foreach (LightningDatabase db in dbs)
+        {
+            var (code, _, value) = tx.Get(db, Encoding.UTF8.GetBytes(request.Key));
+            if (code == MDBResultCode.Success)
+            {
+                return value.CopyToNewArray();
+            }
+        }
+        return null;
+    }
+
+    public void WriteSingleEntry(WriteRequest request)
+    {
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling WriteSingleEntry");
+        using var tx = _env.BeginTransaction();
+        switch (request.Database)
+        {
+            case CacheDatabases.Vanilla:
+                tx.Put(_vanillaDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
+                break;
+            case CacheDatabases.Modded:
+                tx.Put(_moddedDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
+                break;
+        }
+        tx.Commit();
+    }
+
+    public void WriteSectorEntry(string path, AbbrSector sector, CacheDatabases database)
+    {
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling WriteSectorEntry");
+        _ = Task.Run(() => WriteSingleEntry(new WriteRequest(path, MessagePackSerializer.Serialize(sector), database)));
+    }
+    
+    public void WriteMeshEntry(string path, AbbrMesh mesh, CacheDatabases database)
+    {
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling WriteMeshEntry");
+        _ = Task.Run(() => WriteSingleEntry(new WriteRequest(path, MessagePackSerializer.Serialize(mesh), database)));
+    }
+    
+    public void WriteEntry(WriteRequest request)
+    {
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling WriteEntry");
+        _requestWriteQueue.Enqueue(request);
+    }
+    
+    private async Task ProcessWriteQueue()
+    {
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling ProcessWriteQueue");
+        bool wroteExitLog = false;
+        while (IsProcessing || _requestWriteQueue.Count > 0)
+        {
+            await Task.Delay(BatchDelay);
+            if (!IsProcessing && !wroteExitLog && _requestWriteQueue.Count > 0)
+            {
+                Logger.Warning($"Continuing to write {_requestWriteQueue.Count} entries to cache, do not close the application...");
+                wroteExitLog = true;
+            }
+
+            if (!(_requestWriteQueue.Count > 0)) continue;
+            WriteRequest[] requests;
+    
+            lock (_lock)
+            {
+                requests = _requestWriteQueue.ToArray();
+                _requestWriteQueue.Clear();
+            }
+            
+            List<WriteRequest> requestsModded = new();
+            List<WriteRequest> requestsVanilla = new();
+            foreach (var request in requests)
+            {
+                switch (request.Database)
+                {
+                    case CacheDatabases.Vanilla:
+                        requestsVanilla.Add(request);
+                        break;
+                    case CacheDatabases.Modded:
+                        requestsModded.Add(request);
+                        break;
+                }
+            }
+            
+            using var tx = _env.BeginTransaction();
+            if (requestsModded.Count > 0)
+            {
+                foreach (var request in requestsModded)
+                {
+                    tx.Put(_moddedDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                }
+            }
+            
+            if (requestsVanilla.Count > 0)
+            {
+                foreach (var request in requestsVanilla)
+                {
+                    tx.Put(_vanillaDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                }
+            }
+
+            tx.Commit();
+        }
+
+        if (wroteExitLog)
+        {
+            Logger.Success("Finished writing all queued entries to cache");
+        }
+    }
+
+    public void ResizeEnvironment(bool bypass = false)
+    {
+        if (!_isInitialized && !bypass) throw new Exception("Cache service must be initialized before calling ResizeEnvironment");
+        _isInitialized = false;
+        
+        string tempCacheDir = Path.Combine(Directory.GetParent(_settings.CacheDirectory)?.FullName, $"temp_cache_{Guid.NewGuid().ToString()}");
+        Directory.CreateDirectory(tempCacheDir);
+        var tempEnv = new LightningEnvironment(tempCacheDir)
+        {
+            MaxDatabases = 2,
+            MapSize = MapSize,
+            MaxReaders = MaxReaders
+        };
+        tempEnv.Open();
+        var databases = new [] { CacheDatabases.Vanilla.ToString(), CacheDatabases.Modded.ToString() };
+
+        foreach (var database in databases)
+        {
+            using (var createTxn = tempEnv.BeginTransaction())
+            {
+                using (var db = createTxn.OpenDatabase(database, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create }))
+                {
+                    // Just create the database
+                }
+                createTxn.Commit();
+            }
+
+        }
+        var srcTxn = _env.BeginTransaction();
+        var dstTxn = tempEnv.BeginTransaction();
+        foreach (var dbName in databases)
+        {
+            var srcDb = srcTxn.OpenDatabase(dbName);
+            var dstDb = dstTxn.OpenDatabase(dbName, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
+            using (var cursor = srcTxn.CreateCursor(srcDb))
+            {
+                while (cursor.Next() == MDBResultCode.Success)
+                {
+                    dstTxn.Put(dstDb, cursor.GetCurrent().key.CopyToNewArray(), cursor.GetCurrent().value.CopyToNewArray());
+                }
+            }
+        }
+        dstTxn.Commit(); 
+        srcTxn.Commit();
+        
+        _env.Dispose();
+        tempEnv.Dispose();
+        
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        
+        Directory.Delete(_settings.CacheDirectory, true);
+        Directory.Move(tempCacheDir, _settings.CacheDirectory);
+        Initialize();
+    }
+    
+    
+    public void ClearDatabase(CacheDatabases database, bool resize = false, bool bypass = false)
+    {
+        if (!_isInitialized && !bypass) throw new Exception("Cache service must be initialized before calling ClearDatabase");
+        try
+        {
+            
+            using var tx = _env.BeginTransaction();
+            switch (database)
+            {
+                case CacheDatabases.Vanilla:
+                    using (var cursor = tx.CreateCursor(_vanillaDatabase))
+                    {
+                        while (cursor.Next() == MDBResultCode.Success)
+                        {
+                            cursor.Delete();
+                        }
+                    }
+                    break;
+                case CacheDatabases.Modded:
+                    using (var cursor = tx.CreateCursor(_moddedDatabase))
+                    {
+                        while (cursor.Next() == MDBResultCode.Success)
+                        {
+                            cursor.Delete();
+                        }
+                    }
+                    break;
+                case CacheDatabases.All:
+                    using (var cursor = tx.CreateCursor(_vanillaDatabase))
+                    {
+                        while (cursor.Next() == MDBResultCode.Success)
+                        {
+                            cursor.Delete();
+                        }
+                    }
+                    using (var cursor = tx.CreateCursor(_moddedDatabase))
+                    {
+                        while (cursor.Next() == MDBResultCode.Success)
+                        {
+                            cursor.Delete();
+                        }
+                    }
+                    break;
+            }
+            tx.Commit();
+            if (resize) ResizeEnvironment(bypass);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to drop database {database} with error: {ex}");
+        }
+    }
+
+    public bool Move(string fromPath, string toPath)
+    {
+        _isInitialized = false;
+
+        if (!Directory.Exists(fromPath))
+        {
+            Logger.Error($"Directory {fromPath} does not exist");
+            return false;
+        }
+        
+        if (Directory.Exists(toPath))
+            if (Directory.EnumerateFiles(toPath, "*.*", SearchOption.AllDirectories).Any())
+            {
+                Logger.Error($"Directory {toPath} already exists and is not empty");
+                return false;
+            }
+            else
+                Directory.Delete(toPath, true);
+        
+        _env.Dispose();
+        FileSystem.MoveDirectory(fromPath, toPath, UIOption.OnlyErrorDialogs);
+        Initialize();
+        return true;
+    }
+
+    public class CacheStats
+    {
+        public long VanillaEntries { get; set; }
+        public double EstVanillaSize { get; set; }
+        public long ModdedEntries { get; set; }
+        public double EstModdedSize { get; set; }
+
+        public CacheStats()
+        {
+            VanillaEntries = -1;
+            EstVanillaSize = -1;
+            ModdedEntries = -1;
+            EstModdedSize = -1;
+        }
+    }
+
+    public CacheStats GetStats()
+    {
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling ClearDatabase");
+        DirectoryInfo dirInfo = new DirectoryInfo(_settings.CacheDirectory);
+        var totalSize = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
+        long estVanillaSize = 0;
+        long estModdedSize = 0;
+        
+        using var tx = _env.BeginTransaction();
+
+        var vdbStats = _vanillaDatabase.DatabaseStats;
+        var mdbStats = _moddedDatabase.DatabaseStats;
+        
+        var totalEntries = vdbStats.Entries + mdbStats.Entries;
+        if (totalEntries > 0)
+        {
+            estVanillaSize = totalSize / totalEntries * vdbStats.Entries;
+            estModdedSize = totalSize / totalEntries * mdbStats.Entries;
+        }
+        
+        return new CacheStats()
+        {
+            VanillaEntries = vdbStats.Entries,
+            ModdedEntries = mdbStats.Entries,
+            EstVanillaSize = (double)estVanillaSize / Gb,
+            EstModdedSize = (double)estModdedSize / Gb,
+        };
+    }
+    
+    public class DataBaseSample
+    {
+        public int moddedEntriesCount { get; set; }
+        public int vanillaEntriesCount { get; set; }
+        public string[] moddedEntriesSample { get; set; }
+        public string[] vanillaEntriesSample { get; set; }
+        public DataBaseSample(int moddedEntriesCount, int vanillaEntriesCount, string[] moddedEntriesSample, string[] vanillaEntriesSample)
+        {
+            this.moddedEntriesCount = moddedEntriesCount;
+            this.vanillaEntriesCount = vanillaEntriesCount;
+            this.moddedEntriesSample = moddedEntriesSample;
+            this.vanillaEntriesSample = vanillaEntriesSample;
+        }
+    }
+
+    public DataBaseSample GetSample(int sampleSize)
+    {
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling GetSample");
+        var moddedSample = new string[sampleSize];
+        var vanillaSample = new string[sampleSize];
+        int moddedCount;
+        int vanillaCount;
+        
+        using var tx = _env.BeginTransaction();
+        using (var cursor = tx.CreateCursor(_vanillaDatabase))
+        {
+            int i = 0;
+            while (cursor.Next() == MDBResultCode.Success)
+            {
+                if (i == sampleSize) break;
+                var entry = cursor.GetCurrent();
+                vanillaSample[i] = $"{BitConverter.ToString(entry.Item2.CopyToNewArray())} : {BitConverter.ToString(entry.Item3.CopyToNewArray())}";
+                i++;
+            }
+            cursor.First();
+            vanillaCount = cursor.AsEnumerable().Count();
+        }
+        using (var cursor = tx.CreateCursor(_moddedDatabase))
+        {
+            int i = 0;
+            while (cursor.Next() == MDBResultCode.Success)
+            {
+                if (i == sampleSize) break;
+                var entry = cursor.GetCurrent();
+                moddedSample[i] = $"{BitConverter.ToString(entry.Item2.CopyToNewArray())} : {BitConverter.ToString(entry.Item3.CopyToNewArray())}";
+                i++;
+            }
+            cursor.First();
+            moddedCount = cursor.AsEnumerable().Count();
+        }
+        return new DataBaseSample(moddedCount, vanillaCount, moddedSample, vanillaSample);
+    }
+
+    public class CacheDatabaseMetadata
+    {
+        public string VS2077Version { get; set; }
+        public string GameVersion { get; set; }
+        public CacheDatabaseMetadata(string vs2077Version, string gameVersion)
+        {
+            VS2077Version = vs2077Version;
+            GameVersion = gameVersion;
+        }
+    }
+
+    public CacheDatabaseMetadata GetMetadata()
+    {
+        string filePath = Path.Combine(_settings.CacheDirectory, "metadata.json");
+        if (File.Exists(filePath))
+        {
+            string json = File.ReadAllText(filePath);
+            var metadata = JsonSerializer.Deserialize<CacheDatabaseMetadata>(json);
+            if (metadata != null) return metadata;
+        }
+        
+        var gameExePath = Path.Combine(_settings.GameDirectory, "bin", "x64", "Cyberpunk2077.exe");
+        if (!File.Exists(gameExePath))
+        {
+            throw new Exception("Could not find Game Executable.");
+        }
+        var fileVerInfo = FileVersionInfo.GetVersionInfo(gameExePath);
+        string? version = fileVerInfo.ProductVersion;
+        if (version == null)
+        {
+            Logger.Warning($"{version}");
+            throw new Exception("Could not find Game Executable.");
+        }
+        var newMetadata = new CacheDatabaseMetadata(_settings.MinimumCacheVersion, version);
+        Directory.CreateDirectory(_settings.CacheDirectory);
+        File.WriteAllText(filePath, JsonSerializer.Serialize(newMetadata));
+        return newMetadata;
+    }
+}
