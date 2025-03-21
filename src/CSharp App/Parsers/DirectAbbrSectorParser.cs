@@ -182,28 +182,46 @@ public class DirectAbbrSectorParser
                     }
                     break;
                 case worldInstancedDestructibleMeshNode instancedDestructibleNode:
-                    transforms = new AbbrSectorTransform[instancedDestructibleNode.CookedInstanceTransforms.NumElements];
-                    var transformsInstancedDestructibleBuffer = instancedDestructibleNode.CookedInstanceTransforms.SharedDataBuffer.Chunk.Buffer.Data as CookedInstanceTransformsBuffer;
-                    int transformsInstancedDestructibleIndex = 0;
-                    foreach (var transform in transformsInstancedDestructibleBuffer.Transforms.ToArray().AsSpan((int)(uint)instancedDestructibleNode.CookedInstanceTransforms.StartIndex, (int)(uint)instancedDestructibleNode.CookedInstanceTransforms.NumElements))
+                    try
                     {
-                        transforms[transformsInstancedDestructibleIndex] = new AbbrSectorTransform()
+                        transforms =
+                            new AbbrSectorTransform[instancedDestructibleNode.CookedInstanceTransforms.NumElements];
+                        var transformsInstancedDestructibleBuffer =
+                            instancedDestructibleNode.CookedInstanceTransforms.SharedDataBuffer.Chunk.Buffer.Data as
+                                CookedInstanceTransformsBuffer;
+                        int transformsInstancedDestructibleIndex = 0;
+                        foreach (var transform in transformsInstancedDestructibleBuffer.Transforms.ToArray()
+                                     .AsSpan((int)(uint)instancedDestructibleNode.CookedInstanceTransforms.StartIndex,
+                                         (int)(uint)instancedDestructibleNode.CookedInstanceTransforms.NumElements))
                         {
-                            Position = WolvenkitToSharpDX.Vector3(transform.Position) + WolvenkitToSharpDX.Vector3(nodeDataEntry.Position),
-                            Rotation = WolvenkitToSharpDX.Quaternion(transform.Orientation) * WolvenkitToSharpDX.Quaternion(nodeDataEntry.Orientation),
-                            Scale = WolvenkitToSharpDX.Vector3(nodeDataEntry.Scale)
-                        };
-                        transformsInstancedDestructibleIndex++;
+                            transforms[transformsInstancedDestructibleIndex] = new AbbrSectorTransform()
+                            {
+                                Position = WolvenkitToSharpDX.Vector3(transform.Position) +
+                                           WolvenkitToSharpDX.Vector3(nodeDataEntry.Position),
+                                Rotation = WolvenkitToSharpDX.Quaternion(transform.Orientation) *
+                                           WolvenkitToSharpDX.Quaternion(nodeDataEntry.Orientation),
+                                Scale = WolvenkitToSharpDX.Vector3(nodeDataEntry.Scale)
+                            };
+                            transformsInstancedDestructibleIndex++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"Failed to process worldInstancedDestructibleMeshNode with error: {ex}");
+                        goto DefaultLabel;
                     }
                     break;
                 default:
-                    transforms = new AbbrSectorTransform[1];
-                    transforms[0] = new AbbrSectorTransform()
+                    DefaultLabel:
                     {
-                        Position = WolvenkitToSharpDX.Vector3(nodeDataEntry.Position),
-                        Rotation = WolvenkitToSharpDX.Quaternion(nodeDataEntry.Orientation),
-                        Scale = WolvenkitToSharpDX.Vector3(nodeDataEntry.Scale)
-                    };
+                        transforms = new AbbrSectorTransform[1];
+                        transforms[0] = new AbbrSectorTransform()
+                        {
+                            Position = WolvenkitToSharpDX.Vector3(nodeDataEntry.Position),
+                            Rotation = WolvenkitToSharpDX.Quaternion(nodeDataEntry.Orientation),
+                            Scale = WolvenkitToSharpDX.Vector3(nodeDataEntry.Scale)
+                        };
+                    }
                     break;
             }
 

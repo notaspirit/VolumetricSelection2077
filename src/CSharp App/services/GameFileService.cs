@@ -141,7 +141,18 @@ public class GameFileService
             var fileLookup = _archiveManager.Lookup(path, ArchiveManagerScope.Mods);
             if (fileLookup != null) db = CacheDatabases.Modded;
         }
-        var parsedMesh = DirectAbbrMeshParser.ParseFromCR2W(rawMesh);
+
+        AbbrMesh? parsedMesh;
+        try
+        {
+            parsedMesh = DirectAbbrMeshParser.ParseFromCR2W(rawMesh);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to parse mesh {path} with error: {ex}");
+            return null;
+        }
+        if (parsedMesh == null) return null;
         if (_settingsService.CacheEnabled)
         {
             if (!_settingsService.CacheModdedResources && db == CacheDatabases.Modded) return parsedMesh;
@@ -166,7 +177,17 @@ public class GameFileService
             var fileLookup = _archiveManager.Lookup(path, ArchiveManagerScope.Mods);
             if (fileLookup != null) db = CacheDatabases.Modded;
         }
-        var parsedSector = DirectAbbrSectorParser.ParseFromCR2W(rawSector);
+
+        AbbrSector? parsedSector;
+        try
+        {
+            parsedSector = DirectAbbrSectorParser.ParseFromCR2W(rawSector);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to get sector {path} with error: {ex}");
+            return null;
+        }
         if (_settingsService.CacheEnabled)
         {
             if (!_settingsService.CacheModdedResources && db == CacheDatabases.Modded) return parsedSector;
