@@ -100,7 +100,7 @@ public class SettingsService
     public string CETInstallLocation { get; set; }
     public bool CacheModdedResources { get; set; }
 
-    public string MinimumCacheVersion { get; } = "1000.0.0-beta4";
+    public string MinimumCacheVersion { get; } = "1000.0.0-beta5";
     // Methods for loading and saving settings
     public void LoadSettings()
     {

@@ -14,7 +14,7 @@ local relativeOffset = vector3:new(0, 0, 0)
 local selectionBox = nil
 
 -- Settings
-local versionString = "1000.0.0-beta4"
+local versionString = "1000.0.0-beta5"
 
 local settingsInstance = settings.getInstance()
 local isHighlighted = false
