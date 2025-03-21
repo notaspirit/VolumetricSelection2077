@@ -374,26 +374,70 @@ public class CacheService
     {
         _isInitialized = false;
 
-        if (!Directory.Exists(fromPath))
+        if (fromPath == toPath) return true;
+
+        DirectoryInfo fromInfo;
+        DirectoryInfo toInfo;
+
+        bool fromExists;
+        bool toExists;
+        
+        if (!string.IsNullOrEmpty(fromPath))
         {
-            _settings.CacheDirectory = toPath;
-            Initialize();
-            return true;
+            fromInfo = new DirectoryInfo(fromPath);
+            fromExists = fromInfo.Exists;
+        }
+        else
+        {
+            fromExists = false;
         }
         
-        if (Directory.Exists(toPath))
-            if (Directory.EnumerateFiles(toPath, "*.*", SearchOption.AllDirectories).Any())
+        if (!string.IsNullOrEmpty(toPath))
+        {
+            toInfo = new DirectoryInfo(toPath);
+            toExists = toInfo.Exists;
+        }
+        else
+        {
+            Logger.Error("Cache target directory cannot be empty!");
+            return false;
+        }
+
+        if (toInfo.Parent == null)
+        {
+            Logger.Error("Cache target directory cannot be drive root!");
+            return false;
+        }
+
+        if (toExists)
+        {
+            if (!IsDirEmpty(toPath))
             {
                 Logger.Error($"Directory {toPath} already exists and is not empty");
                 return false;
             }
-            else
-                Directory.Delete(toPath, true);
+            Directory.Delete(toPath, true);
+        }
         
         _env.Dispose();
+        
+        if (!fromExists)
+        {
+            _settings.CacheDirectory = toPath;
+            return true;
+        }
+        
         FileSystem.MoveDirectory(fromPath, toPath, UIOption.OnlyErrorDialogs);
-        Initialize();
         return true;
+
+        bool IsDirEmpty(string path)
+        {
+            if (Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories).Any())
+            {
+                return false;
+            }
+            return true;
+        }
     }
 
     public class CacheStats

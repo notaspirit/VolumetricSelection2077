@@ -42,12 +42,14 @@ namespace VolumetricSelection2077
         }
         private async void ClearVanillaCache_Click(object sender, RoutedEventArgs e)
         {
+            if(!_cacheService.IsInitialized) return;
             await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Vanilla, true));
             UpdateCacheStats();
         }
         
         private async void ClearModdedCache_Click(object sender, RoutedEventArgs e)
         {
+            if(!_cacheService.IsInitialized) return;
             await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Modded, true));
             UpdateCacheStats();
         }
@@ -71,6 +73,7 @@ namespace VolumetricSelection2077
                 if (successMove)
                 {
                     _settingsViewModel.PersistentCache.InitialCachePath = _settingsViewModel?.Settings.CacheDirectory;
+                    RestartApp();
                 }
                 else
                 {
