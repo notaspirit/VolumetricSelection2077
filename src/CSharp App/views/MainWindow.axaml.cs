@@ -336,6 +336,7 @@ public partial class MainWindow : Window
 
     private void OnMainWindowClosed(object? sender, EventArgs e)
     {
+        AddQueuedFilters();
         _mainWindowViewModel.Settings.SaveSettings();
     }
 }
