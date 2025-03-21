@@ -12,6 +12,7 @@ using MessagePack;
 using Microsoft.ClearScript.Util.Web;
 using Microsoft.VisualBasic.FileIO;
 using VolumetricSelection2077.Models;
+using WolvenKit.Core.Extensions;
 using SearchOption = System.IO.SearchOption;
 
 namespace VolumetricSelection2077.Services;
@@ -86,26 +87,26 @@ public class CacheService
 
     public void Initialize()
     {
-        _settings = SettingsService.Instance;
-        if (_isInitialized) return;
-        if (_settings.CacheEnabled == false) return;
-        
-        Directory.CreateDirectory(_settings.CacheDirectory);
-        _env = new LightningEnvironment(_settings.CacheDirectory)
-        {
-            MaxDatabases = 2,
-            MapSize = MapSize,
-            MaxReaders = MaxReaders
-        };
-        _env.Open();
-        
-        var tx = _env.BeginTransaction();
-        _moddedDatabase = tx.OpenDatabase(CacheDatabases.Modded.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
-        _vanillaDatabase = tx.OpenDatabase(CacheDatabases.Vanilla.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
-        tx.Commit();
-        
         try
         {
+            _settings = SettingsService.Instance;
+            if (_isInitialized) return;
+            if (_settings.CacheEnabled == false) return;
+        
+            Directory.CreateDirectory(_settings.CacheDirectory);
+            _env = new LightningEnvironment(_settings.CacheDirectory)
+            {
+                MaxDatabases = 2,
+                MapSize = MapSize,
+                MaxReaders = MaxReaders
+            };
+            _env.Open();
+        
+            var tx = _env.BeginTransaction();
+            _moddedDatabase = tx.OpenDatabase(CacheDatabases.Modded.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
+            _vanillaDatabase = tx.OpenDatabase(CacheDatabases.Vanilla.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
+            tx.Commit();
+            
             var metaData = GetMetadata();
             if (!ValidationService.ValidateCache(metaData, _settings.GameDirectory, _settings.MinimumCacheVersion))
             {
@@ -116,9 +117,7 @@ public class CacheService
         }
         catch (Exception e)
         {
-            Logger.Error($"Could not initialize CacheService: {e}");
         }
-        
     }
     
     
@@ -377,8 +376,9 @@ public class CacheService
 
         if (!Directory.Exists(fromPath))
         {
-            Logger.Error($"Directory {fromPath} does not exist");
-            return false;
+            _settings.CacheDirectory = toPath;
+            Initialize();
+            return true;
         }
         
         if (Directory.Exists(toPath))
@@ -414,7 +414,7 @@ public class CacheService
 
     public CacheStats GetStats()
     {
-        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling ClearDatabase");
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling GetStats");
         DirectoryInfo dirInfo = new DirectoryInfo(_settings.CacheDirectory);
         var totalSize = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
         long estVanillaSize = 0;

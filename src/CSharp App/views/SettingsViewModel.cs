@@ -36,7 +36,10 @@ namespace VolumetricSelection2077.ViewModels
             PersistentCache = SettingsViewPersistentCache.Instance;
             try
             {
-                CacheStats = CacheService.Instance.GetStats();
+                if (CacheService.Instance.IsInitialized)
+                    CacheStats = CacheService.Instance.GetStats();
+                else
+                    CacheStats = new CacheService.CacheStats();
             }
             catch (Exception ex)
             {
