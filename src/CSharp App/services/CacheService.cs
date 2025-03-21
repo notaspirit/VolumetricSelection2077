@@ -52,9 +52,10 @@ public class CacheService
     private static CacheService? _instance;
     private SettingsService _settings;
     private LightningEnvironment _env;
+    private static readonly long Gb = 1024 * 1024 * 1024;
     private static readonly int BatchDelay = 1;
     private static readonly int MaxReaders = 512;
-    private static readonly int MapSize = 10485760 * 100; // 1gb (should be more for actual use prob but for testing it will do)
+    private static readonly long MapSize = Gb * 100;
     static ConcurrentQueue<WriteRequest> _requestWriteQueue = new();
     private readonly object _lock = new object();
     private LightningDatabase _vanillaDatabase;
@@ -397,17 +398,17 @@ public class CacheService
 
     public class CacheStats
     {
-        public int VanillaEntries { get; set; }
+        public long VanillaEntries { get; set; }
         public double EstVanillaSize { get; set; }
-        public int ModdedEntries { get; set; }
+        public long ModdedEntries { get; set; }
         public double EstModdedSize { get; set; }
 
         public CacheStats()
         {
-            VanillaEntries = 0;
-            EstVanillaSize = 0;
-            ModdedEntries = 0;
-            EstModdedSize = 0;
+            VanillaEntries = -1;
+            EstVanillaSize = -1;
+            ModdedEntries = -1;
+            EstModdedSize = -1;
         }
     }
 
@@ -415,31 +416,28 @@ public class CacheService
     {
         if (!_isInitialized) throw new Exception("Cache service must be initialized before calling ClearDatabase");
         DirectoryInfo dirInfo = new DirectoryInfo(_settings.CacheDirectory);
-        var totalSize = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length) / (1024.0 * 1024.0 * 1024.0);
-        int vanillaEntries = 0;
-        int moddedEntries = 0;
-        using var tx = _env.BeginTransaction();
-        using (var cursor = tx.CreateCursor(_vanillaDatabase))
-        {
-            while (cursor.Next() == MDBResultCode.Success)
-                vanillaEntries++;
-        }
-        using (var cursor = tx.CreateCursor(_moddedDatabase))
-        {
-            while (cursor.Next() == MDBResultCode.Success)
-                moddedEntries++;
-        }
-
-        var estVanillaSize = totalSize / (vanillaEntries + moddedEntries) * vanillaEntries;
-        var estModdedSize = totalSize / (vanillaEntries + moddedEntries) * moddedEntries;
+        var totalSize = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
+        long estVanillaSize = 0;
+        long estModdedSize = 0;
         
+        using var tx = _env.BeginTransaction();
+
+        var vdbStats = _vanillaDatabase.DatabaseStats;
+        var mdbStats = _moddedDatabase.DatabaseStats;
+        
+        var totalEntries = vdbStats.Entries + mdbStats.Entries;
+        if (totalEntries > 0)
+        {
+            estVanillaSize = totalSize / totalEntries * vdbStats.Entries;
+            estModdedSize = totalSize / totalEntries * mdbStats.Entries;
+        }
         
         return new CacheStats()
         {
-            VanillaEntries = vanillaEntries,
-            ModdedEntries = moddedEntries,
-            EstVanillaSize = double.IsNaN(estVanillaSize) ? 0 : estVanillaSize,
-            EstModdedSize = double.IsNaN(estModdedSize) ? 0 : estModdedSize,
+            VanillaEntries = vdbStats.Entries,
+            ModdedEntries = mdbStats.Entries,
+            EstVanillaSize = (double)estVanillaSize / Gb,
+            EstModdedSize = (double)estModdedSize / Gb,
         };
     }
     
