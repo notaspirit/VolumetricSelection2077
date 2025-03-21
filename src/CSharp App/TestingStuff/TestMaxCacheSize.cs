@@ -50,7 +50,12 @@ public class TestMaxCacheSize
             return;
         }
         var baseBlock = baseBlockFile.RootChunk as worldStreamingBlock;
-
+        if (baseBlock == null)
+        {  
+            Logger.Error("Failed to get ep1Block");
+            return;
+        }
+        
         var ep1BlockFile = am.GetCR2WFile(ep1BlockPath);
         if (ep1BlockFile == null)
         {  
@@ -58,20 +63,35 @@ public class TestMaxCacheSize
             return;
         }
         var ep1Block = ep1BlockFile.RootChunk as worldStreamingBlock;
-
+        if (ep1Block == null)
+        {  
+            Logger.Error("Failed to get ep1Block");
+            return;
+        }
+        CacheService.Instance.StartListening();
+        
         Logger.Info("Starting sector processing...");
         List<Task> sectorTasks = new List<Task>();
         foreach (var sectorDescriptor in baseBlock.Descriptors)
         {
-            sectorTasks.Add(Task.Run(() => ProcessSector(sectorDescriptor.Data.DepotPath, gfs)));
+            string? path = sectorDescriptor.Data.DepotPath;
+            if (path == null)
+                continue;
+            
+            sectorTasks.Add(Task.Run(() => ProcessSector(path, gfs)));
         }
         
         foreach (var sectorDescriptor in ep1Block.Descriptors)
         {
-            sectorTasks.Add(Task.Run(() => ProcessSector(sectorDescriptor.Data.DepotPath, gfs)));
+            string? path = sectorDescriptor.Data.DepotPath;
+            if (path == null)
+                continue;
+            
+            sectorTasks.Add(Task.Run(() => ProcessSector(path, gfs)));
         }
         
         await Task.WhenAll(sectorTasks);
+        CacheService.Instance.StopListening();
         Logger.Success("Finished sector processing");
     }
 }
