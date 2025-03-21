@@ -194,7 +194,6 @@ public class UpdateService
         var exePath = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "VolumetricSelection2077.exe");
         var scriptPath = Path.Combine(rootTempPath, "update.ps1");
         var vbsScriptPath = Path.Combine(rootTempPath, "update.vbs");
-        Logger.Info(exePath);
         File.WriteAllText(scriptPath, $@"
 $exePath = ""{exePath}""
 $unzipPath = ""{unzipPath}""
