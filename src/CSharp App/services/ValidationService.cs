@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using System.IO;
 using System;
 using System.Diagnostics;
+using System.Linq;
 using VolumetricSelection2077.Models;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -11,6 +12,7 @@ namespace VolumetricSelection2077.Services
     public static class ValidationService
     {
         private static readonly SettingsService _settingsService = SettingsService.Instance;
+        public static readonly char[] InvalidCharacters = Path.GetInvalidPathChars().Concat(new[] { '?', '*', '"', '<', '>', '|', '/' }).Distinct().ToArray();
         public static bool ValidateOutputFilename(string filename)
         {
             // Regular expressions for validation
@@ -151,6 +153,47 @@ namespace VolumetricSelection2077.Services
                 return false;
             }
             return true;
+        }
+
+        public enum PathValidationResult
+        {
+            InvalidCharacters,
+            Empty,
+            Relative,
+            Drive,
+            LeadingOrTrailingSpace,
+            TooLong,
+            ValidFile,
+            ValidDirectory
+        }
+
+        /// <summary>
+        ///  Checks if a given path is valid, not if it exists
+        /// </summary>
+        /// <param name="path">The path to check</param>
+        /// <returns>Enum describing validation outcome</returns>
+        public static PathValidationResult ValidatePath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return PathValidationResult.Empty;
+            
+            if (path.IndexOfAny(InvalidCharacters) != -1) return PathValidationResult.InvalidCharacters;
+
+            if (!Path.IsPathFullyQualified(path)) return PathValidationResult.Relative;
+            
+            if (Path.GetPathRoot(path)?.Equals(path, StringComparison.OrdinalIgnoreCase) == true) 
+                return PathValidationResult.Drive;
+            
+            if (path.Length >= 260) return PathValidationResult.TooLong;
+            
+            char separator = Path.DirectorySeparatorChar;
+            var parts = path.Split(separator);
+
+            if (parts.Any(part => part != part.Trim()))
+                return PathValidationResult.LeadingOrTrailingSpace;
+
+            if (Path.HasExtension(path))
+                return PathValidationResult.ValidFile;
+            return PathValidationResult.ValidDirectory;
         }
     }
 }
