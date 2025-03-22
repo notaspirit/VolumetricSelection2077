@@ -142,10 +142,12 @@ namespace VolumetricSelection2077.Services
         /// </summary>
         /// <param name="exception">the exception to be logged</param>
         /// <param name="message">additional message</param>
-        public static void Exception(Exception exception, string? message = null)
+        /// <param name="fileOnly">Only log to the file, but not the Ui</param>
+        public static void Exception(Exception exception, string? message = null, bool fileOnly = false)
         {
             string errorMessage = exception.Message + (message == null ? "" : $" : {message}");
-            _uiLogger?.Error(FormatMessage(errorMessage  + " For more info see log file.", "Error  "));
+            if (!fileOnly)
+                _uiLogger?.Error(FormatMessage(errorMessage  + " For more info see log file.", "Error  "));
             string fullErrorMessage = errorMessage + Environment.NewLine + exception;
             _fileLogger?.Error(FormatMessage(fullErrorMessage, "Error  "));
         }
