@@ -17,7 +17,7 @@ namespace VolumetricSelection2077.Services
         /// Initializes the logger service
         /// </summary>
         /// <param name="logDirectory">The directory to create the log file in</param>
-        /// <exception cref="ArgumentException">If the provided path is not a valid absolute path or not a directory</exception>
+        /// <exception cref="ArgumentException">The provided path is not a valid absolute path or not a directory</exception>
         /// <exception cref="IOException"></exception>
         public static void Initialize(string logDirectory)
         {
@@ -78,7 +78,7 @@ namespace VolumetricSelection2077.Services
         /// Logs an info message 
         /// </summary>
         /// <param name="message">The message to log</param>
-        /// <param name="fileOnly">Log only to the file, but not the Ui</param>
+        /// <param name="fileOnly">Only log to the file, but not the Ui</param>
         public static void Info(string message, bool fileOnly = false)
         {
             if (!fileOnly)
@@ -90,7 +90,7 @@ namespace VolumetricSelection2077.Services
         /// Logs a warning message 
         /// </summary>
         /// <param name="message">The message to log</param>
-        /// <param name="fileOnly">Log only to the file, but not the Ui</param>
+        /// <param name="fileOnly">Only log to the file, but not the Ui</param>
         public static void Warning(string message, bool fileOnly = false) 
         {
             if (!fileOnly)
@@ -102,7 +102,7 @@ namespace VolumetricSelection2077.Services
         /// Logs an error message 
         /// </summary>
         /// <param name="message">The message to log</param>
-        /// <param name="fileOnly">Log only to the file, but not the Ui</param>
+        /// <param name="fileOnly">Only log to the file, but not the Ui</param>
         public static void Error(string message, bool fileOnly = false) 
         {
             if (!fileOnly)
@@ -114,7 +114,7 @@ namespace VolumetricSelection2077.Services
         /// Logs a debug message only if debug mode is enabled
         /// </summary>
         /// <param name="message">The message to log</param>
-        /// <param name="fileOnly">Log only to the file, not the Ui</param>
+        /// <param name="fileOnly">Only log to the file, but not the Ui</param>
         public static void Debug(string message, bool fileOnly = false)
         {
             if (_settingsService.DebugMode)
@@ -129,7 +129,7 @@ namespace VolumetricSelection2077.Services
         /// Logs a success message 
         /// </summary>
         /// <param name="message">The message to log</param>
-        /// <param name="fileOnly">Log only to the file, but not the Ui</param>
+        /// <param name="fileOnly">Only log to the file, but not the Ui</param>
         public static void Success(string message, bool fileOnly = false)
         {
             if (!fileOnly)
