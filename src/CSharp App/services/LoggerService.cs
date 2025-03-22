@@ -136,5 +136,18 @@ namespace VolumetricSelection2077.Services
                 _uiLogger?.Fatal(FormatMessage(message, "Success"));
             _fileLogger?.Fatal(FormatMessage(message, "Success"));
         }
+        
+        /// <summary>
+        /// Logs an exception message and custom message to ui, logs entire exception to file
+        /// </summary>
+        /// <param name="exception">the exception to be logged</param>
+        /// <param name="message">additional message</param>
+        public static void Exception(Exception exception, string? message = null)
+        {
+            string errorMessage = exception.Message + (message == null ? "" : $" : {message}");
+            _uiLogger?.Error(FormatMessage(errorMessage, "Error  "));
+            string fullErrorMessage = errorMessage + Environment.NewLine + exception;
+            _fileLogger?.Error(FormatMessage(fullErrorMessage, "Error  "));
+        }
     }
 }
