@@ -24,13 +24,26 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        InitializeLogger();
+        try
+        {
+            InitializeLogger();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
         DataContext = new MainWindowViewModel();
         _mainWindowViewModel = DataContext as MainWindowViewModel;
         _processService = new ProcessService();
         Closed += OnMainWindowClosed;
     }
-
+    
+    /// <summary>
+    /// Initializes the Logger Service and UI Sink
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Could not find log viewer in the UI</exception>
+    /// <exception cref="ArgumentException">Log Directory it build is invalid</exception>
+    /// <exception cref="IOException"></exception>
     private void InitializeLogger()
     {
         var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);

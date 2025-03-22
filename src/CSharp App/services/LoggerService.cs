@@ -14,11 +14,19 @@ namespace VolumetricSelection2077.Services
         private static SettingsService _settingsService;
         
         /// <summary>
-        /// Initializes the logger service and uses any sinks that were added in the ui logger
+        /// Initializes the logger service
         /// </summary>
         /// <param name="logDirectory">The directory to create the log file in</param>
+        /// <exception cref="ArgumentException">If the provided path is not a valid absolute path or not a directory</exception>
+        /// <exception cref="IOException"></exception>
         public static void Initialize(string logDirectory)
         {
+            var vR = ValidationService.ValidatePath(logDirectory);
+            if (vR != ValidationService.PathValidationResult.ValidDirectory)
+                throw new ArgumentException($"Invalid log directory: {logDirectory}, {vR}");
+
+            Directory.CreateDirectory(logDirectory);
+            
             var logFileName = Path.Combine(logDirectory, $"log_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
             string outputTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss}] {Message:lj}{NewLine}{Exception}";
 
@@ -41,7 +49,7 @@ namespace VolumetricSelection2077.Services
         }
 
         /// <summary>
-        /// Adds a sink to the list of sinks that are used on init in the ui logger
+        /// Adds a sink to the UI Logger
         /// </summary>
         /// <param name="sink">The sink to add</param>
         public static void AddSink(ILogEventSink sink)
