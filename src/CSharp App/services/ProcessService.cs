@@ -440,10 +440,6 @@ public class ProcessService
 
     public async Task<(bool success, string error)> MainProcessTask(string? customRemovalFile = null, string? customRemovalDirectory = null)
     {
-        Logger.Info($"Version: {_settings.ProgramVersion}");
-        
-        _gameFileService.Initialize();
-        
         Logger.Info("Validating inputs...");
         
         if (!ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename))
