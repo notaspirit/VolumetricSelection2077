@@ -185,8 +185,7 @@ namespace VolumetricSelection2077.Services
             
             if (path.Length >= 260) return PathValidationResult.TooLong;
             
-            char separator = Path.DirectorySeparatorChar;
-            var parts = path.Split(separator);
+            var parts = path.Split(Path.DirectorySeparatorChar);
 
             if (parts.Any(part => part != part.Trim()))
                 return PathValidationResult.LeadingOrTrailingSpace;
