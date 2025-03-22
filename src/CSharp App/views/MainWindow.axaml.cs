@@ -87,23 +87,14 @@ public partial class MainWindow : Window
         try
         {
             _mainWindowViewModel.MainTaskProcessing = true;
-            _mainWindowViewModel.Settings.OutputFilename = UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.OutputFilename);
-            OutputFilenameTextBox.Text = _mainWindowViewModel.Settings.OutputFilename;
             AddQueuedFilters();
-            if (!string.IsNullOrEmpty(_mainWindowViewModel.Settings.OutputFilename))
+            var (success, error) = await Task.Run(() =>
+            { 
+                return _processService.MainProcessTask();
+            });
+            if (!success)
             {
-                var (success, error) = await Task.Run(() =>
-                { 
-                    return _processService.MainProcessTask();
-                });
-                if (!success)
-                {
-                    Logger.Error($"Process failed: {error}");
-                }
-            }
-            else
-            {
-                Logger.Error("Output filename is empty");
+                Logger.Error($"Process failed: {error}");
             }
         }
         catch (Exception ex)
@@ -295,7 +286,7 @@ public partial class MainWindow : Window
         base.OnOpened(e);
         Logger.Info($"VS2077 Version: {_mainWindowViewModel.Settings.ProgramVersion}");
         _mainWindowViewModel.IsProcessing = true;
-        var validationResult = ValidationService.ValidateGamePath(_mainWindowViewModel.Settings.GameDirectory);
+        var validationResult = ValidationService.ValidateGamePath(_mainWindowViewModel.Settings.GameDirectory).Item1;
         if (!(validationResult == ValidationService.GamePathResult.Valid ||
               validationResult == ValidationService.GamePathResult.CetNotFound))
         {
