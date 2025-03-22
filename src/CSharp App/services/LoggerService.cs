@@ -145,7 +145,7 @@ namespace VolumetricSelection2077.Services
         public static void Exception(Exception exception, string? message = null)
         {
             string errorMessage = exception.Message + (message == null ? "" : $" : {message}");
-            _uiLogger?.Error(FormatMessage(errorMessage, "Error  "));
+            _uiLogger?.Error(FormatMessage(errorMessage  + " For more info see log file.", "Error  "));
             string fullErrorMessage = errorMessage + Environment.NewLine + exception;
             _fileLogger?.Error(FormatMessage(fullErrorMessage, "Error  "));
         }
