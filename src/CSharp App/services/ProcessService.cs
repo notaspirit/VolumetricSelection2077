@@ -501,7 +501,7 @@ public class ProcessService
     /// <param name="customRemovalFile">Absolute path to custom removal file, only used for benchmarking</param>
     /// <param name="customRemovalDirectory">Absolute path to custom output directory, only used for benchmarking</param>
     /// <returns></returns>
-    /// <exception cref="ArgumentException">Provided custom file does not exist</exception>
+    /// <exception cref="ArgumentException">Provided custom file does not exist, or only one optional param is provided</exception>
     public async Task<(bool success, string error)> MainProcessTask(string? customRemovalFile = null, string? customRemovalDirectory = null)
     {
         Logger.Info("Validating inputs...");
@@ -516,7 +516,7 @@ public class ProcessService
         bool customRemovalDirectoryProvided = customRemovalDirectory != null;
         if (customRemovalFileProvided != customRemovalDirectoryProvided)
         {
-            throw new Exception("Both file path and output directory must be provided for a custom process!");
+            throw new ArgumentException("Both file path and output directory must be provided for a custom process!");
         }
 
         if (!File.Exists(customRemovalFile) && (customRemovalDirectoryProvided || customRemovalDirectory != null))
