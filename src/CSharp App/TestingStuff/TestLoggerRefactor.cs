@@ -39,5 +39,23 @@ public class TestLoggerRefactor
         {
             Logger.Exception(ex, "yeah just don't.");
         }
+        
+        try
+        {
+            throw new AuthenticationException("lets go gambling!");
+        }
+        catch (Exception ex)
+        {
+            Logger.Exception(ex, fileOnly: true);
+        }
+        
+        try
+        {
+            throw new EvaluateException("oh dang it!");
+        }
+        catch (Exception ex)
+        {
+            Logger.Exception(ex, "niky just don't.", true);
+        }
     }
 }
