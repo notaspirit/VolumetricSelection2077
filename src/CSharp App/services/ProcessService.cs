@@ -465,7 +465,7 @@ public class ProcessService
             Logger.Success("Game file service status : OK");
         else
         {
-            Logger.Error("Game file service status : Game file service is not initialized");
+            Logger.Error("Game file service status : Not initialized");
             invalidCount++;
         }
 
@@ -484,7 +484,8 @@ public class ProcessService
             Logger.Success("Selection File           : OK");
         else
         {
-            Logger.Error($"Selection File           : {vr.SelectionFilePathValidationResult}");
+            string invalidReason = vr.SelectionFilePathValidationResult == ValidationService.PathValidationResult.ValidDirectory ? "Not found" : $"Invalid file path {vr.SelectionFilePathValidationResult}";
+            Logger.Error($"Selection File           : {invalidReason}");
             invalidCount++;
         }
 
