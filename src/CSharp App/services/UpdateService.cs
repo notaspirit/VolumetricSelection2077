@@ -35,7 +35,7 @@ public class UpdateService
                     case "beta":
                         output[3] = 2;
                         break;
-                    case "pr":
+                    case "rc":
                         output[3] = 3;
                         break;
                     default:
