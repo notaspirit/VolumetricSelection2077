@@ -507,9 +507,18 @@ public class ProcessService
     {
         Logger.Info("Validating inputs...");
 
-        var validationResult = ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename);
-        if (!EvaluateInputValidation(validationResult))
-            return (false, "Invalid Input");
+        try
+        {
+            var validationResult = ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename);
+            if (!EvaluateInputValidation(validationResult))
+                return (false, "Invalid Input");
+        }
+        catch (Exception ex)
+        {
+            Logger.Exception(ex, fileOnly: true);
+            return (false, ex.Message + " : Failed to validate inputs");
+        }
+
         
         Logger.Info("Starting Process...");
         

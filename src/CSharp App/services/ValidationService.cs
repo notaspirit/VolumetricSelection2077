@@ -55,18 +55,19 @@ namespace VolumetricSelection2077.Services
             return (File.Exists(selectionFilePath), vpr);
         }
         /// <summary>
-        /// Checks if the output directory is a valid path and creates it if it doesn't exist
+        /// Checks if the directory is a valid path and creates it if it doesn't exist
         /// </summary>
-        /// <param name="outputDirectory"></param>
+        /// <param name="directory"></param>
         /// <returns></returns>
-        public static (bool, PathValidationResult) ValidateOutputDirectory(string outputDirectory)
+        /// <exception cref="Exception">Fails to create directory</exception>
+        public static (bool, PathValidationResult) ValidateAndCreateDirectory(string directory)
         {
-            var vpr = ValidatePath(outputDirectory);
+            var vpr = ValidatePath(directory);
             if (vpr != PathValidationResult.ValidDirectory)
                 return (false, vpr);
             try
             {
-                Directory.CreateDirectory(outputDirectory);
+                Directory.CreateDirectory(directory);
             }
             catch (Exception ex)
             {
@@ -111,11 +112,12 @@ namespace VolumetricSelection2077.Services
         /// <param name="gamePath">Path to the root of the game directory</param>
         /// <param name="outputFilename">Output filename</param>
         /// <returns></returns>
+        /// <exception cref="Exception">Fails to create directory it tried to validate</exception>
         public static InputValidationResult ValidateInput(string gamePath, string outputFilename)
         {
             bool cacheStatus = ValidateCacheStatus();
             bool gfsStatus = ValidateGameFileService();
-            var outDirVR = ValidateOutputDirectory(_settingsService.OutputDirectory);
+            var outDirVR = ValidateAndCreateDirectory(_settingsService.OutputDirectory);
             var selFileVR = ValidateSelectionFile(gamePath);
             var validFileName = ValidatePath(@"E:\" + outputFilename + ".xl");
                                 
@@ -143,19 +145,14 @@ namespace VolumetricSelection2077.Services
         {
             var gameExePath = Path.Combine(gamePath, "bin", "x64", "Cyberpunk2077.exe");
             if (!File.Exists(gameExePath))
-            {
                 throw new ArgumentException("Could not find Game Executable.");
-            }
+            
             var fileVerInfo = FileVersionInfo.GetVersionInfo(gameExePath);
             if (fileVerInfo.ProductVersion != metadata.GameVersion)
-            {
                 return false;
-            }
 
             if (metadata.VS2077Version != minimumProgramVersion)
-            {
                 return false;
-            }
             return true;
         }
 
