@@ -28,9 +28,7 @@ namespace VolumetricSelection2077.Services
         {
             var validatePath = ValidatePath(gamePath);
             if (validatePath != PathValidationResult.ValidDirectory)
-            {
                 return (GamePathResult.InvalidGamePath, validatePath);
-            }
             
             string archiveContentPath = Path.Combine(gamePath, "archive", "pc", "content");
             string archiveEp1Path = Path.Combine(gamePath, "archive", "pc", "ep1");
@@ -54,12 +52,7 @@ namespace VolumetricSelection2077.Services
             if (vpr != PathValidationResult.ValidDirectory)
                 return (false, vpr);
             string selectionFilePath = Path.Combine(gamePath, "bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "VolumetricSelection2077", "data", "selection.json");
-            
-            if (!File.Exists(selectionFilePath))
-            {
-                return (false, vpr);
-            }
-            return (true, vpr);
+            return (File.Exists(selectionFilePath), vpr);
         }
         /// <summary>
         /// Checks if the output directory is a valid path and creates it if it doesn't exist
@@ -81,18 +74,6 @@ namespace VolumetricSelection2077.Services
                 return (false, vpr);
             }
             return (true, vpr);
-        }
-        public static bool ValidateCacheDirectory(string cacheDirectory)
-        {
-            if (string.IsNullOrWhiteSpace(cacheDirectory))
-            {
-                Logger.Info("Cache directory is not set in settings, using default");
-                cacheDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077");
-                Directory.CreateDirectory(cacheDirectory);
-                _settingsService.CacheDirectory = cacheDirectory;
-                _settingsService.SaveSettings();
-            }
-            return Directory.Exists(cacheDirectory);
         }
 
         /// <summary>
