@@ -1,5 +1,5 @@
 <Application
-    RequestedThemeVariant="Default"
+    RequestedThemeVariant="Dark"
     x:Class="VolumetricSelection2077.App"
     xmlns="https://github.com/avaloniaui"
     xmlns:local="clr-namespace:VolumetricSelection2077.Resources"
