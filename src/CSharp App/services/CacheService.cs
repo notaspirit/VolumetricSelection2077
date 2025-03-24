@@ -418,8 +418,8 @@ public class CacheService
             }
             Directory.Delete(toPath, true);
         }
-        
-        _env.Dispose();
+        if (_env != null)
+            _env.Dispose();
         
         if (!fromExists)
         {
