@@ -44,7 +44,6 @@ public class SettingsService
         AutoUpdate = true;
         DidUpdate = false;
         CETInstallLocation = "";
-        // PosX, PosY, Width, Height, IsMaximized
         WindowRecoveryState = new();
     }
     

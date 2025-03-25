@@ -267,7 +267,10 @@ public partial class MainWindow : Window
             item.IsChecked = !item.IsChecked;
         }
     }
-
+    
+    /// <summary>
+    /// Adds Filters that are currently in the text box but not yet committed
+    /// </summary>
     private void AddQueuedFilters()
     {
         if (!string.IsNullOrEmpty(ResourceFilterTextBox.Text?.Trim()))
@@ -283,6 +286,11 @@ public partial class MainWindow : Window
         _mainWindowViewModel.Settings.SaveSettings();
     }
     
+    /// <summary>
+    /// Updates saved window size
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     private void MainWindow_PositionChanged(object? sender, PixelPointEventArgs e)
     {
         Dispatcher.UIThread.Post(() =>
@@ -297,7 +305,11 @@ public partial class MainWindow : Window
     }
 
     private bool wasMaximized { get; set; } = false;
-    
+    /// <summary>
+    /// Updates saved window size and sets correct size after returning from maximized state
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
     private void MainWindow_SizeChanged(object? sender, SizeChangedEventArgs e)
     {
         Dispatcher.UIThread.Post(() =>
@@ -309,8 +321,15 @@ public partial class MainWindow : Window
             {
                 if (wasMaximized)
                 {
-                    Width = _mainWindowViewModel.Settings.WindowRecoveryState.PosWidth / DesktopScaling;
-                    Height = _mainWindowViewModel.Settings.WindowRecoveryState.PosHeight / DesktopScaling;
+                    try
+                    {
+                        Width = _mainWindowViewModel.Settings.WindowRecoveryState.PosWidth / DesktopScaling;
+                        Height = _mainWindowViewModel.Settings.WindowRecoveryState.PosHeight / DesktopScaling;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Exception(ex, "Failed to set window size after returning from maximized state");
+                    }
                     wasMaximized = false;
                 }
                 else
@@ -322,16 +341,20 @@ public partial class MainWindow : Window
             }
         });
     }
-
-    private bool SetWindowState(WindowRecoveryState values)
+    /// <summary>
+    /// Sets the position,  size and state of the window safely
+    /// </summary>
+    /// <param name="wrs">Target state</param>
+    /// <returns>true if successful</returns>
+    private bool SetWindowState(WindowRecoveryState wrs)
     {
         try
         {
-            Position = new PixelPoint(_mainWindowViewModel.Settings.WindowRecoveryState.PosX,
-                _mainWindowViewModel.Settings.WindowRecoveryState.PosY);
-            Width = _mainWindowViewModel.Settings.WindowRecoveryState.PosWidth / DesktopScaling;
-            Height = _mainWindowViewModel.Settings.WindowRecoveryState.PosHeight / DesktopScaling;
-            WindowState = (WindowState)_mainWindowViewModel.Settings.WindowRecoveryState.WindowState;
+            Position = new PixelPoint(wrs.PosX,
+                wrs.PosY);
+            Width = wrs.PosWidth / DesktopScaling;
+            Height = wrs.PosHeight / DesktopScaling;
+            WindowState = (WindowState)wrs.WindowState;
             return true;
         }
         catch (Exception ex)
