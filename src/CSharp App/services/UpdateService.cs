@@ -10,8 +10,17 @@ namespace VolumetricSelection2077.Services;
 
 public class UpdateService
 {
+    /// <summary>
+    /// Parses the version string into an array of int 
+    /// </summary>
+    /// <param name="version"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException">The type of the version does not match known types, or empty string provided</exception>
+    /// <exception cref="Exception">Fails to parse parts to int or fails to replace using regex</exception>
     private static int[] ParseVersion(string version)
     {
+        if (string.IsNullOrEmpty(version))
+            throw new ArgumentException($"Invalid version input: {version}");
         try
         {
             var rawDot = version.Replace("v", "").Split('.');
@@ -35,11 +44,11 @@ public class UpdateService
                     case "beta":
                         output[3] = 2;
                         break;
-                    case "pr":
+                    case "rc":
                         output[3] = 3;
                         break;
                     default:
-                        throw new Exception($"Unknown remote version {Regex.Replace(rawDash[1], @"\d", "")}");
+                        throw new ArgumentException($"Unknown version type: {Regex.Replace(rawDash[1], @"\d", "")}");
                 }
                 output[4] = int.Parse(Regex.Replace(rawDash[1], @"\D", ""));
             }
@@ -57,8 +66,19 @@ public class UpdateService
         Same,
         Older
     }
+    /// <summary>
+    /// Checks the relationship between two version strings
+    /// </summary>
+    /// <param name="ver1"></param>
+    /// <param name="ver2"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException">One or both inputs are empty</exception>
+    /// <exception cref="Exception">Fails to parse version strings</exception>
     public static VersionRelation IsVersion1Newer(string ver1, string ver2)
     {
+        if (string.IsNullOrEmpty(ver1) || string.IsNullOrEmpty(ver2))
+            throw new ArgumentException($"Invalid version input: {ver1}, {ver2}");
+        
         var ver1Arr = ParseVersion(ver1);
         var ver2Arr = ParseVersion(ver2);
         for (int i = 0; i < ver1Arr.Length; i++)
@@ -76,6 +96,13 @@ public class UpdateService
         return VersionRelation.Same;
     }
     
+    /// <summary>
+    /// Checks if a newer version is available
+    /// </summary>
+    /// <returns>true and new version string if a newer remote version is found</returns>
+    /// <exception cref="ApiException">Fails to get remote repositiory</exception>
+    /// <exception cref="ArgumentException">local or remote version is empty</exception>
+    /// <exception cref="Exception">failure to parse version strings</exception>
     public static async Task<(bool, string?)> CheckUpdates()
     {
         var client = new GitHubClient(new ProductHeaderValue("VolumetricSelection2077"));
@@ -100,6 +127,10 @@ public class UpdateService
         }
         return (false, null);
     }
+    /// <summary>
+    /// Downloads and installs most recent version for app and cet, restarts client and sets flag to show changelog on next startup 
+    /// </summary>
+    /// <exception cref="Exception">See exception message for more info</exception>
     public static async Task Update()
     {
         
@@ -173,8 +204,7 @@ public class UpdateService
             {
                 if (ValidationService.ValidateGamePath(SettingsService.Instance.GameDirectory).Item1 != ValidationService.GamePathResult.Valid)
                 {
-                    Logger.Error("Could not find valid target location to install VS2077 CET. Please set the game path or custom directory in the settings and restart the application to try again.");
-                    throw new Exception();
+                    throw new Exception("Could not find valid target location to install VS2077 CET. Please set the game path or custom directory in the settings and restart the application to try again.");
                 }
                 unzipPathCet = SettingsService.Instance.GameDirectory;
             }
@@ -228,6 +258,11 @@ objShell.Run ""powershell.exe -ExecutionPolicy Bypass -File """"{scriptPath}""""
         Environment.Exit(0);
     }
 
+    /// <summary>
+    /// Gets the most recent version and changelog
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="ApiException">Fails to get remove info</exception>
     public static async Task<(string, string)> GetChangelog()
     {
         var client = new GitHubClient(new ProductHeaderValue("VolumetricSelection2077"));
