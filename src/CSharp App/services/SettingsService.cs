@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Resources;
 
 namespace VolumetricSelection2077.Services;
@@ -43,6 +44,8 @@ public class SettingsService
         AutoUpdate = true;
         DidUpdate = false;
         CETInstallLocation = "";
+        // PosX, PosY, Width, Height, IsMaximized
+        WindowRecoveryState = new();
     }
     
     public static SettingsService Instance
@@ -99,8 +102,10 @@ public class SettingsService
     public bool DidUpdate { get; set; }
     public string CETInstallLocation { get; set; }
     public bool CacheModdedResources { get; set; }
-
     public string MinimumCacheVersion { get; } = "1000.0.0-beta5";
+    
+    public WindowRecoveryState WindowRecoveryState { get; set; }
+    
     // Methods for loading and saving settings
     public void LoadSettings()
     {
@@ -146,6 +151,7 @@ public class SettingsService
                     DidUpdate = settings.DidUpdate;
                     CETInstallLocation = settings.CETInstallLocation;
                     CacheModdedResources = settings.CacheModdedResources;
+                    WindowRecoveryState = settings.WindowRecoveryState;
                 }
             }
             catch (Exception ex)

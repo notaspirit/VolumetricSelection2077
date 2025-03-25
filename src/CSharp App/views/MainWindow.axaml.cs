@@ -11,6 +11,8 @@ using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.Platform;
+using VolumetricSelection2077.Models;
 using VolumetricSelection2077.TestingStuff;
 using VolumetricSelection2077.ViewModels;
 using VolumetricSelection2077.ViewStructures;
@@ -281,9 +283,63 @@ public partial class MainWindow : Window
         _mainWindowViewModel.Settings.SaveSettings();
     }
     
+    private void MainWindow_PositionChanged(object? sender, PixelPointEventArgs e)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            var newPos = e.Point;
+            if (WindowState == WindowState.Normal)
+            {
+                _mainWindowViewModel.Settings.WindowRecoveryState.PosX = newPos.X;
+                _mainWindowViewModel.Settings.WindowRecoveryState.PosY = newPos.Y;
+            }
+        });
+    }
+
+    private void MainWindow_SizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            var newSize = e.NewSize;
+            if (WindowState == WindowState.Normal)
+            {
+                _mainWindowViewModel.Settings.WindowRecoveryState.PosWidth = (int)(newSize.Width * DesktopScaling);
+                _mainWindowViewModel.Settings.WindowRecoveryState.PosHeight = (int)(newSize.Height * DesktopScaling);
+            }
+        });
+    }
+
+    private bool SetWindowState(WindowRecoveryState values)
+    {
+        try
+        {
+            Position = new PixelPoint(_mainWindowViewModel.Settings.WindowRecoveryState.PosX,
+                _mainWindowViewModel.Settings.WindowRecoveryState.PosY);
+            Width = _mainWindowViewModel.Settings.WindowRecoveryState.PosWidth / DesktopScaling;
+            Height = _mainWindowViewModel.Settings.WindowRecoveryState.PosHeight / DesktopScaling;
+            WindowState = (WindowState)_mainWindowViewModel.Settings.WindowRecoveryState.WindowState;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.Exception(ex, "Failed to set window position or size, using default values.");
+            return false;
+        }
+    }
+    
     protected override async void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
+        PositionChanged += MainWindow_PositionChanged;
+        SizeChanged += MainWindow_SizeChanged;
+        
+        if (!SetWindowState(_mainWindowViewModel.Settings.WindowRecoveryState))
+        {
+            _mainWindowViewModel.Settings.WindowRecoveryState = new();
+            _mainWindowViewModel.Settings.SaveSettings();
+            SetWindowState(_mainWindowViewModel.Settings.WindowRecoveryState);
+        }
+        
         Logger.Info($"VS2077 Version: {_mainWindowViewModel.Settings.ProgramVersion}");
         _mainWindowViewModel.IsProcessing = true;
         var validationResult = ValidationService.ValidateGamePath(_mainWindowViewModel.Settings.GameDirectory).Item1;
@@ -340,6 +396,7 @@ public partial class MainWindow : Window
 
     private void OnMainWindowClosed(object? sender, EventArgs e)
     {
+        _mainWindowViewModel.Settings.WindowRecoveryState.WindowState = WindowState == WindowState.Maximized ? 2 : 0;
         AddQueuedFilters();
         _mainWindowViewModel.Settings.SaveSettings();
     }
