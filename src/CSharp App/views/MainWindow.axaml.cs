@@ -296,15 +296,29 @@ public partial class MainWindow : Window
         });
     }
 
+    private bool wasMaximized { get; set; } = false;
+    
     private void MainWindow_SizeChanged(object? sender, SizeChangedEventArgs e)
     {
         Dispatcher.UIThread.Post(() =>
         {
             var newSize = e.NewSize;
+            if (WindowState == WindowState.Maximized)
+                wasMaximized = true;
             if (WindowState == WindowState.Normal)
             {
-                _mainWindowViewModel.Settings.WindowRecoveryState.PosWidth = (int)(newSize.Width * DesktopScaling);
-                _mainWindowViewModel.Settings.WindowRecoveryState.PosHeight = (int)(newSize.Height * DesktopScaling);
+                if (wasMaximized)
+                {
+                    Width = _mainWindowViewModel.Settings.WindowRecoveryState.PosWidth / DesktopScaling;
+                    Height = _mainWindowViewModel.Settings.WindowRecoveryState.PosHeight / DesktopScaling;
+                    wasMaximized = false;
+                }
+                else
+                {
+                    _mainWindowViewModel.Settings.WindowRecoveryState.PosWidth = (int)(newSize.Width * DesktopScaling);
+                    _mainWindowViewModel.Settings.WindowRecoveryState.PosHeight = (int)(newSize.Height * DesktopScaling);
+                }
+
             }
         });
     }
