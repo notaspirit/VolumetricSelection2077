@@ -125,6 +125,22 @@ public class CacheService
             Logger.Exception(e, "Failed to initialize cache service!");
         }
     }
+
+    /// <summary>
+    /// Disposes of the cache service
+    /// </summary>
+    /// <returns></returns>
+    public Task Dispose()
+    {
+        return Task.Run(() =>
+        {
+            if (!_isInitialized) return;
+            _isInitialized = false;
+            IsProcessing = false;
+            Task.Delay(BatchDelay * 10).Wait();
+            _env.Dispose();
+        });
+    }
     
     /// <summary>
     /// Starts listening to read requests
