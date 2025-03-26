@@ -68,6 +68,7 @@
                 Grid.Column="0"
                 Grid.Row="5"
                 HorizontalAlignment="Left"
+                IsVisible="{Binding AutoUpdateEnabled}"
                 Margin="5"
                 Text="VS2077 CET Install Location"
                 ToolTip.Tip="{x:Static resources:ToolTips.CETInstallLocation}"
@@ -92,6 +93,7 @@
                 Grid.Column="0"
                 Grid.Row="8"
                 HorizontalAlignment="Left"
+                IsVisible="{Binding CacheEnabled}"
                 Margin="5"
                 Text="Cache Directory"
                 ToolTip.Tip="{x:Static resources:ToolTips.CacheDirectory}"
@@ -100,6 +102,7 @@
                 Grid.Column="0"
                 Grid.Row="9"
                 HorizontalAlignment="Left"
+                IsVisible="{Binding CacheEnabled}"
                 Margin="5"
                 Text="Clear Cache"
                 ToolTip.Tip="{x:Static resources:ToolTips.ClearCache}"
@@ -122,13 +125,14 @@
             <ToggleSwitch
                 Grid.Column="1"
                 Grid.Row="4"
-                IsChecked="{Binding Settings.AutoUpdate}"
+                IsChecked="{Binding AutoUpdateEnabled}"
                 Margin="5"
                 OffContent=""
                 OnContent="" />
             <TextBox
                 Grid.Column="1"
                 Grid.Row="5"
+                IsVisible="{Binding AutoUpdateEnabled}"
                 Margin="5"
                 Text="{Binding Settings.CETInstallLocation}"
                 Watermark="{x:Static resources:Watermarks.CETInstallLocation}" />
@@ -141,13 +145,14 @@
             <ToggleSwitch
                 Grid.Column="1"
                 Grid.Row="7"
-                IsChecked="{Binding Settings.CacheEnabled}"
+                IsChecked="{Binding CacheEnabled}"
                 Margin="5"
                 OffContent=""
                 OnContent="" />
             <TextBox
                 Grid.Column="1"
                 Grid.Row="8"
+                IsVisible="{Binding CacheEnabled}"
                 Margin="5"
                 Text="{Binding Settings.CacheDirectory}"
                 Watermark="{x:Static resources:Watermarks.CacheDirectory}" />
@@ -160,6 +165,7 @@
                     Grid.Column="0"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
+                    IsVisible="{Binding CacheEnabled}"
                     Margin="5,0,0,0">
                     <Button.Styles>
                         <Style Selector="Button:pointerover /template/ ContentPresenter">
@@ -174,6 +180,7 @@
                     Grid.Column="1"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
+                    IsVisible="{Binding CacheEnabled}"
                     Margin="5,0,0,0">
                     <Button.Styles>
                         <Style Selector="Button:pointerover /template/ ContentPresenter">
