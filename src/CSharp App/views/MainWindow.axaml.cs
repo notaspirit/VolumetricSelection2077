@@ -287,7 +287,7 @@ public partial class MainWindow : Window
     }
     
     /// <summary>
-    /// Updates saved window size
+    /// Updates saved window position
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="e"></param>
@@ -342,7 +342,7 @@ public partial class MainWindow : Window
         });
     }
     /// <summary>
-    /// Sets the position,  size and state of the window safely
+    /// Sets the position, size and state of the window safely
     /// </summary>
     /// <param name="wrs">Target state</param>
     /// <returns>true if successful</returns>
@@ -359,7 +359,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Logger.Exception(ex, "Failed to set window position or size, using default values.");
+            Logger.Exception(ex, "Failed to set window position, size or state, using default values.");
             return false;
         }
     }
