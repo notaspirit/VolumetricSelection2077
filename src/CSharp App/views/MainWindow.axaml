@@ -422,7 +422,14 @@
                     Maximum="1000"
                     Minimum="0"
                     Name="ProgressBar"
-                    VerticalAlignment="Center" />
+                    VerticalAlignment="Center">
+                    <ProgressBar.Background>
+                        <SolidColorBrush Color="#0a0c10" />
+                    </ProgressBar.Background>
+                    <ProgressBar.Foreground>
+                        <SolidColorBrush Color="#4b48d6" />
+                    </ProgressBar.Foreground>
+                </ProgressBar>
                 <Button
                     Background="#6b82b2"
                     Click="SettingsButton_Click"
