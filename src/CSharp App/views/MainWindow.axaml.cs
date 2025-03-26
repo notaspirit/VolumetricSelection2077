@@ -51,7 +51,7 @@ public partial class MainWindow : Window
         }
         
         _dispatcherTimer = new TrackedDispatchTimer() { Interval = TimeSpan.FromSeconds(1) };
-        _dispatcherTimer.Tick += (s, e) => _progressTextBlock.Text = $"{UtilService.FormatElapsedTime(_dispatcherTimer.ElapsedSeconds)}";
+        _dispatcherTimer.Tick += (s, e) => _progressTextBlock.Text = $"{UtilService.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
         _progress = Progress.Instance;
         _progress.ProgressChanged += (sender, i) => { _progressBar.Value = i;
             // Logger.Info($"Changed progress bar value to {i}");
@@ -103,7 +103,6 @@ public partial class MainWindow : Window
     private async void FindSelectedButton_Click(object? sender, RoutedEventArgs e)
     {
         if (_mainWindowViewModel.IsProcessing) return;
-        Stopwatch stopwatch = Stopwatch.StartNew();
         _dispatcherTimer.Start();
         try
         {
@@ -124,9 +123,8 @@ public partial class MainWindow : Window
         }
         finally
         {
-            stopwatch.Stop();
             _dispatcherTimer.Stop();
-            string formattedTime = UtilService.FormatElapsedTime(stopwatch.Elapsed);
+            string formattedTime = UtilService.FormatElapsedTime(_dispatcherTimer.Elapsed);
             Logger.Info($"Process finished after: {formattedTime}");
             _mainWindowViewModel.MainTaskProcessing = false;
         }
@@ -138,7 +136,9 @@ public partial class MainWindow : Window
         try
         {
             _mainWindowViewModel.BenchmarkProcessing = true;
-            _mainWindowViewModel.Settings.OutputFilename = UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.OutputFilename);
+            _dispatcherTimer.Start();
+            _mainWindowViewModel.Settings.OutputFilename =
+                UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.OutputFilename);
             OutputFilenameTextBox.Text = _mainWindowViewModel.Settings.OutputFilename;
             AddQueuedFilters();
             await Task.Run(() => Benchmarking.Instance.RunBenchmarks());
@@ -147,7 +147,13 @@ public partial class MainWindow : Window
         {
             Logger.Error($"Benchmarking failed: {ex}");
         }
-        _mainWindowViewModel.BenchmarkProcessing = false;
+        finally
+        {
+            _dispatcherTimer.Stop();
+            string formattedTime = UtilService.FormatElapsedTime(_dispatcherTimer.Elapsed);
+            Logger.Info($"Benchmarking finished after: {formattedTime}");
+            _mainWindowViewModel.BenchmarkProcessing = false;
+        }
     }
     
     private void ResourceFilterTextBox_KeyDown(object? sender, KeyEventArgs e)

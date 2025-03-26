@@ -49,13 +49,11 @@ namespace VolumetricSelection2077.Services
         /// <summary>
         /// Formats elapsed seconds to MM:SS
         /// </summary>
-        /// <param name="elapsedSeconds"></param>
+        /// <param name="time"></param>
         /// <returns></returns>
-        public static string FormatElapsedTime(double elapsedSeconds)
+        public static string FormatElapsedTimeMMSS(TimeSpan time)
         {
-            int minutes = (int)(elapsedSeconds / 60);
-            int seconds = (int)(elapsedSeconds % 60);
-            return $"{minutes:D2}:{seconds:D2}";
+            return $"{time.Minutes:D2}:{time.Seconds:D2}";
         }
 
 
