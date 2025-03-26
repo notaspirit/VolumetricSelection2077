@@ -21,6 +21,11 @@ namespace VolumetricSelection2077.Services
             return input.Replace("\\", "\\\\");
         }
         
+        /// <summary>
+        /// Formats TimeSpan to H Hour M minute S.MS Second with the larger ones only being added if it is not 0
+        /// </summary>
+        /// <param name="elapsed"></param>
+        /// <returns></returns>
         public static string FormatElapsedTime(TimeSpan elapsed)
         {
             var parts = new List<string>();
@@ -40,6 +45,19 @@ namespace VolumetricSelection2077.Services
         
             return string.Join(", ", parts);
         }
+        
+        /// <summary>
+        /// Formats elapsed seconds to MM:SS
+        /// </summary>
+        /// <param name="elapsedSeconds"></param>
+        /// <returns></returns>
+        public static string FormatElapsedTime(double elapsedSeconds)
+        {
+            int minutes = (int)(elapsedSeconds / 60);
+            int seconds = (int)(elapsedSeconds % 60);
+            return $"{minutes:D2}:{seconds:D2}";
+        }
+
 
         public static AxlRemovalFile? TryParseAxlRemovalFile(String input)
         {

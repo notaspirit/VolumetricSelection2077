@@ -384,6 +384,7 @@
             <Grid Grid.Row="6" Margin="5">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
@@ -394,7 +395,7 @@
                     Click="ClearLogButton_Click"
                     Grid.Column="0"
                     Height="25"
-                    VerticalAlignment="Bottom"
+                    VerticalAlignment="Center"
                     Width="65">
                     <Button.Styles>
                         <Style Selector="Button:pointerover /template/ ContentPresenter">
@@ -408,11 +409,25 @@
                             VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
+                <TextBlock
+                    Grid.Column="1"
+                    Margin="5"
+                    Name="TimerTextBlock"
+                    Text="00:00"
+                    VerticalAlignment="Center" />
+                <ProgressBar
+                    Grid.Column="2"
+                    Height="20"
+                    Margin="0,5,5,5"
+                    Maximum="100"
+                    Minimum="0"
+                    Name="ProgressBar"
+                    VerticalAlignment="Center" />
                 <Button
                     Background="#6b82b2"
                     Click="SettingsButton_Click"
                     Content="{x:Static resources:Labels.Settings}"
-                    Grid.Column="2"
+                    Grid.Column="3"
                     IsEnabled="{Binding ButtonsAvailable}">
                     <Button.Styles>
                         <Style Selector="Button:pointerover /template/ ContentPresenter">
@@ -420,7 +435,7 @@
                         </Style>
                     </Button.Styles>
                 </Button>
-                <Grid Grid.Column="2" IsVisible="{Binding SettingsOpen}">
+                <Grid Grid.Column="3" IsVisible="{Binding SettingsOpen}">
                     <li:LoadingIndicator
                         Foreground="White"
                         Height="30"
@@ -431,7 +446,7 @@
                     Background="#6b82b2"
                     Click="Benchmark_Click"
                     Content="{x:Static resources:Labels.Benchmark}"
-                    Grid.Column="3"
+                    Grid.Column="4"
                     IsEnabled="{Binding MainTaskAvailable}"
                     IsVisible="{Binding Settings.DebugMode}"
                     Margin="5,0,0,0">
@@ -441,7 +456,7 @@
                         </Style>
                     </Button.Styles>
                 </Button>
-                <Grid Grid.Column="3" IsVisible="{Binding BenchmarkProcessing}">
+                <Grid Grid.Column="4" IsVisible="{Binding BenchmarkProcessing}">
                     <li:LoadingIndicator
                         Foreground="White"
                         Height="30"
@@ -464,7 +479,7 @@
                     Background="#5755d9"
                     Click="FindSelectedButton_Click"
                     Content="{x:Static resources:Labels.FindSelected}"
-                    Grid.Column="4"
+                    Grid.Column="5"
                     IsEnabled="{Binding MainTaskAvailable}"
                     Margin="5,0,0,0">
                     <Button.Styles>
@@ -473,7 +488,7 @@
                         </Style>
                     </Button.Styles>
                 </Button>
-                <Grid Grid.Column="4" IsVisible="{Binding MainTaskProcessing}">
+                <Grid Grid.Column="5" IsVisible="{Binding MainTaskProcessing}">
                     <li:LoadingIndicator
                         Foreground="White"
                         Height="30"
