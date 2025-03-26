@@ -14,13 +14,16 @@ public class Progress
     private bool offsetTargetCount = true;
     public int ProgressPercentage => (int)((float)_currentCount / _targetCount * 1000);
     
+    /// <summary>
+    /// Fires when progress has changed, int represents the % in X / 1000
+    /// </summary>
     public event EventHandler<int>? ProgressChanged;
     
-    private Progress()
-    {
-        
-    }
+    private Progress() { }
     
+    /// <summary>
+    /// Get Singleton instance
+    /// </summary>
     public static Progress Instance
     {
         get
@@ -36,7 +39,11 @@ public class Progress
             }
         }
     }
-
+    
+    /// <summary>
+    /// Adds to the target that represents 100%
+    /// </summary>
+    /// <param name="targetCount">int to add to current target</param>
     public void AddTarget(int targetCount)
     {
         lock (_lock)
@@ -51,6 +58,10 @@ public class Progress
         InvokeProgressChanged();
     }
 
+    /// <summary>
+    /// Adds to the current status 
+    /// </summary>
+    /// <param name="currentCount">count to add to current status</param>
     public void AddCurrent(int currentCount)
     {
         lock (_lock)
@@ -60,6 +71,9 @@ public class Progress
         InvokeProgressChanged();
     }
 
+    /// <summary>
+    /// Resets target and current count
+    /// </summary>
     public void Reset()
     {
         lock (_lock)
@@ -71,6 +85,9 @@ public class Progress
         InvokeProgressChanged();
     }
     
+    /// <summary>
+    /// Event to update the UI
+    /// </summary>
     private void InvokeProgressChanged()
     {
         Dispatcher.UIThread.Post(() =>
