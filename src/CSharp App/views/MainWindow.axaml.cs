@@ -53,9 +53,7 @@ public partial class MainWindow : Window
         _dispatcherTimer = new TrackedDispatchTimer() { Interval = TimeSpan.FromSeconds(1) };
         _dispatcherTimer.Tick += (s, e) => _progressTextBlock.Text = $"{UtilService.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
         _progress = Progress.Instance;
-        _progress.ProgressChanged += (sender, i) => { _progressBar.Value = i;
-            // Logger.Info($"Changed progress bar value to {i}");
-        };
+        _progress.ProgressChanged += (sender, i) => _progressBar.Value = i;
     }
     
     /// <summary>

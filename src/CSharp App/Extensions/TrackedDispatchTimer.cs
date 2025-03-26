@@ -9,6 +9,9 @@ public class TrackedDispatchTimer : DispatcherTimer
     private Stopwatch _stopwatch;
     public TimeSpan Elapsed => _stopwatch.Elapsed;
 
+    /// <summary>
+    /// Starts the stopwatch and timer, fires a "FireTick" event
+    /// </summary>
     public new void Start()
     {
         _stopwatch = Stopwatch.StartNew();
@@ -17,7 +20,9 @@ public class TrackedDispatchTimer : DispatcherTimer
         
         base.Start();
     }
-
+    /// <summary>
+    /// Stops the stopwatch and timer
+    /// </summary>
     public new void Stop()
     {
         _stopwatch.Stop();
