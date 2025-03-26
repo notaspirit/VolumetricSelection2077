@@ -145,8 +145,10 @@ public class CacheService
     /// <summary>
     /// Starts listening to read requests
     /// </summary>
+    /// <exception cref="Exception">Cache service is not initialized</exception>
     public void StartListening()
     {
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling StartListening.");
         IsProcessing = true;
         _ = Task.Run(() => ProcessWriteQueue());
     }
@@ -458,15 +460,28 @@ public class CacheService
         _isInitialized = false;
         if (fromPath == toPath) return true;
 
-        if (ValidationService.ValidatePath(fromPath) != ValidationService.PathValidationResult.ValidDirectory ||
-            ValidationService.ValidatePath(toPath) != ValidationService.PathValidationResult.ValidDirectory)
-            throw new ArgumentException("Invalid path provided.");
-        
-        DirectoryInfo fromInfo = new DirectoryInfo(fromPath);
-        bool fromExists = fromInfo.Exists;
+        var toPathVr = ValidationService.ValidatePath(toPath);
+        if (toPathVr != ValidationService.PathValidationResult.ValidDirectory)
+            throw new ArgumentException($"Invalid target path provided: {toPathVr}");
+
+        DirectoryInfo fromInfo;
+        bool fromExists;
         
         DirectoryInfo toInfo = new DirectoryInfo(toPath);
         bool toExists = toInfo.Exists;
+        
+        if (string.IsNullOrEmpty(fromPath))
+        {
+            fromExists = false;
+        }
+        else
+        {
+            var fromPathVr = ValidationService.ValidatePath(fromPath);
+            if (fromPathVr != ValidationService.PathValidationResult.ValidDirectory)
+                throw new ArgumentException($"Invalid source path provided: {fromPathVr}");
+            fromInfo = new DirectoryInfo(fromPath);
+            fromExists = fromInfo.Exists;
+        }
         
         if (!fromExists)
         {

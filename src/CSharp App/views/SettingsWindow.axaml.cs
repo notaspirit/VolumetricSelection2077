@@ -73,7 +73,8 @@ namespace VolumetricSelection2077
                 if (successMove)
                 {
                     _settingsViewModel.PersistentCache.InitialCachePath = _settingsViewModel?.Settings.CacheDirectory;
-                    RestartApp();
+                    CacheService.Instance.Dispose().Wait();
+                    CacheService.Instance.Initialize();
                 }
                 else
                 {

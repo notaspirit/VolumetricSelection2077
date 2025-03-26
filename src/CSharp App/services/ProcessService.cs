@@ -587,11 +587,26 @@ public class ProcessService
                 return null;
             }
         }
+
+        if (_settings.CacheEnabled)
+        {
+            try
+            {
+                CacheService.Instance.StartListening();
+            }
+            catch (Exception ex)
+            {
+                Logger.Exception(ex, "Failed to start cache service listening.");
+            }
+        }
         
         var tasks = CETOutputFile.Sectors.Select(input => Task.Run(() => SectorProcessThread(input))).ToArray();
 
         var sectorsOutputRaw = await Task.WhenAll(tasks);
-
+        
+        if (_settings.CacheEnabled)
+            CacheService.Instance.StopListening();
+        
         List<AxlRemovalSector> sectors = new();
         foreach (var sector in sectorsOutputRaw)
         {
