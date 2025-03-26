@@ -207,7 +207,7 @@ public static class CollisionCheckService
                      $"Mesh is inside: {isInside}."); */
     }
 
-    public static bool IsCollisionBoxInsideSelectionBox(AbbrActorShapes shape, AbbrSectorTransform actorTransform, BoundingBox selectionBoxAabb, OrientedBoundingBox selectionBoxObb, string collectionName) // the collectionName is just for test building the blender collections
+    public static bool IsCollisionBoxInsideSelectionBox(AbbrActorShapes shape, AbbrSectorTransform actorTransform, BoundingBox selectionBoxAabb, OrientedBoundingBox selectionBoxObb)
     {
         // only working way to apply actor and shape transform
         Matrix shapeTransformMatrix = Matrix.Scaling(new Vector3(1,1,1)) * 

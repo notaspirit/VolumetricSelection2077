@@ -11,6 +11,8 @@ using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using VolumetricSelection2077.Extensions;
+using VolumetricSelection2077.Models;
 using VolumetricSelection2077.TestingStuff;
 using VolumetricSelection2077.ViewModels;
 using VolumetricSelection2077.ViewStructures;
@@ -21,6 +23,10 @@ public partial class MainWindow : Window
     private readonly ProcessService _processService;
     private MainWindowViewModel _mainWindowViewModel;
     
+    private ProgressBar _progressBar;
+    private TextBlock _progressTextBlock;
+    private TrackedDispatchTimer _dispatcherTimer;
+    private Progress _progress;
     public MainWindow()
     {
         InitializeComponent();
@@ -36,6 +42,18 @@ public partial class MainWindow : Window
         _mainWindowViewModel = DataContext as MainWindowViewModel;
         _processService = new ProcessService();
         Closed += OnMainWindowClosed;
+        
+        _progressBar = this.FindControl<ProgressBar>("ProgressBar");
+        _progressTextBlock = this.FindControl<TextBlock>("TimerTextBlock");
+        if (_progressTextBlock == null || _progressBar == null)
+        {
+            Logger.Error($"Could not find one or more ui components: ProgressBar: {_progressBar}, TimerTextBlock: {_progressTextBlock}");
+        }
+        
+        _dispatcherTimer = new TrackedDispatchTimer() { Interval = TimeSpan.FromSeconds(1) };
+        _dispatcherTimer.Tick += (s, e) => _progressTextBlock.Text = $"{UtilService.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
+        _progress = Progress.Instance;
+        _progress.ProgressChanged += (sender, i) => _progressBar.Value = i;
     }
     
     /// <summary>
@@ -59,7 +77,7 @@ public partial class MainWindow : Window
         Logger.Initialize(logDirectory);
         Logger.AddSink(new LogViewerSink(logViewer, "[{Timestamp:yyyy-MM-dd HH:mm:ss}] {Message:lj}{NewLine}{Exception}"));
     }
-
+    
     private async void SettingsButton_Click(object? sender, RoutedEventArgs e)
     {
         if (_mainWindowViewModel.IsProcessing) return;
@@ -83,7 +101,7 @@ public partial class MainWindow : Window
     private async void FindSelectedButton_Click(object? sender, RoutedEventArgs e)
     {
         if (_mainWindowViewModel.IsProcessing) return;
-        Stopwatch stopwatch = Stopwatch.StartNew();
+        _dispatcherTimer.Start();
         try
         {
             _mainWindowViewModel.MainTaskProcessing = true;
@@ -103,8 +121,8 @@ public partial class MainWindow : Window
         }
         finally
         {
-            stopwatch.Stop();
-            string formattedTime = UtilService.FormatElapsedTime(stopwatch.Elapsed);
+            _dispatcherTimer.Stop();
+            string formattedTime = UtilService.FormatElapsedTime(_dispatcherTimer.Elapsed);
             Logger.Info($"Process finished after: {formattedTime}");
             _mainWindowViewModel.MainTaskProcessing = false;
         }
@@ -116,7 +134,9 @@ public partial class MainWindow : Window
         try
         {
             _mainWindowViewModel.BenchmarkProcessing = true;
-            _mainWindowViewModel.Settings.OutputFilename = UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.OutputFilename);
+            _dispatcherTimer.Start();
+            _mainWindowViewModel.Settings.OutputFilename =
+                UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.OutputFilename);
             OutputFilenameTextBox.Text = _mainWindowViewModel.Settings.OutputFilename;
             AddQueuedFilters();
             await Task.Run(() => Benchmarking.Instance.RunBenchmarks());
@@ -125,7 +145,13 @@ public partial class MainWindow : Window
         {
             Logger.Error($"Benchmarking failed: {ex}");
         }
-        _mainWindowViewModel.BenchmarkProcessing = false;
+        finally
+        {
+            _dispatcherTimer.Stop();
+            string formattedTime = UtilService.FormatElapsedTime(_dispatcherTimer.Elapsed);
+            Logger.Info($"Benchmarking finished after: {formattedTime}");
+            _mainWindowViewModel.BenchmarkProcessing = false;
+        }
     }
     
     private void ResourceFilterTextBox_KeyDown(object? sender, KeyEventArgs e)

@@ -1,11 +1,11 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using VolumetricSelection2077.Models;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using DynamicData;
-using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Parsers;
 using Newtonsoft.Json;
 using SharpDX;
@@ -21,10 +21,12 @@ public class ProcessService
 {
     private readonly SettingsService _settings;
     private readonly GameFileService _gameFileService;
+    private Progress _progress;
     public ProcessService()
     {
         _settings = SettingsService.Instance;
         _gameFileService = GameFileService.Instance;
+        _progress = Progress.Instance;
     }
 
     class MergeChanges
@@ -185,11 +187,7 @@ public class ProcessService
         File.WriteAllText(newOutputFilePath, outputContent);
         Logger.Info($"Created file {newOutputFilePath}");
     }
-    
-    // also returns null if none of the nodes in the sector are inside the box
-    private async Task<(bool success, string error, AxlRemovalSector? result)> ProcessStreamingsector(AbbrSector sector, string sectorPath, SelectionInput selectionBox)
-    {
-        async Task<AxlRemovalNodeDeletion?> ProcessNodeAsync(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index)
+    private async Task<AxlRemovalNodeDeletion?> ProcessNodeAsync(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index, AbbrSector sector, SelectionInput selectionBox)
         {
             var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
 
@@ -335,8 +333,7 @@ public class ProcessService
                                     }
                                     break;
                                 case Enums.physicsShapeType.Box:
-                                    string collectionName = sectorPath.Split(@"\")[^1] + " " + index + " " + actorIndex; // just for testing so it's easy to identify the source of the shapes
-                                    bool isCollisionBoxInsideBox = CollisionCheckService.IsCollisionBoxInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb, collectionName);
+                                    bool isCollisionBoxInsideBox = CollisionCheckService.IsCollisionBoxInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb);
                                     if (isCollisionBoxInsideBox)
                                     {
                                         shapeIntersects = true;
@@ -400,8 +397,22 @@ public class ProcessService
 
             return null;
         }
-        
-        var tasks = sector.NodeData.Select((input, index) => Task.Run(() => ProcessNodeAsync(input, index))).ToArray();
+    // also returns null if none of the nodes in the sector are inside the box
+    private async Task<(bool success, string error, AxlRemovalSector? result)> ProcessStreamingsector(AbbrSector sector, string sectorPath, SelectionInput selectionBox)
+    {
+        Task<AxlRemovalNodeDeletion?> ProcessNodeAsyncWithReport(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index, AbbrSector sector, SelectionInput selectionBox)
+        {
+            try
+            {
+                return ProcessNodeAsync(nodeDataEntry, index, sector, selectionBox);
+            }
+            finally
+            {
+                _progress.AddCurrent(1);
+            }
+        }
+        _progress.AddTarget(sector.NodeData.Length);
+        var tasks = sector.NodeData.Select((input, index) => Task.Run(() => ProcessNodeAsyncWithReport(input, index, sector, selectionBox))).ToArray();
 
         var nodeDeletionsRaw = await Task.WhenAll(tasks);
 
@@ -521,6 +532,8 @@ public class ProcessService
 
         
         Logger.Info("Starting Process...");
+        
+        _progress.Reset();
         
         bool customRemovalFileProvided = customRemovalFile != null;
         bool customRemovalDirectoryProvided = customRemovalDirectory != null;
