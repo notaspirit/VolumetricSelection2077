@@ -419,7 +419,7 @@
                     Grid.Column="2"
                     Height="20"
                     Margin="0,5,5,5"
-                    Maximum="100"
+                    Maximum="1000"
                     Minimum="0"
                     Name="ProgressBar"
                     VerticalAlignment="Center" />

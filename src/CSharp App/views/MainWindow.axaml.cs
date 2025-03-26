@@ -12,6 +12,7 @@ using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using VolumetricSelection2077.Extensions;
+using VolumetricSelection2077.Models;
 using VolumetricSelection2077.TestingStuff;
 using VolumetricSelection2077.ViewModels;
 using VolumetricSelection2077.ViewStructures;
@@ -25,7 +26,7 @@ public partial class MainWindow : Window
     private ProgressBar _progressBar;
     private TextBlock _progressTextBlock;
     private TrackedDispatchTimer _dispatcherTimer;
-    
+    private Progress _progress;
     public MainWindow()
     {
         InitializeComponent();
@@ -51,6 +52,10 @@ public partial class MainWindow : Window
         
         _dispatcherTimer = new TrackedDispatchTimer() { Interval = TimeSpan.FromSeconds(1) };
         _dispatcherTimer.Tick += (s, e) => _progressTextBlock.Text = $"{UtilService.FormatElapsedTime(_dispatcherTimer.ElapsedSeconds)}";
+        _progress = Progress.Instance;
+        _progress.ProgressChanged += (sender, i) => { _progressBar.Value = i;
+            // Logger.Info($"Changed progress bar value to {i}");
+        };
     }
     
     /// <summary>
