@@ -20,10 +20,6 @@ namespace VolumetricSelection2077.Services;
 
 public class ProcessService
 {
-    /// <summary>
-    /// Fires when a sectors nodes have been added to the progress status
-    /// </summary>
-    private event EventHandler<bool> NodesAddedToProgress;
     private readonly SettingsService _settings;
     private readonly GameFileService _gameFileService;
     private Progress _progress;
@@ -32,17 +28,8 @@ public class ProcessService
         _settings = SettingsService.Instance;
         _gameFileService = GameFileService.Instance;
         _progress = Progress.Instance;
-        NodesAddedToProgress += (_, _) => _progress.AddCurrent(1, Progress.ProgressSections.Startup);
     }
 
-    /// <summary>
-    /// Invoke nodes added to process (is supposed to be used when a sectors nodes have been added to the progress
-    /// </summary>
-    private void InvokeNodesAddedToProgress()
-    {
-        NodesAddedToProgress?.Invoke(this, true);
-    }
-    
     class MergeChanges
     {
         public int newSectors { get; set; } = 0;
@@ -426,7 +413,7 @@ public class ProcessService
             }
         }
         _progress.AddTarget(sector.NodeData.Length, Progress.ProgressSections.Processing);
-        InvokeNodesAddedToProgress();
+        _progress.AddCurrent(1, Progress.ProgressSections.Startup);
         var tasks = sector.NodeData.Select((input, index) => Task.Run(() => ProcessNodeAsyncWithReport(input, index, sector, selectionBox))).ToArray();
 
         var nodeDeletionsRaw = await Task.WhenAll(tasks);
