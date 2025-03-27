@@ -16,11 +16,8 @@ public class SettingsService
     private static SettingsService? _instance;
     private static readonly object _lock = new object();
     private static readonly string SettingsFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "settings.json");
-
-    // Parameterless constructor for deserialization
     public SettingsService()
     {
-        // Initialize default settings here
         GameDirectory = "";
         CacheEnabled = true;
         CacheDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "cache");
@@ -105,7 +102,6 @@ public class SettingsService
     
     public WindowRecoveryState WindowRecoveryState { get; set; }
     
-    // Methods for loading and saving settings
     /// <summary>
     /// Loads the settings or creates a new settings file if it doesn't exist
     /// </summary>
@@ -177,9 +173,7 @@ public class SettingsService
             var json = JsonSerializer.Serialize(this, options);
             var directory = Path.GetDirectoryName(SettingsFilePath);
             if (!Directory.Exists(directory) && directory != null)
-            {
                 Directory.CreateDirectory(directory);
-            }
             File.WriteAllText(SettingsFilePath, json);
         }
         catch (Exception ex)
