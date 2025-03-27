@@ -149,6 +149,7 @@ public class CacheService
     public void StartListening()
     {
         if (!_isInitialized) throw new Exception("Cache service must be initialized before calling StartListening.");
+        if (IsProcessing) return;
         IsProcessing = true;
         _ = Task.Run(() => ProcessWriteQueue());
     }
@@ -486,6 +487,7 @@ public class CacheService
         if (!fromExists)
         {
             _settings.CacheDirectory = toPath;
+            _settings.SaveSettings();
             return true;
         }
         
@@ -650,7 +652,7 @@ public class CacheService
         var fileVerInfo = FileVersionInfo.GetVersionInfo(gameExePath);
         string? version = fileVerInfo.ProductVersion;
         if (version == null)
-            throw new Exception("Could not find Game Executable.");
+            throw new Exception("Could not find Game Version.");
         
         var newMetadata = new CacheDatabaseMetadata(_settings.MinimumCacheVersion, version);
         Directory.CreateDirectory(_settings.CacheDirectory);
