@@ -81,5 +81,19 @@ namespace VolumetricSelection2077.Services
             }
             return string.Join(Path.DirectorySeparatorChar, cleanOutput);
         }
+        /// <summary>
+        /// Checks if the given directory contains any files
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns>true if no files were found</returns>
+        /// <exception cref="ArgumentException">given filepath is invalid</exception>
+        public static bool IsDirectoryEmpty(string path)
+        {
+            if (ValidationService.ValidatePath(path) != ValidationService.PathValidationResult.ValidDirectory)
+                throw new ArgumentException($"Path is invalid.");
+            if (Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories).Any())
+                return false;
+            return true;
+        }
     }
 }

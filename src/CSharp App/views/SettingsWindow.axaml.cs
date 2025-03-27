@@ -67,13 +67,14 @@ namespace VolumetricSelection2077
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error($"Failed to move Cache {ex}");
+                    Logger.Exception(ex, "Failed to move cache!");
                 }
 
                 if (successMove)
                 {
                     _settingsViewModel.PersistentCache.InitialCachePath = _settingsViewModel?.Settings.CacheDirectory;
-                    RestartApp();
+                    CacheService.Instance.Dispose().Wait();
+                    CacheService.Instance.Initialize();
                 }
                 else
                 {
@@ -84,6 +85,8 @@ namespace VolumetricSelection2077
 
             if ((bool)_settingsViewModel?.Settings.CacheEnabled)
                 CacheService.Instance.Initialize();
+            else
+                CacheService.Instance.Dispose();
             
             if ((bool)_settingsViewModel?.PersistentCache.RequiresRestart)
                 RestartApp();
