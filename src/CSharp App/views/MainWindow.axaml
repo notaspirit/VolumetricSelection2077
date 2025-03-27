@@ -394,7 +394,7 @@
                     Background="#ad0002"
                     Click="ClearLogButton_Click"
                     Grid.Column="0"
-                    Height="25"
+                    Height="24"
                     VerticalAlignment="Center"
                     Width="65">
                     <Button.Styles>
@@ -402,13 +402,19 @@
                             <Setter Property="Background" Value="DarkRed" />
                         </Style>
                     </Button.Styles>
-                    <StackPanel Orientation="Horizontal" Spacing="5">
-                        <TextBlock
-                            FontSize="10"
-                            Text="{x:Static resources:Labels.ClearLog}"
-                            VerticalAlignment="Center" />
-                    </StackPanel>
                 </Button>
+                <Grid Grid.Column="0" Margin="-1,5,5,5">
+                    <Grid.ColumnDefinitions>65</Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>24</Grid.RowDefinitions>
+                    <TextBlock
+                        FontSize="10"
+                        Grid.Column="0"
+                        Grid.Row="0"
+                        HorizontalAlignment="Center"
+                        IsHitTestVisible="False"
+                        Text="{x:Static resources:Labels.ClearLog}"
+                        VerticalAlignment="Center" />
+                </Grid>
                 <TextBlock
                     Grid.Column="1"
                     Margin="5"
