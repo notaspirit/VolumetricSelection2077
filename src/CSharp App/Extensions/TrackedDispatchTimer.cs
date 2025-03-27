@@ -15,9 +15,7 @@ public class TrackedDispatchTimer : DispatcherTimer
     public new void Start()
     {
         _stopwatch = Stopwatch.StartNew();
-        var fireTickMethod = typeof(DispatcherTimer).GetMethod("FireTick", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        fireTickMethod?.Invoke(this, null);
-        
+        InvokeFireTick();
         base.Start();
     }
     /// <summary>
@@ -26,6 +24,17 @@ public class TrackedDispatchTimer : DispatcherTimer
     public new void Stop()
     {
         _stopwatch.Stop();
+        InvokeFireTick();
         base.Stop();
+    }
+    
+    /// <summary>
+    /// Fires a tick event
+    /// </summary>
+    /// <remarks>Breaks the consistency of the tick interval</remarks>
+    private void InvokeFireTick()
+    {
+        var fireTickMethod = typeof(DispatcherTimer).GetMethod("FireTick", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        fireTickMethod?.Invoke(this, null);
     }
 }
