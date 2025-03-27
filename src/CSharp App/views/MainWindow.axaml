@@ -426,7 +426,7 @@
                     VerticalAlignment="Center"
                     ZIndex="2">
                     <ProgressBar.Background>
-                        <SolidColorBrush Color="#0a0c10" />
+                        <SolidColorBrush Color="#0e1117" />
                     </ProgressBar.Background>
                     <ProgressBar.Foreground>
                         <SolidColorBrush Color="#4b48d6" />
@@ -527,6 +527,7 @@
                 Margin="5"
                 x:Name="LogViewer" />
             <TextBlock
+                Background="#0e1117"
                 FontSize="10"
                 Foreground="White"
                 Grid.Row="7"
