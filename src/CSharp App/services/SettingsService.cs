@@ -23,9 +23,9 @@ public class SettingsService
         // Initialize default settings here
         GameDirectory = "";
         CacheEnabled = true;
-        CacheDirectory = "";
+        CacheDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "cache");
         SaveToArchiveMods = true;
-        OutputDirectory = "";
+        OutputDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "output");
         OutputFilename = "";
         DebugMode = false;
         NodeTypeFilter = new BitArray(122, true);
@@ -106,6 +106,9 @@ public class SettingsService
     public WindowRecoveryState WindowRecoveryState { get; set; }
     
     // Methods for loading and saving settings
+    /// <summary>
+    /// Loads the settings or creates a new settings file if it doesn't exist
+    /// </summary>
     public void LoadSettings()
     {
         if (!File.Exists(SettingsFilePath))
@@ -155,11 +158,14 @@ public class SettingsService
             }
             catch (Exception ex)
             {
-                Logger.Error($"Error loading settings: {ex.Message}");
+                Logger.Exception(ex, "Failed to load settings.");
             }
         }
     }
 
+    /// <summary>
+    /// Saves the settings
+    /// </summary>
     public void SaveSettings()
     {
         try
@@ -178,7 +184,7 @@ public class SettingsService
         }
         catch (Exception ex)
         {
-            Logger.Error($"Error saving settings: {ex.Message}");
+            Logger.Exception(ex, "Failed to save settings.");
         }
     }
 }
