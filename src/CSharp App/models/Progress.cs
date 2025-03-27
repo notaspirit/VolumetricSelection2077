@@ -22,12 +22,15 @@ public class ProgressSection
     {
         lock (_lock)
         {
+            var previousPercent = ProgressPercentage;
             _targetCount += targetCount;
             if (offsetTargetCount && targetCount > 0)
             {
                 _targetCount -= 1;
                 offsetTargetCount = false;
             }
+            if (previousPercent == 1000)
+                FulfilledChanged?.Invoke(this, false);
         }
     }
 
@@ -40,6 +43,8 @@ public class ProgressSection
         lock (_lock)
         {
             _currentCount += currentCount;
+            if (_currentCount == _targetCount)
+                FulfilledChanged?.Invoke(this, true);
         }
     }
 
@@ -55,6 +60,11 @@ public class ProgressSection
             offsetTargetCount = true;
         }
     }
+    
+    /// <summary>
+    /// Fires when the status of fulfillment has changed, is true if new status is fulfilled, false if it isn't
+    /// </summary>
+    public event EventHandler<bool>? FulfilledChanged;
 
 }
 
@@ -77,17 +87,25 @@ public class Progress
     private float _StartupWeight = 0.1f;
     private float _ProcessingWeight = 0.8f;
     private float _FinalizationWeight = 0.1f;
+
+    private bool isProcessSuppressed = true;
     
     public int ProgressPercentage => (int)((_sections[ProgressSections.Startup].ProgressPercentage * _StartupWeight) +
-                                           (_sections[ProgressSections.Processing].ProgressPercentage * _ProcessingWeight) +
+                                           (isProcessSuppressed ? 0 : _sections[ProgressSections.Processing].ProgressPercentage * _ProcessingWeight) +
                                            (_sections[ProgressSections.Finalization].ProgressPercentage * _FinalizationWeight));
     
     /// <summary>
     /// Fires when progress has changed, int represents the % in X / 1000
     /// </summary>
     public event EventHandler<int>? ProgressChanged;
-    
-    private Progress() { }
+
+    private Progress()
+    {
+        _sections[ProgressSections.Startup].FulfilledChanged += (_, result) =>
+        {
+            isProcessSuppressed = !result;
+        };
+    }
     
     /// <summary>
     /// Get Singleton instance
@@ -139,6 +157,7 @@ public class Progress
         {
             section.Value.Reset();
         }
+        isProcessSuppressed = true;
         InvokeProgressChanged();
     }
 

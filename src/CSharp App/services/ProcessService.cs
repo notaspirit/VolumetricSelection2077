@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.ComponentModel;
 using VolumetricSelection2077.Models;
 using System.IO;
 using System.Linq;
@@ -19,6 +20,10 @@ namespace VolumetricSelection2077.Services;
 
 public class ProcessService
 {
+    /// <summary>
+    /// Fires when a sectors nodes have been added to the progress status
+    /// </summary>
+    private event EventHandler<bool> NodesAddedToProgress;
     private readonly SettingsService _settings;
     private readonly GameFileService _gameFileService;
     private Progress _progress;
@@ -27,8 +32,17 @@ public class ProcessService
         _settings = SettingsService.Instance;
         _gameFileService = GameFileService.Instance;
         _progress = Progress.Instance;
+        NodesAddedToProgress += (_, _) => _progress.AddCurrent(1, Progress.ProgressSections.Startup);
     }
 
+    /// <summary>
+    /// Invoke nodes added to process (is supposed to be used when a sectors nodes have been added to the progress
+    /// </summary>
+    private void InvokeNodesAddedToProgress()
+    {
+        NodesAddedToProgress?.Invoke(this, true);
+    }
+    
     class MergeChanges
     {
         public int newSectors { get; set; } = 0;
@@ -412,6 +426,7 @@ public class ProcessService
             }
         }
         _progress.AddTarget(sector.NodeData.Length, Progress.ProgressSections.Processing);
+        InvokeNodesAddedToProgress();
         var tasks = sector.NodeData.Select((input, index) => Task.Run(() => ProcessNodeAsyncWithReport(input, index, sector, selectionBox))).ToArray();
 
         var nodeDeletionsRaw = await Task.WhenAll(tasks);
@@ -605,7 +620,7 @@ public class ProcessService
         }
         
         Logger.Info("Added sectors to startup progress target");
-        _progress.AddTarget(CETOutputFile.Sectors.Count, Progress.ProgressSections.Startup);
+        _progress.AddTarget(CETOutputFile.Sectors.Count * 2, Progress.ProgressSections.Startup);
         var tasks = CETOutputFile.Sectors.Select(input => Task.Run(() => SectorProcessThread(input, CETOutputFile))).ToArray();
 
         var sectorsOutputRaw = await Task.WhenAll(tasks);
