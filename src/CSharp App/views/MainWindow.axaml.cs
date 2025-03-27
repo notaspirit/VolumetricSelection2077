@@ -24,6 +24,7 @@ public partial class MainWindow : Window
     private MainWindowViewModel _mainWindowViewModel;
     
     private ProgressBar _progressBar;
+    private ProgressBar _progressBarBroder;
     private TextBlock _progressTextBlock;
     private TrackedDispatchTimer _dispatcherTimer;
     private Progress _progress;
@@ -44,16 +45,27 @@ public partial class MainWindow : Window
         Closed += OnMainWindowClosed;
         
         _progressBar = this.FindControl<ProgressBar>("ProgressBar");
+        _progressBarBroder = this.FindControl<ProgressBar>("ProgressBarBorder");
         _progressTextBlock = this.FindControl<TextBlock>("TimerTextBlock");
-        if (_progressTextBlock == null || _progressBar == null)
+        if (_progressTextBlock == null || _progressBar == null || _progressBarBroder == null)
         {
-            Logger.Error($"Could not find one or more ui components: ProgressBar: {_progressBar}, TimerTextBlock: {_progressTextBlock}");
+            Logger.Error($"Could not find one or more ui components: ProgressBar: {_progressBar}, TimerTextBlock: {_progressTextBlock}, ProgressBarBorder: {_progressBarBroder}");
         }
+        
+        _progressBar.SizeChanged += (s, e) =>
+        {
+            _progressBarBroder.Width = ((_progressBar.Width / DesktopScaling) + 2) * DesktopScaling;
+            _progressBarBroder.Height = ((_progressBar.Height / DesktopScaling) + 2) * DesktopScaling;
+        };
         
         _dispatcherTimer = new TrackedDispatchTimer() { Interval = TimeSpan.FromSeconds(1) };
         _dispatcherTimer.Tick += (s, e) => _progressTextBlock.Text = $"{UtilService.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
         _progress = Progress.Instance;
-        _progress.ProgressChanged += (sender, i) => _progressBar.Value = i;
+        _progress.ProgressChanged += (sender, i) =>
+        {
+            _progressBar.Value = i;
+            _progressBarBroder.Value = i;
+        };
     }
     
     /// <summary>

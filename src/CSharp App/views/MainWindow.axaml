@@ -416,18 +416,36 @@
                     Text="00:00"
                     VerticalAlignment="Center" />
                 <ProgressBar
+                    CornerRadius="2"
                     Grid.Column="2"
                     Height="20"
-                    Margin="0,5,5,5"
+                    Margin="1,6,6,6"
                     Maximum="1000"
                     Minimum="0"
                     Name="ProgressBar"
-                    VerticalAlignment="Center">
+                    VerticalAlignment="Center"
+                    ZIndex="2">
                     <ProgressBar.Background>
                         <SolidColorBrush Color="#0a0c10" />
                     </ProgressBar.Background>
                     <ProgressBar.Foreground>
                         <SolidColorBrush Color="#4b48d6" />
+                    </ProgressBar.Foreground>
+                </ProgressBar>
+                <ProgressBar
+                    CornerRadius="3"
+                    Grid.Column="2"
+                    Margin="0,5,5,5"
+                    Maximum="1000"
+                    Minimum="0"
+                    Name="ProgressBarBorder"
+                    VerticalAlignment="Center"
+                    ZIndex="1">
+                    <ProgressBar.Background>
+                        <SolidColorBrush Color="#a0a2a5" />
+                    </ProgressBar.Background>
+                    <ProgressBar.Foreground>
+                        <SolidColorBrush Color="#414f6c" />
                     </ProgressBar.Foreground>
                 </ProgressBar>
                 <Button
