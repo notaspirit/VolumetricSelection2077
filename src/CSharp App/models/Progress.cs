@@ -1,18 +1,86 @@
 using System;
+using System.Collections.Generic;
 using Avalonia.Threading;
+using Tmds.DBus.Protocol;
 using VolumetricSelection2077.Services;
 
 namespace VolumetricSelection2077.Models;
 
-public class Progress
+public class ProgressSection
 {
-    private static Progress? _instance;
-    private static readonly object _lock = new object();
-    private static readonly object _eventLock = new object();
     private int _targetCount = 1;
     private int _currentCount = 0;
     private bool offsetTargetCount = true;
+    private static readonly object _lock = new object();
     public int ProgressPercentage => (int)((float)_currentCount / _targetCount * 1000);
+
+    /// <summary>
+    /// Adds to the target that represents 100%
+    /// </summary>
+    /// <param name="targetCount">int to add to current target</param>
+    public void AddTarget(int targetCount)
+    {
+        lock (_lock)
+        {
+            _targetCount += targetCount;
+            if (offsetTargetCount && targetCount > 0)
+            {
+                _targetCount -= 1;
+                offsetTargetCount = false;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Adds to the current status 
+    /// </summary>
+    /// <param name="currentCount">count to add to current status</param>
+    public void AddCurrent(int currentCount)
+    {
+        lock (_lock)
+        {
+            _currentCount += currentCount;
+        }
+    }
+
+    /// <summary>
+    /// Resets target and current count
+    /// </summary>
+    public void Reset()
+    {
+        lock (_lock)
+        {
+            _currentCount = 0;
+            _targetCount = 1;
+            offsetTargetCount = true;
+        }
+    }
+
+}
+
+public class Progress
+{
+    public enum ProgressSections
+    {
+        Startup,
+        Processing,
+        Finalization
+    }
+    
+    private static Progress? _instance;
+    private static readonly object _lock = new object();
+    private static readonly object _eventLock = new object();
+    private Dictionary<ProgressSections, ProgressSection> _sections = new() { { ProgressSections.Startup, new ProgressSection()},
+        { ProgressSections.Processing, new ProgressSection()},
+        { ProgressSections.Finalization, new ProgressSection()} };
+
+    private float _StartupWeight = 0.1f;
+    private float _ProcessingWeight = 0.8f;
+    private float _FinalizationWeight = 0.1f;
+    
+    public int ProgressPercentage => (int)((_sections[ProgressSections.Startup].ProgressPercentage * _StartupWeight) +
+                                           (_sections[ProgressSections.Processing].ProgressPercentage * _ProcessingWeight) +
+                                           (_sections[ProgressSections.Finalization].ProgressPercentage * _FinalizationWeight));
     
     /// <summary>
     /// Fires when progress has changed, int represents the % in X / 1000
@@ -44,17 +112,10 @@ public class Progress
     /// Adds to the target that represents 100%
     /// </summary>
     /// <param name="targetCount">int to add to current target</param>
-    public void AddTarget(int targetCount)
+    /// <param name="section">the section to add to</param>
+    public void AddTarget(int targetCount, ProgressSections section)
     {
-        lock (_lock)
-        {
-            _targetCount += targetCount;
-            if (offsetTargetCount && targetCount > 0)
-            {
-                _targetCount -= 1;
-                offsetTargetCount = false;
-            }
-        }
+        _sections[section].AddTarget(targetCount);
         InvokeProgressChanged();
     }
 
@@ -62,12 +123,10 @@ public class Progress
     /// Adds to the current status 
     /// </summary>
     /// <param name="currentCount">count to add to current status</param>
-    public void AddCurrent(int currentCount)
+    /// /// <param name="section">the section to add to</param>
+    public void AddCurrent(int currentCount, ProgressSections section)
     {
-        lock (_lock)
-        {
-            _currentCount += currentCount;
-        }
+        _sections[section].AddCurrent(currentCount);
         InvokeProgressChanged();
     }
 
@@ -76,12 +135,29 @@ public class Progress
     /// </summary>
     public void Reset()
     {
-        lock (_lock)
+        foreach (var section in _sections)
         {
-            _currentCount = 0;
-            _targetCount = 1;
-            offsetTargetCount = true;
+            section.Value.Reset();
         }
+        InvokeProgressChanged();
+    }
+
+    /// <summary>
+    /// Sets the weighting of each section, this should be called just after resetting when cleaning up the progress for a new run
+    /// </summary>
+    /// <param name="startupWeight"></param>
+    /// <param name="processingWeight"></param>
+    /// <param name="finalizationWeight"></param>
+    /// <exception cref="ArgumentException">if sum of weights isn't 1 or any weight is less than 0</exception>
+    public void SetWeight(float startupWeight, float processingWeight, float finalizationWeight)
+    {
+        if (startupWeight + processingWeight + finalizationWeight != 1)
+            throw new ArgumentException("Weights must add up to 1");
+        if (startupWeight < 0 || processingWeight < 0 || finalizationWeight < 0)
+            throw new ArgumentException("Weights cannot be less than 0");
+        _StartupWeight = startupWeight;
+        _ProcessingWeight = processingWeight;
+        _FinalizationWeight = finalizationWeight;
         InvokeProgressChanged();
     }
     
@@ -94,7 +170,6 @@ public class Progress
         {
             lock (_eventLock)
             {
-                Logger.Info($"Called update event: target: {_targetCount}, current: {_currentCount}, progress: {ProgressPercentage}", true);
                 ProgressChanged?.Invoke(this, ProgressPercentage);
             }
         });
