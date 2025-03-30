@@ -121,9 +121,11 @@ public class SettingsService
                 {
                     GameDirectory = settings.GameDirectory;
                     CacheEnabled = settings.CacheEnabled;
-                    CacheDirectory = settings.CacheDirectory;
+                    if (!string.IsNullOrEmpty(settings.CacheDirectory)) 
+                        CacheDirectory = settings.CacheDirectory;
                     SaveToArchiveMods = settings.SaveToArchiveMods;
-                    OutputDirectory = settings.OutputDirectory;
+                    if (!string.IsNullOrEmpty(settings.OutputDirectory))
+                        OutputDirectory = settings.OutputDirectory;
                     OutputFilename = settings.OutputFilename;
                     DebugMode = settings.DebugMode;
                     NodeTypeFilter = settings.NodeTypeFilter;
