@@ -1,11 +1,12 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.ComponentModel;
+using VolumetricSelection2077.Models;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using DynamicData;
-using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Parsers;
 using Newtonsoft.Json;
 using SharpDX;
@@ -21,10 +22,12 @@ public class ProcessService
 {
     private readonly SettingsService _settings;
     private readonly GameFileService _gameFileService;
+    private Progress _progress;
     public ProcessService()
     {
         _settings = SettingsService.Instance;
         _gameFileService = GameFileService.Instance;
+        _progress = Progress.Instance;
     }
 
     class MergeChanges
@@ -185,11 +188,7 @@ public class ProcessService
         File.WriteAllText(newOutputFilePath, outputContent);
         Logger.Info($"Created file {newOutputFilePath}");
     }
-    
-    // also returns null if none of the nodes in the sector are inside the box
-    private async Task<(bool success, string error, AxlRemovalSector? result)> ProcessStreamingsector(AbbrSector sector, string sectorPath, SelectionInput selectionBox)
-    {
-        async Task<AxlRemovalNodeDeletion?> ProcessNodeAsync(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index)
+    private async Task<AxlRemovalNodeDeletion?> ProcessNodeAsync(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index, AbbrSector sector, SelectionInput selectionBox)
         {
             var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
 
@@ -335,8 +334,7 @@ public class ProcessService
                                     }
                                     break;
                                 case Enums.physicsShapeType.Box:
-                                    string collectionName = sectorPath.Split(@"\")[^1] + " " + index + " " + actorIndex; // just for testing so it's easy to identify the source of the shapes
-                                    bool isCollisionBoxInsideBox = CollisionCheckService.IsCollisionBoxInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb, collectionName);
+                                    bool isCollisionBoxInsideBox = CollisionCheckService.IsCollisionBoxInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb);
                                     if (isCollisionBoxInsideBox)
                                     {
                                         shapeIntersects = true;
@@ -400,8 +398,23 @@ public class ProcessService
 
             return null;
         }
-        
-        var tasks = sector.NodeData.Select((input, index) => Task.Run(() => ProcessNodeAsync(input, index))).ToArray();
+    // also returns null if none of the nodes in the sector are inside the box
+    private async Task<(bool success, string error, AxlRemovalSector? result)> ProcessStreamingsector(AbbrSector sector, string sectorPath, SelectionInput selectionBox)
+    {
+        async Task<AxlRemovalNodeDeletion?> ProcessNodeAsyncWithReport(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index, AbbrSector sector, SelectionInput selectionBox)
+        {
+            try
+            {
+                return await ProcessNodeAsync(nodeDataEntry, index, sector, selectionBox);
+            }
+            finally
+            {
+                _progress.AddCurrent(1, Progress.ProgressSections.Processing);
+            }
+        }
+        _progress.AddTarget(sector.NodeData.Length, Progress.ProgressSections.Processing);
+        _progress.AddCurrent(1, Progress.ProgressSections.Startup);
+        var tasks = sector.NodeData.Select((input, index) => Task.Run(() => ProcessNodeAsyncWithReport(input, index, sector, selectionBox))).ToArray();
 
         var nodeDeletionsRaw = await Task.WhenAll(tasks);
 
@@ -496,6 +509,38 @@ public class ProcessService
         
         return false;
     }
+    
+    private async Task<AxlRemovalSector?> SectorProcessThread(string streamingSectorName, SelectionInput CETOutputFile)
+    {
+        Logger.Info($"Starting sector process thread for {streamingSectorName}...");
+        _progress.AddCurrent(1, Progress.ProgressSections.Startup);
+        try
+        {
+            string streamingSectorNameFix = Regex.Replace(streamingSectorName, @"\\{2}", @"\");
+            var sector = _gameFileService.GetSector(streamingSectorNameFix);
+            if (sector == null)
+            {
+                Logger.Warning($"Failed to find sector {streamingSectorNameFix}");
+                return null;
+            }
+                
+            var (successPSS, errorPSS, resultPss) = await ProcessStreamingsector(sector, streamingSectorName, CETOutputFile);
+            if (successPSS)
+            { 
+                Logger.Info($"Successfully processed streamingsector {streamingSectorName} which found {resultPss?.NodeDeletions.Count ?? 0} nodes out of {sector.NodeData.Length} nodes.");
+                return resultPss;
+            }
+            
+            Logger.Error($"Failed to processes streamingsector {streamingSectorName} with error: {errorPSS}");
+            return null;
+        }
+        catch (Exception e)
+        {
+            Logger.Error($"Failed to Processes {streamingSectorName}: {e}");
+            return null;
+        }
+    }
+    
     /// <summary>
     /// Processes all sectors in the selection file generated by the CET part and saves a removal file to the set location if intersections with the obb were found
     /// </summary>
@@ -521,6 +566,23 @@ public class ProcessService
 
         
         Logger.Info("Starting Process...");
+        
+        _progress.Reset();
+        _progress.SetWeight(0.1f, 0.85f, 0.05f);
+
+        if (_settings.CacheEnabled)
+        {
+            try
+            {
+                CacheService.Instance.StartListening();
+            }
+            catch (Exception ex)
+            {
+                Logger.Exception(ex, "Failed to start listening to write requests in cache service!");
+            }
+        }
+
+
         
         bool customRemovalFileProvided = customRemovalFile != null;
         bool customRemovalDirectoryProvided = customRemovalDirectory != null;
@@ -557,56 +619,16 @@ public class ProcessService
                 return (false, $"Failed to parse CET output file with error: {errorSP}");
             }
         }
-        async Task<AxlRemovalSector?> SectorProcessThread(string streamingSectorName)
-        {
-            Logger.Info($"Starting sector process thread for {streamingSectorName}...");
-
-            try
-            {
-                string streamingSectorNameFix = Regex.Replace(streamingSectorName, @"\\{2}", @"\");
-                var sector = _gameFileService.GetSector(streamingSectorNameFix);
-                if (sector == null)
-                {
-                    Logger.Warning($"Failed to find sector {streamingSectorNameFix}");
-                    return null;
-                }
-                
-                var (successPSS, errorPSS, resultPss) = await ProcessStreamingsector(sector, streamingSectorName, CETOutputFile);
-                if (successPSS)
-                { 
-                    Logger.Info($"Successfully processed streamingsector {streamingSectorName} which found {resultPss?.NodeDeletions.Count ?? 0} nodes out of {sector.NodeData.Length} nodes.");
-                    return resultPss;
-                }
-            
-                Logger.Error($"Failed to processes streamingsector {streamingSectorName} with error: {errorPSS}");
-                return null;
-            }
-            catch (Exception e)
-            {
-                Logger.Error($"Failed to Processes {streamingSectorName}: {e}");
-                return null;
-            }
-        }
-
-        if (_settings.CacheEnabled)
-        {
-            try
-            {
-                CacheService.Instance.StartListening();
-            }
-            catch (Exception ex)
-            {
-                Logger.Exception(ex, "Failed to start cache service listening.");
-            }
-        }
         
-        var tasks = CETOutputFile.Sectors.Select(input => Task.Run(() => SectorProcessThread(input))).ToArray();
+        _progress.AddTarget(CETOutputFile.Sectors.Count * 2, Progress.ProgressSections.Startup);
+        var tasks = CETOutputFile.Sectors.Select(input => Task.Run(() => SectorProcessThread(input, CETOutputFile))).ToArray();
 
         var sectorsOutputRaw = await Task.WhenAll(tasks);
-        
+
         if (_settings.CacheEnabled)
             CacheService.Instance.StopListening();
         
+        _progress.AddTarget(2, Progress.ProgressSections.Finalization);
         List<AxlRemovalSector> sectors = new();
         foreach (var sector in sectorsOutputRaw)
         {
@@ -615,7 +637,7 @@ public class ProcessService
                 sectors.Add(sector);
             }
         }
-        
+        _progress.AddCurrent(1, Progress.ProgressSections.Finalization);
         if (sectors.Count == 0)
         {
             Logger.Warning("No sectors intersect, no output file generated!");
@@ -639,6 +661,7 @@ public class ProcessService
             
             SaveFile(removalFile, customRemovalDirectory, customRemovalFile);
         }
+        _progress.AddCurrent(1, Progress.ProgressSections.Finalization);
         return (true, string.Empty);
     }
 }
