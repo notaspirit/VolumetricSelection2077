@@ -156,7 +156,7 @@ public class GameFileService
         if (_settingsService.CacheEnabled)
         {
             if (!_settingsService.CacheModdedResources && db == CacheDatabases.Modded) return parsedMesh;
-            _cacheService.WriteMeshEntry(path, parsedMesh, db); 
+            _cacheService.WriteEntry(path, parsedMesh, db); 
         }
         return parsedMesh;
     }
@@ -191,7 +191,7 @@ public class GameFileService
         if (_settingsService.CacheEnabled)
         {
             if (!_settingsService.CacheModdedResources && db == CacheDatabases.Modded) return parsedSector;
-            _cacheService.WriteSectorEntry(path, parsedSector, db);
+            _cacheService.WriteEntry(path, parsedSector, db);
         }
         return parsedSector;
     }

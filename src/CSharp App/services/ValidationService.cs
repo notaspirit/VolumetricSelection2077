@@ -119,7 +119,7 @@ namespace VolumetricSelection2077.Services
             bool gfsStatus = ValidateGameFileService();
             var outDirVR = ValidateAndCreateDirectory(_settingsService.OutputDirectory);
             var selFileVR = ValidateSelectionFile(gamePath);
-            var validFileName = ValidatePath(@"E:\" + outputFilename + ".xl");
+            var validFileName = string.IsNullOrEmpty(outputFilename) ? PathValidationResult.Empty : ValidatePath(@"E:\" + outputFilename + ".xl");
                                 
             return new InputValidationResult()
             {

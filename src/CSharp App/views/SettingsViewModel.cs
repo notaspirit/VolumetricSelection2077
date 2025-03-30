@@ -25,10 +25,30 @@ namespace VolumetricSelection2077.ViewModels
                 OnPropertyChanged(nameof(ClearModdedCacheButtonLabel));
             }
         }
-
+        
         public string ClearVanillaCacheButtonLabel => Labels.ClearVanillaCache + $" [ {CacheStats.VanillaEntries} files | {CacheStats.EstVanillaSize:F2} GB ]";
         
         public string ClearModdedCacheButtonLabel => Labels.ClearModdedCache + $" [ {CacheStats.ModdedEntries} files | {CacheStats.EstModdedSize:F2} GB ]";
+        
+        public bool CacheEnabled 
+        {
+            get => Settings.CacheEnabled;
+            set
+            {
+                Settings.CacheEnabled = value;
+                OnPropertyChanged(nameof(CacheEnabled));
+            }
+        }
+        
+        public bool AutoUpdateEnabled 
+        {
+            get => Settings.AutoUpdate;
+            set
+            {
+                Settings.AutoUpdate = value;
+                OnPropertyChanged(nameof(AutoUpdateEnabled));
+            }
+        }
         
         public SettingsViewModel() 
         { 
