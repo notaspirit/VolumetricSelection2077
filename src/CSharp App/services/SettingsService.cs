@@ -16,16 +16,13 @@ public class SettingsService
     private static SettingsService? _instance;
     private static readonly object _lock = new object();
     private static readonly string SettingsFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "settings.json");
-
-    // Parameterless constructor for deserialization
     public SettingsService()
     {
-        // Initialize default settings here
         GameDirectory = "";
         CacheEnabled = true;
-        CacheDirectory = "";
+        CacheDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "cache");
         SaveToArchiveMods = true;
-        OutputDirectory = "";
+        OutputDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "output");
         OutputFilename = "";
         DebugMode = false;
         NodeTypeFilter = new BitArray(122, true);
@@ -105,7 +102,9 @@ public class SettingsService
     
     public WindowRecoveryState WindowRecoveryState { get; set; }
     
-    // Methods for loading and saving settings
+    /// <summary>
+    /// Loads the settings or creates a new settings file if it doesn't exist
+    /// </summary>
     public void LoadSettings()
     {
         if (!File.Exists(SettingsFilePath))
@@ -122,9 +121,11 @@ public class SettingsService
                 {
                     GameDirectory = settings.GameDirectory;
                     CacheEnabled = settings.CacheEnabled;
-                    CacheDirectory = settings.CacheDirectory;
+                    if (!string.IsNullOrEmpty(settings.CacheDirectory)) 
+                        CacheDirectory = settings.CacheDirectory;
                     SaveToArchiveMods = settings.SaveToArchiveMods;
-                    OutputDirectory = settings.OutputDirectory;
+                    if (!string.IsNullOrEmpty(settings.OutputDirectory))
+                        OutputDirectory = settings.OutputDirectory;
                     OutputFilename = settings.OutputFilename;
                     DebugMode = settings.DebugMode;
                     NodeTypeFilter = settings.NodeTypeFilter;
@@ -155,11 +156,14 @@ public class SettingsService
             }
             catch (Exception ex)
             {
-                Logger.Error($"Error loading settings: {ex.Message}");
+                Logger.Exception(ex, "Failed to load settings.");
             }
         }
     }
 
+    /// <summary>
+    /// Saves the settings
+    /// </summary>
     public void SaveSettings()
     {
         try
@@ -171,14 +175,12 @@ public class SettingsService
             var json = JsonSerializer.Serialize(this, options);
             var directory = Path.GetDirectoryName(SettingsFilePath);
             if (!Directory.Exists(directory) && directory != null)
-            {
                 Directory.CreateDirectory(directory);
-            }
             File.WriteAllText(SettingsFilePath, json);
         }
         catch (Exception ex)
         {
-            Logger.Error($"Error saving settings: {ex.Message}");
+            Logger.Exception(ex, "Failed to save settings.");
         }
     }
 }
