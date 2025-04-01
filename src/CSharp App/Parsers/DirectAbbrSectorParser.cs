@@ -21,6 +21,8 @@ public class DirectAbbrSectorParser
 {
     public static AbbrSector ParseFromCR2W(CR2WFile input)
     {
+        var gfs = GameFileService.Instance;
+        
         if (input.RootChunk is not worldStreamingSector sector)
         {
             throw new Exception("Input file is not a world streaming sector");
@@ -218,22 +220,46 @@ public class DirectAbbrSectorParser
                     transforms = new AbbrSectorTransform[instancedFoliageNode.PopulationSpanInfo.StancesCount];
                     var foliageResourceFile = input.EmbeddedFiles.FirstOrDefault(efile =>
                         efile.FileName == instancedFoliageNode.FoliageResource.DepotPath);
-                    if (foliageResourceFile == null)
+                    FoliageBuffer fb;
+                    if (foliageResourceFile != null)
                     {
-                        Logger.Warning($"Failed to find embedded resource: {instancedFoliageNode.FoliageResource.DepotPath} in sector!");
-                        goto DefaultLabel;
-                    }
-
-                    if (foliageResourceFile.Content is not worldFoliageCompiledResource wfcr)
-                    {
-                        Logger.Warning($"Embedded resource {instancedFoliageNode.FoliageResource.DepotPath} is not worldFoliageCompiledResource!");
-                        goto DefaultLabel;
-                    }
+                        if (foliageResourceFile.Content is not worldFoliageCompiledResource wfcr)
+                        {
+                            Logger.Warning($"Embedded resource {instancedFoliageNode.FoliageResource.DepotPath} is not worldFoliageCompiledResource!");
+                            goto DefaultLabel;
+                        }
                     
-                    if (wfcr.DataBuffer.Data is not FoliageBuffer fb)
+                        if (wfcr.DataBuffer.Data is not FoliageBuffer foliagebuffer)
+                        {
+                            Logger.Warning("Failed to process worldFoliage resource, Data is not FoliageBuffer!");
+                            goto DefaultLabel;
+                        }
+
+                        fb = foliagebuffer;
+                    }
+                    else
                     {
-                        Logger.Warning("Failed to process worldFoliage resource, Data is not FoliageBuffer!");
-                        goto DefaultLabel;
+                        
+                        if (!gfs?.IsInitialized ?? false)
+                        {
+                            Logger.Warning($"Resource {instancedFoliageNode.FoliageResource.DepotPath} is not embedded and game file service is not initialized! Using fallback method, cache should be manually cleared once issue is resolved.");
+                            goto DefaultLabel;
+                        }
+                        
+                        var foliageCR2W = gfs?.ArchiveManager?.GetCR2WFile(instancedFoliageNode.FoliageResource.DepotPath);
+                        if (foliageCR2W is null)
+                        {
+                            Logger.Warning($"Failed to get {instancedFoliageNode.FoliageResource.DepotPath} from archive files!");
+                            goto DefaultLabel;
+                        }
+        
+                        if (foliageCR2W.RootChunk is not worldFoliageCompiledResource { DataBuffer.Data: FoliageBuffer foliageBuffer })
+                        {
+                            Logger.Warning($"Failed to get {instancedFoliageNode.FoliageResource.DepotPath} is not worldFoliageCompiledResource!");
+                            goto DefaultLabel;
+                        }
+                        
+                        fb = foliageBuffer;
                     }
                     
                     int foliageTransformIndex = 0;
@@ -252,8 +278,7 @@ public class DirectAbbrSectorParser
                         foliageTransformIndex++;
                     }
                     
-                    nodeBoundingBox = new BoundingBox(WolvenkitToSharpDX.Vector3(nodeDataEntry.Position) + WolvenkitToSharpDX.Vector3(nodeDataEntry.Bounds.Min),
-                                                        WolvenkitToSharpDX.Vector3(nodeDataEntry.Position) + WolvenkitToSharpDX.Vector3(nodeDataEntry.Bounds.Max));
+                    nodeBoundingBox = new BoundingBox(WolvenkitToSharpDX.Vector3(nodeDataEntry.Bounds.Min), WolvenkitToSharpDX.Vector3(nodeDataEntry.Bounds.Max));
                     break;
                 default:
                     DefaultLabel:
