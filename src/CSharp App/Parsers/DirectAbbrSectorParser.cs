@@ -277,8 +277,8 @@ public class DirectAbbrSectorParser
                         };
                         foliageTransformIndex++;
                     }
-                    
-                    nodeBoundingBox = new BoundingBox(WolvenkitToSharpDX.Vector3(nodeDataEntry.Bounds.Min), WolvenkitToSharpDX.Vector3(nodeDataEntry.Bounds.Max));
+                    nodeBoundingBox = new BoundingBox(WolvenkitToSharpDX.Vector3(instancedFoliageNode.FoliageLocalBounds.Min) + WolvenkitToSharpDX.Vector3(nodeDataEntry.Position),
+                        WolvenkitToSharpDX.Vector3(instancedFoliageNode.FoliageLocalBounds.Max) + WolvenkitToSharpDX.Vector3(nodeDataEntry.Position));
                     break;
                 default:
                     DefaultLabel:
