@@ -352,7 +352,7 @@ public static class CollisionCheckService
         collisionSphere.TransformBoundingSphere(transformMatrix);
         
         collisionSphere.TransformBoundingSphere(Matrix.Invert(selectionBoxObb.Transformation));
-        var selectionAsAABB = selectionBoxObb.GetBoundingBox();
+        var selectionAsAABB = new BoundingBox((-selectionBoxObb.Size + selectionBoxObb.Center) / 2, (selectionBoxObb.Size + selectionBoxObb.Center) / 2);
         return selectionAsAABB.Contains(ref collisionSphere) != ContainmentType.Disjoint;
     }
 }
