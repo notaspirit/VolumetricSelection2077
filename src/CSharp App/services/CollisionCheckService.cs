@@ -4,7 +4,9 @@ using VolumetricSelection2077.Models;
 using System.Collections.Generic;
 using System.Linq;
 using HelixToolkit.Wpf.SharpDX;
+using Microsoft.Extensions.Logging;
 using WolvenKit.RED4.Types;
+using OrientedBoundingBox = SharpDX.OrientedBoundingBox;
 using Plane = SharpDX.Plane;
 using Vector3 = SharpDX.Vector3;
 using Vector4 = SharpDX.Vector4;
@@ -273,22 +275,21 @@ public static class CollisionCheckService
     public static bool IsCollisionSphereInsideSelectionBox(AbbrActorShapes shape, AbbrSectorTransform actorTransform,
         OrientedBoundingBox selectionBoxObb)
     {
-        // only working way to apply actor and shape transform
         Matrix shapeTransformMatrix = Matrix.Scaling(new Vector3(1,1,1)) * 
                                       Matrix.RotationQuaternion(shape.Transform.Rotation) * 
                                       Matrix.Translation(shape.Transform.Position);
 
-        Matrix actorTransformMatrix = Matrix.Scaling(actorTransform.Scale) * 
+        Matrix actorTransformMatrix = Matrix.Scaling(actorTransform.Scale.X) * 
                                       Matrix.RotationQuaternion(actorTransform.Rotation) * 
                                       Matrix.Translation(actorTransform.Position);
 
         Matrix transformMatrix = shapeTransformMatrix * actorTransformMatrix;
         
-        var collisionSphere = new BoundingSphere(shape.Transform.Position, shape.Transform.Scale.X);
+        var collisionSphere = new BoundingSphere();
         collisionSphere.TransformBoundingSphere(transformMatrix);
-        Vector3 obbHalfExtends = selectionBoxObb.Size / 2;
-        Vector3 closestPoint = Vector3.Clamp(collisionSphere.Center, -obbHalfExtends, obbHalfExtends);
         
-        return collisionSphere.Contains(ref closestPoint) != ContainmentType.Disjoint;
+        collisionSphere.TransformBoundingSphere(Matrix.Invert(selectionBoxObb.Transformation));
+        var selectionAsAABB = selectionBoxObb.GetBoundingBox();
+        return selectionAsAABB.Contains(ref collisionSphere) != ContainmentType.Disjoint;
     }
 }
