@@ -55,6 +55,14 @@ public class GetAvgBBScaleStreamingBlockSector
             {
                 foreach (var transform in nodeDataEntry.Transforms)
                 {
+                    if (transform.Position == new SharpDX.Vector3(0f, 0f, 0f) &&
+                        transform.Rotation == new SharpDX.Quaternion(0f, 0f, 0f, 1f) &&
+                        transform.Scale == new SharpDX.Vector3(1f, 1f, 1f))
+                    {
+                        Logger.Warning("ALARM! ALARM!");
+                        continue;
+                    }
+                    
                     if (transform.Position.X < min.X) min.X = transform.Position.X;
                     if (transform.Position.Y < min.Y) min.Y = transform.Position.Y;
                     if (transform.Position.Z < min.Z) min.Z = transform.Position.Z;
