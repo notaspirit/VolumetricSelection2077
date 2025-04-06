@@ -218,11 +218,14 @@ public class DirectAbbrSectorParser
                     break;
                 case worldFoliageNode instancedFoliageNode:
                     transforms = new AbbrSectorTransform[instancedFoliageNode.PopulationSpanInfo.StancesCount];
-                    var foliageResourceFile = input.EmbeddedFiles.FirstOrDefault(efile =>
-                        efile.FileName == instancedFoliageNode.FoliageResource.DepotPath);
+                    
                     FoliageBuffer fb;
-                    if (foliageResourceFile != null)
+                    
+                    if (instancedFoliageNode.FoliageResource.Flags == InternalEnums.EImportFlags.Embedded)
                     {
+                        var foliageResourceFile = input.EmbeddedFiles.FirstOrDefault(efile =>
+                            efile.FileName == instancedFoliageNode.FoliageResource.DepotPath);
+                        
                         if (foliageResourceFile.Content is not worldFoliageCompiledResource wfcr)
                         {
                             Logger.Warning($"Embedded resource {instancedFoliageNode.FoliageResource.DepotPath} is not worldFoliageCompiledResource!");
@@ -236,10 +239,10 @@ public class DirectAbbrSectorParser
                         }
 
                         fb = foliagebuffer;
+                        
                     }
                     else
                     {
-                        
                         if (!gfs?.IsInitialized ?? false)
                         {
                             Logger.Warning($"Resource {instancedFoliageNode.FoliageResource.DepotPath} is not embedded and game file service is not initialized! Using fallback method, cache should be manually cleared once issue is resolved.");
