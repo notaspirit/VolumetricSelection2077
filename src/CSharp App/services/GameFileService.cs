@@ -56,7 +56,7 @@ public class GameFileService
     /// <summary>
     ///  Initializes GameFileService if it isn't already
     /// </summary>
-    /// <returns></returns>
+    /// <returns>true if operation was successful</returns>
     public bool Initialize()
     {
         if (_initialized) return true;
