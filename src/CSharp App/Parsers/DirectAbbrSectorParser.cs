@@ -1,8 +1,6 @@
 using System;
 using System.Linq;
-using DynamicData;
 using SharpDX;
-using SharpDX.Direct3D9;
 using VolumetricSelection2077.Converters;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Resources;
@@ -10,7 +8,6 @@ using VolumetricSelection2077.Services;
 using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.Archive.CR2W;
 using WolvenKit.RED4.Types;
-using Int64 = System.Int64;
 using Quaternion = SharpDX.Quaternion;
 using Vector3 = SharpDX.Vector3;
 using worldNodeData = WolvenKit.RED4.Archive.Buffer.worldNodeData;
@@ -26,6 +23,21 @@ public class DirectAbbrSectorParser
         if (input.RootChunk is not worldStreamingSector sector)
         {
             throw new Exception("Input file is not a world streaming sector");
+        }
+    
+        foreach (var efile in input.EmbeddedFiles)
+        {
+            if (efile.FileName.ToString().EndsWith(".mesh") || efile.FileName.ToString().EndsWith(".w2mesh"))
+            {
+                Logger.Debug($"Processing Embedded file: {efile.FileName}");
+                var parsedMesh = DirectAbbrMeshParser.ParseFromEmbedded(efile);
+                if (parsedMesh is null)
+                {
+                    Logger.Warning($"Failed to parse embedded file {efile.FileName}");
+                    continue;
+                }
+                CacheService.Instance.WriteEntry(efile.FileName, parsedMesh, CacheDatabases.Vanilla);
+            }
         }
         
         var nodes = new AbbrStreamingSectorNodesEntry[sector.Nodes.Count];

@@ -9,6 +9,7 @@ using VolumetricSelection2077.Converters;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
 using WolvenKit.Common.PhysX;
+using WolvenKit.RED4.Archive;
 using WolvenKit.RED4.Archive.CR2W;
 using WolvenKit.RED4.Types;
 using Plane = SharpDX.Plane;
@@ -87,12 +88,26 @@ public class DirectAbbrMeshParser
         }
     }
 
+    public static AbbrMesh? ParseFromEmbedded(ICR2WEmbeddedFile efile)
+    {
+        if (efile.Content is not CMesh cmesh)
+            return null;
+        return ParseFromCMesh(cmesh);
+    }
+    
     public static AbbrMesh? ParseFromCR2W(CR2WFile cr2w)
     {
-        if (cr2w.RootChunk is not CMesh { RenderResourceBlob.Chunk: rendRenderMeshBlob rendBlob } cMesh)
-        {
+        if (cr2w.RootChunk is not CMesh cmesh)
             return null;
-        }
+        return ParseFromCMesh(cmesh);
+    }
+
+    public static AbbrMesh? ParseFromCMesh(CMesh inputMesh)
+    {
+        if (inputMesh.RenderResourceBlob == null)
+            return null;
+        if (inputMesh.RenderResourceBlob.Chunk is not rendRenderMeshBlob rendBlob)
+            return null;
 
         int lowestLod = 1;
         var rendInfos = rendBlob.Header.RenderChunkInfos;
