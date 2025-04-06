@@ -365,12 +365,10 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Logger.Error($"An error occured during the update check: {ex}");
+            Logger.Exception(ex, "Failed to Check for Updates.");
         }
-        var success = await Task.Run(() =>
-        {
-            return GameFileService.Instance.Initialize();
-        });
+        var success = await Task.Run(() => GameFileService.Instance.Initialize());
+        
         if (success)
             _mainWindowViewModel.AppInitialized = true;
         _mainWindowViewModel.IsProcessing = false;
