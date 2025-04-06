@@ -9,6 +9,10 @@ Note that the versioning is epoch semantic => [Epoch * 1000 + MAJOR].MINOR.PATCH
 
 Roadmeshes and occluder resources are expected to fail, as well as any modded resources, if anything else fails or you have any other feedback please open an issue for it on GitHub.
 
+## Quick Demo (with beta1)
+<video src="https://github.com/user-attachments/assets/964b637a-c7c3-41a6-890c-4e555ba6640f" width="852" height="480"></video>
+(Note that the processing part is sped up, in the actual clip it took ~1min)
+
 ## Requirements
 - CyberEngineTweaks ([GitHub](https://github.com/maximegmd/CyberEngineTweaks) | [Nexus](https://www.nexusmods.com/cyberpunk2077/mods/107))
 - ArchiveXL ([GitHub](https://github.com/psiberx/cp2077-archive-xl) | [Nexus](https://www.nexusmods.com/cyberpunk2077/mods/4198))

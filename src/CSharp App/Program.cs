@@ -2,6 +2,7 @@
 using Serilog;
 using System;
 using System.IO;
+using VolumetricSelection2077.Converters;
 
 namespace VolumetricSelection2077;
 
@@ -12,6 +13,7 @@ class Program
     {
         try
         {
+            MessagePackConfig.ConfigureFormatters();
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         }
         catch (Exception ex)

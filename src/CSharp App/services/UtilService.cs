@@ -21,6 +21,11 @@ namespace VolumetricSelection2077.Services
             return input.Replace("\\", "\\\\");
         }
         
+        /// <summary>
+        /// Formats TimeSpan to H Hour M minute S.MS Second with the larger ones only being added if it is not 0
+        /// </summary>
+        /// <param name="elapsed"></param>
+        /// <returns></returns>
         public static string FormatElapsedTime(TimeSpan elapsed)
         {
             var parts = new List<string>();
@@ -40,6 +45,17 @@ namespace VolumetricSelection2077.Services
         
             return string.Join(", ", parts);
         }
+        
+        /// <summary>
+        /// Formats elapsed seconds to MM:SS
+        /// </summary>
+        /// <param name="time"></param>
+        /// <returns></returns>
+        public static string FormatElapsedTimeMMSS(TimeSpan time)
+        {
+            return $"{time.Minutes:D2}:{time.Seconds:D2}";
+        }
+
 
         public static AxlRemovalFile? TryParseAxlRemovalFile(String input)
         {
@@ -80,6 +96,20 @@ namespace VolumetricSelection2077.Services
                 
             }
             return string.Join(Path.DirectorySeparatorChar, cleanOutput);
+        }
+        /// <summary>
+        /// Checks if the given directory contains any files
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns>true if no files were found</returns>
+        /// <exception cref="ArgumentException">given filepath is invalid</exception>
+        public static bool IsDirectoryEmpty(string path)
+        {
+            if (ValidationService.ValidatePath(path) != ValidationService.PathValidationResult.ValidDirectory)
+                throw new ArgumentException($"Path is invalid.");
+            if (Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories).Any())
+                return false;
+            return true;
         }
     }
 }

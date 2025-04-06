@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using VolumetricSelection2077.Views;
 using VolumetricSelection2077.Services;
 using System;
+using System.ComponentModel;
 using System.IO;
 using Avalonia.Interactivity;
 using System.Threading.Tasks;
@@ -10,6 +11,8 @@ using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using VolumetricSelection2077.Extensions;
+using VolumetricSelection2077.Models;
 using VolumetricSelection2077.TestingStuff;
 using VolumetricSelection2077.ViewModels;
 using VolumetricSelection2077.ViewStructures;
@@ -20,15 +23,57 @@ public partial class MainWindow : Window
     private readonly ProcessService _processService;
     private MainWindowViewModel _mainWindowViewModel;
     
+    private ProgressBar _progressBar;
+    private ProgressBar _progressBarBroder;
+    private TextBlock _progressTextBlock;
+    private TrackedDispatchTimer _dispatcherTimer;
+    private Progress _progress;
     public MainWindow()
     {
         InitializeComponent();
-        InitializeLogger();
+        try
+        {
+            InitializeLogger();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
         DataContext = new MainWindowViewModel();
         _mainWindowViewModel = DataContext as MainWindowViewModel;
         _processService = new ProcessService();
+        Closed += OnMainWindowClosed;
+        
+        _progressBar = this.FindControl<ProgressBar>("ProgressBar");
+        _progressBarBroder = this.FindControl<ProgressBar>("ProgressBarBorder");
+        _progressTextBlock = this.FindControl<TextBlock>("TimerTextBlock");
+        if (_progressTextBlock == null || _progressBar == null || _progressBarBroder == null)
+        {
+            Logger.Error($"Could not find one or more ui components: ProgressBar: {_progressBar}, TimerTextBlock: {_progressTextBlock}, ProgressBarBorder: {_progressBarBroder}");
+        }
+        
+        _progressBar.SizeChanged += (s, e) =>
+        {
+            _progressBarBroder.Width = ((_progressBar.Width / DesktopScaling) + 2) * DesktopScaling;
+            _progressBarBroder.Height = ((_progressBar.Height / DesktopScaling) + 2) * DesktopScaling;
+        };
+        
+        _dispatcherTimer = new TrackedDispatchTimer() { Interval = TimeSpan.FromSeconds(1) };
+        _dispatcherTimer.Tick += (s, e) => _progressTextBlock.Text = $"{UtilService.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
+        _progress = Progress.Instance;
+        _progress.ProgressChanged += (sender, i) =>
+        {
+            _progressBar.Value = i;
+            _progressBarBroder.Value = i;
+        };
     }
-
+    
+    /// <summary>
+    /// Initializes the Logger Service and UI Sink
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Could not find log viewer in the UI</exception>
+    /// <exception cref="ArgumentException">Log Directory it build is invalid</exception>
+    /// <exception cref="IOException"></exception>
     private void InitializeLogger()
     {
         var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -44,12 +89,20 @@ public partial class MainWindow : Window
         Logger.Initialize(logDirectory);
         Logger.AddSink(new LogViewerSink(logViewer, "[{Timestamp:yyyy-MM-dd HH:mm:ss}] {Message:lj}{NewLine}{Exception}"));
     }
-
-    private void SettingsButton_Click(object? sender, RoutedEventArgs e)
+    
+    private async void SettingsButton_Click(object? sender, RoutedEventArgs e)
     {
         if (_mainWindowViewModel.IsProcessing) return;
+        _mainWindowViewModel.SettingsOpen = true;
         var settingsWindow = new SettingsWindow();
-        settingsWindow.ShowDialog(this);
+        settingsWindow.Opened += (_, _) =>
+        {
+            var x = this.Position.X + 10;
+            var y = this.Position.Y + 41;
+            settingsWindow.Position = new PixelPoint(x, y);
+        };
+        await settingsWindow.ShowDialog(this);
+        _mainWindowViewModel.SettingsOpen = false;
     }
     private void ClearLogButton_Click(object? sender, RoutedEventArgs e)
     {
@@ -60,27 +113,18 @@ public partial class MainWindow : Window
     private async void FindSelectedButton_Click(object? sender, RoutedEventArgs e)
     {
         if (_mainWindowViewModel.IsProcessing) return;
-        Stopwatch stopwatch = Stopwatch.StartNew();
+        _dispatcherTimer.Start();
         try
         {
-            _mainWindowViewModel.IsProcessing = true;
-            _mainWindowViewModel.Settings.OutputFilename = UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.OutputFilename);
-            OutputFilenameTextBox.Text = _mainWindowViewModel.Settings.OutputFilename;
-            _mainWindowViewModel.Settings.SaveSettings();
-            if (!string.IsNullOrEmpty(_mainWindowViewModel.Settings.OutputFilename))
+            _mainWindowViewModel.MainTaskProcessing = true;
+            AddQueuedFilters();
+            var (success, error) = await Task.Run(() =>
+            { 
+                return _processService.MainProcessTask();
+            });
+            if (!success)
             {
-                var (success, error) = await Task.Run(() =>
-                { 
-                    return _processService.MainProcessTask();
-                });
-                if (!success)
-                {
-                    Logger.Error($"Process failed: {error}");
-                }
-            }
-            else
-            {
-                Logger.Error("Output filename is empty");
+                Logger.Error($"Process failed: {error}");
             }
         }
         catch (Exception ex)
@@ -89,10 +133,10 @@ public partial class MainWindow : Window
         }
         finally
         {
-            stopwatch.Stop();
-            string formattedTime = UtilService.FormatElapsedTime(stopwatch.Elapsed);
+            _dispatcherTimer.Stop();
+            string formattedTime = UtilService.FormatElapsedTime(_dispatcherTimer.Elapsed);
             Logger.Info($"Process finished after: {formattedTime}");
-            _mainWindowViewModel.IsProcessing = false;
+            _mainWindowViewModel.MainTaskProcessing = false;
         }
     }
 
@@ -101,17 +145,25 @@ public partial class MainWindow : Window
         if (_mainWindowViewModel.IsProcessing) return;
         try
         {
-            _mainWindowViewModel.IsProcessing = true;
-            _mainWindowViewModel.Settings.OutputFilename = UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.OutputFilename);
+            _mainWindowViewModel.BenchmarkProcessing = true;
+            _dispatcherTimer.Start();
+            _mainWindowViewModel.Settings.OutputFilename =
+                UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.OutputFilename);
             OutputFilenameTextBox.Text = _mainWindowViewModel.Settings.OutputFilename;
-            _mainWindowViewModel.Settings.SaveSettings();
+            AddQueuedFilters();
             await Task.Run(() => Benchmarking.Instance.RunBenchmarks());
         }
         catch (Exception ex)
         {
             Logger.Error($"Benchmarking failed: {ex}");
         }
-        _mainWindowViewModel.IsProcessing = false;
+        finally
+        {
+            _dispatcherTimer.Stop();
+            string formattedTime = UtilService.FormatElapsedTime(_dispatcherTimer.Elapsed);
+            Logger.Info($"Benchmarking finished after: {formattedTime}");
+            _mainWindowViewModel.BenchmarkProcessing = false;
+        }
     }
     
     private void ResourceFilterTextBox_KeyDown(object? sender, KeyEventArgs e)
@@ -192,6 +244,7 @@ public partial class MainWindow : Window
         if (sender is Button)
         {
             _mainWindowViewModel.FilterSelectionVisibility = !_mainWindowViewModel.FilterSelectionVisibility;
+            AddQueuedFilters();
         }
     }
     
@@ -249,5 +302,83 @@ public partial class MainWindow : Window
         {
             item.IsChecked = !item.IsChecked;
         }
+    }
+
+    private void AddQueuedFilters()
+    {
+        if (!string.IsNullOrEmpty(ResourceFilterTextBox.Text?.Trim()))
+        {
+            _mainWindowViewModel.Settings.ResourceNameFilter.Add(ResourceFilterTextBox.Text.ToLower());
+            ResourceFilterTextBox.Text = string.Empty;
+        }
+        if (!string.IsNullOrEmpty(DebugNameFilterTextBox.Text?.Trim()))
+        {
+            _mainWindowViewModel.Settings.DebugNameFilter.Add(DebugNameFilterTextBox.Text.ToLower());
+            DebugNameFilterTextBox.Text = string.Empty;
+        }
+        _mainWindowViewModel.Settings.SaveSettings();
+    }
+    
+    protected override async void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+        Logger.Info($"VS2077 Version: {_mainWindowViewModel.Settings.ProgramVersion}");
+        _mainWindowViewModel.IsProcessing = true;
+        var validationResult = ValidationService.ValidateGamePath(_mainWindowViewModel.Settings.GameDirectory).Item1;
+        if (!(validationResult == ValidationService.GamePathResult.Valid ||
+              validationResult == ValidationService.GamePathResult.CetNotFound))
+        {
+            Logger.Error("Failed to initialize VS2077! Invalid Game Path, update it in the settings and restart the application.");
+            _mainWindowViewModel.AppInitialized = false;
+            _mainWindowViewModel.IsProcessing = false;
+            return;
+        }
+        try
+        {
+            if (_mainWindowViewModel.Settings.DidUpdate)
+            {
+                var changelog = await UpdateService.GetChangelog();
+                Logger.Success($"Successfully updated to {changelog.Item1}");
+                Logger.Info($"Changelog:" +
+                            $"\n{changelog.Item2}");
+                _mainWindowViewModel.Settings.DidUpdate = false;
+                _mainWindowViewModel.Settings.SaveSettings();
+            }
+            else
+            {
+                Logger.Info("Checking for Updates...");
+                var updateExists = await UpdateService.CheckUpdates();
+                if (updateExists.Item1)
+                {
+                    Logger.Warning($"Update to {updateExists.Item2} is available");
+                }
+                else
+                {
+                    Logger.Info("No updates found");
+                }
+
+                if (updateExists.Item1 && _mainWindowViewModel.Settings.AutoUpdate)
+                {
+                    await UpdateService.Update();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"An error occured during the update check: {ex}");
+        }
+        var success = await Task.Run(() =>
+        {
+            return GameFileService.Instance.Initialize();
+        });
+        if (success)
+            _mainWindowViewModel.AppInitialized = true;
+        _mainWindowViewModel.IsProcessing = false;
+    }
+
+    private void OnMainWindowClosed(object? sender, EventArgs e)
+    {
+        AddQueuedFilters();
+        _mainWindowViewModel.Settings.SaveSettings();
     }
 }

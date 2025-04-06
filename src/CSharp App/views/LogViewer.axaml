@@ -1,17 +1,19 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:views="clr-namespace:VolumetricSelection2077.Views"
-             x:Class="VolumetricSelection2077.Views.LogViewer"
-             x:DataType="views:LogViewer">
-    <ScrollViewer Name="LogScrollViewer" Background="#0a0c10">
+<UserControl
+    x:Class="VolumetricSelection2077.Views.LogViewer"
+    x:DataType="views:LogViewer"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:views="clr-namespace:VolumetricSelection2077.Views"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer Background="#0e1117" Name="LogScrollViewer">
         <ItemsControl ItemsSource="{Binding LogMessages}">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <SelectableTextBlock Text="{Binding Text}" 
-                                       FontFamily="Cascadia Code, Consolas, Courier New, Monospace"
-                                       TextWrapping="Wrap">
+                    <SelectableTextBlock
+                        FontFamily="Cascadia Code, Consolas, Courier New, Monospace"
+                        Text="{Binding Text}"
+                        TextWrapping="Wrap">
                         <SelectableTextBlock.Foreground>
-                            <Binding Path="Level" Converter="{StaticResource LogLevelColorConverter}"/>
+                            <Binding Converter="{StaticResource LogLevelColorConverter}" Path="Level" />
                         </SelectableTextBlock.Foreground>
                     </SelectableTextBlock>
                 </DataTemplate>

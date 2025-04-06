@@ -14,7 +14,7 @@ local relativeOffset = vector3:new(0, 0, 0)
 local selectionBox = nil
 
 -- Settings
-local versionString = "1000.0.0-beta3"
+local versionString = "1000.0.0-beta6"
 
 local settingsInstance = settings.getInstance()
 local isHighlighted = false
@@ -466,6 +466,10 @@ local function settingsTab()
             RHTRangeLocal = 120
             settingsInstance:update("RHTRange", RHTRangeLocal)
         end
+        ImGui.TableNextColumn()
+        ImGui.Text("RHT Range value *must* match the Max Scanning Distance in World Inspector > Settings > World Scanner")
+        ImGui.TableNextColumn()
+        ImGui.Text("Note that higher ranges than default may miss the higher quality meshes and only remove the proxy, this is a limitation of streaming distances and RHT")
         ImGui.EndTable()
     end
 end
