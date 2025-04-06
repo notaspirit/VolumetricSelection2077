@@ -95,7 +95,7 @@ public class GameFileService
         catch (Exception e)
         {
             sw.Stop();
-            Logger.Error($"Initializing Game File Service failed : {e}");
+            Logger.Exception(e, "Initializing Game File Service failed!");
             return false;
         }
 
@@ -132,10 +132,10 @@ public class GameFileService
         var cachedMesh = _cacheService.GetEntry(new ReadRequest(path, _readCacheTarget));
         if (MessagePackHelper.TryDeserialize<AbbrMesh>(cachedMesh, out var mesh)) return mesh;
         
-        var rawMesh = _archiveManager.GetCR2WFile(path);
+        var rawMesh = ArchiveManager.GetCR2WFile(path);
         if (rawMesh == null) return null;
         CacheDatabases db = CacheDatabases.Vanilla;
-        if (_settingsService.SupportModdedResources && _settingsService.CacheEnabled)
+        if (_settingsService.SupportModdedResources)
         {
             var fileLookup = ArchiveManager.Lookup(path, ArchiveManagerScope.Mods);
             if (fileLookup != null) db = CacheDatabases.Modded;
@@ -148,7 +148,7 @@ public class GameFileService
         }
         catch (Exception ex)
         {
-            Logger.Error($"Failed to parse mesh {path} with error: {ex}");
+            Logger.Exception(ex,$"Failed to parse mesh {path}");
             return null;
         }
         if (parsedMesh == null) return null;
@@ -162,11 +162,10 @@ public class GameFileService
     public AbbrSector? GetSector(string path)
     {
         if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
-        if (_settingsService.CacheEnabled)
-        {
-            var cachedSector = _cacheService.GetEntry(new ReadRequest(path, _readCacheTarget));
-            if (MessagePackHelper.TryDeserialize<AbbrSector>(cachedSector, out var mesh)) return mesh;
-        }
+
+        var cachedSector = _cacheService.GetEntry(new ReadRequest(path, _readCacheTarget));
+        if (MessagePackHelper.TryDeserialize<AbbrSector>(cachedSector, out var mesh)) return mesh;
+        
         var rawSector = ArchiveManager.GetCR2WFile(path);
         if (rawSector == null) return null;
         CacheDatabases db = CacheDatabases.Vanilla;
@@ -183,7 +182,7 @@ public class GameFileService
         }
         catch (Exception ex)
         {
-            Logger.Error($"Failed to get sector {path} with error: {ex}");
+            Logger.Exception(ex,$"Failed to parse sector {path}");
             return null;
         }
 
