@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using MessagePack;
 using SharpDX;
 using VolumetricSelection2077.Converters;
 using VolumetricSelection2077.Models;
@@ -29,14 +30,13 @@ public class DirectAbbrSectorParser
         {
             if (efile.FileName.ToString().EndsWith(".mesh") || efile.FileName.ToString().EndsWith(".w2mesh"))
             {
-                Logger.Debug($"Processing Embedded file: {efile.FileName}");
                 var parsedMesh = DirectAbbrMeshParser.ParseFromEmbedded(efile);
                 if (parsedMesh is null)
                 {
                     Logger.Warning($"Failed to parse embedded file {efile.FileName}");
                     continue;
                 }
-                CacheService.Instance.WriteEntry(efile.FileName, parsedMesh, CacheDatabases.Vanilla);
+                CacheService.Instance.WriteSingleEntry(new WriteRequest(efile.FileName, MessagePackSerializer.Serialize(parsedMesh)));
             }
         }
         
