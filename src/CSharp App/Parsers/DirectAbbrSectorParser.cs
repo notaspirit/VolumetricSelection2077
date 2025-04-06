@@ -17,6 +17,12 @@ namespace VolumetricSelection2077.Parsers;
 
 public class DirectAbbrSectorParser
 {
+    /// <summary>
+    /// Parses a CR2W file into an AbbrSector
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception">cr2w file is not a streamingsector</exception>
     public static AbbrSector ParseFromCR2W(CR2WFile input)
     {
         var gfs = GameFileService.Instance;
