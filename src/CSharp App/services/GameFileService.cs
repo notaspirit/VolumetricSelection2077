@@ -52,6 +52,11 @@ public class GameFileService
     {
         _settingsService = SettingsService.Instance;
     }
+    
+    /// <summary>
+    ///  Initializes GameFileService if it isn't already
+    /// </summary>
+    /// <returns></returns>
     public bool Initialize()
     {
         if (_initialized) return true;
@@ -114,6 +119,15 @@ public class GameFileService
             }
         }
     }
+    
+    /// <summary>
+    /// Gets a PhysX Mesh entry
+    /// </summary>
+    /// <param name="sectorHash"></param>
+    /// <param name="actorHash"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception">Game file service is not initialized</exception>
+    /// <remarks>Collision meshes are not cached</remarks>
     public async Task<AbbrMesh?> GetPhysXMesh(ulong sectorHash, ulong actorHash)
     {
         if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetPhysXMesh.");
@@ -125,6 +139,13 @@ public class GameFileService
         
         return DirectAbbrMeshParser.ParseFromPhysX(rawMesh);
     }
+    
+    /// <summary>
+    /// Gets a CMesh from the archives or cache and returns the parsed AbbrMesh
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception">Game file service is not initialized</exception>
     public AbbrMesh? GetCMesh(string path)
     {
         if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
@@ -158,7 +179,13 @@ public class GameFileService
         
         return parsedMesh;
     }
-
+    
+    /// <summary>
+    /// Gets a worldStreamingSector from the archives or cache and returns the parsed AbbrSector
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception">Game file service is not initialized</exception>
     public AbbrSector? GetSector(string path)
     {
         if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
