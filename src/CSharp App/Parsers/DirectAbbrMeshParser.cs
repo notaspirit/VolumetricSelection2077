@@ -1,24 +1,24 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using BulletSharp;
-using DynamicData;
-using Microsoft.ClearScript.Util.Web;
 using SharpDX;
-using VolumetricSelection2077.Converters;
 using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Services;
 using WolvenKit.Common.PhysX;
 using WolvenKit.RED4.Archive;
 using WolvenKit.RED4.Archive.CR2W;
 using WolvenKit.RED4.Types;
-using Plane = SharpDX.Plane;
 using Vector4 = SharpDX.Vector4;
 
 namespace VolumetricSelection2077.Parsers;
 
 public class DirectAbbrMeshParser
 {
+    /// <summary>
+    /// Gets the indicies of a convex collision mesh
+    /// </summary>
+    /// <param name="polygon"></param>
+    /// <param name="hullData"></param>
+    /// <returns></returns>
     public static uint[] GetPolygonIndices(HullPolygonData polygon, ConvexHullData hullData)
     {
         var indices = new uint[polygon.NbVerts];
@@ -29,6 +29,11 @@ public class DirectAbbrMeshParser
         return indices;
     }
     
+    /// <summary>
+    /// Parses the collision n polygon mesh (convexMesh) into an AbbrMesh
+    /// </summary>
+    /// <param name="convexMesh"></param>
+    /// <returns></returns>
     private static AbbrMesh ParseConvexMesh(ConvexMesh convexMesh)
     {
         var polygons = new uint[convexMesh.HullData.Polygons.Count][];
@@ -50,7 +55,12 @@ public class DirectAbbrMeshParser
             SubMeshes = subMeshesOut
         };
     }
-
+    
+    /// <summary>
+    /// Parses the collision triangle mesh into an AbbrMesh
+    /// </summary>
+    /// <param name="triangleMesh"></param>
+    /// <returns></returns>
     private static AbbrMesh ParseTriangleMesh(BV4TriangleMesh triangleMesh)
     {
         var verts = triangleMesh.Vertices.ToArray();
@@ -75,6 +85,12 @@ public class DirectAbbrMeshParser
         };
     }
     
+    /// <summary>
+    /// Parses a PhysX Collision mesh into an AbbrMesh
+    /// </summary>
+    /// <param name="inputMesh"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
     public static AbbrMesh ParseFromPhysX(PhysXMesh inputMesh)
     {
         switch (inputMesh)
@@ -87,7 +103,12 @@ public class DirectAbbrMeshParser
                 throw new ArgumentException("Invalid physics mesh");
         }
     }
-
+    
+    /// <summary>
+    /// Parses a CMesh from an embedded file, uses <see cref="ParseFromCMesh"/> 
+    /// </summary>
+    /// <param name="efile"></param>
+    /// <returns></returns>
     public static AbbrMesh? ParseFromEmbedded(ICR2WEmbeddedFile efile)
     {
         if (efile.Content is not CMesh cmesh)
@@ -95,13 +116,24 @@ public class DirectAbbrMeshParser
         return ParseFromCMesh(cmesh);
     }
     
+    /// <summary>
+    /// Parses a CMesh from a CR2W file, uses <see cref="ParseFromCMesh"/> 
+    /// </summary>
+    /// <param name="cr2w"></param>
+    /// <returns></returns>
     public static AbbrMesh? ParseFromCR2W(CR2WFile cr2w)
     {
         if (cr2w.RootChunk is not CMesh cmesh)
             return null;
         return ParseFromCMesh(cmesh);
     }
-
+    
+    /// <summary>
+    /// Parses the CMesh into an AbbrMesh
+    /// </summary>
+    /// <param name="inputMesh"></param>
+    /// <returns></returns>
+    /// <remarks>fails to process occlusion meshes as those have a different internal structure</remarks>
     public static AbbrMesh? ParseFromCMesh(CMesh inputMesh)
     {
         if (inputMesh.RenderResourceBlob == null)
