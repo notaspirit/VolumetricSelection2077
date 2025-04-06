@@ -83,7 +83,7 @@ namespace VolumetricSelection2077.Services
         /// <returns></returns>
         public static bool ValidateCacheStatus()
         {
-            return _settingsService.CacheEnabled == CacheService.Instance.IsInitialized;
+            return CacheService.Instance.IsInitialized;
         }
 
         /// <summary>

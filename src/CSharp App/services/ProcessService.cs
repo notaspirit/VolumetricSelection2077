@@ -569,20 +569,15 @@ public class ProcessService
         
         _progress.Reset();
         _progress.SetWeight(0.1f, 0.85f, 0.05f);
-
-        if (_settings.CacheEnabled)
+        
+        try
         {
-            try
-            {
-                CacheService.Instance.StartListening();
-            }
-            catch (Exception ex)
-            {
-                Logger.Exception(ex, "Failed to start listening to write requests in cache service!");
-            }
+            CacheService.Instance.StartListening();
         }
-
-
+        catch (Exception ex)
+        {
+            Logger.Exception(ex, "Failed to start listening to write requests in cache service!");
+        }
         
         bool customRemovalFileProvided = customRemovalFile != null;
         bool customRemovalDirectoryProvided = customRemovalDirectory != null;
@@ -624,9 +619,8 @@ public class ProcessService
         var tasks = CETOutputFile.Sectors.Select(input => Task.Run(() => SectorProcessThread(input, CETOutputFile))).ToArray();
 
         var sectorsOutputRaw = await Task.WhenAll(tasks);
-
-        if (_settings.CacheEnabled)
-            CacheService.Instance.StopListening();
+        
+        CacheService.Instance.StopListening();
         
         _progress.AddTarget(2, Progress.ProgressSections.Finalization);
         List<AxlRemovalSector> sectors = new();
