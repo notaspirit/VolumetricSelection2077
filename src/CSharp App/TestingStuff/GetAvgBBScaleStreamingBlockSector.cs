@@ -45,12 +45,17 @@ public class GetAvgBBScaleStreamingBlockSector
         
         Dictionary<string, BoundingBox> bbsFromSectorManual = new();
 
-        Logger.Info("Calculating rough AABB dirctly...");
+        Logger.Info("Calculating rough AABB directly...");
         foreach (var entry in bbsFromBlock)
         {
             var sector = gfs.GetSector(entry.Key);
             SharpDX.Vector3 min = new(int.MaxValue, int.MaxValue, int.MaxValue);
             SharpDX.Vector3 max = new(int.MinValue, int.MinValue, int.MinValue);
+            if (sector == null)
+            {
+                bbsFromBlock.Remove(entry.Key);
+                continue;
+            }
             foreach (var nodeDataEntry in sector.NodeData)
             {
                 foreach (var transform in nodeDataEntry.Transforms)
@@ -59,7 +64,7 @@ public class GetAvgBBScaleStreamingBlockSector
                         transform.Rotation == new SharpDX.Quaternion(0f, 0f, 0f, 1f) &&
                         transform.Scale == new SharpDX.Vector3(1f, 1f, 1f))
                     {
-                        Logger.Warning("ALARM! ALARM!");
+                        Logger.Warning($"ALARM! ALARM! Node: {sector.Nodes[nodeDataEntry.NodeIndex].Type}");
                         continue;
                     }
                     
@@ -126,7 +131,7 @@ public class GetAvgBBScaleStreamingBlockSector
             Random random = new Random();
             int randomIndex = random.Next(0, root.Descriptors.Count);
             var descriptor = root.Descriptors[randomIndex];
-            if ((/*$"{descriptor.Category}" != "Interior" && */
+            if (($"{descriptor.Category}" != "Interior" &&
                 $"{descriptor.Category}" != "Exterior") || bbsFromBlock.ContainsKey(descriptor.Data.DepotPath))
             {
                 return GetRandomSectorDescriptor();

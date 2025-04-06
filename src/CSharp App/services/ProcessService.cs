@@ -11,6 +11,7 @@ using VolumetricSelection2077.Parsers;
 using Newtonsoft.Json;
 using SharpDX;
 using VolumetricSelection2077.Resources;
+using VolumetricSelection2077.TestingStuff;
 using WolvenKit.RED4.Types;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -550,6 +551,10 @@ public class ProcessService
     /// <exception cref="ArgumentException">Provided custom file does not exist, or only one optional param is provided</exception>
     public async Task<(bool success, string error)> MainProcessTask(string? customRemovalFile = null, string? customRemovalDirectory = null)
     {
+        
+        GetAvgBBScaleStreamingBlockSector.Run(_gameFileService);
+        return (true, "null");
+        
         Logger.Info("Validating inputs...");
 
         try
