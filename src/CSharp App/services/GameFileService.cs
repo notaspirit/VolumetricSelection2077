@@ -34,7 +34,7 @@ public class GameFileService
     private static readonly object _lock = new object();
     private readonly ILoggerService _loggerService = new SerilogWrapper();
     private readonly IProgressService<double> _progressService = new ProgressService<double>();
-    private ArchiveManager? _archiveManager;
+    public ArchiveManager? ArchiveManager;
     private readonly SettingsService _settingsService;
     private HashService? _hashService;
     private HookService? _hookService;
@@ -73,18 +73,18 @@ public class GameFileService
                 _hashService,
                 _loggerService,
                 _hookService);
-            _archiveManager = new ArchiveManager(
+            ArchiveManager = new ArchiveManager(
                 _hashService,
                 _red4ParserService,
                 _loggerService,
                 _progressService
             );
             _geometryCacheService = new GeometryCacheService(
-                _archiveManager,
+                ArchiveManager,
                 _red4ParserService
             );
             var gameExePath = new FileInfo(_settingsService.GameDirectory + @"\bin\x64\Cyberpunk2077.exe");
-            _archiveManager.Initialize(gameExePath, _settingsService.SupportModdedResources);
+            ArchiveManager.Initialize(gameExePath, _settingsService.SupportModdedResources);
             _cacheService = CacheService.Instance;
             _readCacheTarget = _settingsService.SupportModdedResources ? CacheDatabases.All : CacheDatabases.Vanilla;
             _initialized = true;
@@ -135,9 +135,9 @@ public class GameFileService
         var rawMesh = _archiveManager.GetCR2WFile(path);
         if (rawMesh == null) return null;
         CacheDatabases db = CacheDatabases.Vanilla;
-        if (_settingsService.SupportModdedResources)
+        if (_settingsService.SupportModdedResources && _settingsService.CacheEnabled)
         {
-            var fileLookup = _archiveManager.Lookup(path, ArchiveManagerScope.Mods);
+            var fileLookup = ArchiveManager.Lookup(path, ArchiveManagerScope.Mods);
             if (fileLookup != null) db = CacheDatabases.Modded;
         }
 
@@ -162,16 +162,17 @@ public class GameFileService
     public AbbrSector? GetSector(string path)
     {
         if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
-        
-        var cachedSector = _cacheService.GetEntry(new ReadRequest(path, _readCacheTarget));
-        if (MessagePackHelper.TryDeserialize<AbbrSector>(cachedSector, out var mesh)) return mesh;
-        
-        var rawSector = _archiveManager.GetCR2WFile(path);
+        if (_settingsService.CacheEnabled)
+        {
+            var cachedSector = _cacheService.GetEntry(new ReadRequest(path, _readCacheTarget));
+            if (MessagePackHelper.TryDeserialize<AbbrSector>(cachedSector, out var mesh)) return mesh;
+        }
+        var rawSector = ArchiveManager.GetCR2WFile(path);
         if (rawSector == null) return null;
         CacheDatabases db = CacheDatabases.Vanilla;
         if (_settingsService.SupportModdedResources)
         {
-            var fileLookup = _archiveManager.Lookup(path, ArchiveManagerScope.Mods);
+            var fileLookup = ArchiveManager.Lookup(path, ArchiveManagerScope.Mods);
             if (fileLookup != null) db = CacheDatabases.Modded;
         }
 

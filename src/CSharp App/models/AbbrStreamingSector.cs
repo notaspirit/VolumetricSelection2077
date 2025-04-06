@@ -35,6 +35,9 @@ namespace VolumetricSelection2077.Models
     
         [Key(1)]
         public int NodeIndex { get; set; }
+        
+        [Key(2)]
+        public BoundingBox? AABB { get; set; }
     }
 
     [MessagePackObject]
