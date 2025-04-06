@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using DynamicData;
+using SharpDX;
 using SharpDX.Direct3D9;
 using VolumetricSelection2077.Converters;
 using VolumetricSelection2077.Models;
@@ -10,6 +11,7 @@ using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.Archive.CR2W;
 using WolvenKit.RED4.Types;
 using Int64 = System.Int64;
+using Quaternion = SharpDX.Quaternion;
 using Vector3 = SharpDX.Vector3;
 using worldNodeData = WolvenKit.RED4.Archive.Buffer.worldNodeData;
 
@@ -19,6 +21,8 @@ public class DirectAbbrSectorParser
 {
     public static AbbrSector ParseFromCR2W(CR2WFile input)
     {
+        var gfs = GameFileService.Instance;
+        
         if (input.RootChunk is not worldStreamingSector sector)
         {
             throw new Exception("Input file is not a world streaming sector");
@@ -163,7 +167,8 @@ public class DirectAbbrSectorParser
         foreach (var nodeDataEntry in nodeDataBuffer)
         {
             AbbrSectorTransform[] transforms;
-
+            BoundingBox? nodeBoundingBox = null;
+            
             switch (sector.Nodes[nodeDataEntry.NodeIndex].Chunk)
             {
                 case worldInstancedMeshNode instancedNode:
@@ -211,6 +216,70 @@ public class DirectAbbrSectorParser
                         goto DefaultLabel;
                     }
                     break;
+                case worldFoliageNode instancedFoliageNode:
+                    transforms = new AbbrSectorTransform[instancedFoliageNode.PopulationSpanInfo.StancesCount];
+                    var foliageResourceFile = input.EmbeddedFiles.FirstOrDefault(efile =>
+                        efile.FileName == instancedFoliageNode.FoliageResource.DepotPath);
+                    FoliageBuffer fb;
+                    if (foliageResourceFile != null)
+                    {
+                        if (foliageResourceFile.Content is not worldFoliageCompiledResource wfcr)
+                        {
+                            Logger.Warning($"Embedded resource {instancedFoliageNode.FoliageResource.DepotPath} is not worldFoliageCompiledResource!");
+                            goto DefaultLabel;
+                        }
+                    
+                        if (wfcr.DataBuffer.Data is not FoliageBuffer foliagebuffer)
+                        {
+                            Logger.Warning("Failed to process worldFoliage resource, Data is not FoliageBuffer!");
+                            goto DefaultLabel;
+                        }
+
+                        fb = foliagebuffer;
+                    }
+                    else
+                    {
+                        
+                        if (!gfs?.IsInitialized ?? false)
+                        {
+                            Logger.Warning($"Resource {instancedFoliageNode.FoliageResource.DepotPath} is not embedded and game file service is not initialized! Using fallback method, cache should be manually cleared once issue is resolved.");
+                            goto DefaultLabel;
+                        }
+                        
+                        var foliageCR2W = gfs?.ArchiveManager?.GetCR2WFile(instancedFoliageNode.FoliageResource.DepotPath);
+                        if (foliageCR2W is null)
+                        {
+                            Logger.Warning($"Failed to get {instancedFoliageNode.FoliageResource.DepotPath} from archive files!");
+                            goto DefaultLabel;
+                        }
+        
+                        if (foliageCR2W.RootChunk is not worldFoliageCompiledResource { DataBuffer.Data: FoliageBuffer foliageBuffer })
+                        {
+                            Logger.Warning($"Failed to get {instancedFoliageNode.FoliageResource.DepotPath} is not worldFoliageCompiledResource!");
+                            goto DefaultLabel;
+                        }
+                        
+                        fb = foliageBuffer;
+                    }
+                    
+                    int foliageTransformIndex = 0;
+                    foreach (var transform in fb.Populations.ToArray()
+                                 .AsSpan((int)(uint)instancedFoliageNode.PopulationSpanInfo.StancesBegin,
+                                     (int)(uint)instancedFoliageNode.PopulationSpanInfo.StancesCount))
+                    {
+                        transforms[foliageTransformIndex] = new AbbrSectorTransform()
+                        {
+                            Position = WolvenkitToSharpDX.Vector3(transform.Position) +
+                                       WolvenkitToSharpDX.Vector3(nodeDataEntry.Position),
+                            Rotation = new Quaternion(transform.Rotation.X, transform.Rotation.Y,
+                                transform.Rotation.Z, transform.Rotation.W),
+                            Scale = new Vector3(transform.Scale, transform.Scale, transform.Scale)
+                        };
+                        foliageTransformIndex++;
+                    }
+                    nodeBoundingBox = new BoundingBox(WolvenkitToSharpDX.Vector3(instancedFoliageNode.FoliageLocalBounds.Min) + WolvenkitToSharpDX.Vector3(nodeDataEntry.Position),
+                        WolvenkitToSharpDX.Vector3(instancedFoliageNode.FoliageLocalBounds.Max) + WolvenkitToSharpDX.Vector3(nodeDataEntry.Position));
+                    break;
                 default:
                     DefaultLabel:
                     {
@@ -228,7 +297,8 @@ public class DirectAbbrSectorParser
             nodeDataOut[nodeDataIndex] = new AbbrStreamingSectorNodeDataEntry()
             {
                 NodeIndex = nodeDataEntry.NodeIndex,
-                Transforms = transforms
+                Transforms = transforms,
+                AABB = nodeBoundingBox
             };
             nodeDataIndex++;
         }

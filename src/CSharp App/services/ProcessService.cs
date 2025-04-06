@@ -11,6 +11,7 @@ using VolumetricSelection2077.Parsers;
 using Newtonsoft.Json;
 using SharpDX;
 using VolumetricSelection2077.Resources;
+using VolumetricSelection2077.TestingStuff;
 using WolvenKit.RED4.Types;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -284,6 +285,13 @@ public class ProcessService
             switch (entryType)
             {
                 case CollisionCheck.Types.Mesh:
+                    if (nodeDataEntry.AABB != null)
+                    {
+                        BoundingBox nodeAABB = (BoundingBox)nodeDataEntry.AABB;
+                        if (selectionBox.Obb.Contains(ref nodeAABB) == ContainmentType.Disjoint)
+                            return null;
+                    }
+                    
                     var mesh = _gameFileService.GetCMesh(nodeEntry.ResourcePath);
                     if (mesh == null)
                     {
