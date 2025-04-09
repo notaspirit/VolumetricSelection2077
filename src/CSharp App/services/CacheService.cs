@@ -11,6 +11,7 @@ using LightningDB;
 using MessagePack;
 using Microsoft.ClearScript.Util.Web;
 using Microsoft.VisualBasic.FileIO;
+using SharpDX;
 using VolumetricSelection2077.Models;
 using WolvenKit.Core.Extensions;
 using WolvenKit.RED4.Types;
@@ -22,6 +23,8 @@ public enum CacheDatabases
 {
     Vanilla,
     Modded,
+    VanillaBounds,
+    ModdedBounds,
     All
 }
 
@@ -62,6 +65,8 @@ public class CacheService
     private readonly object _lock = new object();
     private LightningDatabase _vanillaDatabase;
     private LightningDatabase _moddedDatabase;
+    private LightningDatabase _vanillaBoundsDatabase;
+    private LightningDatabase _moddedBoundsDatabase;
     private bool _isInitialized;
 
     public bool IsInitialized
@@ -101,7 +106,7 @@ public class CacheService
             
             _env = new LightningEnvironment(_settings.CacheDirectory)
             {
-                MaxDatabases = 2,
+                MaxDatabases = 4,
                 MapSize = MapSize,
                 MaxReaders = MaxReaders
             };
@@ -110,6 +115,8 @@ public class CacheService
             var tx = _env.BeginTransaction();
             _moddedDatabase = tx.OpenDatabase(CacheDatabases.Modded.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
             _vanillaDatabase = tx.OpenDatabase(CacheDatabases.Vanilla.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
+            _moddedBoundsDatabase = tx.OpenDatabase(CacheDatabases.ModdedBounds.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
+            _vanillaBoundsDatabase = tx.OpenDatabase(CacheDatabases.VanillaBounds.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
             tx.Commit();
             
             var metaData = GetMetadata();
@@ -288,6 +295,8 @@ public class CacheService
             
             List<WriteRequest> requestsModded = new();
             List<WriteRequest> requestsVanilla = new();
+            List<WriteRequest> requestsModdedBounds = new();
+            List<WriteRequest> requestsVanillaBounds = new();
             foreach (var request in requests)
             {
                 switch (request.Database)
@@ -297,6 +306,12 @@ public class CacheService
                         break;
                     case CacheDatabases.Modded:
                         requestsModded.Add(request);
+                        break;
+                    case CacheDatabases.VanillaBounds:
+                        requestsVanillaBounds.Add(request);
+                        break;
+                    case CacheDatabases.ModdedBounds:
+                        requestsModdedBounds.Add(request);
                         break;
                 }
             }
@@ -315,6 +330,22 @@ public class CacheService
                 foreach (var request in requestsVanilla)
                 {
                     tx.Put(_vanillaDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                }
+            }
+            
+            if (requestsVanillaBounds.Count > 0)
+            {
+                foreach (var request in requestsVanillaBounds)
+                {
+                    tx.Put(_vanillaBoundsDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                }
+            }
+                
+            if (requestsModdedBounds.Count > 0)
+            {
+                foreach (var request in requestsModdedBounds)
+                {
+                    tx.Put(_moddedBoundsDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
                 }
             }
 
@@ -346,7 +377,7 @@ public class CacheService
             MaxReaders = MaxReaders
         };
         tempEnv.Open();
-        var databases = new [] { CacheDatabases.Vanilla.ToString(), CacheDatabases.Modded.ToString() };
+        var databases = new [] { CacheDatabases.Vanilla.ToString(), CacheDatabases.Modded.ToString(), CacheDatabases.VanillaBounds.ToString(), CacheDatabases.ModdedBounds.ToString() };
 
         foreach (var database in databases)
         {
@@ -422,6 +453,24 @@ public class CacheService
                         }
                     }
                     break;
+                case CacheDatabases.VanillaBounds:
+                    using (var cursor = tx.CreateCursor(_vanillaBoundsDatabase))
+                    {
+                        while (cursor.Next() == MDBResultCode.Success)
+                        {
+                            cursor.Delete();
+                        }
+                    }
+                    break;
+                case CacheDatabases.ModdedBounds:
+                    using (var cursor = tx.CreateCursor(_moddedBoundsDatabase))
+                    {
+                        while (cursor.Next() == MDBResultCode.Success)
+                        {
+                            cursor.Delete();
+                        }
+                    }
+                    break;
                 case CacheDatabases.All:
                     using (var cursor = tx.CreateCursor(_vanillaDatabase))
                     {
@@ -431,6 +480,20 @@ public class CacheService
                         }
                     }
                     using (var cursor = tx.CreateCursor(_moddedDatabase))
+                    {
+                        while (cursor.Next() == MDBResultCode.Success)
+                        {
+                            cursor.Delete();
+                        }
+                    }
+                    using (var cursor = tx.CreateCursor(_vanillaBoundsDatabase))
+                    {
+                        while (cursor.Next() == MDBResultCode.Success)
+                        {
+                            cursor.Delete();
+                        }
+                    }
+                    using (var cursor = tx.CreateCursor(_moddedBoundsDatabase))
                     {
                         while (cursor.Next() == MDBResultCode.Success)
                         {
