@@ -6,6 +6,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Avalonia.Interactivity;
 using VolumetricSelection2077.Services;
+using VolumetricSelection2077.views;
 
 namespace VolumetricSelection2077
 {
@@ -13,12 +14,17 @@ namespace VolumetricSelection2077
     {
         private SettingsViewModel? _settingsViewModel;
         private CacheService _cacheService;
+        
+        private bool showedDialog;
+        private bool moveCache = true;
+        
         public SettingsWindow()
         {
             InitializeComponent();
             DataContext = new SettingsViewModel();
             _settingsViewModel = DataContext as SettingsViewModel;
             _cacheService = CacheService.Instance;
+            Closing += OnSettingsWindowClosing;
             Closed += OnSettingsWindowClosed;
         }
 
@@ -53,6 +59,22 @@ namespace VolumetricSelection2077
             await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Modded, true));
             UpdateCacheStats();
         }
+
+        private async void OnSettingsWindowClosing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (!showedDialog && (bool)_settingsViewModel?.PersistentCache.CachePathChanged)
+            {
+                showedDialog = true;
+                e.Cancel = true;
+                var result = await DialogService.ShowDialog("Cache Path Changed!",
+                    "Move the current cache, or initialize a new cache at the new location (creating one if none exists)?",
+                    "Move",
+                    "Initialize",
+                    this);
+                moveCache = result == DialogService.DialogResult.LeftButton;
+                Close();
+            }
+        }
         
         private void OnSettingsWindowClosed(object? sender, EventArgs e)
         {
@@ -62,8 +84,8 @@ namespace VolumetricSelection2077
                 bool successMove = false;
                 try
                 {
-                    successMove = CacheService.Instance.Move(_settingsViewModel?.PersistentCache.InitialCachePath,
-                        _settingsViewModel?.Settings.CacheDirectory);
+                    successMove = moveCache ? CacheService.Instance.Move(_settingsViewModel?.PersistentCache.InitialCachePath,
+                        _settingsViewModel?.Settings.CacheDirectory) : true;
                 }
                 catch (Exception ex)
                 {
