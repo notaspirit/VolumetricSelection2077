@@ -6,6 +6,7 @@ using System.Linq;
 using VolumetricSelection2077.Models;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using YamlDotNet.Serialization;
 
 namespace VolumetricSelection2077.Services
 {
@@ -95,6 +96,44 @@ namespace VolumetricSelection2077.Services
             return GameFileService.Instance.IsInitialized;
         }
         
+        /// <summary>
+        /// Checks if the given regex is valid
+        /// </summary>
+        /// <param name="regex"></param>
+        /// <returns></returns>
+        public static bool ValidateRegex(string regex)
+        {
+            if (string.IsNullOrEmpty(regex))
+                return false;
+            try
+            {
+                Regex.IsMatch("", regex);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+        
+        /// <summary>
+        /// Checks if the all resourcePathFilters are valid regex
+        /// </summary>
+        /// <returns></returns>
+        public static bool ValidateResourcePathFilter()
+        {
+            return SettingsService.Instance.ResourceNameFilter.Count > 0 ? SettingsService.Instance.ResourceNameFilter.All(x => ValidateRegex(x)) : true;
+        }
+        
+        /// <summary>
+        /// Checks if the all debugNameFilters are valid regex
+        /// </summary>
+        /// <returns></returns>
+        public static bool ValidateDebugNameFilter()
+        {
+            return SettingsService.Instance.DebugNameFilter.Count > 0 ? SettingsService.Instance.DebugNameFilter.All(x => ValidateRegex(x)) : true;
+        }
+        
         public class InputValidationResult
         {
             public bool CacheStatus { get; set; }
@@ -104,6 +143,8 @@ namespace VolumetricSelection2077.Services
             public bool SelectionFileExists { get; set; }
             public PathValidationResult SelectionFilePathValidationResult { get; set; }
             public PathValidationResult OutputFileName { get; set; }
+            public bool ResourceNameFilterValid { get; set; }
+            public bool DebugNameFilterValid { get; set; }
         }
         
         /// <summary>
@@ -120,6 +161,8 @@ namespace VolumetricSelection2077.Services
             var outDirVR = ValidateAndCreateDirectory(_settingsService.OutputDirectory);
             var selFileVR = ValidateSelectionFile(gamePath);
             var validFileName = string.IsNullOrEmpty(outputFilename) ? PathValidationResult.Empty : ValidatePath(@"E:\" + outputFilename + ".xl");
+            var resourceNameFilterValid = ValidateResourcePathFilter();
+            var debugNameFilterValid = ValidateDebugNameFilter();
                                 
             return new InputValidationResult()
             {
@@ -129,7 +172,9 @@ namespace VolumetricSelection2077.Services
                 OutputDirectroyPathValidationResult = outDirVR.Item2,
                 SelectionFileExists = selFileVR.Item1,
                 SelectionFilePathValidationResult = selFileVR.Item2,
-                OutputFileName = validFileName
+                OutputFileName = validFileName,
+                ResourceNameFilterValid = resourceNameFilterValid,
+                DebugNameFilterValid = debugNameFilterValid
             };
         }
         
