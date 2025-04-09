@@ -558,6 +558,11 @@ public class ProcessService
     /// <exception cref="ArgumentException">Provided custom file does not exist, or only one optional param is provided</exception>
     public async Task<(bool success, string error)> MainProcessTask(string? customRemovalFile = null, string? customRemovalDirectory = null)
     {
+        
+        var boundsService = new BoundingBoxBuilderService();
+        await boundsService.BuildAllBounds();
+        return (true, string.Empty);
+        
         Logger.Info("Validating inputs...");
 
         try
