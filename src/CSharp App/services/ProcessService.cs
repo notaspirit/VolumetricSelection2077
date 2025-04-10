@@ -466,6 +466,7 @@ public class ProcessService
     private bool EvaluateInputValidation(ValidationService.InputValidationResult vr)
     {
         int invalidCount = 0;
+        bool invalidRegex = false;
         if (vr.OutputFileName == ValidationService.PathValidationResult.ValidFile)
             Logger.Success("Filename                 : OK");
         else
@@ -510,9 +511,32 @@ public class ProcessService
             invalidCount++;
         }
 
+        if (vr.ResourceNameFilterValid)
+            Logger.Success("Resource Name Filter     : OK");
+        else
+        {
+            Logger.Error("Resource Name Filter     : Invalid Regex");
+            invalidCount++;
+            invalidRegex = true;
+        }
+        
+        if (vr.DebugNameFilterValid)
+            Logger.Success("Debug Name Filter        : OK");
+        else
+        {
+            Logger.Error("Debug Name Filter        : Invalid Regex");
+            invalidCount++;
+            invalidRegex = true;
+        }
+        
         if (invalidCount == 0)
         {
             return true;
+        }
+
+        if (invalidRegex)
+        {
+            Logger.Info(@"If you were not trying to use regex ensure that you have escaped all special characters, most commonly '\' and '.' (should be escaped as '\\' and '\.')");
         }
         
         return false;
