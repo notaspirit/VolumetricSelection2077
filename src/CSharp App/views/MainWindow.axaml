@@ -21,7 +21,7 @@
                 Grid.Row="0"
                 Height="60"
                 HorizontalAlignment="Left"
-                Margin="5"
+                Margin="5,15,5,15"
                 RenderOptions.BitmapInterpolationMode="HighQuality"
                 Source="{Binding VS2077Icon}" />
 
