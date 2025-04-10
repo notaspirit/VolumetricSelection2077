@@ -97,6 +97,7 @@ public class CacheService
                 throw new Exception("Invalid cache directory");
             
             if (_isInitialized) return;
+            if (_env != null) return;
             if (_settings.CacheEnabled == false) return;
             
             _env = new LightningEnvironment(_settings.CacheDirectory)
@@ -463,7 +464,11 @@ public class CacheService
 
         var toPathVr = ValidationService.ValidatePath(toPath);
         if (toPathVr != ValidationService.PathValidationResult.ValidDirectory)
+        {
+            _isInitialized = true;
             throw new ArgumentException($"Invalid target path provided: {toPathVr}");
+        }
+
 
         DirectoryInfo fromInfo;
         bool fromExists;
@@ -479,7 +484,10 @@ public class CacheService
         {
             var fromPathVr = ValidationService.ValidatePath(fromPath);
             if (fromPathVr != ValidationService.PathValidationResult.ValidDirectory)
+            {
+                _isInitialized = true;
                 throw new ArgumentException($"Invalid source path provided: {fromPathVr}");
+            }
             fromInfo = new DirectoryInfo(fromPath);
             fromExists = fromInfo.Exists;
         }
@@ -494,7 +502,10 @@ public class CacheService
         if (toExists)
         {
             if (!UtilService.IsDirectoryEmpty(toPath))
+            {
+                _isInitialized = true;
                 throw new Exception("Target directory is not empty");
+            }
             Directory.Delete(toPath, true);
         }
         
