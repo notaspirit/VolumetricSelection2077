@@ -620,7 +620,8 @@ public class ProcessService
         }
         catch (Exception ex)
         {
-            Logger.Exception(ex, "Failed to start listening to write requests in cache service!");
+            Logger.Exception(ex, "Failed to start listening to write requests in cache service!", fileOnly: true);
+            return (false, "Failed to start listening to write requests in cache service!");
         }
 
         AxlRemovalSector?[] sectorsOutputRaw;
