@@ -1,8 +1,7 @@
 using System;
 using System.Linq;
-using DynamicData;
+using MessagePack;
 using SharpDX;
-using SharpDX.Direct3D9;
 using VolumetricSelection2077.Converters;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Resources;
@@ -10,7 +9,6 @@ using VolumetricSelection2077.Services;
 using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.Archive.CR2W;
 using WolvenKit.RED4.Types;
-using Int64 = System.Int64;
 using Quaternion = SharpDX.Quaternion;
 using Vector3 = SharpDX.Vector3;
 using worldNodeData = WolvenKit.RED4.Archive.Buffer.worldNodeData;
@@ -19,6 +17,12 @@ namespace VolumetricSelection2077.Parsers;
 
 public class DirectAbbrSectorParser
 {
+    /// <summary>
+    /// Parses a CR2W file into an AbbrSector
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception">cr2w file is not a streamingsector</exception>
     public static AbbrSector ParseFromCR2W(CR2WFile input)
     {
         var gfs = GameFileService.Instance;
@@ -26,6 +30,20 @@ public class DirectAbbrSectorParser
         if (input.RootChunk is not worldStreamingSector sector)
         {
             throw new Exception("Input file is not a world streaming sector");
+        }
+    
+        foreach (var efile in input.EmbeddedFiles)
+        {
+            if ((efile?.FileName.ToString()?.EndsWith(".mesh") ?? false) || (efile?.FileName.ToString()?.EndsWith(".w2mesh") ?? false))
+            {
+                var parsedMesh = DirectAbbrMeshParser.ParseFromEmbedded(efile);
+                if (parsedMesh is null)
+                {
+                    Logger.Warning($"Failed to parse embedded file {efile.FileName}");
+                    continue;
+                }
+                CacheService.Instance.WriteSingleEntry(new WriteRequest(efile.FileName, MessagePackSerializer.Serialize(parsedMesh)));
+            }
         }
         
         var nodes = new AbbrStreamingSectorNodesEntry[sector.Nodes.Count];

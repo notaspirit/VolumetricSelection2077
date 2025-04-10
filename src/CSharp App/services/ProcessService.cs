@@ -601,20 +601,6 @@ public class ProcessService
         
         _progress.Reset();
         _progress.SetWeight(0.1f, 0.85f, 0.05f);
-
-        if (_settings.CacheEnabled)
-        {
-            try
-            {
-                CacheService.Instance.StartListening();
-            }
-            catch (Exception ex)
-            {
-                Logger.Exception(ex, "Failed to start listening to write requests in cache service!");
-            }
-        }
-
-
         
         bool customRemovalFileProvided = customRemovalFile != null;
         bool customRemovalDirectoryProvided = customRemovalDirectory != null;
@@ -652,13 +638,30 @@ public class ProcessService
             }
         }
         
-        _progress.AddTarget(CETOutputFile.Sectors.Count * 2, Progress.ProgressSections.Startup);
-        var tasks = CETOutputFile.Sectors.Select(input => Task.Run(() => SectorProcessThread(input, CETOutputFile))).ToArray();
+        try
+        {
+            CacheService.Instance.StartListening();
+        }
+        catch (Exception ex)
+        {
+            Logger.Exception(ex, "Failed to start listening to write requests in cache service!", fileOnly: true);
+            return (false, "Failed to start listening to write requests in cache service!");
+        }
 
-        var sectorsOutputRaw = await Task.WhenAll(tasks);
+        AxlRemovalSector?[] sectorsOutputRaw;
+        
+        try
+        {
+            _progress.AddTarget(CETOutputFile.Sectors.Count * 2, Progress.ProgressSections.Startup);
+            var tasks = CETOutputFile.Sectors.Select(input => Task.Run(() => SectorProcessThread(input, CETOutputFile)))
+                .ToArray();
 
-        if (_settings.CacheEnabled)
+            sectorsOutputRaw = await Task.WhenAll(tasks);
+        }
+        finally
+        {
             CacheService.Instance.StopListening();
+        }
         
         _progress.AddTarget(2, Progress.ProgressSections.Finalization);
         List<AxlRemovalSector> sectors = new();

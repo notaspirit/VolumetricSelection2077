@@ -97,7 +97,6 @@ public class CacheService
                 throw new Exception("Invalid cache directory");
             
             if (_isInitialized) return;
-            if (_settings.CacheEnabled == false) return;
             
             _env = new LightningEnvironment(_settings.CacheDirectory)
             {
@@ -321,6 +320,9 @@ public class CacheService
             tx.Commit();
         }
 
+        if (!_settings.CacheEnabled)
+            ClearDatabase(CacheDatabases.All, true);
+        
         if (wroteExitLog)
         {
             Logger.Success("Finished writing all queued entries to cache");
