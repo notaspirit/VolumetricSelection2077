@@ -34,7 +34,7 @@ public class DirectAbbrSectorParser
     
         foreach (var efile in input.EmbeddedFiles)
         {
-            if (efile.FileName.ToString().EndsWith(".mesh") || efile.FileName.ToString().EndsWith(".w2mesh"))
+            if ((efile?.FileName.ToString()?.EndsWith(".mesh") ?? false) || (efile?.FileName.ToString()?.EndsWith(".w2mesh") ?? false))
             {
                 var parsedMesh = DirectAbbrMeshParser.ParseFromEmbedded(efile);
                 if (parsedMesh is null)
