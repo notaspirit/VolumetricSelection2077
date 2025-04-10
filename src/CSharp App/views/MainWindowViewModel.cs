@@ -17,7 +17,7 @@ namespace VolumetricSelection2077.ViewModels
         public SettingsService Settings { get; set; }
         private bool _isProcesing { get; set; }
         
-        public Bitmap VS2077Icon { get; set; } = new Bitmap(Path.Combine(AppContext.BaseDirectory, "assets", "VolumetricSelection2077MSStyle.png"));
+        public Bitmap VS2077Icon { get; set; }
         public bool IsProcessing
         {
             get => _isProcesing;
@@ -165,6 +165,17 @@ namespace VolumetricSelection2077.ViewModels
             CheckedCount = NodeTypeFilterItems.Count(item => item.IsChecked);
             
             SaveFileModes = new ObservableCollection<SaveFileMode.Enum>(Enum.GetValues(typeof(SaveFileMode.Enum)).Cast<SaveFileMode.Enum>());
+            
+            try
+            {
+                 VS2077Icon = new Bitmap(Path.Combine(AppContext.BaseDirectory, "assets",
+                   "VolumetricSelection2077MSStyle.png"));
+            }
+            catch (Exception ex)
+            {
+                Logger.Exception(ex, "Failed to load VS2077 Icon!");
+            }
+            
         }
         private void ResourceNameFilter_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
