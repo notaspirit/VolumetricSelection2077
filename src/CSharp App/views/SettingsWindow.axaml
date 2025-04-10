@@ -11,184 +11,187 @@
     xmlns:resources="clr-namespace:VolumetricSelection2077.Resources"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border Margin="5">
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="200" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+        <StackPanel Orientation="Vertical">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="200" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
 
-            <!--  Header Row  -->
-            <TextBlock
-                FontSize="32"
-                FontWeight="Bold"
-                Grid.ColumnSpan="2"
-                Grid.Row="0"
-                HorizontalAlignment="Left"
-                Margin="5"
-                Text="{x:Static resources:Labels.Settings}" />
-
-            <!--  First Row: Label  -->
-            <TextBlock
-                Grid.Column="0"
-                Grid.Row="1"
-                HorizontalAlignment="Left"
-                Margin="5"
-                Text="Game Directory"
-                ToolTip.Tip="{x:Static resources:ToolTips.GameDirectory}"
-                VerticalAlignment="Center" />
-            <TextBlock
-                Grid.Column="0"
-                Grid.Row="2"
-                HorizontalAlignment="Left"
-                Margin="5"
-                Text="Modded Resources"
-                ToolTip.Tip="{x:Static resources:ToolTips.ModdedResources}"
-                VerticalAlignment="Center" />
-            <TextBlock
-                Grid.Column="0"
-                Grid.Row="4"
-                HorizontalAlignment="Left"
-                Margin="5"
-                Text="Auto Update"
-                ToolTip.Tip="{x:Static resources:ToolTips.AutoUpdate}"
-                VerticalAlignment="Center" />
-            <TextBlock
-                Grid.Column="0"
-                Grid.Row="5"
-                HorizontalAlignment="Left"
-                IsVisible="{Binding AutoUpdateEnabled}"
-                Margin="5"
-                Text="VS2077 CET Install Location"
-                ToolTip.Tip="{x:Static resources:ToolTips.CETInstallLocation}"
-                VerticalAlignment="Center" />
-            <TextBlock
-                Grid.Column="0"
-                Grid.Row="6"
-                HorizontalAlignment="Left"
-                Margin="5"
-                Text="Custom Output Directory"
-                ToolTip.Tip="{x:Static resources:ToolTips.CustomOutputDirectory}"
-                VerticalAlignment="Center" />
-            <TextBlock
-                Grid.Column="0"
-                Grid.Row="7"
-                HorizontalAlignment="Left"
-                Margin="5"
-                Text="Cache Uncooked Resources"
-                ToolTip.Tip="{x:Static resources:ToolTips.CacheEnabled}"
-                VerticalAlignment="Center" />
-            <TextBlock
-                Grid.Column="0"
-                Grid.Row="8"
-                HorizontalAlignment="Left"
-                IsVisible="{Binding CacheEnabled}"
-                Margin="5"
-                Text="Cache Directory"
-                ToolTip.Tip="{x:Static resources:ToolTips.CacheDirectory}"
-                VerticalAlignment="Center" />
-            <TextBlock
-                Grid.Column="0"
-                Grid.Row="9"
-                HorizontalAlignment="Left"
-                IsVisible="{Binding CacheEnabled}"
-                Margin="5"
-                Text="Clear Cache"
-                ToolTip.Tip="{x:Static resources:ToolTips.ClearCache}"
-                VerticalAlignment="Center" />
-            <!--  Second Row: Setting Control (e.g., ToggleSwitch)  -->
-            <TextBox
-                Grid.Column="1"
-                Grid.Row="1"
-                Margin="5"
-                Text="{Binding Settings.GameDirectory}"
-                Watermark="{x:Static resources:Watermarks.GameDirectory}"
-                x:Name="GameDirectoryTextBox" />
-            <ToggleSwitch
-                Grid.Column="1"
-                Grid.Row="2"
-                IsChecked="{Binding Settings.SupportModdedResources}"
-                Margin="5"
-                OffContent=""
-                OnContent="" />
-            <ToggleSwitch
-                Grid.Column="1"
-                Grid.Row="4"
-                IsChecked="{Binding AutoUpdateEnabled}"
-                Margin="5"
-                OffContent=""
-                OnContent="" />
-            <TextBox
-                Grid.Column="1"
-                Grid.Row="5"
-                IsVisible="{Binding AutoUpdateEnabled}"
-                Margin="5"
-                Text="{Binding Settings.CETInstallLocation}"
-                Watermark="{x:Static resources:Watermarks.CETInstallLocation}" />
-            <TextBox
-                Grid.Column="1"
-                Grid.Row="6"
-                Margin="5"
-                Text="{Binding Settings.OutputDirectory}"
-                Watermark="{x:Static resources:Watermarks.CustomOutputDirectory}" />
-            <ToggleSwitch
-                Grid.Column="1"
-                Grid.Row="7"
-                IsChecked="{Binding CacheEnabled}"
-                Margin="5"
-                OffContent=""
-                OnContent="" />
-            <TextBox
-                Grid.Column="1"
-                Grid.Row="8"
-                IsVisible="{Binding CacheEnabled}"
-                Margin="5"
-                Text="{Binding Settings.CacheDirectory}"
-                Watermark="{x:Static resources:Watermarks.CacheDirectory}" />
-            <Grid Grid.Column="1" Grid.Row="9">
-                <Grid.ColumnDefinitions>*, *</Grid.ColumnDefinitions>
-                <Button
-                    Background="#ad0002"
-                    Click="ClearVanillaCache_Click"
-                    Content="{Binding ClearVanillaCacheButtonLabel}"
+                <!--  Header Row  -->
+                <Image
                     Grid.Column="0"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Center"
+                    Grid.ColumnSpan="2"
+                    Grid.Row="0"
+                    Height="60"
+                    HorizontalAlignment="Left"
+                    Margin="5"
+                    RenderOptions.BitmapInterpolationMode="HighQuality"
+                    Source="{Binding SettingsIcon}" />
+
+                <!--  First Row: Label  -->
+                <TextBlock
+                    Grid.Column="0"
+                    Grid.Row="1"
+                    HorizontalAlignment="Left"
+                    Margin="5"
+                    Text="Game Directory"
+                    ToolTip.Tip="{x:Static resources:ToolTips.GameDirectory}"
+                    VerticalAlignment="Center" />
+                <TextBlock
+                    Grid.Column="0"
+                    Grid.Row="2"
+                    HorizontalAlignment="Left"
+                    Margin="5"
+                    Text="Modded Resources"
+                    ToolTip.Tip="{x:Static resources:ToolTips.ModdedResources}"
+                    VerticalAlignment="Center" />
+                <TextBlock
+                    Grid.Column="0"
+                    Grid.Row="4"
+                    HorizontalAlignment="Left"
+                    Margin="5"
+                    Text="Auto Update"
+                    ToolTip.Tip="{x:Static resources:ToolTips.AutoUpdate}"
+                    VerticalAlignment="Center" />
+                <TextBlock
+                    Grid.Column="0"
+                    Grid.Row="5"
+                    HorizontalAlignment="Left"
+                    IsVisible="{Binding AutoUpdateEnabled}"
+                    Margin="5"
+                    Text="VS2077 CET Install Location"
+                    ToolTip.Tip="{x:Static resources:ToolTips.CETInstallLocation}"
+                    VerticalAlignment="Center" />
+                <TextBlock
+                    Grid.Column="0"
+                    Grid.Row="6"
+                    HorizontalAlignment="Left"
+                    Margin="5"
+                    Text="Custom Output Directory"
+                    ToolTip.Tip="{x:Static resources:ToolTips.CustomOutputDirectory}"
+                    VerticalAlignment="Center" />
+                <TextBlock
+                    Grid.Column="0"
+                    Grid.Row="7"
+                    HorizontalAlignment="Left"
+                    Margin="5"
+                    Text="Cache Uncooked Resources"
+                    ToolTip.Tip="{x:Static resources:ToolTips.CacheEnabled}"
+                    VerticalAlignment="Center" />
+                <TextBlock
+                    Grid.Column="0"
+                    Grid.Row="8"
+                    HorizontalAlignment="Left"
                     IsVisible="{Binding CacheEnabled}"
-                    Margin="5,0,0,0">
-                    <Button.Styles>
-                        <Style Selector="Button:pointerover /template/ ContentPresenter">
-                            <Setter Property="Background" Value="DarkRed" />
-                        </Style>
-                    </Button.Styles>
-                </Button>
-                <Button
-                    Background="#ad0002"
-                    Click="ClearModdedCache_Click"
-                    Content="{Binding ClearModdedCacheButtonLabel}"
+                    Margin="5"
+                    Text="Cache Directory"
+                    ToolTip.Tip="{x:Static resources:ToolTips.CacheDirectory}"
+                    VerticalAlignment="Center" />
+                <TextBlock
+                    Grid.Column="0"
+                    Grid.Row="9"
+                    HorizontalAlignment="Left"
+                    IsVisible="{Binding CacheEnabled}"
+                    Margin="5"
+                    Text="Clear Cache"
+                    ToolTip.Tip="{x:Static resources:ToolTips.ClearCache}"
+                    VerticalAlignment="Center" />
+                <!--  Second Row: Setting Control (e.g., ToggleSwitch)  -->
+                <TextBox
                     Grid.Column="1"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Center"
+                    Grid.Row="1"
+                    Margin="5"
+                    Text="{Binding Settings.GameDirectory}"
+                    Watermark="{x:Static resources:Watermarks.GameDirectory}"
+                    x:Name="GameDirectoryTextBox" />
+                <ToggleSwitch
+                    Grid.Column="1"
+                    Grid.Row="2"
+                    IsChecked="{Binding Settings.SupportModdedResources}"
+                    Margin="5"
+                    OffContent=""
+                    OnContent="" />
+                <ToggleSwitch
+                    Grid.Column="1"
+                    Grid.Row="4"
+                    IsChecked="{Binding AutoUpdateEnabled}"
+                    Margin="5"
+                    OffContent=""
+                    OnContent="" />
+                <TextBox
+                    Grid.Column="1"
+                    Grid.Row="5"
+                    IsVisible="{Binding AutoUpdateEnabled}"
+                    Margin="5"
+                    Text="{Binding Settings.CETInstallLocation}"
+                    Watermark="{x:Static resources:Watermarks.CETInstallLocation}" />
+                <TextBox
+                    Grid.Column="1"
+                    Grid.Row="6"
+                    Margin="5"
+                    Text="{Binding Settings.OutputDirectory}"
+                    Watermark="{x:Static resources:Watermarks.CustomOutputDirectory}" />
+                <ToggleSwitch
+                    Grid.Column="1"
+                    Grid.Row="7"
+                    IsChecked="{Binding CacheEnabled}"
+                    Margin="5"
+                    OffContent=""
+                    OnContent="" />
+                <TextBox
+                    Grid.Column="1"
+                    Grid.Row="8"
                     IsVisible="{Binding CacheEnabled}"
-                    Margin="5,0,0,0">
-                    <Button.Styles>
-                        <Style Selector="Button:pointerover /template/ ContentPresenter">
-                            <Setter Property="Background" Value="DarkRed" />
-                        </Style>
-                    </Button.Styles>
-                </Button>
+                    Margin="5"
+                    Text="{Binding Settings.CacheDirectory}"
+                    Watermark="{x:Static resources:Watermarks.CacheDirectory}" />
+                <Grid Grid.Column="1" Grid.Row="9">
+                    <Grid.ColumnDefinitions>*, *</Grid.ColumnDefinitions>
+                    <Button
+                        Background="#ad0002"
+                        Click="ClearVanillaCache_Click"
+                        Content="{Binding ClearVanillaCacheButtonLabel}"
+                        Grid.Column="0"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        IsVisible="{Binding CacheEnabled}"
+                        Margin="5,0,0,0">
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                <Setter Property="Background" Value="DarkRed" />
+                            </Style>
+                        </Button.Styles>
+                    </Button>
+                    <Button
+                        Background="#ad0002"
+                        Click="ClearModdedCache_Click"
+                        Content="{Binding ClearModdedCacheButtonLabel}"
+                        Grid.Column="1"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        IsVisible="{Binding CacheEnabled}"
+                        Margin="5,0,0,0">
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                <Setter Property="Background" Value="DarkRed" />
+                            </Style>
+                        </Button.Styles>
+                    </Button>
+                </Grid>
             </Grid>
-        </Grid>
+        </StackPanel>
     </Border>
 </Window>

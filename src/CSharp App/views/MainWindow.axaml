@@ -16,12 +16,14 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border Margin="5">
         <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,*">
-            <TextBlock
-                FontSize="32"
-                FontWeight="Bold"
+            <Image
+                Grid.Column="0"
                 Grid.Row="0"
+                Height="60"
+                HorizontalAlignment="Left"
                 Margin="5"
-                Text="{x:Static resources:Labels.VS2077}" />
+                RenderOptions.BitmapInterpolationMode="HighQuality"
+                Source="{Binding VS2077Icon}" />
 
             <TextBox
                 Grid.Row="1"

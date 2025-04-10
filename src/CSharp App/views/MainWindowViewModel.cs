@@ -1,8 +1,11 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
+using Avalonia.Controls;
 using Avalonia.Markup.Xaml.MarkupExtensions;
+using Avalonia.Media.Imaging;
 using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.Services;
 using VolumetricSelection2077.ViewStructures;
@@ -14,6 +17,7 @@ namespace VolumetricSelection2077.ViewModels
         public SettingsService Settings { get; set; }
         private bool _isProcesing { get; set; }
         
+        public Bitmap VS2077Icon { get; set; } = new Bitmap(Path.Combine(AppContext.BaseDirectory, "assets", "VolumetricSelection2077MSStyle.png"));
         public bool IsProcessing
         {
             get => _isProcesing;

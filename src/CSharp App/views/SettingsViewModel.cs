@@ -1,5 +1,7 @@
 using System;
 using System.ComponentModel;
+using System.IO;
+using Avalonia.Media.Imaging;
 using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.Services;
 using VolumetricSelection2077.views;
@@ -49,6 +51,8 @@ namespace VolumetricSelection2077.ViewModels
                 OnPropertyChanged(nameof(AutoUpdateEnabled));
             }
         }
+        
+        public Bitmap SettingsIcon { get; set; } = new Bitmap(Path.Combine(AppContext.BaseDirectory, "assets", "SettingsMSStyle.png"));
         
         public SettingsViewModel() 
         { 
