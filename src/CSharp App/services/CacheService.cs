@@ -134,9 +134,13 @@ public class CacheService
         return Task.Run(() =>
         {
             if (!_isInitialized) return;
+            if (_env == null) return;
             _isInitialized = false;
-            IsProcessing = false;
-            Task.Delay(BatchDelay * 10).Wait();
+            if (IsProcessing)
+            {
+                IsProcessing = false;
+                Task.Delay(BatchDelay * 10).Wait();
+            }
             _env.Dispose();
         });
     }
@@ -460,7 +464,6 @@ public class CacheService
     /// <exception cref="Exception">target directory is not empty</exception>
     public bool Move(string fromPath, string toPath)
     {
-        _isInitialized = false;
         if (fromPath == toPath) return true;
 
         var toPathVr = ValidationService.ValidatePath(toPath);
@@ -500,6 +503,8 @@ public class CacheService
             Directory.Delete(toPath, true);
         }
         
+        _isInitialized = false;
+        
         if (_env != null)
             _env.Dispose();
         
@@ -531,7 +536,16 @@ public class CacheService
     {
         if (!_isInitialized) return new CacheStats();
         DirectoryInfo dirInfo = new DirectoryInfo(_settings.CacheDirectory);
-        var totalSize = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
+        long totalSize;
+        try
+        {
+            totalSize = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
+        }
+        catch (Exception ex)
+        {
+            Logger.Exception(ex, "Failed to get total size of cache!", true);
+            totalSize = 0;
+        }
         long estVanillaSize = 0;
         long estModdedSize = 0;
         
