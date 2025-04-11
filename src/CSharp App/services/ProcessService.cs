@@ -1,15 +1,17 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.ComponentModel;
+using VolumetricSelection2077.Models;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using DynamicData;
-using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Parsers;
 using Newtonsoft.Json;
 using SharpDX;
 using VolumetricSelection2077.Resources;
+using VolumetricSelection2077.TestingStuff;
 using WolvenKit.RED4.Types;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -21,10 +23,12 @@ public class ProcessService
 {
     private readonly SettingsService _settings;
     private readonly GameFileService _gameFileService;
+    private Progress _progress;
     public ProcessService()
     {
         _settings = SettingsService.Instance;
         _gameFileService = GameFileService.Instance;
+        _progress = Progress.Instance;
     }
 
     class MergeChanges
@@ -185,11 +189,7 @@ public class ProcessService
         File.WriteAllText(newOutputFilePath, outputContent);
         Logger.Info($"Created file {newOutputFilePath}");
     }
-    
-    // also returns null if none of the nodes in the sector are inside the box
-    private async Task<(bool success, string error, AxlRemovalSector? result)> ProcessStreamingsector(AbbrSector sector, string sectorPath, SelectionInput selectionBox)
-    {
-        async Task<AxlRemovalNodeDeletion?> ProcessNodeAsync(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index)
+    private async Task<AxlRemovalNodeDeletion?> ProcessNodeAsync(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index, AbbrSector sector, SelectionInput selectionBox)
         {
             var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
 
@@ -285,6 +285,13 @@ public class ProcessService
             switch (entryType)
             {
                 case CollisionCheck.Types.Mesh:
+                    if (nodeDataEntry.AABB != null)
+                    {
+                        BoundingBox nodeAABB = (BoundingBox)nodeDataEntry.AABB;
+                        if (selectionBox.Obb.Contains(ref nodeAABB) == ContainmentType.Disjoint)
+                            return null;
+                    }
+                    
                     var mesh = _gameFileService.GetCMesh(nodeEntry.ResourcePath);
                     if (mesh == null)
                     {
@@ -335,8 +342,7 @@ public class ProcessService
                                     }
                                     break;
                                 case Enums.physicsShapeType.Box:
-                                    string collectionName = sectorPath.Split(@"\")[^1] + " " + index + " " + actorIndex; // just for testing so it's easy to identify the source of the shapes
-                                    bool isCollisionBoxInsideBox = CollisionCheckService.IsCollisionBoxInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb, collectionName);
+                                    bool isCollisionBoxInsideBox = CollisionCheckService.IsCollisionBoxInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb);
                                     if (isCollisionBoxInsideBox)
                                     {
                                         shapeIntersects = true;
@@ -400,8 +406,23 @@ public class ProcessService
 
             return null;
         }
-        
-        var tasks = sector.NodeData.Select((input, index) => Task.Run(() => ProcessNodeAsync(input, index))).ToArray();
+    // also returns null if none of the nodes in the sector are inside the box
+    private async Task<(bool success, string error, AxlRemovalSector? result)> ProcessStreamingsector(AbbrSector sector, string sectorPath, SelectionInput selectionBox)
+    {
+        async Task<AxlRemovalNodeDeletion?> ProcessNodeAsyncWithReport(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index, AbbrSector sector, SelectionInput selectionBox)
+        {
+            try
+            {
+                return await ProcessNodeAsync(nodeDataEntry, index, sector, selectionBox);
+            }
+            finally
+            {
+                _progress.AddCurrent(1, Progress.ProgressSections.Processing);
+            }
+        }
+        _progress.AddTarget(sector.NodeData.Length, Progress.ProgressSections.Processing);
+        _progress.AddCurrent(1, Progress.ProgressSections.Startup);
+        var tasks = sector.NodeData.Select((input, index) => Task.Run(() => ProcessNodeAsyncWithReport(input, index, sector, selectionBox))).ToArray();
 
         var nodeDeletionsRaw = await Task.WhenAll(tasks);
 
@@ -437,32 +458,160 @@ public class ProcessService
         };
         return (true, "", result);
     }
-
-    public async Task<(bool success, string error)> MainProcessTask(string? customRemovalFile = null, string? customRemovalDirectory = null)
+    /// <summary>
+    /// Logs and Evaluates ValidationServiceResult
+    /// </summary>
+    /// <param name="vr"></param>
+    /// <returns>true if all are valid, false if at least one is invalid</returns>
+    private bool EvaluateInputValidation(ValidationService.InputValidationResult vr)
     {
-        Logger.Info($"Version: {_settings.ProgramVersion}");
-        
-        _gameFileService.Initialize();
-        
-        Logger.Info("Validating inputs...");
-        
-        if (!ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename))
+        int invalidCount = 0;
+        bool invalidRegex = false;
+        if (vr.OutputFileName == ValidationService.PathValidationResult.ValidFile)
+            Logger.Success("Filename                 : OK");
+        else
         {
-            return (false, "Validation failed");
+            Logger.Error($"Filename                 : {vr.OutputFileName}");
+            invalidCount++;
         }
         
+        if (vr.CacheStatus)
+            Logger.Success("Cache status             : OK");
+        else
+        {
+            Logger.Error("Cache status             : Cache state does not match expected");
+            invalidCount++;
+        }
+        
+        if (vr.GameFileServiceStatus)
+            Logger.Success("Game file service status : OK");
+        else
+        {
+            Logger.Error("Game file service status : Not initialized");
+            invalidCount++;
+        }
+
+        if (!_settings.SaveToArchiveMods)
+        {
+            if (vr.ValidOutputDirectory)
+                Logger.Success("Output directory         : OK");
+            else
+            {
+                Logger.Error($"Output directory         : {vr.OutputDirectroyPathValidationResult}");
+                invalidCount++;
+            }
+        }
+
+        if (vr.SelectionFileExists)
+            Logger.Success("Selection File           : OK");
+        else
+        {
+            string invalidReason = vr.SelectionFilePathValidationResult == ValidationService.PathValidationResult.ValidDirectory ? "Not found" : $"Invalid file path {vr.SelectionFilePathValidationResult}";
+            Logger.Error($"Selection File           : {invalidReason}");
+            invalidCount++;
+        }
+
+        if (vr.ResourceNameFilterValid)
+            Logger.Success("Resource Name Filter     : OK");
+        else
+        {
+            Logger.Error("Resource Name Filter     : Invalid Regex");
+            invalidCount++;
+            invalidRegex = true;
+        }
+        
+        if (vr.DebugNameFilterValid)
+            Logger.Success("Debug Name Filter        : OK");
+        else
+        {
+            Logger.Error("Debug Name Filter        : Invalid Regex");
+            invalidCount++;
+            invalidRegex = true;
+        }
+        
+        if (invalidCount == 0)
+        {
+            return true;
+        }
+
+        if (invalidRegex)
+        {
+            Logger.Info(@"If you were not trying to use regex ensure that you have escaped all special characters, most commonly '\' and '.' (should be escaped as '\\' and '\.')");
+        }
+        
+        return false;
+    }
+    
+    private async Task<AxlRemovalSector?> SectorProcessThread(string streamingSectorName, SelectionInput CETOutputFile)
+    {
+        Logger.Info($"Starting sector process thread for {streamingSectorName}...");
+        _progress.AddCurrent(1, Progress.ProgressSections.Startup);
+        try
+        {
+            string streamingSectorNameFix = Regex.Replace(streamingSectorName, @"\\{2}", @"\");
+            var sector = _gameFileService.GetSector(streamingSectorNameFix);
+            if (sector == null)
+            {
+                Logger.Warning($"Failed to find sector {streamingSectorNameFix}");
+                return null;
+            }
+                
+            var (successPSS, errorPSS, resultPss) = await ProcessStreamingsector(sector, streamingSectorName, CETOutputFile);
+            if (successPSS)
+            { 
+                Logger.Info($"Successfully processed streamingsector {streamingSectorName} which found {resultPss?.NodeDeletions.Count ?? 0} nodes out of {sector.NodeData.Length} nodes.");
+                return resultPss;
+            }
+            
+            Logger.Error($"Failed to processes streamingsector {streamingSectorName} with error: {errorPSS}");
+            return null;
+        }
+        catch (Exception e)
+        {
+            Logger.Error($"Failed to Processes {streamingSectorName}: {e}");
+            return null;
+        }
+    }
+    
+    /// <summary>
+    /// Processes all sectors in the selection file generated by the CET part and saves a removal file to the set location if intersections with the obb were found
+    /// </summary>
+    /// <param name="customRemovalFile">Absolute path to custom removal file, only used for benchmarking</param>
+    /// <param name="customRemovalDirectory">Absolute path to custom output directory, only used for benchmarking</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException">Provided custom file does not exist, or only one optional param is provided</exception>
+    public async Task<(bool success, string error)> MainProcessTask(string? customRemovalFile = null, string? customRemovalDirectory = null)
+    {
+        Logger.Info("Validating inputs...");
+
+        try
+        {
+            var validationResult = ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename);
+            if (!EvaluateInputValidation(validationResult))
+                return (false, "Invalid Input");
+        }
+        catch (Exception ex)
+        {
+            Logger.Exception(ex, fileOnly: true);
+            return (false, ex.Message + " : Failed to validate inputs");
+        }
+
+        
         Logger.Info("Starting Process...");
+        
+        _progress.Reset();
+        _progress.SetWeight(0.1f, 0.85f, 0.05f);
         
         bool customRemovalFileProvided = customRemovalFile != null;
         bool customRemovalDirectoryProvided = customRemovalDirectory != null;
         if (customRemovalFileProvided != customRemovalDirectoryProvided)
         {
-            throw new Exception("Both file path and output directory must be provided for a custom process!");
+            throw new ArgumentException("Both file path and output directory must be provided for a custom process!");
         }
 
         if (!File.Exists(customRemovalFile) && (customRemovalDirectoryProvided || customRemovalDirectory != null))
         {
-            throw new Exception($"Provided file ({customRemovalFile}) doesn't exist!");
+            throw new ArgumentException($"Provided file ({customRemovalFile}) doesn't exist!");
         }
 
         SelectionInput? CETOutputFile;
@@ -488,41 +637,33 @@ public class ProcessService
                 return (false, $"Failed to parse CET output file with error: {errorSP}");
             }
         }
-        async Task<AxlRemovalSector?> SectorProcessThread(string streamingSectorName)
+        
+        try
         {
-            Logger.Info($"Starting sector process thread for {streamingSectorName}...");
+            CacheService.Instance.StartListening();
+        }
+        catch (Exception ex)
+        {
+            Logger.Exception(ex, "Failed to start listening to write requests in cache service!", fileOnly: true);
+            return (false, "Failed to start listening to write requests in cache service!");
+        }
 
-            try
-            {
-                string streamingSectorNameFix = Regex.Replace(streamingSectorName, @"\\{2}", @"\");
-                var sector = _gameFileService.GetSector(streamingSectorNameFix);
-                if (sector == null)
-                {
-                    Logger.Warning($"Failed to find sector {streamingSectorNameFix}");
-                    return null;
-                }
-                
-                var (successPSS, errorPSS, resultPss) = await ProcessStreamingsector(sector, streamingSectorName, CETOutputFile);
-                if (successPSS)
-                { 
-                    Logger.Info($"Successfully processed streamingsector {streamingSectorName} which found {resultPss?.NodeDeletions.Count ?? 0} nodes out of {sector.NodeData.Length} nodes.");
-                    return resultPss;
-                }
-            
-                Logger.Error($"Failed to processes streamingsector {streamingSectorName} with error: {errorPSS}");
-                return null;
-            }
-            catch (Exception e)
-            {
-                Logger.Error($"Failed to Processes {streamingSectorName}: {e}");
-                return null;
-            }
+        AxlRemovalSector?[] sectorsOutputRaw;
+        
+        try
+        {
+            _progress.AddTarget(CETOutputFile.Sectors.Count * 2, Progress.ProgressSections.Startup);
+            var tasks = CETOutputFile.Sectors.Select(input => Task.Run(() => SectorProcessThread(input, CETOutputFile)))
+                .ToArray();
+
+            sectorsOutputRaw = await Task.WhenAll(tasks);
+        }
+        finally
+        {
+            CacheService.Instance.StopListening();
         }
         
-        var tasks = CETOutputFile.Sectors.Select(input => Task.Run(() => SectorProcessThread(input))).ToArray();
-
-        var sectorsOutputRaw = await Task.WhenAll(tasks);
-
+        _progress.AddTarget(2, Progress.ProgressSections.Finalization);
         List<AxlRemovalSector> sectors = new();
         foreach (var sector in sectorsOutputRaw)
         {
@@ -531,7 +672,7 @@ public class ProcessService
                 sectors.Add(sector);
             }
         }
-        
+        _progress.AddCurrent(1, Progress.ProgressSections.Finalization);
         if (sectors.Count == 0)
         {
             Logger.Warning("No sectors intersect, no output file generated!");
@@ -555,6 +696,7 @@ public class ProcessService
             
             SaveFile(removalFile, customRemovalDirectory, customRemovalFile);
         }
+        _progress.AddCurrent(1, Progress.ProgressSections.Finalization);
         return (true, string.Empty);
     }
 }

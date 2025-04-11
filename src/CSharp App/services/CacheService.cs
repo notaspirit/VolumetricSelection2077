@@ -13,6 +13,7 @@ using Microsoft.ClearScript.Util.Web;
 using Microsoft.VisualBasic.FileIO;
 using VolumetricSelection2077.Models;
 using WolvenKit.Core.Extensions;
+using WolvenKit.RED4.Types;
 using SearchOption = System.IO.SearchOption;
 
 namespace VolumetricSelection2077.Services;
@@ -84,16 +85,19 @@ public class CacheService
             return _instance;
         }
     }
-
+    /// <summary>
+    /// Initializes the Cache Service at the directory defined in the settings, sets Initialized bool if successful
+    /// </summary>
     public void Initialize()
     {
         try
         {
             _settings = SettingsService.Instance;
+            if (!ValidationService.ValidateAndCreateDirectory(_settings.CacheDirectory).Item1)
+                throw new Exception("Invalid cache directory");
+            
             if (_isInitialized) return;
-            if (_settings.CacheEnabled == false) return;
-        
-            Directory.CreateDirectory(_settings.CacheDirectory);
+            
             _env = new LightningEnvironment(_settings.CacheDirectory)
             {
                 MaxDatabases = 2,
@@ -117,24 +121,57 @@ public class CacheService
         }
         catch (Exception e)
         {
+            Logger.Exception(e, "Failed to initialize cache service!");
         }
     }
+
+    /// <summary>
+    /// Disposes of the cache service
+    /// </summary>
+    /// <returns></returns>
+    public Task Dispose()
+    {
+        return Task.Run(() =>
+        {
+            if (!_isInitialized) return;
+            if (_env == null) return;
+            _isInitialized = false;
+            if (IsProcessing)
+            {
+                IsProcessing = false;
+                Task.Delay(BatchDelay * 10).Wait();
+            }
+            _env.Dispose();
+        });
+    }
     
-    
+    /// <summary>
+    /// Starts listening to read requests
+    /// </summary>
+    /// <exception cref="Exception">Cache service is not initialized</exception>
     public void StartListening()
     {
+        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling StartListening.");
+        if (IsProcessing) return;
         IsProcessing = true;
         _ = Task.Run(() => ProcessWriteQueue());
     }
-
+    /// <summary>
+    /// Stops listening to read requests
+    /// </summary>
     public void StopListening()
     {
         IsProcessing = false;
     }
-
+    
+    /// <summary>
+    /// Gets a single entry from the cache 
+    /// </summary>
+    /// <param name="request"></param>
+    /// <returns>null if db is not supported, value doesn't exist or cache service is uninitialized</returns>
     public byte[]? GetEntry(ReadRequest request)
     {
-        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling GetEntry");
+        if (!_isInitialized) return null;
         using var tx = _env.BeginTransaction();
         LightningDatabase[] dbs;
         switch (request.Database)
@@ -149,7 +186,7 @@ public class CacheService
                 dbs = new[] { _vanillaDatabase, _moddedDatabase };
                 break;
             default:
-                throw new ArgumentException("Unknown Database");
+                return null;
         }
 
         foreach (LightningDatabase db in dbs)
@@ -162,7 +199,12 @@ public class CacheService
         }
         return null;
     }
-
+    
+    /// <summary>
+    /// Writes a single entry to the cache
+    /// </summary>
+    /// <param name="request"></param>
+    /// <exception cref="Exception">Cache is uninitialized</exception>
     public void WriteSingleEntry(WriteRequest request)
     {
         if (!_isInitialized) throw new Exception("Cache service must be initialized before calling WriteSingleEntry");
@@ -178,25 +220,53 @@ public class CacheService
         }
         tx.Commit();
     }
-
-    public void WriteSectorEntry(string path, AbbrSector sector, CacheDatabases database)
+    
+    /// <summary>
+    /// Enqueues AbbrSector (serialized on a background thread) to be written to cache
+    /// </summary>
+    /// <param name="path">game file path</param>
+    /// <param name="sector"></param>
+    /// <param name="database"></param>
+    public void WriteEntry(string path, AbbrSector sector, CacheDatabases database)
     {
-        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling WriteSectorEntry");
-        _ = Task.Run(() => WriteSingleEntry(new WriteRequest(path, MessagePackSerializer.Serialize(sector), database)));
+        if (!_isInitialized) return;
+        _ = Task.Run(() =>
+        {
+            var request = new WriteRequest(path, MessagePackSerializer.Serialize(sector), database);
+            _requestWriteQueue.Enqueue(request);
+        });
     }
     
-    public void WriteMeshEntry(string path, AbbrMesh mesh, CacheDatabases database)
+    /// <summary>
+    /// Enqueues AbbrMesh (serialized on a background thread) to be written to cache
+    /// </summary>
+    /// <param name="path">game file path</param>
+    /// <param name="mesh"></param>
+    /// <param name="database"></param>
+    public void WriteEntry(string path, AbbrMesh mesh, CacheDatabases database)
     {
-        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling WriteMeshEntry");
-        _ = Task.Run(() => WriteSingleEntry(new WriteRequest(path, MessagePackSerializer.Serialize(mesh), database)));
+        if (!_isInitialized) return;
+        _ = Task.Run(() =>
+        {
+            var request = new WriteRequest(path, MessagePackSerializer.Serialize(mesh), database);
+            _requestWriteQueue.Enqueue(request);
+        });
     }
     
+    /// <summary>
+    /// Enqueues serialized data to be written to cache
+    /// </summary>
+    /// <param name="request"></param>
     public void WriteEntry(WriteRequest request)
     {
-        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling WriteEntry");
+        if (!_isInitialized) return;
         _requestWriteQueue.Enqueue(request);
     }
     
+    /// <summary>
+    /// Loops while IsProcessing is true or request queue is > 0, writes all entries in bulk to cache
+    /// </summary>
+    /// <exception cref="Exception">Cache Service is not initialized</exception>
     private async Task ProcessWriteQueue()
     {
         if (!_isInitialized) throw new Exception("Cache service must be initialized before calling ProcessWriteQueue");
@@ -254,12 +324,20 @@ public class CacheService
             tx.Commit();
         }
 
+        if (!_settings.CacheEnabled)
+            ClearDatabase(CacheDatabases.All, true);
+        
         if (wroteExitLog)
         {
             Logger.Success("Finished writing all queued entries to cache");
         }
     }
 
+    /// <summary>
+    /// Resizes the environment 
+    /// </summary>
+    /// <param name="bypass">bypass initialization check => callers responsibility to ensure env is ready</param>
+    /// <exception cref="Exception">If cache service is not initialized</exception>
     public void ResizeEnvironment(bool bypass = false)
     {
         if (!_isInitialized && !bypass) throw new Exception("Cache service must be initialized before calling ResizeEnvironment");
@@ -316,7 +394,13 @@ public class CacheService
         Initialize();
     }
     
-    
+    /// <summary>
+    /// Removes all entries from a database
+    /// </summary>
+    /// <param name="database">target database(s)</param>
+    /// <param name="resize">resize environment after removing</param>
+    /// <param name="bypass">bypass initialization check</param>
+    /// <exception cref="Exception">Cache service is not initialized</exception>
     public void ClearDatabase(CacheDatabases database, bool resize = false, bool bypass = false)
     {
         if (!_isInitialized && !bypass) throw new Exception("Cache service must be initialized before calling ClearDatabase");
@@ -366,78 +450,66 @@ public class CacheService
         }
         catch (Exception ex)
         {
-            Logger.Error($"Failed to drop database {database} with error: {ex}");
+            Logger.Exception(ex, $"Failed to clear database: {database}.");
         }
     }
 
+    /// <summary>
+    /// Moves the cache directory
+    /// </summary>
+    /// <param name="fromPath">source path</param>
+    /// <param name="toPath">target path</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException">at least one provided path is invalid or relative</exception>
+    /// <exception cref="Exception">target directory is not empty</exception>
     public bool Move(string fromPath, string toPath)
     {
-        _isInitialized = false;
-
         if (fromPath == toPath) return true;
 
-        DirectoryInfo fromInfo;
-        DirectoryInfo toInfo;
+        var toPathVr = ValidationService.ValidatePath(toPath);
+        if (toPathVr != ValidationService.PathValidationResult.ValidDirectory)
+            throw new ArgumentException($"Invalid target path provided: {toPathVr}");
 
+        DirectoryInfo fromInfo;
         bool fromExists;
-        bool toExists;
         
-        if (!string.IsNullOrEmpty(fromPath))
-        {
-            fromInfo = new DirectoryInfo(fromPath);
-            fromExists = fromInfo.Exists;
-        }
-        else
+        DirectoryInfo toInfo = new DirectoryInfo(toPath);
+        bool toExists = toInfo.Exists;
+        
+        if (string.IsNullOrEmpty(fromPath))
         {
             fromExists = false;
         }
-        
-        if (!string.IsNullOrEmpty(toPath))
-        {
-            toInfo = new DirectoryInfo(toPath);
-            toExists = toInfo.Exists;
-        }
         else
         {
-            Logger.Error("Cache target directory cannot be empty!");
-            return false;
+            var fromPathVr = ValidationService.ValidatePath(fromPath);
+            if (fromPathVr != ValidationService.PathValidationResult.ValidDirectory)
+                throw new ArgumentException($"Invalid source path provided: {fromPathVr}");
+            fromInfo = new DirectoryInfo(fromPath);
+            fromExists = fromInfo.Exists;
         }
-
-        if (toInfo.Parent == null)
-        {
-            Logger.Error("Cache target directory cannot be drive root!");
-            return false;
-        }
-
-        if (toExists)
-        {
-            if (!IsDirEmpty(toPath))
-            {
-                Logger.Error($"Directory {toPath} already exists and is not empty");
-                return false;
-            }
-            Directory.Delete(toPath, true);
-        }
-        
-        _env.Dispose();
         
         if (!fromExists)
         {
             _settings.CacheDirectory = toPath;
+            _settings.SaveSettings();
             return true;
         }
         
+        if (toExists)
+        {
+            if (!UtilService.IsDirectoryEmpty(toPath))
+                throw new Exception("Target directory is not empty");
+            Directory.Delete(toPath, true);
+        }
+        
+        _isInitialized = false;
+        
+        if (_env != null)
+            _env.Dispose();
+        
         FileSystem.MoveDirectory(fromPath, toPath, UIOption.OnlyErrorDialogs);
         return true;
-
-        bool IsDirEmpty(string path)
-        {
-            if (Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories).Any())
-            {
-                return false;
-            }
-            return true;
-        }
     }
 
     public class CacheStats
@@ -456,11 +528,24 @@ public class CacheService
         }
     }
 
+    /// <summary>
+    /// Gets cache stats
+    /// </summary>
+    /// <returns>populated cache stats if initialized else -1 on all fields</returns>
     public CacheStats GetStats()
     {
-        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling GetStats");
+        if (!_isInitialized) return new CacheStats();
         DirectoryInfo dirInfo = new DirectoryInfo(_settings.CacheDirectory);
-        var totalSize = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
+        long totalSize;
+        try
+        {
+            totalSize = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
+        }
+        catch (Exception ex)
+        {
+            Logger.Exception(ex, "Failed to get total size of cache!", true);
+            totalSize = 0;
+        }
         long estVanillaSize = 0;
         long estModdedSize = 0;
         
@@ -500,6 +585,12 @@ public class CacheService
         }
     }
 
+    /// <summary>
+    /// Gets a sample of all cache entries (only used for testing)
+    /// </summary>
+    /// <param name="sampleSize"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
     public DataBaseSample GetSample(int sampleSize)
     {
         if (!_isInitialized) throw new Exception("Cache service must be initialized before calling GetSample");
@@ -548,10 +639,18 @@ public class CacheService
             GameVersion = gameVersion;
         }
     }
-
+    
+    /// <summary>
+    /// Returns additional metadata about cache
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="Exception">any used filepath is invalid (cache, game) or no game exe file found</exception>
     public CacheDatabaseMetadata GetMetadata()
     {
         string filePath = Path.Combine(_settings.CacheDirectory, "metadata.json");
+        if (ValidationService.ValidatePath(filePath) != ValidationService.PathValidationResult.ValidFile)
+            throw new Exception("Cache directory is invalid!");
+        
         if (File.Exists(filePath))
         {
             string json = File.ReadAllText(filePath);
@@ -560,17 +659,17 @@ public class CacheService
         }
         
         var gameExePath = Path.Combine(_settings.GameDirectory, "bin", "x64", "Cyberpunk2077.exe");
+        if (ValidationService.ValidatePath(filePath) != ValidationService.PathValidationResult.ValidFile)
+            throw new Exception("Game directory is invalid!");
+        
         if (!File.Exists(gameExePath))
-        {
             throw new Exception("Could not find Game Executable.");
-        }
+        
         var fileVerInfo = FileVersionInfo.GetVersionInfo(gameExePath);
         string? version = fileVerInfo.ProductVersion;
         if (version == null)
-        {
-            Logger.Warning($"{version}");
-            throw new Exception("Could not find Game Executable.");
-        }
+            throw new Exception("Could not find Game Version.");
+        
         var newMetadata = new CacheDatabaseMetadata(_settings.MinimumCacheVersion, version);
         Directory.CreateDirectory(_settings.CacheDirectory);
         File.WriteAllText(filePath, JsonSerializer.Serialize(newMetadata));

@@ -1,0 +1,47 @@
+<Window
+    Background="#171c26"
+    MinWidth="450"
+    SizeToContent="WidthAndHeight"
+    Title="Dialog"
+    mc:Ignorable="d"
+    x:Class="VolumetricSelection2077.views.Dialog"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <TextBlock
+            Margin="10"
+            Text="This is a message."
+            x:Name="MessageTextBlock" />
+        <StackPanel
+            HorizontalAlignment="Right"
+            Orientation="Horizontal"
+            VerticalAlignment="Bottom">
+            <Button
+                Background="#6b82b2"
+                Click="OkButton_Click"
+                Content="OK"
+                Margin="5"
+                Name="ButtonLeft">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="#455472" />
+                    </Style>
+                </Button.Styles>
+            </Button>
+            <Button
+                Background="#6b82b2"
+                Click="CancelButton_Click"
+                Content="Cancel"
+                Margin="0,5,5,5"
+                Name="ButtonRight">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="#455472" />
+                    </Style>
+                </Button.Styles>
+            </Button>
+        </StackPanel>
+    </StackPanel>
+</Window>

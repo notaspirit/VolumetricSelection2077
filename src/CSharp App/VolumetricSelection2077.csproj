@@ -40,11 +40,12 @@
 
   <ItemGroup>
     <AvaloniaResource Include="assets\**" />
+    <Content Include="assets\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <PropertyGroup>
     <Version>1000.0.0.0</Version>
     <FileVersion>1000.0.0.0</FileVersion>
-    <InformationalVersion>1000.0.0-beta6</InformationalVersion>
+    <InformationalVersion>1000.0.0-beta7</InformationalVersion>
   </PropertyGroup>
 </Project>

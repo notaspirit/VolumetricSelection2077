@@ -4,7 +4,7 @@ using VolumetricSelection2077.Models;
 using System.Collections.Generic;
 using System.Linq;
 using HelixToolkit.Wpf.SharpDX;
-using WolvenKit.RED4.Types;
+using OrientedBoundingBox = SharpDX.OrientedBoundingBox;
 using Plane = SharpDX.Plane;
 using Vector3 = SharpDX.Vector3;
 using Vector4 = SharpDX.Vector4;
@@ -13,6 +13,11 @@ namespace VolumetricSelection2077.Services;
 
 public static class CollisionCheckService
 {
+    /// <summary>
+    /// Returns an OBBs 3 axes
+    /// </summary>
+    /// <param name="obb"></param>
+    /// <returns></returns>
     private static Vector3[] GetObbAxes(OrientedBoundingBox obb)
     {
         var x = new Vector3(obb.Transformation.M11, obb.Transformation.M12, obb.Transformation.M13);
@@ -24,6 +29,13 @@ public static class CollisionCheckService
             x, y, z
         };
     }
+    /// <summary>
+    /// Checks for overlap (containment and intersection) between a polygon with n edges and an obb
+    /// </summary>
+    /// <param name="polygon"></param>
+    /// <param name="vertices"></param>
+    /// <param name="obb"></param>
+    /// <returns></returns>
     public static bool CheckOverlapPolygonBox(uint[] polygon, Vector3[] vertices, OrientedBoundingBox obb)
     {
         var polyVerts = polygon.Select(index => vertices[index]).ToArray();
@@ -77,6 +89,12 @@ public static class CollisionCheckService
         return true;
     }
     
+    /// <summary>
+    /// Checks if a submesh overlaps with the obb
+    /// </summary>
+    /// <param name="submesh"></param>
+    /// <param name="obb"></param>
+    /// <returns></returns>
     public static bool CheckOverlapSubMeshBox(AbbrSubMesh submesh, OrientedBoundingBox obb)
     {
         foreach (var poly in submesh.PolygonIndices)
@@ -103,6 +121,11 @@ public static class CollisionCheckService
             return Max >= other.Min && Min <= other.Max;
         }
     }
+    /// <summary>
+    /// Converts a sharpdx vector4 to vector3
+    /// </summary>
+    /// <param name="v"></param>
+    /// <returns></returns>
     private static Vector3 Vec4toVec3(Vector4 v)
     {
         Vector3 result;
@@ -120,6 +143,16 @@ public static class CollisionCheckService
         }
         return result;
     }
+    
+    /// <summary>
+    /// Checks if a mesh node has overlap with the obb
+    /// </summary>
+    /// <param name="mesh"></param>
+    /// <param name="selectionBoxOBB"></param>
+    /// <param name="selectionBoxAabb"></param>
+    /// <param name="transforms"></param>
+    /// <param name="matrixTransform"></param>
+    /// <returns></returns>
     public static bool IsMeshInsideBox(AbbrMesh mesh, OrientedBoundingBox selectionBoxOBB, BoundingBox selectionBoxAabb, AbbrSectorTransform[]? transforms, Matrix? matrixTransform = null)
     {
         static bool IsInsidePrivate(AbbrSubMesh submesh, OrientedBoundingBox selectionObb, BoundingBox selectionAabb, Matrix transform)
@@ -185,6 +218,15 @@ public static class CollisionCheckService
         return false;
     }
 
+    /// <summary>
+    /// Checks if a collision mesh actor is overlapping with the obb
+    /// </summary>
+    /// <param name="mesh"></param>
+    /// <param name="selectionBoxObb"></param>
+    /// <param name="selectionBoxAabb"></param>
+    /// <param name="actorTransform"></param>
+    /// <param name="shapeTransform"></param>
+    /// <returns></returns>
     public static bool IsCollisonMeshInsideSelectionBox(AbbrMesh mesh, OrientedBoundingBox selectionBoxObb,
         BoundingBox selectionBoxAabb, AbbrSectorTransform actorTransform, AbbrSectorTransform shapeTransform)
     {
@@ -207,7 +249,15 @@ public static class CollisionCheckService
                      $"Mesh is inside: {isInside}."); */
     }
 
-    public static bool IsCollisionBoxInsideSelectionBox(AbbrActorShapes shape, AbbrSectorTransform actorTransform, BoundingBox selectionBoxAabb, OrientedBoundingBox selectionBoxObb, string collectionName) // the collectionName is just for test building the blender collections
+    /// <summary>
+    /// Checks if a collision box actor overlaps with the obb
+    /// </summary>
+    /// <param name="shape"></param>
+    /// <param name="actorTransform"></param>
+    /// <param name="selectionBoxAabb"></param>
+    /// <param name="selectionBoxObb"></param>
+    /// <returns></returns>
+    public static bool IsCollisionBoxInsideSelectionBox(AbbrActorShapes shape, AbbrSectorTransform actorTransform, BoundingBox selectionBoxAabb, OrientedBoundingBox selectionBoxObb)
     {
         // only working way to apply actor and shape transform
         Matrix shapeTransformMatrix = Matrix.Scaling(new Vector3(1,1,1)) * 
@@ -237,6 +287,14 @@ public static class CollisionCheckService
         return isInside;
     }
     
+    /// <summary>
+    /// Checks if a collision capsule actor overlaps with the obb
+    /// </summary>
+    /// <param name="shape"></param>
+    /// <param name="actorTransform"></param>
+    /// <param name="selectionBoxAabb"></param>
+    /// <param name="selectionBoxObb"></param>
+    /// <returns></returns>
     public static bool IsCollisionCapsuleInsideSelectionBox(AbbrActorShapes shape, AbbrSectorTransform actorTransform, BoundingBox selectionBoxAabb, OrientedBoundingBox selectionBoxObb)
     {
         float height = shape.Transform.Scale.Y + 2 * actorTransform.Scale.X;   
@@ -269,26 +327,32 @@ public static class CollisionCheckService
         }
         return isInside;
     }
-
+    
+    /// <summary>
+    /// Checks if a collision sphere actor overlaps with the obb
+    /// </summary>
+    /// <param name="shape"></param>
+    /// <param name="actorTransform"></param>
+    /// <param name="selectionBoxObb"></param>
+    /// <returns></returns>
     public static bool IsCollisionSphereInsideSelectionBox(AbbrActorShapes shape, AbbrSectorTransform actorTransform,
         OrientedBoundingBox selectionBoxObb)
     {
-        // only working way to apply actor and shape transform
         Matrix shapeTransformMatrix = Matrix.Scaling(new Vector3(1,1,1)) * 
                                       Matrix.RotationQuaternion(shape.Transform.Rotation) * 
                                       Matrix.Translation(shape.Transform.Position);
 
-        Matrix actorTransformMatrix = Matrix.Scaling(actorTransform.Scale) * 
+        Matrix actorTransformMatrix = Matrix.Scaling(new Vector3(1,1,1)) * 
                                       Matrix.RotationQuaternion(actorTransform.Rotation) * 
                                       Matrix.Translation(actorTransform.Position);
 
         Matrix transformMatrix = shapeTransformMatrix * actorTransformMatrix;
         
-        var collisionSphere = new BoundingSphere(shape.Transform.Position, shape.Transform.Scale.X);
-        collisionSphere.TransformBoundingSphere(transformMatrix);
-        Vector3 obbHalfExtends = selectionBoxObb.Size / 2;
-        Vector3 closestPoint = Vector3.Clamp(collisionSphere.Center, -obbHalfExtends, obbHalfExtends);
+        Vector4 transformedSpherePosition = Vector4.Transform(Vector3.Transform(new Vector3(0,0,0), transformMatrix), Matrix.Invert(selectionBoxObb.Transformation));
         
-        return collisionSphere.Contains(ref closestPoint) != ContainmentType.Disjoint;
+        var collisionSphere = new BoundingSphere(Vec4toVec3(transformedSpherePosition), shape.Transform.Scale.X);
+        
+        var selectionAsAABB = new BoundingBox(-selectionBoxObb.Size / 2, selectionBoxObb.Size / 2);
+        return selectionAsAABB.Contains(ref collisionSphere) != ContainmentType.Disjoint;
     }
 }

@@ -1,11 +1,7 @@
 <Window
     Background="#171c26"
-    Height="600"
     Icon="../assets/redCube.ico"
     Title="VolumetricSelection2077"
-    Width="1350"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
     mc:Ignorable="d"
     x:Class="VolumetricSelection2077.MainWindow"
     x:DataType="viewModels:MainWindowViewModel"
@@ -20,12 +16,14 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border Margin="5">
         <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,*">
-            <TextBlock
-                FontSize="32"
-                FontWeight="Bold"
+            <Image
+                Grid.Column="0"
                 Grid.Row="0"
-                Margin="5"
-                Text="{x:Static resources:Labels.VS2077}" />
+                Height="60"
+                HorizontalAlignment="Left"
+                Margin="5,15,5,15"
+                RenderOptions.BitmapInterpolationMode="HighQuality"
+                Source="{Binding VS2077Icon}" />
 
             <TextBox
                 Grid.Row="1"
@@ -384,6 +382,7 @@
             <Grid Grid.Row="6" Margin="5">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
@@ -393,26 +392,71 @@
                     Background="#ad0002"
                     Click="ClearLogButton_Click"
                     Grid.Column="0"
-                    Height="25"
-                    VerticalAlignment="Bottom"
+                    Height="24"
+                    VerticalAlignment="Center"
                     Width="65">
                     <Button.Styles>
                         <Style Selector="Button:pointerover /template/ ContentPresenter">
                             <Setter Property="Background" Value="DarkRed" />
                         </Style>
                     </Button.Styles>
-                    <StackPanel Orientation="Horizontal" Spacing="5">
-                        <TextBlock
-                            FontSize="10"
-                            Text="{x:Static resources:Labels.ClearLog}"
-                            VerticalAlignment="Center" />
-                    </StackPanel>
                 </Button>
+                <Grid Grid.Column="0" Margin="-1,5,5,5">
+                    <Grid.ColumnDefinitions>65</Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>24</Grid.RowDefinitions>
+                    <TextBlock
+                        FontSize="10"
+                        Grid.Column="0"
+                        Grid.Row="0"
+                        HorizontalAlignment="Center"
+                        IsHitTestVisible="False"
+                        Text="{x:Static resources:Labels.ClearLog}"
+                        VerticalAlignment="Center" />
+                </Grid>
+                <TextBlock
+                    Grid.Column="1"
+                    Margin="5"
+                    Name="TimerTextBlock"
+                    Text="00:00"
+                    VerticalAlignment="Center" />
+                <ProgressBar
+                    CornerRadius="2"
+                    Grid.Column="2"
+                    Height="20"
+                    Margin="1,6,6,6"
+                    Maximum="1000"
+                    Minimum="0"
+                    Name="ProgressBar"
+                    VerticalAlignment="Center"
+                    ZIndex="2">
+                    <ProgressBar.Background>
+                        <SolidColorBrush Color="#0e1117" />
+                    </ProgressBar.Background>
+                    <ProgressBar.Foreground>
+                        <SolidColorBrush Color="#4b48d6" />
+                    </ProgressBar.Foreground>
+                </ProgressBar>
+                <ProgressBar
+                    CornerRadius="3"
+                    Grid.Column="2"
+                    Margin="0,5,5,5"
+                    Maximum="1000"
+                    Minimum="0"
+                    Name="ProgressBarBorder"
+                    VerticalAlignment="Center"
+                    ZIndex="1">
+                    <ProgressBar.Background>
+                        <SolidColorBrush Color="#a0a2a5" />
+                    </ProgressBar.Background>
+                    <ProgressBar.Foreground>
+                        <SolidColorBrush Color="#414f6c" />
+                    </ProgressBar.Foreground>
+                </ProgressBar>
                 <Button
                     Background="#6b82b2"
                     Click="SettingsButton_Click"
                     Content="{x:Static resources:Labels.Settings}"
-                    Grid.Column="2"
+                    Grid.Column="3"
                     IsEnabled="{Binding ButtonsAvailable}">
                     <Button.Styles>
                         <Style Selector="Button:pointerover /template/ ContentPresenter">
@@ -420,7 +464,7 @@
                         </Style>
                     </Button.Styles>
                 </Button>
-                <Grid Grid.Column="2" IsVisible="{Binding SettingsOpen}">
+                <Grid Grid.Column="3" IsVisible="{Binding SettingsOpen}">
                     <li:LoadingIndicator
                         Foreground="White"
                         Height="30"
@@ -431,7 +475,7 @@
                     Background="#6b82b2"
                     Click="Benchmark_Click"
                     Content="{x:Static resources:Labels.Benchmark}"
-                    Grid.Column="3"
+                    Grid.Column="4"
                     IsEnabled="{Binding MainTaskAvailable}"
                     IsVisible="{Binding Settings.DebugMode}"
                     Margin="5,0,0,0">
@@ -441,7 +485,7 @@
                         </Style>
                     </Button.Styles>
                 </Button>
-                <Grid Grid.Column="3" IsVisible="{Binding BenchmarkProcessing}">
+                <Grid Grid.Column="4" IsVisible="{Binding BenchmarkProcessing}">
                     <li:LoadingIndicator
                         Foreground="White"
                         Height="30"
@@ -464,7 +508,7 @@
                     Background="#5755d9"
                     Click="FindSelectedButton_Click"
                     Content="{x:Static resources:Labels.FindSelected}"
-                    Grid.Column="4"
+                    Grid.Column="5"
                     IsEnabled="{Binding MainTaskAvailable}"
                     Margin="5,0,0,0">
                     <Button.Styles>
@@ -473,7 +517,7 @@
                         </Style>
                     </Button.Styles>
                 </Button>
-                <Grid Grid.Column="4" IsVisible="{Binding MainTaskProcessing}">
+                <Grid Grid.Column="5" IsVisible="{Binding MainTaskProcessing}">
                     <li:LoadingIndicator
                         Foreground="White"
                         Height="30"
@@ -487,6 +531,7 @@
                 Margin="5"
                 x:Name="LogViewer" />
             <TextBlock
+                Background="#0e1117"
                 FontSize="10"
                 Foreground="White"
                 Grid.Row="7"

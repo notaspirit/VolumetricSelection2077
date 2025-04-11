@@ -11,6 +11,8 @@ using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using VolumetricSelection2077.Extensions;
+using VolumetricSelection2077.Models;
 using VolumetricSelection2077.TestingStuff;
 using VolumetricSelection2077.ViewModels;
 using VolumetricSelection2077.ViewStructures;
@@ -21,16 +23,57 @@ public partial class MainWindow : Window
     private readonly ProcessService _processService;
     private MainWindowViewModel _mainWindowViewModel;
     
+    private ProgressBar _progressBar;
+    private ProgressBar _progressBarBroder;
+    private TextBlock _progressTextBlock;
+    private TrackedDispatchTimer _dispatcherTimer;
+    private Progress _progress;
     public MainWindow()
     {
         InitializeComponent();
-        InitializeLogger();
+        try
+        {
+            InitializeLogger();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
         DataContext = new MainWindowViewModel();
         _mainWindowViewModel = DataContext as MainWindowViewModel;
         _processService = new ProcessService();
         Closed += OnMainWindowClosed;
+        
+        _progressBar = this.FindControl<ProgressBar>("ProgressBar");
+        _progressBarBroder = this.FindControl<ProgressBar>("ProgressBarBorder");
+        _progressTextBlock = this.FindControl<TextBlock>("TimerTextBlock");
+        if (_progressTextBlock == null || _progressBar == null || _progressBarBroder == null)
+        {
+            Logger.Error($"Could not find one or more ui components: ProgressBar: {_progressBar}, TimerTextBlock: {_progressTextBlock}, ProgressBarBorder: {_progressBarBroder}");
+        }
+        
+        _progressBar.SizeChanged += (s, e) =>
+        {
+            _progressBarBroder.Width = ((_progressBar.Width / DesktopScaling) + 2) * DesktopScaling;
+            _progressBarBroder.Height = ((_progressBar.Height / DesktopScaling) + 2) * DesktopScaling;
+        };
+        
+        _dispatcherTimer = new TrackedDispatchTimer() { Interval = TimeSpan.FromSeconds(1) };
+        _dispatcherTimer.Tick += (s, e) => _progressTextBlock.Text = $"{UtilService.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
+        _progress = Progress.Instance;
+        _progress.ProgressChanged += (sender, i) =>
+        {
+            _progressBar.Value = i;
+            _progressBarBroder.Value = i;
+        };
     }
-
+    
+    /// <summary>
+    /// Initializes the Logger Service and UI Sink
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Could not find log viewer in the UI</exception>
+    /// <exception cref="ArgumentException">Log Directory it build is invalid</exception>
+    /// <exception cref="IOException"></exception>
     private void InitializeLogger()
     {
         var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -46,18 +89,12 @@ public partial class MainWindow : Window
         Logger.Initialize(logDirectory);
         Logger.AddSink(new LogViewerSink(logViewer, "[{Timestamp:yyyy-MM-dd HH:mm:ss}] {Message:lj}{NewLine}{Exception}"));
     }
-
+    
     private async void SettingsButton_Click(object? sender, RoutedEventArgs e)
     {
         if (_mainWindowViewModel.IsProcessing) return;
         _mainWindowViewModel.SettingsOpen = true;
         var settingsWindow = new SettingsWindow();
-        settingsWindow.Opened += (_, _) =>
-        {
-            var x = this.Position.X + 10;
-            var y = this.Position.Y + 41;
-            settingsWindow.Position = new PixelPoint(x, y);
-        };
         await settingsWindow.ShowDialog(this);
         _mainWindowViewModel.SettingsOpen = false;
     }
@@ -70,27 +107,18 @@ public partial class MainWindow : Window
     private async void FindSelectedButton_Click(object? sender, RoutedEventArgs e)
     {
         if (_mainWindowViewModel.IsProcessing) return;
-        Stopwatch stopwatch = Stopwatch.StartNew();
+        _dispatcherTimer.Start();
         try
         {
             _mainWindowViewModel.MainTaskProcessing = true;
-            _mainWindowViewModel.Settings.OutputFilename = UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.OutputFilename);
-            OutputFilenameTextBox.Text = _mainWindowViewModel.Settings.OutputFilename;
             AddQueuedFilters();
-            if (!string.IsNullOrEmpty(_mainWindowViewModel.Settings.OutputFilename))
+            var (success, error) = await Task.Run(() =>
+            { 
+                return _processService.MainProcessTask();
+            });
+            if (!success)
             {
-                var (success, error) = await Task.Run(() =>
-                { 
-                    return _processService.MainProcessTask();
-                });
-                if (!success)
-                {
-                    Logger.Error($"Process failed: {error}");
-                }
-            }
-            else
-            {
-                Logger.Error("Output filename is empty");
+                Logger.Error($"Process failed: {error}");
             }
         }
         catch (Exception ex)
@@ -99,8 +127,8 @@ public partial class MainWindow : Window
         }
         finally
         {
-            stopwatch.Stop();
-            string formattedTime = UtilService.FormatElapsedTime(stopwatch.Elapsed);
+            _dispatcherTimer.Stop();
+            string formattedTime = UtilService.FormatElapsedTime(_dispatcherTimer.Elapsed);
             Logger.Info($"Process finished after: {formattedTime}");
             _mainWindowViewModel.MainTaskProcessing = false;
         }
@@ -112,7 +140,9 @@ public partial class MainWindow : Window
         try
         {
             _mainWindowViewModel.BenchmarkProcessing = true;
-            _mainWindowViewModel.Settings.OutputFilename = UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.OutputFilename);
+            _dispatcherTimer.Start();
+            _mainWindowViewModel.Settings.OutputFilename =
+                UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.OutputFilename);
             OutputFilenameTextBox.Text = _mainWindowViewModel.Settings.OutputFilename;
             AddQueuedFilters();
             await Task.Run(() => Benchmarking.Instance.RunBenchmarks());
@@ -121,7 +151,13 @@ public partial class MainWindow : Window
         {
             Logger.Error($"Benchmarking failed: {ex}");
         }
-        _mainWindowViewModel.BenchmarkProcessing = false;
+        finally
+        {
+            _dispatcherTimer.Stop();
+            string formattedTime = UtilService.FormatElapsedTime(_dispatcherTimer.Elapsed);
+            Logger.Info($"Benchmarking finished after: {formattedTime}");
+            _mainWindowViewModel.BenchmarkProcessing = false;
+        }
     }
     
     private void ResourceFilterTextBox_KeyDown(object? sender, KeyEventArgs e)
@@ -261,7 +297,10 @@ public partial class MainWindow : Window
             item.IsChecked = !item.IsChecked;
         }
     }
-
+    
+    /// <summary>
+    /// Adds Filters that are currently in the text box but not yet committed
+    /// </summary>
     private void AddQueuedFilters()
     {
         if (!string.IsNullOrEmpty(ResourceFilterTextBox.Text?.Trim()))
@@ -277,12 +316,100 @@ public partial class MainWindow : Window
         _mainWindowViewModel.Settings.SaveSettings();
     }
     
+     /// <summary>
+    /// Updates saved window position
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    private void MainWindow_PositionChanged(object? sender, PixelPointEventArgs e)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            var newPos = e.Point;
+            if (WindowState == WindowState.Normal)
+            {
+                _mainWindowViewModel.Settings.WindowRecoveryState.PosX = newPos.X;
+                _mainWindowViewModel.Settings.WindowRecoveryState.PosY = newPos.Y;
+            }
+        });
+    }
+
+    private bool wasMaximized { get; set; } = false;
+    /// <summary>
+    /// Updates saved window size and sets correct size after returning from maximized state
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    private void MainWindow_SizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            var newSize = e.NewSize;
+            if (WindowState == WindowState.Maximized)
+                wasMaximized = true;
+            if (WindowState == WindowState.Normal)
+            {
+                if (wasMaximized)
+                {
+                    try
+                    {
+                        Width = _mainWindowViewModel.Settings.WindowRecoveryState.PosWidth / DesktopScaling;
+                        Height = _mainWindowViewModel.Settings.WindowRecoveryState.PosHeight / DesktopScaling;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Exception(ex, "Failed to set window size after returning from maximized state");
+                    }
+                    wasMaximized = false;
+                }
+                else
+                {
+                    _mainWindowViewModel.Settings.WindowRecoveryState.PosWidth = (int)(newSize.Width * DesktopScaling);
+                    _mainWindowViewModel.Settings.WindowRecoveryState.PosHeight = (int)(newSize.Height * DesktopScaling);
+                }
+
+            }
+        });
+    }
+    /// <summary>
+    /// Sets the position, size and state of the window safely
+    /// </summary>
+    /// <param name="wrs">Target state</param>
+    /// <returns>true if successful</returns>
+    private bool SetWindowState(WindowRecoveryState wrs)
+    {
+        try
+        {
+            Position = new PixelPoint(wrs.PosX,
+                wrs.PosY);
+            Width = wrs.PosWidth / DesktopScaling;
+            Height = wrs.PosHeight / DesktopScaling;
+            WindowState = (WindowState)wrs.WindowState;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.Exception(ex, "Failed to set window position, size or state, using default values.");
+            return false;
+        }
+    }
+    
     protected override async void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
+        PositionChanged += MainWindow_PositionChanged;
+        SizeChanged += MainWindow_SizeChanged;
+
+        if (!SetWindowState(_mainWindowViewModel.Settings.WindowRecoveryState))
+        {
+            _mainWindowViewModel.Settings.WindowRecoveryState = new();
+            _mainWindowViewModel.Settings.SaveSettings();
+            SetWindowState(_mainWindowViewModel.Settings.WindowRecoveryState);
+        }
+        
         Logger.Info($"VS2077 Version: {_mainWindowViewModel.Settings.ProgramVersion}");
         _mainWindowViewModel.IsProcessing = true;
-        var validationResult = ValidationService.ValidateGamePath(_mainWindowViewModel.Settings.GameDirectory);
+        var validationResult = ValidationService.ValidateGamePath(_mainWindowViewModel.Settings.GameDirectory).Item1;
         if (!(validationResult == ValidationService.GamePathResult.Valid ||
               validationResult == ValidationService.GamePathResult.CetNotFound))
         {
@@ -323,12 +450,10 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Logger.Error($"An error occured during the update check: {ex}");
+            Logger.Exception(ex, "Failed to Check for Updates.");
         }
-        var success = await Task.Run(() =>
-        {
-            return GameFileService.Instance.Initialize();
-        });
+        var success = await Task.Run(() => GameFileService.Instance.Initialize());
+        
         if (success)
             _mainWindowViewModel.AppInitialized = true;
         _mainWindowViewModel.IsProcessing = false;
@@ -336,6 +461,7 @@ public partial class MainWindow : Window
 
     private void OnMainWindowClosed(object? sender, EventArgs e)
     {
+        _mainWindowViewModel.Settings.WindowRecoveryState.WindowState = WindowState == WindowState.Maximized ? 2 : 0;
         AddQueuedFilters();
         _mainWindowViewModel.Settings.SaveSettings();
     }

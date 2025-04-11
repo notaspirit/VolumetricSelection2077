@@ -1,5 +1,7 @@
 using System;
 using System.ComponentModel;
+using System.IO;
+using Avalonia.Media.Imaging;
 using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.Services;
 using VolumetricSelection2077.views;
@@ -25,10 +27,32 @@ namespace VolumetricSelection2077.ViewModels
                 OnPropertyChanged(nameof(ClearModdedCacheButtonLabel));
             }
         }
-
+        
         public string ClearVanillaCacheButtonLabel => Labels.ClearVanillaCache + $" [ {CacheStats.VanillaEntries} files | {CacheStats.EstVanillaSize:F2} GB ]";
         
         public string ClearModdedCacheButtonLabel => Labels.ClearModdedCache + $" [ {CacheStats.ModdedEntries} files | {CacheStats.EstModdedSize:F2} GB ]";
+        
+        public bool CacheEnabled 
+        {
+            get => Settings.CacheEnabled;
+            set
+            {
+                Settings.CacheEnabled = value;
+                OnPropertyChanged(nameof(CacheEnabled));
+            }
+        }
+        
+        public bool AutoUpdateEnabled 
+        {
+            get => Settings.AutoUpdate;
+            set
+            {
+                Settings.AutoUpdate = value;
+                OnPropertyChanged(nameof(AutoUpdateEnabled));
+            }
+        }
+        
+        public Bitmap SettingsIcon { get; set; }
         
         public SettingsViewModel() 
         { 
@@ -43,8 +67,17 @@ namespace VolumetricSelection2077.ViewModels
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to load Cache {ex}");
+                Logger.Exception(ex, $"Failed to load Cache!");
                 CacheStats = new CacheService.CacheStats();
+            }
+
+            try
+            {
+                SettingsIcon = new Bitmap(Path.Combine(AppContext.BaseDirectory, "assets", "SettingsMSStyle.png"));
+            }
+            catch(Exception ex)
+            {
+                Logger.Exception(ex, $"Failed to load Settings Icon!");
             }
         }
         
