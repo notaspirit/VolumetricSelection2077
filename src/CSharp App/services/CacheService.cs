@@ -136,9 +136,13 @@ public class CacheService
         return Task.Run(() =>
         {
             if (!_isInitialized) return;
+            if (_env == null) return;
             _isInitialized = false;
-            IsProcessing = false;
-            Task.Delay(BatchDelay * 10).Wait();
+            if (IsProcessing)
+            {
+                IsProcessing = false;
+                Task.Delay(BatchDelay * 10).Wait();
+            }
             _env.Dispose();
         });
     }
@@ -459,17 +463,12 @@ public class CacheService
     /// <exception cref="Exception">target directory is not empty</exception>
     public bool Move(string fromPath, string toPath)
     {
-        _isInitialized = false;
         if (fromPath == toPath) return true;
 
         var toPathVr = ValidationService.ValidatePath(toPath);
         if (toPathVr != ValidationService.PathValidationResult.ValidDirectory)
-        {
-            _isInitialized = true;
             throw new ArgumentException($"Invalid target path provided: {toPathVr}");
-        }
-
-
+        
         DirectoryInfo fromInfo;
         bool fromExists;
         
@@ -484,10 +483,7 @@ public class CacheService
         {
             var fromPathVr = ValidationService.ValidatePath(fromPath);
             if (fromPathVr != ValidationService.PathValidationResult.ValidDirectory)
-            {
-                _isInitialized = true;
                 throw new ArgumentException($"Invalid source path provided: {fromPathVr}");
-            }
             fromInfo = new DirectoryInfo(fromPath);
             fromExists = fromInfo.Exists;
         }
@@ -502,12 +498,12 @@ public class CacheService
         if (toExists)
         {
             if (!UtilService.IsDirectoryEmpty(toPath))
-            {
-                _isInitialized = true;
                 throw new Exception("Target directory is not empty");
-            }
+            
             Directory.Delete(toPath, true);
         }
+        
+        _isInitialized = false;
         
         if (_env != null)
             _env.Dispose();
