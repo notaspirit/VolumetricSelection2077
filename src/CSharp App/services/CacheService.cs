@@ -97,7 +97,6 @@ public class CacheService
                 throw new Exception("Invalid cache directory");
             
             if (_isInitialized) return;
-            if (_env != null) return;
             
             _env = new LightningEnvironment(_settings.CacheDirectory)
             {
@@ -537,7 +536,16 @@ public class CacheService
     {
         if (!_isInitialized) return new CacheStats();
         DirectoryInfo dirInfo = new DirectoryInfo(_settings.CacheDirectory);
-        var totalSize = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
+        long totalSize;
+        try
+        {
+            totalSize = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
+        }
+        catch (Exception ex)
+        {
+            Logger.Exception(ex, "Failed to get total size of cache!", true);
+            totalSize = 0;
+        }
         long estVanillaSize = 0;
         long estModdedSize = 0;
         

@@ -114,13 +114,13 @@ namespace VolumetricSelection2077
                     _settingsViewModel.Settings.CacheDirectory = _settingsViewModel?.PersistentCache.InitialCachePath;
                     _settingsViewModel?.Settings.SaveSettings();
                 }
+                
+                CacheService.Instance.Dispose().Wait();
             }
             
             if ((bool)_settingsViewModel?.PersistentCache.RequiresRestart)
                 RestartApp();
-            
-            if(!_cacheService.IsInitialized)
-                CacheService.Instance.Initialize();
+            CacheService.Instance.Initialize();
         }
     };
 }
