@@ -52,6 +52,11 @@ public class GameFileService
     {
         _settingsService = SettingsService.Instance;
     }
+    
+    /// <summary>
+    ///  Initializes GameFileService if it isn't already
+    /// </summary>
+    /// <returns>true if operation was successful</returns>
     public bool Initialize()
     {
         if (_initialized) return true;
@@ -95,7 +100,7 @@ public class GameFileService
         catch (Exception e)
         {
             sw.Stop();
-            Logger.Error($"Initializing Game File Service failed : {e}");
+            Logger.Exception(e, "Initializing Game File Service failed!");
             return false;
         }
 
@@ -114,6 +119,15 @@ public class GameFileService
             }
         }
     }
+    
+    /// <summary>
+    /// Gets a PhysX Mesh entry
+    /// </summary>
+    /// <param name="sectorHash"></param>
+    /// <param name="actorHash"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception">Game file service is not initialized</exception>
+    /// <remarks>Collision meshes are not cached</remarks>
     public async Task<AbbrMesh?> GetPhysXMesh(ulong sectorHash, ulong actorHash)
     {
         if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetPhysXMesh.");
@@ -125,18 +139,24 @@ public class GameFileService
         
         return DirectAbbrMeshParser.ParseFromPhysX(rawMesh);
     }
+    
+    /// <summary>
+    /// Gets a CMesh from the archives or cache and returns the parsed AbbrMesh
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception">Game file service is not initialized</exception>
     public AbbrMesh? GetCMesh(string path)
     {
         if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
-        if (_settingsService.CacheEnabled)
-        {
-            var cachedMesh = _cacheService.GetEntry(new ReadRequest(path, _readCacheTarget));
-            if (MessagePackHelper.TryDeserialize<AbbrMesh>(cachedMesh, out var mesh)) return mesh;
-        }
+
+        var cachedMesh = _cacheService.GetEntry(new ReadRequest(path, _readCacheTarget));
+        if (MessagePackHelper.TryDeserialize<AbbrMesh>(cachedMesh, out var mesh)) return mesh;
+        
         var rawMesh = ArchiveManager.GetCR2WFile(path);
         if (rawMesh == null) return null;
         CacheDatabases db = CacheDatabases.Vanilla;
-        if (_settingsService.SupportModdedResources && _settingsService.CacheEnabled)
+        if (_settingsService.SupportModdedResources)
         {
             var fileLookup = ArchiveManager.Lookup(path, ArchiveManagerScope.Mods);
             if (fileLookup != null) db = CacheDatabases.Modded;
@@ -149,30 +169,34 @@ public class GameFileService
         }
         catch (Exception ex)
         {
-            Logger.Error($"Failed to parse mesh {path} with error: {ex}");
+            Logger.Exception(ex,$"Failed to parse mesh {path}");
             return null;
         }
         if (parsedMesh == null) return null;
-        if (_settingsService.CacheEnabled)
-        {
-            if (!_settingsService.CacheModdedResources && db == CacheDatabases.Modded) return parsedMesh;
-            _cacheService.WriteEntry(path, parsedMesh, db); 
-        }
+
+        if (!_settingsService.CacheModdedResources && db == CacheDatabases.Modded) return parsedMesh;
+        _cacheService.WriteEntry(path, parsedMesh, db); 
+        
         return parsedMesh;
     }
-
+    
+    /// <summary>
+    /// Gets a worldStreamingSector from the archives or cache and returns the parsed AbbrSector
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception">Game file service is not initialized</exception>
     public AbbrSector? GetSector(string path)
     {
         if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
-        if (_settingsService.CacheEnabled)
-        {
-            var cachedSector = _cacheService.GetEntry(new ReadRequest(path, _readCacheTarget));
-            if (MessagePackHelper.TryDeserialize<AbbrSector>(cachedSector, out var mesh)) return mesh;
-        }
+
+        var cachedSector = _cacheService.GetEntry(new ReadRequest(path, _readCacheTarget));
+        if (MessagePackHelper.TryDeserialize<AbbrSector>(cachedSector, out var mesh)) return mesh;
+        
         var rawSector = ArchiveManager.GetCR2WFile(path);
         if (rawSector == null) return null;
         CacheDatabases db = CacheDatabases.Vanilla;
-        if (_settingsService.SupportModdedResources  && _settingsService.CacheEnabled)
+        if (_settingsService.SupportModdedResources)
         {
             var fileLookup = ArchiveManager.Lookup(path, ArchiveManagerScope.Mods);
             if (fileLookup != null) db = CacheDatabases.Modded;
@@ -185,14 +209,13 @@ public class GameFileService
         }
         catch (Exception ex)
         {
-            Logger.Error($"Failed to get sector {path} with error: {ex}");
+            Logger.Exception(ex,$"Failed to parse sector {path}");
             return null;
         }
-        if (_settingsService.CacheEnabled)
-        {
-            if (!_settingsService.CacheModdedResources && db == CacheDatabases.Modded) return parsedSector;
-            _cacheService.WriteEntry(path, parsedSector, db);
-        }
+
+        if (!_settingsService.CacheModdedResources && db == CacheDatabases.Modded) return parsedSector;
+        _cacheService.WriteEntry(path, parsedSector, db);
+        
         return parsedSector;
     }
 }
