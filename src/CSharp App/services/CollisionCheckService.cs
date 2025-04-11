@@ -342,17 +342,17 @@ public static class CollisionCheckService
                                       Matrix.RotationQuaternion(shape.Transform.Rotation) * 
                                       Matrix.Translation(shape.Transform.Position);
 
-        Matrix actorTransformMatrix = Matrix.Scaling(actorTransform.Scale.X) * 
+        Matrix actorTransformMatrix = Matrix.Scaling(new Vector3(1,1,1)) * 
                                       Matrix.RotationQuaternion(actorTransform.Rotation) * 
                                       Matrix.Translation(actorTransform.Position);
 
         Matrix transformMatrix = shapeTransformMatrix * actorTransformMatrix;
         
-        var collisionSphere = new BoundingSphere();
-        collisionSphere.TransformBoundingSphere(transformMatrix);
+        Vector4 transformedSpherePosition = Vector4.Transform(Vector3.Transform(new Vector3(0,0,0), transformMatrix), Matrix.Invert(selectionBoxObb.Transformation));
         
-        collisionSphere.TransformBoundingSphere(Matrix.Invert(selectionBoxObb.Transformation));
-        var selectionAsAABB = new BoundingBox((-selectionBoxObb.Size + selectionBoxObb.Center) / 2, (selectionBoxObb.Size + selectionBoxObb.Center) / 2);
+        var collisionSphere = new BoundingSphere(Vec4toVec3(transformedSpherePosition), shape.Transform.Scale.X);
+        
+        var selectionAsAABB = new BoundingBox(-selectionBoxObb.Size / 2, selectionBoxObb.Size / 2);
         return selectionAsAABB.Contains(ref collisionSphere) != ContainmentType.Disjoint;
     }
 }
