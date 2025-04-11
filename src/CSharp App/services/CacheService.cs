@@ -98,7 +98,6 @@ public class CacheService
             
             if (_isInitialized) return;
             if (_env != null) return;
-            if (_settings.CacheEnabled == false) return;
             
             _env = new LightningEnvironment(_settings.CacheDirectory)
             {
@@ -326,6 +325,9 @@ public class CacheService
             tx.Commit();
         }
 
+        if (!_settings.CacheEnabled)
+            ClearDatabase(CacheDatabases.All, true);
+        
         if (wroteExitLog)
         {
             Logger.Success("Finished writing all queued entries to cache");
@@ -468,7 +470,7 @@ public class CacheService
         var toPathVr = ValidationService.ValidatePath(toPath);
         if (toPathVr != ValidationService.PathValidationResult.ValidDirectory)
             throw new ArgumentException($"Invalid target path provided: {toPathVr}");
-        
+
         DirectoryInfo fromInfo;
         bool fromExists;
         
@@ -499,7 +501,6 @@ public class CacheService
         {
             if (!UtilService.IsDirectoryEmpty(toPath))
                 throw new Exception("Target directory is not empty");
-            
             Directory.Delete(toPath, true);
         }
         
