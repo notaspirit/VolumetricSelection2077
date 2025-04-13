@@ -190,13 +190,11 @@ public class BoundingBoxBuilderService
                     }
                 }
             }
+            BoundingBox bb;
             if (min == max)
-                Logger.Debug($"Bounding box for {sectorPath} is a point!! {min} to {max}");
-            if (min.X > 8000 || min.Y > 8000 || max.X > 8000 || max.Y > 8000 || min.X < -8000 || min.Y < -8000 || max.X < -8000 || max.Y < -8000)
-                Logger.Debug($"Bounding box for {sectorPath} is very far away, pls check that it's real:  {min} to {max}");
-            
-            // Logger.Debug($"Bounding box for {sectorPath} is {min} to {max}");
-            var bb = new BoundingBox(min, max);
+                bb = new BoundingBox(min - new Vector3(1,1,1), max + new Vector3(1,1,1));
+            else
+                bb = new BoundingBox(min, max);
             _cacheService.WriteEntry(new WriteRequest(sectorPath, MessagePackSerializer.Serialize(bb), database));
             return bb;
         }
