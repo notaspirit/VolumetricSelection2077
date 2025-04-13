@@ -1,5 +1,7 @@
 using System;
 using System.ComponentModel;
+using System.IO;
+using Avalonia.Media.Imaging;
 using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.Services;
 using VolumetricSelection2077.views;
@@ -50,6 +52,8 @@ namespace VolumetricSelection2077.ViewModels
             }
         }
         
+        public Bitmap SettingsIcon { get; set; }
+        
         public SettingsViewModel() 
         { 
             Settings = SettingsService.Instance;
@@ -63,8 +67,17 @@ namespace VolumetricSelection2077.ViewModels
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to load Cache {ex}");
+                Logger.Exception(ex, $"Failed to load Cache!");
                 CacheStats = new CacheService.CacheStats();
+            }
+
+            try
+            {
+                SettingsIcon = new Bitmap(Path.Combine(AppContext.BaseDirectory, "assets", "SettingsMSStyle.png"));
+            }
+            catch(Exception ex)
+            {
+                Logger.Exception(ex, $"Failed to load Settings Icon!");
             }
         }
         

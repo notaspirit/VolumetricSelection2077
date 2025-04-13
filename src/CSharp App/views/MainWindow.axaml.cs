@@ -95,12 +95,6 @@ public partial class MainWindow : Window
         if (_mainWindowViewModel.IsProcessing) return;
         _mainWindowViewModel.SettingsOpen = true;
         var settingsWindow = new SettingsWindow();
-        settingsWindow.Opened += (_, _) =>
-        {
-            var x = this.Position.X + 10;
-            var y = this.Position.Y + 41;
-            settingsWindow.Position = new PixelPoint(x, y);
-        };
         await settingsWindow.ShowDialog(this);
         _mainWindowViewModel.SettingsOpen = false;
     }
@@ -303,7 +297,10 @@ public partial class MainWindow : Window
             item.IsChecked = !item.IsChecked;
         }
     }
-
+    
+    /// <summary>
+    /// Adds Filters that are currently in the text box but not yet committed
+    /// </summary>
     private void AddQueuedFilters()
     {
         if (!string.IsNullOrEmpty(ResourceFilterTextBox.Text?.Trim()))
@@ -319,9 +316,97 @@ public partial class MainWindow : Window
         _mainWindowViewModel.Settings.SaveSettings();
     }
     
+     /// <summary>
+    /// Updates saved window position
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    private void MainWindow_PositionChanged(object? sender, PixelPointEventArgs e)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            var newPos = e.Point;
+            if (WindowState == WindowState.Normal)
+            {
+                _mainWindowViewModel.Settings.WindowRecoveryState.PosX = newPos.X;
+                _mainWindowViewModel.Settings.WindowRecoveryState.PosY = newPos.Y;
+            }
+        });
+    }
+
+    private bool wasMaximized { get; set; } = false;
+    /// <summary>
+    /// Updates saved window size and sets correct size after returning from maximized state
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    private void MainWindow_SizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            var newSize = e.NewSize;
+            if (WindowState == WindowState.Maximized)
+                wasMaximized = true;
+            if (WindowState == WindowState.Normal)
+            {
+                if (wasMaximized)
+                {
+                    try
+                    {
+                        Width = _mainWindowViewModel.Settings.WindowRecoveryState.PosWidth / DesktopScaling;
+                        Height = _mainWindowViewModel.Settings.WindowRecoveryState.PosHeight / DesktopScaling;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Exception(ex, "Failed to set window size after returning from maximized state");
+                    }
+                    wasMaximized = false;
+                }
+                else
+                {
+                    _mainWindowViewModel.Settings.WindowRecoveryState.PosWidth = (int)(newSize.Width * DesktopScaling);
+                    _mainWindowViewModel.Settings.WindowRecoveryState.PosHeight = (int)(newSize.Height * DesktopScaling);
+                }
+
+            }
+        });
+    }
+    /// <summary>
+    /// Sets the position, size and state of the window safely
+    /// </summary>
+    /// <param name="wrs">Target state</param>
+    /// <returns>true if successful</returns>
+    private bool SetWindowState(WindowRecoveryState wrs)
+    {
+        try
+        {
+            Position = new PixelPoint(wrs.PosX,
+                wrs.PosY);
+            Width = wrs.PosWidth / DesktopScaling;
+            Height = wrs.PosHeight / DesktopScaling;
+            WindowState = (WindowState)wrs.WindowState;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.Exception(ex, "Failed to set window position, size or state, using default values.");
+            return false;
+        }
+    }
+    
     protected override async void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
+        PositionChanged += MainWindow_PositionChanged;
+        SizeChanged += MainWindow_SizeChanged;
+
+        if (!SetWindowState(_mainWindowViewModel.Settings.WindowRecoveryState))
+        {
+            _mainWindowViewModel.Settings.WindowRecoveryState = new();
+            _mainWindowViewModel.Settings.SaveSettings();
+            SetWindowState(_mainWindowViewModel.Settings.WindowRecoveryState);
+        }
+        
         Logger.Info($"VS2077 Version: {_mainWindowViewModel.Settings.ProgramVersion}");
         _mainWindowViewModel.IsProcessing = true;
         var validationResult = ValidationService.ValidateGamePath(_mainWindowViewModel.Settings.GameDirectory).Item1;
@@ -376,6 +461,7 @@ public partial class MainWindow : Window
 
     private void OnMainWindowClosed(object? sender, EventArgs e)
     {
+        _mainWindowViewModel.Settings.WindowRecoveryState.WindowState = WindowState == WindowState.Maximized ? 2 : 0;
         AddQueuedFilters();
         _mainWindowViewModel.Settings.SaveSettings();
     }
