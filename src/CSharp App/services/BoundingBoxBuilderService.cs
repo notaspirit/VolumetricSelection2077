@@ -190,7 +190,12 @@ public class BoundingBoxBuilderService
                     }
                 }
             }
-            Logger.Debug($"Bounding box for {sectorPath} is {min} to {max}");
+            if (min == max)
+                Logger.Debug($"Bounding box for {sectorPath} is a point!! {min} to {max}");
+            if (min.X > 8000 || min.Y > 8000 || max.X > 8000 || max.Y > 8000 || min.X < -8000 || min.Y < -8000 || max.X < -8000 || max.Y < -8000)
+                Logger.Debug($"Bounding box for {sectorPath} is very far away, pls check that it's real:  {min} to {max}");
+            
+            // Logger.Debug($"Bounding box for {sectorPath} is {min} to {max}");
             var bb = new BoundingBox(min, max);
             _cacheService.WriteEntry(new WriteRequest(sectorPath, MessagePackSerializer.Serialize(bb), database));
             return bb;
@@ -223,8 +228,18 @@ public class BoundingBoxBuilderService
         
         _progress.AddCurrent(1, Progress.ProgressSections.Startup);
         _progress.AddTarget(vanillaSectors.Count + moddedSectors.Count, Progress.ProgressSections.Processing);
+
+        try
+        {
+            CacheService.Instance.StartListening();
+        }
+        catch (Exception ex)
+        {
+            Logger.Exception(ex, "Failed to start listening to write requests in cache service!");
+            return;
+        }
         
-        List<Task<BoundingBox?>> tasks = vanillaSectors.Select(x => ProcessStreamingsector(x, CacheDatabases.Vanilla)).ToList();
+        List<Task<BoundingBox?>> tasks = vanillaSectors.Select(x => Task.Run(() => ProcessStreamingsector(x, CacheDatabases.Vanilla))).ToList();
         await Task.WhenAll(tasks);
         
         if (_settings.SupportModdedResources)
@@ -232,6 +247,8 @@ public class BoundingBoxBuilderService
             {
                 Logger.Info($"Building bounds for {sector}...");
             }
+        
+        CacheService.Instance.StopListening();
         
         Logger.Info("Finished building bounds!");
     }

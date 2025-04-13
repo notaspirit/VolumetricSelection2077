@@ -372,7 +372,7 @@ public class CacheService
         Directory.CreateDirectory(tempCacheDir);
         var tempEnv = new LightningEnvironment(tempCacheDir)
         {
-            MaxDatabases = 2,
+            MaxDatabases = 4,
             MapSize = MapSize,
             MaxReaders = MaxReaders
         };
