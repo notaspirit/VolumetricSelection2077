@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using DynamicData;
+using MessagePack;
 using VolumetricSelection2077.Parsers;
 using Newtonsoft.Json;
 using SharpDX;
@@ -582,10 +583,11 @@ public class ProcessService
     /// <exception cref="ArgumentException">Provided custom file does not exist, or only one optional param is provided</exception>
     public async Task<(bool success, string error)> MainProcessTask(string? customRemovalFile = null, string? customRemovalDirectory = null)
     {
-        
+        /*
         var boundsService = new BoundingBoxBuilderService();
         await boundsService.BuildAllBounds();
         return (true, string.Empty);
+        */
         
         Logger.Info("Validating inputs...");
 
@@ -655,6 +657,22 @@ public class ProcessService
 
         AxlRemovalSector?[] sectorsOutputRaw;
         
+        CETOutputFile.Sectors.Clear();
+
+        var sectorVanilla = CacheService.Instance.GetAllEntries(CacheDatabases.VanillaBounds);
+        Logger.Info($"Found {sectorVanilla?.Length} sectors in vanilla bounds");
+        foreach (var sectorAABB in sectorVanilla)
+        {
+            // Logger.Info($"Checking sector {sectorAABB.Key} in vanilla bounds...");
+            var aabb = MessagePackSerializer.Deserialize<BoundingBox>(sectorAABB.Value);
+            if (CETOutputFile.Aabb.Contains(aabb) != ContainmentType.Disjoint)
+            {
+                CETOutputFile.Sectors.Add(sectorAABB.Key);
+                Logger.Info($"Found sector {sectorAABB.Key} in vanilla bounds with min max {aabb.Minimum} to {aabb.Maximum}");
+            }
+        }
+        
+        Logger.Debug($"Found {CETOutputFile.Sectors.Count} sectors in vanilla bounds");
         try
         {
             _progress.AddTarget(CETOutputFile.Sectors.Count * 2, Progress.ProgressSections.Startup);

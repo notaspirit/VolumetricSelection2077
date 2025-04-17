@@ -206,6 +206,54 @@ public class CacheService
         }
         return null;
     }
+
+    /// <summary>
+    /// Gets all entries from the provided database.
+    /// </summary>
+    /// <param name="db"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception">if cache is not initialized</exception>
+    private KeyValuePair<string, byte[]>[] GetAllEntries(LightningDatabase db)
+    {
+        using var tx = _env.BeginTransaction();
+        KeyValuePair<string, byte[]>[] entries = new KeyValuePair<string, byte[]>[db.DatabaseStats.Entries];
+        using (var cursor = tx.CreateCursor(db))
+        {
+            int i = 0;
+            while (cursor.Next() == MDBResultCode.Success)
+            {
+                entries[i] = new KeyValuePair<string, byte[]>(Encoding.UTF8.GetString(cursor.GetCurrent().key.CopyToNewArray()), cursor.GetCurrent().value.CopyToNewArray());
+                i++;
+            }
+        }
+        return entries;
+    }
+    
+    /// <summary>
+    /// Gets all entries from the specified database.
+    /// </summary>
+    /// <param name="database"></param>
+    /// <returns></returns>
+    /// <remarks>returns null if the cache is not initialized, database doesn't exist or the target is all databases</remarks>
+    public KeyValuePair<string, byte[]>[]? GetAllEntries(CacheDatabases database)
+    {
+        if (!_isInitialized) return null;
+        switch (database)
+        {
+            case CacheDatabases.Vanilla:
+                return GetAllEntries(_vanillaDatabase);
+            case CacheDatabases.Modded:
+                return GetAllEntries(_moddedDatabase);
+            case CacheDatabases.VanillaBounds:
+                return GetAllEntries(_vanillaBoundsDatabase);
+            case CacheDatabases.ModdedBounds:
+                return GetAllEntries(_moddedBoundsDatabase);
+            case CacheDatabases.All:
+                return null;
+            default:
+                return null;
+        }
+    }
     
     /// <summary>
     /// Writes a single entry to the cache
