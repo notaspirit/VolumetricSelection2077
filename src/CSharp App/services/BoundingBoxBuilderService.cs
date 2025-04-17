@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using MessagePack;
 using SharpDX;
 using VolumetricSelection2077.Models;
+using VolumetricSelection2077.Resources;
 using WolvenKit.RED4.Types;
 using Vector3 = SharpDX.Vector3;
 
@@ -24,7 +25,7 @@ public class BoundingBoxBuilderService
         _progress = Progress.Instance;
     }
 
-    private async Task<BoundingBox?> ProcessStreamingsector(string sectorPath, CacheDatabases database)
+    private async Task ProcessStreamingsector(string sectorPath, CacheDatabases database)
     {
         try
         {
@@ -33,7 +34,7 @@ public class BoundingBoxBuilderService
             if (sector == null)
             {
                 Logger.Warning($"Failed to get sector {sectorPath}");
-                return null;
+                return;
             }
 
             var min = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
@@ -42,6 +43,9 @@ public class BoundingBoxBuilderService
             foreach (var nodeDataEntry in sector.NodeData)
             {
                 var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
+                if (nodeEntry.Type == NodeTypeProcessingOptions.Enum.worldInstancedOccluderNode)
+                    continue;
+                
                 if ((nodeEntry?.ResourcePath?.EndsWith(".mesh") ?? false) || (nodeEntry?.ResourcePath?.EndsWith(".w2mesh") ?? false))
                 {
                     var mesh = _gameFileService.GetCMesh(nodeEntry.ResourcePath);
@@ -196,12 +200,10 @@ public class BoundingBoxBuilderService
             else
                 bb = new BoundingBox(min, max);
             _cacheService.WriteEntry(new WriteRequest(sectorPath, MessagePackSerializer.Serialize(bb), database));
-            return bb;
         }
         catch (Exception e)
         {
             Logger.Exception(e, $"Failed to build bounding box for {sectorPath}");
-            return null;
         }
         finally
         {
@@ -215,16 +217,15 @@ public class BoundingBoxBuilderService
             throw new Exception("Game file service is not initialized!");
         
         _progress.Reset();
-        _progress.SetWeight(0.1f, 0.85f, 0.05f);
-        
-        _progress.AddTarget(1, Progress.ProgressSections.Startup);
+        _progress.SetWeight(0f, 1f, 0f);
 
+        _progress.AddTarget(1, Progress.ProgressSections.Startup);
+        _progress.AddCurrent(1, Progress.ProgressSections.Startup);
         List<string> vanillaSectors = _gameFileService.ArchiveManager.GetGameArchives().SelectMany(x => x.Files.Values.Where(y => y.Extension == ".streamingsector").Select(y => y.FileName)).ToList();
         List<string> moddedSectors = new();
         if (_settings.SupportModdedResources)
             moddedSectors = _gameFileService.ArchiveManager.GetModArchives().SelectMany(x => x.Files.Values.Where(y => y.Extension == ".streamingsector").Select(y => y.FileName)).ToList();
         
-        _progress.AddCurrent(1, Progress.ProgressSections.Startup);
         _progress.AddTarget(vanillaSectors.Count + moddedSectors.Count, Progress.ProgressSections.Processing);
 
         try
@@ -237,14 +238,10 @@ public class BoundingBoxBuilderService
             return;
         }
         
-        List<Task<BoundingBox?>> tasks = vanillaSectors.Select(x => Task.Run(() => ProcessStreamingsector(x, CacheDatabases.Vanilla))).ToList();
+        List<Task> tasks = vanillaSectors.Select(x => Task.Run(() => ProcessStreamingsector(x, CacheDatabases.VanillaBounds))).ToList();
+        tasks.AddRange(moddedSectors.Select(x =>
+            Task.Run(() => ProcessStreamingsector(x, CacheDatabases.ModdedBounds))));
         await Task.WhenAll(tasks);
-        
-        if (_settings.SupportModdedResources)
-            foreach (var sector in moddedSectors)
-            {
-                Logger.Info($"Building bounds for {sector}...");
-            }
         
         CacheService.Instance.StopListening();
         
