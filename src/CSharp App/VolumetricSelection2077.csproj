@@ -21,7 +21,6 @@
     <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.2.5" />
     <PackageReference Include="BulletSharp" Version="0.11.1" />
     <PackageReference Include="HelixToolkit.SharpDX.Core" Version="2.25.0" />
-    <PackageReference Include="HelixToolkit.Wpf.SharpDX" Version="2.25.0" />
     <PackageReference Include="LightningDB" Version="0.16.0" />
     <PackageReference Include="LoadingIndicators.Avalonia" Version="11.0.11.1" />
     <PackageReference Include="MessagePack" Version="3.1.3" />
