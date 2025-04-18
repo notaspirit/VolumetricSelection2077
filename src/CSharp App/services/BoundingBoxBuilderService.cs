@@ -25,7 +25,7 @@ public class BoundingBoxBuilderService
         _progress = Progress.Instance;
     }
 
-    private async Task ProcessStreamingsector(string sectorPath, CacheDatabases database)
+    public async Task ProcessStreamingsector(string sectorPath, CacheDatabases? database)
     {
         try
         {
@@ -64,13 +64,8 @@ public class BoundingBoxBuilderService
                     {
                         foreach (var submesh in mesh.SubMeshes)
                         {
-                            Matrix transformMatrix = Matrix.Scaling(transform.Scale) * 
-                                                      Matrix.RotationQuaternion(transform.Rotation) * 
-                                                      Matrix.Translation(transform.Position);
-                            
-                            var transformedAabb = new OrientedBoundingBox(submesh.BoundingBox);
-                            transformedAabb.Transform(transformMatrix);
-                            
+                            var halfExtends = submesh.BoundingBox.Size / 2 * transform.Scale;
+                            var transformedAabb = new BoundingBox(submesh.BoundingBox.Center - halfExtends, submesh.BoundingBox.Center + halfExtends);
                             foreach (var corner in transformedAabb.GetCorners())
                             {
                                 min = Vector3.Min(min, corner);
@@ -84,7 +79,9 @@ public class BoundingBoxBuilderService
                     {
                         foreach (var shape in actor.Shapes)
                         {
-                            
+                            Matrix actorTransformMatrix = Matrix.Scaling(actor.Transform.Scale) *
+                                                              Matrix.RotationQuaternion(actor.Transform.Rotation) *
+                                                              Matrix.Translation(actor.Transform.Position);
                             switch (shape.ShapeType)
                             {
                                 case Enums.physicsShapeType.TriangleMesh:
@@ -104,12 +101,8 @@ public class BoundingBoxBuilderService
                                     Matrix shapeTransformMatrixMesh = Matrix.Scaling(new Vector3(1,1,1)) * 
                                                                      Matrix.RotationQuaternion(shape.Transform.Rotation) * 
                                                                      Matrix.Translation(shape.Transform.Position);
-
-                                    Matrix actorTransformMatrixMesh = Matrix.Scaling(actor.Transform.Scale) *
-                                                                     Matrix.RotationQuaternion(actor.Transform.Rotation) *
-                                                                     Matrix.Translation(actor.Transform.Position);
                                     
-                                    Matrix transformMatrixMesh = shapeTransformMatrixMesh * actorTransformMatrixMesh;
+                                    Matrix transformMatrixMesh = shapeTransformMatrixMesh * actorTransformMatrix;
                                     foreach (var submesh in collisionMesh.SubMeshes)
                                     {
                                         OrientedBoundingBox obb = new(submesh.BoundingBox);
@@ -126,11 +119,7 @@ public class BoundingBoxBuilderService
                                                                   Matrix.RotationQuaternion(shape.Transform.Rotation) * 
                                                                   Matrix.Translation(shape.Transform.Position);
 
-                                    Matrix actorTransformMatrixBox = Matrix.Scaling(actor.Transform.Scale) *
-                                                                  Matrix.RotationQuaternion(actor.Transform.Rotation) *
-                                                                  Matrix.Translation(actor.Transform.Position);
-
-                                    Matrix transformMatrixBox = shapeTransformMatrixBox * actorTransformMatrixBox;
+                                    Matrix transformMatrixBox = shapeTransformMatrixBox * actorTransformMatrix;
                                     
                                     OrientedBoundingBox collisionBox = new(-shape.Transform.Scale, shape.Transform.Scale);
                                     collisionBox.Transform(transformMatrixBox);
@@ -148,11 +137,7 @@ public class BoundingBoxBuilderService
                                                                   Matrix.RotationQuaternion(shape.Transform.Rotation) * 
                                                                   Matrix.Translation(shape.Transform.Position);
 
-                                    Matrix actorTransformMatrixCapusle = Matrix.Scaling(actor.Transform.Scale) * 
-                                                                  Matrix.RotationQuaternion(actor.Transform.Rotation) * 
-                                                                  Matrix.Translation(actor.Transform.Position);
-
-                                    Matrix transformMatrixCapsule = shapeTransformMatrixCapsule * actorTransformMatrixCapusle;
+                                    Matrix transformMatrixCapsule = shapeTransformMatrixCapsule * actorTransformMatrix;
         
                                     OrientedBoundingBox capsuleObb = new(-shapeSizeAsBox, shapeSizeAsBox);
                                     capsuleObb.Transform(transformMatrixCapsule);
@@ -167,11 +152,7 @@ public class BoundingBoxBuilderService
                                                                          Matrix.RotationQuaternion(shape.Transform.Rotation) * 
                                                                          Matrix.Translation(shape.Transform.Position);
 
-                                    Matrix actorTransformMatrixSphere = Matrix.Scaling(actor.Transform.Scale) * 
-                                                                         Matrix.RotationQuaternion(actor.Transform.Rotation) * 
-                                                                         Matrix.Translation(actor.Transform.Position);
-
-                                    Matrix transformMatrixSphere = shapeTransformMatrixSphere * actorTransformMatrixSphere;
+                                    Matrix transformMatrixSphere = shapeTransformMatrixSphere * actorTransformMatrix;
                                     
                                     OrientedBoundingBox sphereObb = new(new Vector3(-shape.Transform.Scale.X), new Vector3(shape.Transform.Scale.X));
                                     sphereObb.Transform(transformMatrixSphere);
@@ -199,7 +180,8 @@ public class BoundingBoxBuilderService
                 bb = new BoundingBox(min - new Vector3(1,1,1), max + new Vector3(1,1,1));
             else
                 bb = new BoundingBox(min, max);
-            _cacheService.WriteEntry(new WriteRequest(sectorPath, MessagePackSerializer.Serialize(bb), database));
+            if (database != null)
+                _cacheService.WriteEntry(new WriteRequest(sectorPath, MessagePackSerializer.Serialize(bb), (CacheDatabases)database));
         }
         catch (Exception e)
         {

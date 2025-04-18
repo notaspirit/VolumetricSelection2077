@@ -583,6 +583,13 @@ public class ProcessService
     /// <exception cref="ArgumentException">Provided custom file does not exist, or only one optional param is provided</exception>
     public async Task<(bool success, string error)> MainProcessTask(string? customRemovalFile = null, string? customRemovalDirectory = null)
     {
+        await TestSectorAABBTime.Run();
+        return (true, string.Empty);
+        
+        /*
+        CompareNewSectorBoundsWithStreamingBlock.Run(_gameFileService, CacheService.Instance);
+        return (true, string.Empty);
+        */
         /*
         var boundsService = new BoundingBoxBuilderService();
         await boundsService.BuildAllBounds();
