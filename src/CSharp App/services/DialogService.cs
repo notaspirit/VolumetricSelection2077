@@ -16,21 +16,15 @@ public class DialogService
         _owner = owner;
     }
     
-    public async Task<int> ShowDialog(string title, string message, string[] buttonContents)
+    public Task<int> ShowDialog(string title, string message, string[] buttonContents)
     {
-        var dialog = new Dialog(title, message, buttonContents);
-        
-        await dialog.ShowDialog(_owner);
-        
-        return dialog.DialogResult;
+        return ShowDialog(title, message, buttonContents, _owner);
     }
     
     public static async Task<int> ShowDialog(string title, string message, string[] buttonContents, Window owner)
     {
         var dialog = new Dialog(title, message, buttonContents);
-        
         await dialog.ShowDialog(owner);
-        
         return dialog.DialogResult;
     }
 }
