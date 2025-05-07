@@ -473,10 +473,10 @@
                 </Grid>
                 <Button
                     Background="#6b82b2"
-                    Click="Benchmark_Click"
-                    Content="{x:Static resources:Labels.Benchmark}"
+                    Click="DebugWindowButton_Click"
+                    Content="{x:Static resources:Labels.DebugMenu}"
                     Grid.Column="4"
-                    IsEnabled="{Binding MainTaskAvailable}"
+                    IsEnabled="{Binding DebugWindowButtonEnabled}"
                     IsVisible="{Binding Settings.DebugMode}"
                     Margin="5,0,0,0">
                     <Button.Styles>
@@ -485,7 +485,7 @@
                         </Style>
                     </Button.Styles>
                 </Button>
-                <Grid Grid.Column="4" IsVisible="{Binding BenchmarkProcessing}">
+                <Grid Grid.Column="4" IsVisible="{Binding DebugWindowButtonSpinnerEnabled}">
                     <li:LoadingIndicator
                         Foreground="White"
                         Height="30"
