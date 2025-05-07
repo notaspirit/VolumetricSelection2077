@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Avalonia.Controls;
@@ -8,6 +9,7 @@ using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Media.Imaging;
 using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.Services;
+using VolumetricSelection2077.views;
 using VolumetricSelection2077.ViewStructures;
 
 namespace VolumetricSelection2077.ViewModels
@@ -30,6 +32,17 @@ namespace VolumetricSelection2077.ViewModels
             }
         }
 
+        public DebugWindow? DebugWindowInstance { get; set; }
+
+        public bool DebugWindowButtonEnabled => DebugWindowInstance == null;
+        public bool DebugWindowButtonSpinnerEnabled => DebugWindowInstance != null;
+        public void DebugWindowInstanceChanged()
+        {
+            OnPropertyChanged(nameof(DebugWindowButtonEnabled));
+            OnPropertyChanged(nameof(DebugWindowInstance));
+            OnPropertyChanged(nameof(DebugWindowButtonSpinnerEnabled));
+        }
+        
         public bool ButtonsAvailable
         {
             get => !_isProcesing;
