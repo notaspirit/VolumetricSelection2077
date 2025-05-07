@@ -45,5 +45,18 @@
                 IsActive="True"
                 Width="30" />
         </Grid>
+        <Button
+            Background="#6b82b2"
+            Click="DialogTest_Click"
+            Content="Dialog Test"
+            Grid.Column="1"
+            Grid.Row="0"
+            Margin="5,5,0,5">
+            <Button.Styles>
+                <Style Selector="Button:pointerover /template/ ContentPresenter">
+                    <Setter Property="Background" Value="#455472" />
+                </Style>
+            </Button.Styles>
+        </Button>
     </Grid>
 </Window>
