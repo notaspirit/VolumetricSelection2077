@@ -14,14 +14,15 @@ namespace VolumetricSelection2077.views;
 public partial class DebugWindow : Window
 {
     private readonly MainWindowViewModel? _mainWindowViewModel;
+    private readonly DebugWindowViewModel? _debugWindowViewModel;
     private TrackedDispatchTimer _dispatcherTimer;
     private MainWindow? mainWindow;
     public DebugWindow(Window parent)
     {
         InitializeComponent();
         DataContext = new DebugWindowViewModel(parent);
-        var debugWindowViewModel = DataContext as DebugWindowViewModel;
-        _mainWindowViewModel = debugWindowViewModel?.ParentViewModel;
+        _debugWindowViewModel = DataContext as DebugWindowViewModel;
+        _mainWindowViewModel = _debugWindowViewModel?.ParentViewModel;
         
         mainWindow = parent as MainWindow;
         
@@ -29,11 +30,13 @@ public partial class DebugWindow : Window
         _dispatcherTimer.Tick += (s, e) => mainWindow.ProgressTextBlock.Text = $"{UtilService.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
 
         Opened += OnOpened;
+        Closing += OnClosing;
     }
     
     private async void Benchmark_Click(object? sender, RoutedEventArgs e)
     {
         if (_mainWindowViewModel.IsProcessing) return;
+        _debugWindowViewModel.IsProcessing = true;
         try
         {
             _mainWindowViewModel.BenchmarkProcessing = true;
@@ -54,6 +57,7 @@ public partial class DebugWindow : Window
             string formattedTime = UtilService.FormatElapsedTime(_dispatcherTimer.Elapsed);
             Logger.Info($"Benchmarking finished after: {formattedTime}");
             _mainWindowViewModel.BenchmarkProcessing = false;
+            _debugWindowViewModel.IsProcessing = false;
         }
     }
     
@@ -61,7 +65,11 @@ public partial class DebugWindow : Window
     {
         double x = mainWindow.Position.X + (mainWindow.Bounds.Width - Bounds.Width) / 2;
         double y = mainWindow.Position.Y + (mainWindow.Bounds.Height - Bounds.Height) / 2;
-        
         Position = new PixelPoint((int)x, (int)y);
+    }
+    
+    private void OnClosing(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        e.Cancel = _debugWindowViewModel?.IsProcessing ?? false;
     }
 }
