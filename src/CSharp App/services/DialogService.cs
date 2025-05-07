@@ -9,24 +9,12 @@ namespace VolumetricSelection2077.Services;
 
 public class DialogService
 {
-    public enum DialogResult
+    public static async Task<int> ShowDialog(string title, string message, string[] buttonContents, Window owner)
     {
-        LeftButton,
-        RightButton
-    }
-    
-    public static async Task<DialogResult> ShowDialog(string title, string message, string buttonLeftText, string buttonRightText, Window owner)
-    {
-        var dialog = new Dialog
-        {
-            Title = title,
-            Message = message,
-            ButtonLeftText = buttonLeftText,
-            ButtonRightText = buttonRightText
-        };
+        var dialog = new Dialog(title, message, buttonContents);
         
         await dialog.ShowDialog(owner);
         
-        return dialog.DialogResult ? DialogResult.LeftButton : DialogResult.RightButton;
+        return dialog.DialogResult;
     }
 }

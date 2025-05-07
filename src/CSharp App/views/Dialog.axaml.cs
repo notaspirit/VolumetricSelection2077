@@ -2,16 +2,24 @@ using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using DynamicData;
+using VolumetricSelection2077.Services;
+using VolumetricSelection2077.ViewModels;
 
 namespace VolumetricSelection2077.views;
 
 public partial class Dialog : Window
 {
-    public Dialog()
+    private DialogWindowViewModel? _dialogWindowViewModel;
+    
+    public Dialog(string title, string message, string[] buttons)
     {
         InitializeComponent();
         Opened += OnOpened;
         Closing += (_, args) => { args.Cancel = !buttonClicked; };
+
+        DataContext = new DialogWindowViewModel(title, message, buttons);
+        _dialogWindowViewModel = DataContext as DialogWindowViewModel;
     }
 
     private void OnOpened(object? sender, EventArgs e)
@@ -24,40 +32,16 @@ public partial class Dialog : Window
             Position = new PixelPoint((int)x, (int)y);
         }
     }
-    
-    public string TitleText
-    {
-        set => SetValue(TitleProperty, value);
-    }
-    
-    public string Message
-    {
-        set => MessageTextBlock.Text = value;
-    }
 
-    public string ButtonLeftText
-    {
-        set => ButtonLeft.Content = value;
-    }
-    
-    public string ButtonRightText
-    {
-        set => ButtonRight.Content = value;
-    }
-
-    public bool DialogResult { get; set; }
+    public int DialogResult { get; set; } = -1;
     private bool buttonClicked = false;
-    private void OkButton_Click(object sender, RoutedEventArgs e)
+    private void DynamicButton_Click(object? sender, RoutedEventArgs e)
     {
-        DialogResult = true;
-        buttonClicked = true;
-        Close();
-    }
-
-    private void CancelButton_Click(object sender, RoutedEventArgs e)
-    {
-        DialogResult = false;
-        buttonClicked = true;
-        Close();
+        if (sender is Button button && button.DataContext is string buttonText)
+        {
+            DialogResult = _dialogWindowViewModel?.ButtonContents.IndexOf(buttonText) ?? -1;
+            buttonClicked = true;
+            Close();
+        }
     }
 }
