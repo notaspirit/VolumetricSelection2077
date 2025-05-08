@@ -46,6 +46,7 @@ namespace VolumetricSelection2077.Resources
             public static string VS2077 { get; } = "VolumetricSelection2077";
             public static string FindSelected　{ get; } = "Find Selected";
             public static string Benchmark { get; } = "Benchmark";
+            public static string DebugMenu { get; } = "Debug Menu";
             public static string ClearLog { get; } = "Clear Log";
             public static string ResourceFilter { get; } = " Resource Path Filters";
             public static string DebugNameFilter { get; } = " Debug Name Filters";

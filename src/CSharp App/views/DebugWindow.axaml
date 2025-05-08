@@ -1,0 +1,62 @@
+<Window
+    Background="#171c26"
+    MinHeight="50"
+    MinWidth="355"
+    SizeToContent="WidthAndHeight"
+    Title="Debug"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    mc:Ignorable="d"
+    x:Class="VolumetricSelection2077.views.DebugWindow"
+    x:DataType="viewmodels:DebugWindowViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:avalonia="clr-namespace:LoadingIndicators.Avalonia;assembly=LoadingIndicators.Avalonia"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:resources="clr-namespace:VolumetricSelection2077.Resources"
+    xmlns:viewmodels="clr-namespace:VolumetricSelection2077.views"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid
+        ColumnDefinitions="*,*,*"
+        Margin="5"
+        RowDefinitions="*">
+        <Button
+            Background="#6b82b2"
+            Click="Benchmark_Click"
+            Content="{x:Static resources:Labels.Benchmark}"
+            Grid.Column="0"
+            Grid.Row="0"
+            IsEnabled="{Binding ParentViewModel.MainTaskAvailable}"
+            IsVisible="{Binding ParentViewModel.Settings.DebugMode}"
+            Margin="5,0,0,0">
+            <Button.Styles>
+                <Style Selector="Button:pointerover /template/ ContentPresenter">
+                    <Setter Property="Background" Value="#455472" />
+                </Style>
+            </Button.Styles>
+        </Button>
+        <Grid
+            Grid.Column="0"
+            Grid.Row="0"
+            IsVisible="{Binding ParentViewModel.BenchmarkProcessing}">
+            <avalonia:LoadingIndicator
+                Foreground="White"
+                Height="30"
+                IsActive="True"
+                Width="30" />
+        </Grid>
+        <Button
+            Background="#6b82b2"
+            Click="DialogTest_Click"
+            Content="Dialog Test"
+            Grid.Column="1"
+            Grid.Row="0"
+            Margin="5,5,0,5">
+            <Button.Styles>
+                <Style Selector="Button:pointerover /template/ ContentPresenter">
+                    <Setter Property="Background" Value="#455472" />
+                </Style>
+            </Button.Styles>
+        </Button>
+    </Grid>
+</Window>
