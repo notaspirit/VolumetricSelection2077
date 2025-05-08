@@ -72,4 +72,11 @@ public partial class DebugWindow : Window
     {
         e.Cancel = _debugWindowViewModel?.IsProcessing ?? false;
     }
+
+    private async void DialogTest_Click(object? sender, RoutedEventArgs e)
+    {
+        _debugWindowViewModel.IsProcessing = true;
+        await TestDialogService.Run(this);
+        _debugWindowViewModel.IsProcessing = false;
+    }
 }

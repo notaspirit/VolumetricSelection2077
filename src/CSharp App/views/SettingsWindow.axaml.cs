@@ -81,10 +81,9 @@ namespace VolumetricSelection2077
                 e.Cancel = true;
                 var result = await DialogService.ShowDialog("Cache Path Changed!",
                     "Move the current cache, or initialize a new cache at the new location (creating one if none exists)?",
-                    "Move",
-                    "Initialize",
+                    new [] { "Move", "Initialize" },
                     this);
-                moveCache = result == DialogService.DialogResult.LeftButton;
+                moveCache = result == 0;
                 Close();
             }
         }
