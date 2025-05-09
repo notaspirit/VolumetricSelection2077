@@ -2,12 +2,14 @@ using System;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using VolumetricSelection2077.Extensions;
 using VolumetricSelection2077.Services;
 using VolumetricSelection2077.TestingStuff;
 using VolumetricSelection2077.ViewModels;
+using Path = System.IO.Path;
 
 namespace VolumetricSelection2077.views;
 
@@ -77,6 +79,22 @@ public partial class DebugWindow : Window
     {
         _debugWindowViewModel.IsProcessing = true;
         await TestDialogService.Run(this);
+        _debugWindowViewModel.IsProcessing = false;
+    }
+    
+    private void DumpSectorBounds_Click(object? sender, RoutedEventArgs e)
+    {
+        _debugWindowViewModel.IsProcessing = true;
+        CacheService.Instance.DumpSectorBBToFile();
+        _debugWindowViewModel.IsProcessing = false;
+    }
+
+    private void LoadSectorBounds_Click(object? sender, RoutedEventArgs e)
+    {
+        _debugWindowViewModel.IsProcessing = true;
+        var cacheMetadata = CacheService.Instance.GetMetadata();
+        CacheService.Instance.LoadSectorBBFromFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "debug",
+            $"{cacheMetadata.GameVersion}-{cacheMetadata.VS2077Version}.bin"));
         _debugWindowViewModel.IsProcessing = false;
     }
 }

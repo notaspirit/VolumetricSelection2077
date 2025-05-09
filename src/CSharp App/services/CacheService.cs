@@ -12,6 +12,7 @@ using MessagePack;
 using Microsoft.ClearScript.Util.Web;
 using Microsoft.VisualBasic.FileIO;
 using SharpDX;
+using VolumetricSelection2077.Helpers;
 using VolumetricSelection2077.Models;
 using WolvenKit.Core.Extensions;
 using WolvenKit.RED4.Types;
@@ -785,5 +786,54 @@ public class CacheService
         Directory.CreateDirectory(_settings.CacheDirectory);
         File.WriteAllText(filePath, JsonSerializer.Serialize(newMetadata));
         return newMetadata;
+    }
+
+    public void DumpSectorBBToFile()
+    {
+        try
+        {
+            var dump = new SectorBBDump();
+            var cacheMetadata = GetMetadata();
+            dump.GameVersion = cacheMetadata.GameVersion;
+            dump.VS2077Version = cacheMetadata.VS2077Version;
+            dump.Sectors = new List<KeyValuePair<string, BoundingBox>>();
+            using var tx = _env.BeginTransaction();
+            using var cursor = tx.CreateCursor(_vanillaBoundsDatabase);
+            while (cursor.Next() == MDBResultCode.Success)
+            {
+                var entry = cursor.GetCurrent();
+                dump.Sectors.Add(new KeyValuePair<string, BoundingBox>(
+                    BitConverter.ToString(entry.Item2.CopyToNewArray()),
+                    MessagePackSerializer.Deserialize<BoundingBox>(entry.Item3.CopyToNewArray())));
+            }
+
+            var filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "debug",
+                $"{dump.GameVersion}-{dump.VS2077Version}.bin");
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+            File.WriteAllBytes(filePath, MessagePackSerializer.Serialize(dump));
+            Logger.Info($"Dumped {dump.Sectors.Count} sector bounds to file {filePath}...");
+        }
+        catch (Exception ex)
+        {
+            Logger.Exception(ex, "Failed to dump sector bounds to file!");       
+        }
+    }
+
+    public void LoadSectorBBFromFile(string path)
+    {
+        if (!File.Exists(path))
+            throw new Exception("File does not exist!");
+        ClearDatabase(CacheDatabases.VanillaBounds);
+        var dump = MessagePackSerializer.Deserialize<SectorBBDump>(File.ReadAllBytes(path));
+        var cacheMetadata = GetMetadata();
+        if (dump.GameVersion != cacheMetadata.GameVersion || dump.VS2077Version != cacheMetadata.VS2077Version)
+            throw new Exception("File does not match current cache version!");
+        using var tx = _env.BeginTransaction();
+        foreach (var sector in dump.Sectors)
+        {
+            tx.Put(_vanillaBoundsDatabase, Encoding.UTF8.GetBytes(sector.Key), MessagePackSerializer.Serialize(sector.Value));
+        }
+        tx.Commit();
+        Logger.Info($"Loaded {dump.Sectors.Count} sector bounds from file {path}...");
     }
 }
