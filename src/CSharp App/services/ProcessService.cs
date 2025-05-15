@@ -27,6 +27,7 @@ public class ProcessService
     private readonly SettingsService _settings;
     private readonly GameFileService _gameFileService;
     private readonly DialogService _dialogService;
+    private readonly BoundingBoxBuilderService _boundingBoxBuilderService;
     private Progress _progress;
     public ProcessService(DialogService dialogService)
     {
@@ -34,6 +35,7 @@ public class ProcessService
         _gameFileService = GameFileService.Instance;
         _progress = Progress.Instance;
         _dialogService = dialogService;
+        _boundingBoxBuilderService = new BoundingBoxBuilderService();
     }
 
     class MergeChanges
@@ -596,7 +598,7 @@ public class ProcessService
                     Logger.Info("Building...");
                     try
                     {
-                        await new BoundingBoxBuilderService().BuildAllBounds();
+                        await new BoundingBoxBuilderService().BuildBounds(BoundingBoxBuilderService.BuildBoundsMode.Vanilla);
                         Logger.Success("Vanilla Sector BBs       : OK");
                     }
                     catch (Exception e)
@@ -618,6 +620,31 @@ public class ProcessService
                     break;
                 case 2:
                     Logger.Error("Vanilla Sector BBs       : User Canceled");
+                    invalidCount++;
+                    break;
+            }
+        }
+        
+        if (vr.ModdedSectorBBsBuild)
+            Logger.Success("Modded Sector BBs        : OK");
+        else
+        {
+            var dialogResult = await _dialogService.ShowDialog("Modded Sector Bounds not found!", "Not all modded sectors have a build bounding box!", ["Build Missing", "Rebuild All", "Ignore", "Cancel"]);
+            switch (dialogResult)
+            {
+                case 0:
+                    await _boundingBoxBuilderService.BuildBounds(
+                        BoundingBoxBuilderService.BuildBoundsMode.MissingModded);
+                    break;
+                case 1:
+                    await _boundingBoxBuilderService.BuildBounds(
+                        BoundingBoxBuilderService.BuildBoundsMode.RebuildModded);
+                    break;
+                case 2:
+                    Logger.Warning("Modded Sector BBs        : User Ignored");
+                    break;
+                case 3:
+                    Logger.Error("Modded Sector BBs        : User Canceled");
                     invalidCount++;
                     break;
             }

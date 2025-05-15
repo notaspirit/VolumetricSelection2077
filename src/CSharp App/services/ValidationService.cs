@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using System.IO;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using VolumetricSelection2077.Models;
@@ -146,6 +147,7 @@ namespace VolumetricSelection2077.Services
             public bool ResourceNameFilterValid { get; set; }
             public bool DebugNameFilterValid { get; set; }
             public bool VanillaSectorBBsBuild { get; set; }
+            public bool ModdedSectorBBsBuild { get; set; }
         }
         
         /// <summary>
@@ -165,6 +167,7 @@ namespace VolumetricSelection2077.Services
             var resourceNameFilterValid = ValidateResourcePathFilter();
             var debugNameFilterValid = ValidateDebugNameFilter();
             var vanillaSectorBBsBuild = AreVanillaSectorBBsBuild();
+            var moddedSectorBBsBuild = AreModdedSectorBBsBuild();
                                 
             return new InputValidationResult()
             {
@@ -177,7 +180,8 @@ namespace VolumetricSelection2077.Services
                 OutputFileName = validFileName,
                 ResourceNameFilterValid = resourceNameFilterValid,
                 DebugNameFilterValid = debugNameFilterValid,
-                VanillaSectorBBsBuild = vanillaSectorBBsBuild
+                VanillaSectorBBsBuild = vanillaSectorBBsBuild,
+                ModdedSectorBBsBuild = moddedSectorBBsBuild
             };
         }
         
@@ -246,6 +250,26 @@ namespace VolumetricSelection2077.Services
         public static bool AreVanillaSectorBBsBuild()
         {
             return CacheService.Instance.GetMetadata().AreVanillaSectorBBsBuild;
+        }
+        
+        /// <summary>
+        /// Checks if all currently loaded modded sectors have build bounding boxes
+        /// </summary>
+        /// <returns>true if all modded sectors have bounding boxes or modded resources are disabled</returns>
+        public static bool AreModdedSectorBBsBuild()
+        {
+            if (!SettingsService.Instance.SupportModdedResources)
+                return true;
+            
+            var inArchiveSectors = GameFileService.Instance.ArchiveManager.GetModArchives()
+                .SelectMany(x => x.Files.Values.Where(y => y.Extension == ".streamingsector").Select(y => y.FileName))
+                .ToList();
+
+            var cachedBBSectors = CacheService.Instance.GetAllEntries(CacheDatabases.ModdedBounds)
+                .Select(x => x.Key)
+                .ToList();
+
+            return inArchiveSectors.All(sector => cachedBBSectors.Contains(sector));
         }
     }
 }
