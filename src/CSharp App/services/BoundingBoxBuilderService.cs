@@ -226,7 +226,7 @@ public class BoundingBoxBuilderService
         await Task.WhenAll(tasks);
         
         CacheService.Instance.StopListening();
-        
+        CacheService.Instance.SetMetaDataVanillaBoundsStatus(true);
         Logger.Info("Finished building bounds!");
     }
 }

@@ -17,6 +17,7 @@ public partial class DebugWindow : Window
 {
     private readonly MainWindowViewModel? _mainWindowViewModel;
     private readonly DebugWindowViewModel? _debugWindowViewModel;
+    private readonly DialogService _dialogService;
     private TrackedDispatchTimer _dispatcherTimer;
     private MainWindow? mainWindow;
     public DebugWindow(Window parent)
@@ -25,7 +26,7 @@ public partial class DebugWindow : Window
         DataContext = new DebugWindowViewModel(parent);
         _debugWindowViewModel = DataContext as DebugWindowViewModel;
         _mainWindowViewModel = _debugWindowViewModel?.ParentViewModel;
-        
+        _dialogService = new DialogService(this);
         mainWindow = parent as MainWindow;
         
         _dispatcherTimer = new TrackedDispatchTimer() { Interval = TimeSpan.FromSeconds(1) };
@@ -47,7 +48,7 @@ public partial class DebugWindow : Window
                 UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.OutputFilename);
             mainWindow.OutputFilenameTextBox.Text = _mainWindowViewModel.Settings.OutputFilename;
             mainWindow.AddQueuedFilters();
-            await Task.Run(() => Benchmarking.Instance.RunBenchmarks());
+            await Task.Run(() => Benchmarking.Instance.RunBenchmarks(_dialogService));
         }
         catch (Exception ex)
         {

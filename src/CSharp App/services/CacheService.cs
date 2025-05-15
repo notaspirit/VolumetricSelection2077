@@ -745,10 +745,12 @@ public class CacheService
     {
         public string VS2077Version { get; set; }
         public string GameVersion { get; set; }
+        public bool AreVanillaSectorBBsBuild { get; set; }
         public CacheDatabaseMetadata(string vs2077Version, string gameVersion)
         {
             VS2077Version = vs2077Version;
             GameVersion = gameVersion;
+            AreVanillaSectorBBsBuild = false;
         }
     }
     
@@ -788,6 +790,24 @@ public class CacheService
         return newMetadata;
     }
 
+    /// <summary>
+    /// Changes the VanillaSectorBoundsStatus in the metadata.json file.
+    /// </summary>
+    /// <param name="newValue"></param>
+    /// <returns></returns>
+    public bool SetMetaDataVanillaBoundsStatus(bool newValue)
+    {
+        var metadata = GetMetadata();
+        metadata.AreVanillaSectorBBsBuild = newValue;
+        File.WriteAllText(Path.Combine(_settings.CacheDirectory, "metadata.json"), JsonSerializer.Serialize(metadata));
+        return true;
+    }
+
+    /// <summary>
+    /// Dumps sector bounding box data from the cache to a binary file.
+    /// The output file is stored in the user's application data directory within a debug folder, named with the game's version and VS2077 version.
+    /// Intended for internal use only.
+    /// </summary>
     public void DumpSectorBBToFile()
     {
         try
@@ -819,6 +839,16 @@ public class CacheService
         }
     }
 
+    /// <summary>
+    /// Loads sector bounding boxes from a file into the cache database.
+    /// The file must contain a serialized SectorBBDump object, and it must match the current game version
+    /// and VS2077 version defined in the cache metadata.
+    /// </summary>
+    /// <param name="path">The file path containing the serialized sector bounding boxes.</param>
+    /// <exception cref="Exception">
+    /// Thrown if the file does not exist, or if the file's game version or VS2077 version
+    /// does not match the current cache metadata version.
+    /// </exception>
     public void LoadSectorBBFromFile(string path)
     {
         if (!File.Exists(path))
@@ -834,6 +864,7 @@ public class CacheService
             tx.Put(_vanillaBoundsDatabase, Encoding.UTF8.GetBytes(sector.Key), MessagePackSerializer.Serialize(sector.Value));
         }
         tx.Commit();
+        SetMetaDataVanillaBoundsStatus(true);
         Logger.Info($"Loaded {dump.Sectors.Count} sector bounds from file {path}...");
     }
 }

@@ -5,6 +5,8 @@ using System.ComponentModel;
 using VolumetricSelection2077.Models;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Reflection.Emit;
 using System.Text.RegularExpressions;
 using DynamicData;
 using MessagePack;
@@ -24,12 +26,14 @@ public class ProcessService
 {
     private readonly SettingsService _settings;
     private readonly GameFileService _gameFileService;
+    private readonly DialogService _dialogService;
     private Progress _progress;
-    public ProcessService()
+    public ProcessService(DialogService dialogService)
     {
         _settings = SettingsService.Instance;
         _gameFileService = GameFileService.Instance;
         _progress = Progress.Instance;
+        _dialogService = dialogService;
     }
 
     class MergeChanges
@@ -459,12 +463,40 @@ public class ProcessService
         };
         return (true, "", result);
     }
+
+    private async Task<bool> FetchRemoteSectorBBs()
+    {
+        var cacheMetadata = CacheService.Instance.GetMetadata();
+        string fileUrl = $"https://raw.githubusercontent.com/notaspirit/VolumetricSelection2077Resources/SectorBounds/{cacheMetadata.GameVersion}-{cacheMetadata.VS2077Version}.bin";
+        string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "VolumetricSelection2077", "temp", $"{cacheMetadata.GameVersion}-{cacheMetadata.VS2077Version}.bin");
+        using (HttpClient client = new HttpClient())
+        {
+            try
+            {
+                Logger.Info($"Fetching {fileUrl}...");
+                byte[] fileData = await client.GetByteArrayAsync(fileUrl);
+
+                await File.WriteAllBytesAsync(filePath, fileData);
+            }
+            catch (HttpRequestException e)
+            {
+                Logger.Exception(e, $"Failed to fetch remote sector bounds! {e.Message}");
+                return false;
+            }
+        }
+        
+        CacheService.Instance.LoadSectorBBFromFile(filePath);
+        File.Delete(filePath);
+        return true;
+    }
+    
     /// <summary>
     /// Logs and Evaluates ValidationServiceResult
     /// </summary>
     /// <param name="vr"></param>
     /// <returns>true if all are valid, false if at least one is invalid</returns>
-    private bool EvaluateInputValidation(ValidationService.InputValidationResult vr)
+    private async Task<bool> EvaluateInputValidation(ValidationService.InputValidationResult vr)
     {
         int invalidCount = 0;
         bool invalidRegex = false;
@@ -530,6 +562,67 @@ public class ProcessService
             invalidRegex = true;
         }
         
+        if (vr.VanillaSectorBBsBuild)
+            Logger.Success("Vanilla Sector BBs       : OK");
+        else
+        {
+            var dialogResult = await _dialogService.ShowDialog("Vanilla Sector Bounds not found!", "Vanilla Sector Bounds are not built, do you want to build them now (this will take a while) or fetch prebuild ones from remote?", ["Fetch Remote", "Build", "Cancel"]);
+            switch (dialogResult)
+            {
+                case 0:
+                    RetryFetchingRemote:
+                    Logger.Info("Fetching from remote...");
+                    var result = await FetchRemoteSectorBBs();
+                    if (result)
+                        Logger.Success("Vanilla Sector BBs       : OK");
+                    else
+                    {
+                        var failedToFetchRemoteDialogResult = await _dialogService.ShowDialog("Failed to fetch remote sector bounds!", "Failed to fetch remote sector bounds, do you want to retry or build them now (this will take a while)?", ["Retry", "Build", "Cancel"]);
+                        switch (failedToFetchRemoteDialogResult)
+                        {
+                            case 0:
+                                goto RetryFetchingRemote;
+                            case 1:
+                                goto BuildSectorBBs;
+                            case 2:
+                                Logger.Error("Vanilla Sector BBs       : User Canceled");
+                                invalidCount++;
+                                break;
+                        }
+                    }
+                    break;
+                case 1:
+                    BuildSectorBBs:
+                    Logger.Info("Building...");
+                    try
+                    {
+                        await new BoundingBoxBuilderService().BuildAllBounds();
+                        Logger.Success("Vanilla Sector BBs       : OK");
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Exception(e, $"Failed to build sector bounds with error {e.Message}");
+                        var failedToFetchRemoteDialogResult = await _dialogService.ShowDialog("Failed to build sector bounds!", "Failed to build sector bounds, do you want to retry or fetch them from remote?", ["Retry", "Fetch Remote", "Cancel"]);
+                        switch (failedToFetchRemoteDialogResult)
+                        {
+                            case 0:
+                                goto BuildSectorBBs;
+                            case 1:
+                                goto RetryFetchingRemote;
+                            case 2:
+                                Logger.Error("Vanilla Sector BBs       : User Canceled");
+                                invalidCount++;
+                                break;
+                        }
+                    }
+                    break;
+                case 2:
+                    Logger.Error("Vanilla Sector BBs       : User Canceled");
+                    invalidCount++;
+                    break;
+            }
+        }
+        
         if (invalidCount == 0)
         {
             return true;
@@ -583,25 +676,12 @@ public class ProcessService
     /// <exception cref="ArgumentException">Provided custom file does not exist, or only one optional param is provided</exception>
     public async Task<(bool success, string error)> MainProcessTask(string? customRemovalFile = null, string? customRemovalDirectory = null)
     {
-        await TestSectorAABBTime.Run();
-        return (true, string.Empty);
-        
-        /*
-        CompareNewSectorBoundsWithStreamingBlock.Run(_gameFileService, CacheService.Instance);
-        return (true, string.Empty);
-        */
-        /*
-        var boundsService = new BoundingBoxBuilderService();
-        await boundsService.BuildAllBounds();
-        return (true, string.Empty);
-        */
-        
         Logger.Info("Validating inputs...");
 
         try
         {
             var validationResult = ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename);
-            if (!EvaluateInputValidation(validationResult))
+            if (!await EvaluateInputValidation(validationResult))
                 return (false, "Invalid Input");
         }
         catch (Exception ex)

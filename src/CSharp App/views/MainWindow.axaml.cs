@@ -41,7 +41,7 @@ public partial class MainWindow : Window
         }
         DataContext = new MainWindowViewModel();
         _mainWindowViewModel = DataContext as MainWindowViewModel;
-        _processService = new ProcessService();
+        _processService = new ProcessService(new DialogService(this));
         Closed += OnMainWindowClosed;
         
         _progressBar = this.FindControl<ProgressBar>("ProgressBar");

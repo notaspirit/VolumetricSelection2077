@@ -145,6 +145,7 @@ namespace VolumetricSelection2077.Services
             public PathValidationResult OutputFileName { get; set; }
             public bool ResourceNameFilterValid { get; set; }
             public bool DebugNameFilterValid { get; set; }
+            public bool VanillaSectorBBsBuild { get; set; }
         }
         
         /// <summary>
@@ -163,6 +164,7 @@ namespace VolumetricSelection2077.Services
             var validFileName = string.IsNullOrEmpty(outputFilename) ? PathValidationResult.Empty : ValidatePath(@"E:\" + outputFilename + ".xl");
             var resourceNameFilterValid = ValidateResourcePathFilter();
             var debugNameFilterValid = ValidateDebugNameFilter();
+            var vanillaSectorBBsBuild = AreVanillaSectorBBsBuild();
                                 
             return new InputValidationResult()
             {
@@ -174,7 +176,8 @@ namespace VolumetricSelection2077.Services
                 SelectionFilePathValidationResult = selFileVR.Item2,
                 OutputFileName = validFileName,
                 ResourceNameFilterValid = resourceNameFilterValid,
-                DebugNameFilterValid = debugNameFilterValid
+                DebugNameFilterValid = debugNameFilterValid,
+                VanillaSectorBBsBuild = vanillaSectorBBsBuild
             };
         }
         
@@ -239,6 +242,10 @@ namespace VolumetricSelection2077.Services
             if (Path.HasExtension(path))
                 return PathValidationResult.ValidFile;
             return PathValidationResult.ValidDirectory;
+        }
+        public static bool AreVanillaSectorBBsBuild()
+        {
+            return CacheService.Instance.GetMetadata().AreVanillaSectorBBsBuild;
         }
     }
 }
