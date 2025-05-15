@@ -72,6 +72,20 @@ namespace VolumetricSelection2077
             await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Modded, true));
             UpdateCacheStats();
         }
+        
+        private async void ClearVanillaBoundsCache_Click(object sender, RoutedEventArgs e)
+        {
+            if(!_cacheService.IsInitialized) return;
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.VanillaBounds, true));
+            UpdateCacheStats();
+        }
+        
+        private async void ClearModdedBoundsCache_Click(object sender, RoutedEventArgs e)
+        {
+            if(!_cacheService.IsInitialized) return;
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.ModdedBounds, true));
+            UpdateCacheStats();
+        }
 
         private async void OnSettingsWindowClosing(object? sender, System.ComponentModel.CancelEventArgs e)
         {

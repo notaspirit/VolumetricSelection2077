@@ -28,9 +28,13 @@ namespace VolumetricSelection2077.ViewModels
             }
         }
         
-        public string ClearVanillaCacheButtonLabel => Labels.ClearVanillaCache + $" [ {CacheStats.VanillaEntries} files | {CacheStats.EstVanillaSize:F2} GB ]";
+        public string ClearVanillaCacheButtonLabel => Labels.ClearVanillaCache + $" [ {CacheStats.VanillaEntries} files | {CacheStats.EstVanillaSize.GetFormattedSize()} ]";
         
-        public string ClearModdedCacheButtonLabel => Labels.ClearModdedCache + $" [ {CacheStats.ModdedEntries} files | {CacheStats.EstModdedSize:F2} GB ]";
+        public string ClearModdedCacheButtonLabel => Labels.ClearModdedCache + $" [ {CacheStats.ModdedEntries} files | {CacheStats.EstModdedSize.GetFormattedSize()} ]";
+        
+        public string ClearVanillaBoundsCacheButtonLabel => Labels.ClearVanillaBoundsCache + $" [ {CacheStats.VanillaBoundsEntries} files | {CacheStats.EstVanillaBoundsSize.GetFormattedSize()} ]";
+        
+        public string ClearModdedBoundsCacheButtonLabel => Labels.ClearModdedBoundsCache + $" [ {CacheStats.ModdedBoundsEntries} files | {CacheStats.EstModdedBoundsSize.GetFormattedSize()} ]";
         
         public bool CacheEnabled 
         {

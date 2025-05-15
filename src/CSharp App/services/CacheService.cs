@@ -58,10 +58,12 @@ public class CacheService
     private static CacheService? _instance;
     private SettingsService _settings;
     private LightningEnvironment _env;
-    private static readonly long Gb = 1024 * 1024 * 1024;
+    private static readonly long Kb = 1024;
+    private static readonly long Gb = Kb * Kb * Kb;
     private static readonly int BatchDelay = 1;
     private static readonly int MaxReaders = 512;
     private static readonly long MapSize = Gb * 100;
+    private static readonly ulong EstimatedBoundsEntrySizeInBytes = 116;
     static ConcurrentQueue<WriteRequest> _requestWriteQueue = new();
     private readonly object _lock = new object();
     private LightningDatabase _vanillaDatabase;
@@ -627,16 +629,25 @@ public class CacheService
     public class CacheStats
     {
         public long VanillaEntries { get; set; }
-        public double EstVanillaSize { get; set; }
+        public FileSize EstVanillaSize { get; set; }
         public long ModdedEntries { get; set; }
-        public double EstModdedSize { get; set; }
+        public FileSize EstModdedSize { get; set; }
 
+        public long VanillaBoundsEntries { get; set; }
+        public FileSize EstVanillaBoundsSize { get; set; }
+        public long ModdedBoundsEntries { get; set; }
+        public FileSize EstModdedBoundsSize { get; set; }
+        
         public CacheStats()
         {
             VanillaEntries = -1;
-            EstVanillaSize = -1;
+            EstVanillaSize = new(0);
             ModdedEntries = -1;
-            EstModdedSize = -1;
+            EstModdedSize = new(0);
+            VanillaBoundsEntries = -1;
+            EstVanillaBoundsSize = new(0);
+            ModdedBoundsEntries = -1;
+            EstModdedBoundsSize = new(0);
         }
     }
 
@@ -648,37 +659,48 @@ public class CacheService
     {
         if (!_isInitialized) return new CacheStats();
         DirectoryInfo dirInfo = new DirectoryInfo(_settings.CacheDirectory);
-        long totalSize;
+        ulong totalSize;
         try
         {
-            totalSize = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
+            totalSize = (ulong)dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
         }
         catch (Exception ex)
         {
             Logger.Exception(ex, "Failed to get total size of cache!", true);
             totalSize = 0;
         }
-        long estVanillaSize = 0;
-        long estModdedSize = 0;
+        ulong estVanillaSize = 0;
+        ulong estModdedSize = 0;
         
         using var tx = _env.BeginTransaction();
 
         var vdbStats = _vanillaDatabase.DatabaseStats;
         var mdbStats = _moddedDatabase.DatabaseStats;
+        var vbdbStats = _vanillaBoundsDatabase.DatabaseStats;
+        var mdbdbStats = _moddedBoundsDatabase.DatabaseStats;
+
+        ulong estVanillaBoundsSize = (ulong)vbdbStats.Entries * EstimatedBoundsEntrySizeInBytes;
+        ulong estModdedBoundsSize = (ulong)mdbdbStats.Entries * EstimatedBoundsEntrySizeInBytes;
         
-        var totalEntries = vdbStats.Entries + mdbStats.Entries;
+        var totalSizeWithoutBounds = totalSize - (estVanillaBoundsSize + estModdedBoundsSize);
+        long totalEntries = vdbStats.Entries + mdbStats.Entries;
         if (totalEntries > 0)
         {
-            estVanillaSize = totalSize / totalEntries * vdbStats.Entries;
-            estModdedSize = totalSize / totalEntries * mdbStats.Entries;
+            estVanillaSize = totalSizeWithoutBounds / (ulong)totalEntries * (ulong)vdbStats.Entries;
+            estModdedSize = totalSizeWithoutBounds / (ulong)totalEntries * (ulong)mdbStats.Entries;
         }
         
         return new CacheStats()
         {
             VanillaEntries = vdbStats.Entries,
             ModdedEntries = mdbStats.Entries,
-            EstVanillaSize = (double)estVanillaSize / Gb,
-            EstModdedSize = (double)estModdedSize / Gb,
+            EstVanillaSize = new(estVanillaSize),
+            EstModdedSize = new(estModdedSize),
+            
+            VanillaBoundsEntries = vbdbStats.Entries,
+            ModdedBoundsEntries = mdbdbStats.Entries,
+            EstVanillaBoundsSize = new(estVanillaBoundsSize),
+            EstModdedBoundsSize = new(estModdedBoundsSize)
         };
     }
     
