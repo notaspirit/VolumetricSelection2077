@@ -407,7 +407,11 @@ public class CacheService
         }
 
         if (!_settings.CacheEnabled)
-            ClearDatabase(CacheDatabases.All, true);
+        {
+            ClearDatabase(CacheDatabases.Vanilla);
+            ClearDatabase(CacheDatabases.Modded, true);
+        }
+            
         
         if (wroteExitLog)
         {
