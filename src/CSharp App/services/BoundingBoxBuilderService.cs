@@ -24,12 +24,16 @@ public class BoundingBoxBuilderService
         _settings = SettingsService.Instance;
         _progress = Progress.Instance;
     }
-
+    /// <summary>
+    /// Builds an accurate bounding box for the given sector, and writes it to the given database
+    /// </summary>
+    /// <param name="sectorPath">path to the sector within the archives</param>
+    /// <param name="database">database to save the output to</param>
     public async Task ProcessStreamingsector(string sectorPath, CacheDatabases? database)
     {
         try
         {
-            Logger.Debug($"Building bounds for {sectorPath}...");
+            Logger.Info($"Building bounds for {sectorPath}...");
             var sector = _gameFileService.GetSector(sectorPath);
             if (sector == null)
             {
@@ -200,6 +204,11 @@ public class BoundingBoxBuilderService
         RebuildModded,
         MissingModded
     }
+    /// <summary>
+    /// Builds bounding boxes for all sectors matching the provided mode
+    /// </summary>
+    /// <param name="mode"></param>
+    /// <exception cref="Exception">Game File Service is not initialized or Cache Service is not initialized</exception>
     public async Task BuildBounds(BuildBoundsMode mode)
     {
         if (!_gameFileService.IsInitialized)
@@ -232,23 +241,15 @@ public class BoundingBoxBuilderService
                 break;
         }
         _progress.AddTarget(vanillaSectors.Count + moddedSectors.Count, Progress.ProgressSections.Processing);
-
-        try
-        {
-            CacheService.Instance.StartListening();
-        }
-        catch (Exception ex)
-        {
-            Logger.Exception(ex, "Failed to start listening to write requests in cache service!");
-            return;
-        }
+        
+        _cacheService.StartListening();
         
         List<Task> tasks = vanillaSectors.Select(x => Task.Run(() => ProcessStreamingsector(x, CacheDatabases.VanillaBounds))).ToList();
         tasks.AddRange(moddedSectors.Select(x =>
             Task.Run(() => ProcessStreamingsector(x, CacheDatabases.ModdedBounds))));
         await Task.WhenAll(tasks);
         
-        CacheService.Instance.StopListening();
+        _cacheService.StopListening();
         if (mode == BuildBoundsMode.Vanilla || mode == BuildBoundsMode.All) 
             _cacheService.SetMetaDataVanillaBoundsStatus(true);
         Logger.Info("Finished building bounds!");

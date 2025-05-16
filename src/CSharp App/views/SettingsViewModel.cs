@@ -25,6 +25,8 @@ namespace VolumetricSelection2077.ViewModels
                 OnPropertyChanged(nameof(CacheStats));
                 OnPropertyChanged(nameof(ClearVanillaCacheButtonLabel));
                 OnPropertyChanged(nameof(ClearModdedCacheButtonLabel));
+                OnPropertyChanged(nameof(ClearVanillaBoundsCacheButtonLabel));
+                OnPropertyChanged(nameof(ClearModdedBoundsCacheButtonLabel));
             }
         }
         

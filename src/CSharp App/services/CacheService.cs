@@ -522,6 +522,8 @@ public class CacheService
                             cursor.Delete();
                         }
                     }
+
+                    SetMetaDataVanillaBoundsStatus(false);
                     break;
                 case CacheDatabases.ModdedBounds:
                     using (var cursor = tx.CreateCursor(_moddedBoundsDatabase))
@@ -554,6 +556,7 @@ public class CacheService
                             cursor.Delete();
                         }
                     }
+                    SetMetaDataVanillaBoundsStatus(false);
                     using (var cursor = tx.CreateCursor(_moddedBoundsDatabase))
                     {
                         while (cursor.Next() == MDBResultCode.Success)
@@ -658,7 +661,7 @@ public class CacheService
     /// <summary>
     /// Gets cache stats
     /// </summary>
-    /// <returns>populated cache stats if initialized else -1 on all fields</returns>
+    /// <returns>populated cache stats if initialized else -1 on all entry counts and 0 on all size fields</returns>
     public CacheStats GetStats()
     {
         if (!_isInitialized) return new CacheStats();
@@ -849,7 +852,7 @@ public class CacheService
             {
                 var entry = cursor.GetCurrent();
                 dump.Sectors.Add(new KeyValuePair<string, BoundingBox>(
-                    BitConverter.ToString(entry.Item2.CopyToNewArray()),
+                    Encoding.Default.GetString(entry.Item2.CopyToNewArray()),
                     MessagePackSerializer.Deserialize<BoundingBox>(entry.Item3.CopyToNewArray())));
             }
 

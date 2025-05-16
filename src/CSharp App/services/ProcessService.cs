@@ -28,6 +28,8 @@ public class ProcessService
     private readonly GameFileService _gameFileService;
     private readonly DialogService _dialogService;
     private readonly BoundingBoxBuilderService _boundingBoxBuilderService;
+    private readonly CacheService _cacheService;
+    private readonly ValidationService _validationService;
     private Progress _progress;
     public ProcessService(DialogService dialogService)
     {
@@ -36,6 +38,8 @@ public class ProcessService
         _progress = Progress.Instance;
         _dialogService = dialogService;
         _boundingBoxBuilderService = new BoundingBoxBuilderService();
+        _cacheService = CacheService.Instance;
+        _validationService = new ValidationService();
     }
 
     class MergeChanges
@@ -465,13 +469,18 @@ public class ProcessService
         };
         return (true, "", result);
     }
-
+    
+    /// <summary>
+    /// Fetches remote sector bounds from VS2077 Resource repo 
+    /// </summary>
+    /// <returns>true if successful</returns>
     private async Task<bool> FetchRemoteSectorBBs()
     {
-        var cacheMetadata = CacheService.Instance.GetMetadata();
-        string fileUrl = $"https://raw.githubusercontent.com/notaspirit/VolumetricSelection2077Resources/SectorBounds/{cacheMetadata.GameVersion}-{cacheMetadata.VS2077Version}.bin";
+        var cacheMetadata = _cacheService.GetMetadata();
+        string fileUrl = $"https://github.com/notaspirit/VolumetricSelection2077Resources/raw/refs/heads/main/SectorBounds/{cacheMetadata.GameVersion}-{cacheMetadata.VS2077Version}.bin";
         string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "VolumetricSelection2077", "temp", $"{cacheMetadata.GameVersion}-{cacheMetadata.VS2077Version}.bin");
+        Directory.CreateDirectory(Path.GetDirectoryName(filePath));
         using (HttpClient client = new HttpClient())
         {
             try
@@ -488,7 +497,7 @@ public class ProcessService
             }
         }
         
-        CacheService.Instance.LoadSectorBBFromFile(filePath);
+        _cacheService.LoadSectorBBFromFile(filePath);
         File.Delete(filePath);
         return true;
     }
@@ -573,7 +582,7 @@ public class ProcessService
             {
                 case 0:
                     RetryFetchingRemote:
-                    Logger.Info("Fetching from remote...");
+                    Logger.Info("Fetching Sector Bounds from remote...");
                     var result = await FetchRemoteSectorBBs();
                     if (result)
                         Logger.Success("Vanilla Sector BBs       : OK");
@@ -595,7 +604,7 @@ public class ProcessService
                     break;
                 case 1:
                     BuildSectorBBs:
-                    Logger.Info("Building...");
+                    Logger.Info("Building Sector Bounds...");
                     try
                     {
                         await new BoundingBoxBuilderService().BuildBounds(BoundingBoxBuilderService.BuildBoundsMode.Vanilla);
@@ -689,7 +698,7 @@ public class ProcessService
         }
         catch (Exception e)
         {
-            Logger.Error($"Failed to Processes {streamingSectorName}: {e}");
+            Logger.Exception(e, $"Failed to process sector {streamingSectorName} with error {e.Message}");;
             return null;
         }
     }
@@ -707,7 +716,7 @@ public class ProcessService
 
         try
         {
-            var validationResult = ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename);
+            var validationResult = _validationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename);
             if (!await EvaluateInputValidation(validationResult))
                 return (false, "Invalid Input");
         }
@@ -761,7 +770,7 @@ public class ProcessService
         
         try
         {
-            CacheService.Instance.StartListening();
+            _cacheService.StartListening();
         }
         catch (Exception ex)
         {
@@ -773,31 +782,32 @@ public class ProcessService
         
         CETOutputFile.Sectors.Clear();
 
-        var sectorVanilla = CacheService.Instance.GetAllEntries(CacheDatabases.VanillaBounds);
-        Logger.Info($"Found {sectorVanilla?.Length} sectors in vanilla bounds");
-        foreach (var sectorAABB in sectorVanilla)
-        {
-            // Logger.Info($"Checking sector {sectorAABB.Key} in vanilla bounds...");
-            var aabb = MessagePackSerializer.Deserialize<BoundingBox>(sectorAABB.Value);
-            if (CETOutputFile.Aabb.Contains(aabb) != ContainmentType.Disjoint)
-            {
-                CETOutputFile.Sectors.Add(sectorAABB.Key);
-                Logger.Info($"Found sector {sectorAABB.Key} in vanilla bounds with min max {aabb.Minimum} to {aabb.Maximum}");
-            }
-        }
+        var vanillaBoundingBoxes = _cacheService.GetAllEntries(CacheDatabases.VanillaBounds);
         
-        Logger.Debug($"Found {CETOutputFile.Sectors.Count} sectors in vanilla bounds");
+        CETOutputFile.Sectors.Add(vanillaBoundingBoxes
+            .Where(x => CETOutputFile.Aabb.Contains(MessagePackSerializer.Deserialize<BoundingBox>(x.Value)) != ContainmentType.Disjoint)
+            .Select(x => x.Key).ToArray());
+
+        if (_settings.SupportModdedResources)
+        {
+            var moddedBoundingBoxes = _cacheService.GetAllEntries(CacheDatabases.ModdedBounds);
+            CETOutputFile.Sectors.Add(moddedBoundingBoxes
+                .Where(x => CETOutputFile.Aabb.Contains(MessagePackSerializer.Deserialize<BoundingBox>(x.Value)) != ContainmentType.Disjoint)
+                .Select(x => x.Key).ToArray());
+        }
+
+        Logger.Info($"Found {CETOutputFile.Sectors.Count} sectors to process...");
+        
         try
         {
             _progress.AddTarget(CETOutputFile.Sectors.Count * 2, Progress.ProgressSections.Startup);
             var tasks = CETOutputFile.Sectors.Select(input => Task.Run(() => SectorProcessThread(input, CETOutputFile)))
                 .ToArray();
-
             sectorsOutputRaw = await Task.WhenAll(tasks);
         }
         finally
         {
-            CacheService.Instance.StopListening();
+            _cacheService.StopListening();
         }
         
         _progress.AddTarget(2, Progress.ProgressSections.Finalization);
