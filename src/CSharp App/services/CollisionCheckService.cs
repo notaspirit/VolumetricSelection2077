@@ -142,7 +142,7 @@ public static class CollisionCheckService
         }
         return result;
     }
-    
+
     /// <summary>
     /// Checks if a mesh node has overlap with the obb
     /// </summary>
@@ -152,7 +152,8 @@ public static class CollisionCheckService
     /// <param name="transforms"></param>
     /// <param name="matrixTransform"></param>
     /// <returns></returns>
-    public static bool IsMeshInsideBox(AbbrMesh mesh, OrientedBoundingBox selectionBoxOBB, BoundingBox selectionBoxAabb, AbbrSectorTransform[]? transforms, Matrix? matrixTransform = null)
+    public static (bool, List<int>) IsMeshInsideBox(AbbrMesh mesh, OrientedBoundingBox selectionBoxOBB, BoundingBox selectionBoxAabb,
+        AbbrSectorTransform[]? transforms, Matrix? matrixTransform = null, bool checkAllTransforms = false)
     {
         static bool IsInsidePrivate(AbbrSubMesh submesh, OrientedBoundingBox selectionObb, BoundingBox selectionAabb, Matrix transform)
         {
@@ -183,7 +184,7 @@ public static class CollisionCheckService
         if (transforms == null && matrixTransform == null)
         {
             Logger.Error("IsMeshInsideBox: No transform provided, aborting.");
-            return false;
+            return (false, new List<int>() {0} );
         }
 
         if (matrixTransform != null)
@@ -192,29 +193,38 @@ public static class CollisionCheckService
             {
                 if (IsInsidePrivate(submesh, selectionBoxOBB, selectionBoxAabb, (Matrix)matrixTransform))
                 {
-                    return true;
+                    return (true, new List<int> { 0 });
                 }
             }
         }
 
+        HashSet<int> transformIndices = new();
+        int index = 0;
+        
         if (transforms != null)
         {
-            foreach (var submesh in mesh.SubMeshes)
+            foreach (var transform in transforms)
             {
-                foreach (var transform in transforms)
+                foreach (var submesh in mesh.SubMeshes)
                 {
                     Matrix localTransformMatrix = Matrix.Scaling(transform.Scale) * 
                                                   Matrix.RotationQuaternion(transform.Rotation) * 
                                                   Matrix.Translation(transform.Position);
                     if (IsInsidePrivate(submesh, selectionBoxOBB, selectionBoxAabb, localTransformMatrix))
                     {
-                        return true;
+                        transformIndices.Add(index);
+                        if (!checkAllTransforms)
+                        {
+                            return (true, transformIndices.ToList());
+                        }
                     }
                 }
+                index++;
             }
         }
-        
-        return false;
+        if (checkAllTransforms && transformIndices.Count > 0)
+            return (true, transformIndices.ToList());
+        return (false, transformIndices.ToList());
     }
 
     /// <summary>
@@ -240,7 +250,7 @@ public static class CollisionCheckService
 
         Matrix transformMatrix = shapeTransformMatrix * actorTransformMatrix;
         
-        return IsMeshInsideBox(mesh, selectionBoxObb, selectionBoxAabb,null,  transformMatrix);
+        return IsMeshInsideBox(mesh, selectionBoxObb, selectionBoxAabb,null,  transformMatrix).Item1;
         /* Logger.Debug("\n" +
                      $"Build Collision Mesh Scale with {actorTransform.Scale} * {shapeTransform.Scale} => {combinedScale}\n" +
                      $"Build Collision Mesh Rotation with {actorTransform.Rotation} * {shapeTransform.Rotation} => {combinedRotation}\n" +

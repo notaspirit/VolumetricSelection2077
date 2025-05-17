@@ -57,11 +57,11 @@ namespace VolumetricSelection2077.Services
         }
 
 
-        public static AxlRemovalFile? TryParseAxlRemovalFile(String input)
+        public static AxlModificationFile? TryParseAxlRemovalFile(String input)
         {
             try
             {
-                return JsonConvert.DeserializeObject<AxlRemovalFile>(input);
+                return JsonConvert.DeserializeObject<AxlModificationFile>(input);
             }
             catch (JsonException) { }
             
@@ -70,7 +70,7 @@ namespace VolumetricSelection2077.Services
                 var deserializer = new DeserializerBuilder()
                     .WithNamingConvention(CamelCaseNamingConvention.Instance)
                     .Build();
-                return deserializer.Deserialize<AxlRemovalFile>(input);
+                return deserializer.Deserialize<AxlModificationFile>(input);
             }
             catch (YamlDotNet.Core.YamlException) { }
             

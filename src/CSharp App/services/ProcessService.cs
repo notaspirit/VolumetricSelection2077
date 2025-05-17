@@ -38,8 +38,10 @@ public class ProcessService
         public int newActors { get; set; } = 0;
     }
     
-    private (List<AxlRemovalSector>?,MergeChanges?)  MergeSectors(string filepath, AxlRemovalFile newRemovals)
+    private (List<AxlSector>?,MergeChanges?)  MergeSectors(string filepath, AxlModificationFile newRemovals)
     {
+        throw new NotImplementedException();
+        /*
         var changeCount = new MergeChanges();
         
         string fileContent = File.ReadAllText(filepath);
@@ -49,17 +51,17 @@ public class ProcessService
             var newSectors = newRemovals.Streaming.Sectors;
             var oldSectors = exisitngRemovalFile.Streaming.Sectors;
             
-            Dictionary<string, AxlRemovalSector> mergedDict = oldSectors.ToDictionary(x => x.Path);
+            Dictionary<string, AxlSector> mergedDict = oldSectors.ToDictionary(x => x.Path);
 
             foreach (var newSector in newSectors)
             {
-                if (mergedDict.TryGetValue(newSector.Path, out AxlRemovalSector existingSector))
+                if (mergedDict.TryGetValue(newSector.Path, out AxlSector existingSector))
                 {
-                    Dictionary<int, AxlRemovalNodeDeletion> mergedNodes =
+                    Dictionary<int, AxlNodeDeletion> mergedNodes =
                         existingSector.NodeDeletions.ToDictionary(x => x.Index);
                     foreach (var newNode in newSector.NodeDeletions)
                     {
-                        if (mergedNodes.TryGetValue(newNode.Index, out AxlRemovalNodeDeletion existingNode))
+                        if (mergedNodes.TryGetValue(newNode.Index, out AxlNodeDeletion existingNode))
                         {
                             if (newNode.ActorDeletions != null || 
                                 newNode.ActorDeletions?.Count > 0 ||
@@ -96,9 +98,10 @@ public class ProcessService
         }
         Logger.Error($"Failed to parse existing removal file {filepath}");
         return (null, null);
+        */
     }
     
-    private void SaveFile(AxlRemovalFile removalFile, string? customRemovalDirectory = null, string? customRemovalFilename = null)
+    private void SaveFile(AxlModificationFile removalFile, string? customRemovalDirectory = null, string? customRemovalFilename = null)
     {
         string outputFilePath;
         if (customRemovalDirectory == null || customRemovalFilename == null)
@@ -189,13 +192,13 @@ public class ProcessService
         File.WriteAllText(newOutputFilePath, outputContent);
         Logger.Info($"Created file {newOutputFilePath}");
     }
-    private async Task<AxlRemovalNodeDeletion?> ProcessNodeAsync(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index, AbbrSector sector, SelectionInput selectionBox)
+    private async Task<AxlNodeDeletion?> ProcessNodeAsync(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index, AbbrSector sector, SelectionInput selectionBox)
         {
             var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
 
             if (_settings.NukeOccluders && nodeEntry.Type.ToString().ToLower().Contains("occluder"))
             {
-                return new AxlRemovalNodeDeletion()
+                return new AxlNodeDeletion()
                 {
                     Type = nodeEntry.Type.ToString(),
                     Index = index,
@@ -298,21 +301,37 @@ public class ProcessService
                         Logger.Warning($"Failed to get CMesh from {nodeEntry.ResourcePath}");
                         return null;
                     }
-                    bool isInside = CollisionCheckService.IsMeshInsideBox(mesh,
+                    
+                    var isInstanced = nodeEntry.Type == NodeTypeProcessingOptions.Enum.worldInstancedDestructibleMeshNode
+                                      || nodeEntry.Type == NodeTypeProcessingOptions.Enum.worldInstancedMeshNode;
+                    
+                    var (isInside, indices) = CollisionCheckService.IsMeshInsideBox(mesh,
                         selectionBox.Obb,
                         selectionBox.Aabb,
-                        nodeDataEntry.Transforms);
+                        nodeDataEntry.Transforms, checkAllTransforms: isInstanced);
                     
-                    if (isInside)
+                    
+                    if (isInside && !isInstanced)
                     {
-                        return new AxlRemovalNodeDeletion()
+                        return new AxlNodeDeletion()
                         {
                             Index = index,
                             Type = nodeEntry.Type.ToString(),
                             DebugName = nodeEntry.DebugName
                         };
                     }
-                    return null;
+                    if (isInside && isInstanced)
+                    {
+                        return new AxlInstancedNodeDeletion()
+                        {
+                            Index = index,
+                            Type = nodeEntry.Type.ToString(),
+                            DebugName = nodeEntry.DebugName,
+                            ExpectedInstances = nodeDataEntry.Transforms.Length,
+                            InstanceDeletions = indices
+                        };
+                    }
+                    break;
                 case CollisionCheck.Types.Collider:
                     List<int> actorRemoval = new List<int>();
                     int actorIndex = 0;
@@ -377,7 +396,7 @@ public class ProcessService
                     }
                     if (actorRemoval.Count > 0)
                     {
-                        return new AxlRemovalNodeDeletion()
+                        return new AxlCollisionNodeDeletion()
                             {
                                 Index = index,
                                 Type = nodeEntry.Type.ToString(),
@@ -386,14 +405,14 @@ public class ProcessService
                                 DebugName = nodeEntry.DebugName
                             };
                     }
-                    return null;
+                    break;
                 case CollisionCheck.Types.Default:
                     foreach (var transform in nodeDataEntry.Transforms)
                     {
                         var intersection = selectionBox.Obb.Contains(transform.Position);
                         if (intersection != ContainmentType.Disjoint)
                         {
-                            return new AxlRemovalNodeDeletion()
+                            return new AxlNodeDeletion()
                             {
                                 Index = index,
                                 Type = nodeEntry.Type.ToString(),
@@ -401,15 +420,14 @@ public class ProcessService
                             };
                         }
                     }
-                    return null;
+                    break;
             }
-
             return null;
         }
     // also returns null if none of the nodes in the sector are inside the box
-    private async Task<(bool success, string error, AxlRemovalSector? result)> ProcessStreamingsector(AbbrSector sector, string sectorPath, SelectionInput selectionBox)
+    private async Task<(bool success, string error, AxlSector? result)> ProcessStreamingsector(AbbrSector sector, string sectorPath, SelectionInput selectionBox)
     {
-        async Task<AxlRemovalNodeDeletion?> ProcessNodeAsyncWithReport(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index, AbbrSector sector, SelectionInput selectionBox)
+        async Task<AxlNodeDeletion?> ProcessNodeAsyncWithReport(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index, AbbrSector sector, SelectionInput selectionBox)
         {
             try
             {
@@ -427,7 +445,7 @@ public class ProcessService
         var nodeDeletionsRaw = await Task.WhenAll(tasks);
 
         bool isOnlyOccluders = true;
-        List<AxlRemovalNodeDeletion> nodeDeletions = new();
+        List<AxlNodeDeletion> nodeDeletions = new();
         foreach (var nodeDeletion in nodeDeletionsRaw)
         {
             if (nodeDeletion != null)
@@ -450,7 +468,7 @@ public class ProcessService
             return (true, "No Nodes Intersect with Box.", null);
         }
         
-        var result = new AxlRemovalSector()
+        var result = new AxlSector()
         {
             NodeDeletions = nodeDeletions,
             ExpectedNodes = sector.NodeData.Length,
@@ -542,7 +560,7 @@ public class ProcessService
         return false;
     }
     
-    private async Task<AxlRemovalSector?> SectorProcessThread(string streamingSectorName, SelectionInput CETOutputFile)
+    private async Task<AxlSector?> SectorProcessThread(string streamingSectorName, SelectionInput CETOutputFile)
     {
         Logger.Info($"Starting sector process thread for {streamingSectorName}...");
         _progress.AddCurrent(1, Progress.ProgressSections.Startup);
@@ -648,7 +666,7 @@ public class ProcessService
             return (false, "Failed to start listening to write requests in cache service!");
         }
 
-        AxlRemovalSector?[] sectorsOutputRaw;
+        AxlSector?[] sectorsOutputRaw;
         
         try
         {
@@ -664,7 +682,7 @@ public class ProcessService
         }
         
         _progress.AddTarget(2, Progress.ProgressSections.Finalization);
-        List<AxlRemovalSector> sectors = new();
+        List<AxlSector> sectors = new();
         foreach (var sector in sectorsOutputRaw)
         {
             if (sector != null)
@@ -679,9 +697,9 @@ public class ProcessService
         }
         else
         {
-            var removalFile = new AxlRemovalFile()
+            var removalFile = new AxlModificationFile()
             {
-                Streaming = new AxlRemovalStreaming()
+                Streaming = new AxlStreaming()
                 {
                     Sectors = sectors
                 }
