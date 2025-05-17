@@ -189,9 +189,11 @@ public class GameFileService
     public AbbrSector? GetSector(string path)
     {
         if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
-
         var cachedSector = _cacheService.GetEntry(new ReadRequest(path, _readCacheTarget));
-        if (MessagePackHelper.TryDeserialize<AbbrSector>(cachedSector, out var mesh)) return mesh;
+        if (MessagePackHelper.TryDeserialize<AbbrSector>(cachedSector, out var mesh))
+        {
+            return mesh;
+        }
         
         var rawSector = ArchiveManager.GetCR2WFile(path);
         if (rawSector == null) return null;
@@ -215,7 +217,6 @@ public class GameFileService
 
         if (!_settingsService.CacheModdedResources && db == CacheDatabases.Modded) return parsedSector;
         _cacheService.WriteEntry(path, parsedSector, db);
-        
         return parsedSector;
     }
 }

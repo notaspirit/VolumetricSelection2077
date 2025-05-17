@@ -23,6 +23,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="200" />
@@ -174,6 +175,37 @@
                     Background="#ad0002"
                     Click="ClearModdedCache_Click"
                     Content="{Binding ClearModdedCacheButtonLabel}"
+                    Grid.Column="1"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Margin="5,0,0,0">
+                    <Button.Styles>
+                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                            <Setter Property="Background" Value="DarkRed" />
+                        </Style>
+                    </Button.Styles>
+                </Button>
+            </Grid>
+            <Grid Grid.Column="1" Grid.Row="10">
+                <Grid.ColumnDefinitions>*, *</Grid.ColumnDefinitions>
+                <Button
+                    Background="#ad0002"
+                    Click="ClearVanillaBoundsCache_Click"
+                    Content="{Binding ClearVanillaBoundsCacheButtonLabel}"
+                    Grid.Column="0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Margin="5,0,0,0">
+                    <Button.Styles>
+                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                            <Setter Property="Background" Value="DarkRed" />
+                        </Style>
+                    </Button.Styles>
+                </Button>
+                <Button
+                    Background="#ad0002"
+                    Click="ClearModdedBoundsCache_Click"
+                    Content="{Binding ClearModdedBoundsCacheButtonLabel}"
                     Grid.Column="1"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"

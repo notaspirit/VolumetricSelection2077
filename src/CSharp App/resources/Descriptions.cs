@@ -57,5 +57,7 @@ namespace VolumetricSelection2077.Resources
             public static string SaveToArchiveMods { get; } = "Save Files To";
             public static string ClearVanillaCache { get; } = "Vanilla";
             public static string ClearModdedCache { get; } = "Modded";
+            public static string ClearVanillaBoundsCache { get; } = "Vanilla Bounds";
+            public static string ClearModdedBoundsCache { get; } = "Modded Bounds";
         }
 }

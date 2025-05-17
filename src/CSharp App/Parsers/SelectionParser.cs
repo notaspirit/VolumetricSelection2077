@@ -39,13 +39,6 @@ public class SelectionParser
         {
             return (false, "No scale values found!", null);
         }
-        /*
-        Matrix selectionBoxMatrix = Matrix.RotationYawPitchRoll(-(float)rotX, -(float)rotY, -(float)rotZ);
-        OrientedBoundingBox obb = new OrientedBoundingBox(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
-        obb.Scale(new Vector3((float)scaleX, (float)scaleY, (float)scaleZ));
-        obb.Transform(selectionBoxMatrix);
-        obb.Translate(new Vector3((float)originX, (float)originY, (float)originZ));
-        */
         Matrix selectionBoxMatrix = Matrix.RotationYawPitchRoll(
             MathUtil.DegreesToRadians((float)rotX), MathUtil.DegreesToRadians((float)rotY), MathUtil.DegreesToRadians((float)rotZ));
         Vector3 halfScale = new Vector3((float)scaleX / 2, (float)scaleY / 2, (float)scaleZ / 2);
@@ -54,40 +47,11 @@ public class SelectionParser
         obb.Transform(selectionBoxMatrix);
         obb.Translate(new Vector3((float)originX, (float)originY, (float)originZ));
         
-        var sectorListJson = jsonInput?["sectors"] as JsonArray;
-        if (sectorListJson == null)
-        {
-            return (false, "No sectors found!", null);
-        }
-        List<string> sectorList = new List<string>();
-        foreach (var sector in sectorListJson)
-        {
-            string? sectorName = sector?.GetValue<string>();
-            if (sectorName == null)
-            {
-                Logger.Warning("Failed to parse sector name to string! Skipping.");
-                continue;
-            }
-
-            if (!sectorName.EndsWith(".streamingsector"))
-            {
-                Logger.Warning("Sector name does not end with streamingsector! Skipping.");
-                continue;
-            }
-            
-            sectorList.Add(sectorName);
-        }
-        
-        if (sectorList.Count == 0)
-        {
-            return (false, "Sector list contains 0 entries!", null);
-        }
-        
         SelectionInput parsedSelection = new SelectionInput()
         {
             Obb = obb,
             Aabb = obb.GetBoundingBox(),
-            Sectors = sectorList
+            Sectors = new List<string>()
         };
         return (true, "", parsedSelection);
     }

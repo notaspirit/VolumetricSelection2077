@@ -44,11 +44,11 @@ public class Benchmarking
     
     
     
-    public async Task RunBenchmarks()
+    public async Task RunBenchmarks(DialogService dialogService)
     {
         Logger.Info("Starting Benchmarks");
         // CacheService.Instance.DropDatabase(CacheDatabases.Vanilla);
-        var processingService = new ProcessService();
+        var processingService = new ProcessService(dialogService);
         string benchFileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "VolumetricSelection2077", "benchmarks");
         string benchOutputDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
