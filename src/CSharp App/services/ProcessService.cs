@@ -786,14 +786,14 @@ public class ProcessService
         
         CETOutputFile.Sectors.Add(vanillaBoundingBoxes
             .Where(x => CETOutputFile.Aabb.Contains(MessagePackSerializer.Deserialize<BoundingBox>(x.Value)) != ContainmentType.Disjoint)
-            .Select(x => x.Key).ToArray());
+            .Select(x => x.Key));
 
         if (_settings.SupportModdedResources)
         {
             var moddedBoundingBoxes = _cacheService.GetAllEntries(CacheDatabases.ModdedBounds);
             CETOutputFile.Sectors.Add(moddedBoundingBoxes
                 .Where(x => CETOutputFile.Aabb.Contains(MessagePackSerializer.Deserialize<BoundingBox>(x.Value)) != ContainmentType.Disjoint)
-                .Select(x => x.Key).ToArray());
+                .Select(x => x.Key));
         }
 
         Logger.Info($"Found {CETOutputFile.Sectors.Count} sectors to process...");
