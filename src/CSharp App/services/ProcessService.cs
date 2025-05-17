@@ -779,8 +779,6 @@ public class ProcessService
         }
 
         AxlRemovalSector?[] sectorsOutputRaw;
-        
-        CETOutputFile.Sectors.Clear();
 
         var vanillaBoundingBoxes = _cacheService.GetAllEntries(CacheDatabases.VanillaBounds);
         
