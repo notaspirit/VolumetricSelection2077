@@ -8,15 +8,15 @@ CtrlADel.sln
 CtrlADel.code-workspace
 
 # Default ignored files
-/shelf/
-/workspace.xml
+shelf/
+workspace.xml
 # Rider ignored files
-/modules.xml
-/contentModel.xml
-/.idea.CtrlADel.iml
-/projectSettingsUpdater.xml
+modules.xml
+contentModel.xml
+.idea.CtrlADel.iml
+projectSettingsUpdater.xml
 # Editor-based HTTP Client requests
-/httpRequests/
+httpRequests/
 # Datasource local storage ignored files
-/dataSources/
-/dataSources.local.xml
+dataSources/
+dataSources.local.xml
