@@ -363,9 +363,9 @@ public class ProcessService
                     Logger.Warning($"Failed to get CMesh from {nodeEntry.ResourcePath}");
                     return null;
                 }
-                // worldInstancedDestructibleMeshNode is not yet supported by archiveXL as of 1.22.0, commenting it out for now
-                var isInstanced = /* nodeEntry.Type == NodeTypeProcessingOptions.Enum.worldInstancedDestructibleMeshNode
-                                  || */ nodeEntry.Type == NodeTypeProcessingOptions.Enum.worldInstancedMeshNode;
+
+                var isInstanced = nodeEntry.Type == NodeTypeProcessingOptions.Enum.worldInstancedDestructibleMeshNode
+                                  ||  nodeEntry.Type == NodeTypeProcessingOptions.Enum.worldInstancedMeshNode;
                 
                 var (isInside, indices) = CollisionCheckService.IsMeshInsideBox(mesh,
                     selectionBox.Obb,
