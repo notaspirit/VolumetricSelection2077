@@ -57,6 +57,9 @@ namespace VolumetricSelection2077.Models
     
         [Key(4)]
         public string? DebugName { get; set; }
+        
+        [Key(5)]
+        public ulong? ProxyRef { get; set; }
     }
 
     [MessagePackObject]

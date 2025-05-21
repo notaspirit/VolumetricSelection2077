@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -11,7 +12,6 @@ using VolumetricSelection2077.Parsers;
 using Newtonsoft.Json;
 using SharpDX;
 using VolumetricSelection2077.Resources;
-using VolumetricSelection2077.TestingStuff;
 using WolvenKit.RED4.Types;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -31,74 +31,22 @@ public class ProcessService
         _progress = Progress.Instance;
     }
 
-    class MergeChanges
-    {
-        public int newSectors { get; set; } = 0;
-        public int newNodes { get; set; } = 0;
-        public int newActors { get; set; } = 0;
-    }
+    public ConcurrentBag<ProxyNodeTracker> proxyTracker = new();
     
-    private (List<AxlSector>?,MergeChanges?)  MergeSectors(string filepath, AxlModificationFile newRemovals)
+
+    
+    private (List<AxlSector>?, SectorMergeChangesCount?)  MergeSectors(string filepath, AxlModificationFile newRemovals)
     {
-        throw new NotImplementedException();
-        /*
-        var changeCount = new MergeChanges();
         
         string fileContent = File.ReadAllText(filepath);
-        var exisitngRemovalFile = UtilService.TryParseAxlRemovalFile(fileContent);
-        if (exisitngRemovalFile != null)
+        var existingRemovalFile = UtilService.TryParseAxlRemovalFile(fileContent);
+        if (existingRemovalFile != null)
         {
-            var newSectors = newRemovals.Streaming.Sectors;
-            var oldSectors = exisitngRemovalFile.Streaming.Sectors;
-            
-            Dictionary<string, AxlSector> mergedDict = oldSectors.ToDictionary(x => x.Path);
-
-            foreach (var newSector in newSectors)
-            {
-                if (mergedDict.TryGetValue(newSector.Path, out AxlSector existingSector))
-                {
-                    Dictionary<int, AxlNodeDeletion> mergedNodes =
-                        existingSector.NodeDeletions.ToDictionary(x => x.Index);
-                    foreach (var newNode in newSector.NodeDeletions)
-                    {
-                        if (mergedNodes.TryGetValue(newNode.Index, out AxlNodeDeletion existingNode))
-                        {
-                            if (newNode.ActorDeletions != null || 
-                                newNode.ActorDeletions?.Count > 0 ||
-                                existingNode.ActorDeletions?.Count != null ||
-                                existingNode.ActorDeletions?.Count > 0)
-                            {
-                                existingNode.ExpectedActors =  newNode.ExpectedActors ?? existingNode.ExpectedActors;
-                                HashSet<int> actorSet = new HashSet<int>(newNode.ActorDeletions ?? new List<int>());
-                                actorSet.UnionWith(existingNode.ActorDeletions ?? new List<int>());
-                                existingNode.ActorDeletions = actorSet.ToList();
-                                changeCount.newActors += actorSet.Count - existingNode.ActorDeletions.Count;
-                            }
-                        }
-                        else
-                        {
-                            mergedNodes[newNode.Index] = newNode;
-                            changeCount.newNodes++;
-                            changeCount.newActors += newNode.ActorDeletions?.Count ?? 0;
-                        }
-                    }
-                    existingSector.NodeDeletions = mergedNodes.Values.ToList();
-                }
-                else
-                {
-                    mergedDict[newSector.Path] = newSector;
-                    changeCount.newSectors++;
-                    changeCount.newNodes += newSector.NodeDeletions?.Count ?? 0;
-                    foreach (var newNode in newSector.NodeDeletions)
-                        changeCount.newActors += newNode.ActorDeletions?.Count ?? 0;
-                }
-            }
-            var mergedSectors = mergedDict.Values.ToList();
-            return (mergedSectors, changeCount);
+            return UtilService.MergeAxlSectors(existingRemovalFile.Streaming.Sectors, newRemovals.Streaming.Sectors);
         }
         Logger.Error($"Failed to parse existing removal file {filepath}");
         return (null, null);
-        */
+        
     }
     
     private void SaveFile(AxlModificationFile removalFile, string? customRemovalDirectory = null, string? customRemovalFilename = null)
@@ -120,7 +68,7 @@ public class ProcessService
             outputFilePath = Path.Combine(customRemovalDirectory, fileName) + ".xl";
         }
 
-        MergeChanges mergeChanges = new();
+        SectorMergeChangesCount mergeChanges = new();
         if (_settings.SaveMode == SaveFileMode.Enum.Extend && File.Exists(outputFilePath))
         {
            var mergedSectors = MergeSectors(outputFilePath, removalFile);
@@ -192,10 +140,124 @@ public class ProcessService
         File.WriteAllText(newOutputFilePath, outputContent);
         Logger.Info($"Created file {newOutputFilePath}");
     }
-    private async Task<AxlNodeDeletion?> ProcessNodeAsync(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index, AbbrSector sector, SelectionInput selectionBox)
+
+
+    private static List<ProxyNodeTracker> ResolveProxyNodes(ConcurrentBag<ProxyNodeTracker> proxyTracker)
+    {
+        var dict = new Dictionary<ulong, ProxyNodeTracker>();
+
+        foreach (var proxy in proxyTracker)
+        {
+            if (dict.TryGetValue(proxy.ProxyRef, out var existingProxy))
+            {
+                if (existingProxy.IsResolved && proxy.IsResolved)
+                {
+                    Logger.Warning($"Proxy {proxy.ProxyRef} has been resolved twice to {proxy.NodeInfo?.Index} in {proxy.NodeInfo?.SectorPath} and {existingProxy.NodeInfo?.Index} in {existingProxy.NodeInfo?.SectorPath}.");
+                    continue;
+                }
+
+                if (proxy.IsResolved)
+                {
+                    existingProxy.IsResolved = true;
+                    existingProxy.NodeInfo = proxy.NodeInfo;
+                }
+                existingProxy.NodesUnderProxyDiff += proxy.NodesUnderProxyDiff;
+            }
+            else
+            {
+                dict.Add(proxy.ProxyRef, proxy);
+            }
+        }
+        
+        var unresolvedProxies = dict.Where(x => !x.Value.IsResolved).Select(x => x.Value).ToList();
+        if (unresolvedProxies.Count > 0)
+        {
+            Logger.Warning($"Found {unresolvedProxies.Count} unresolved proxies. For details see log file.");
+            
+            string unresolvedProxyString = "\n";
+            foreach (var proxy in unresolvedProxies)
+            {
+                unresolvedProxyString += $"{proxy.ProxyRef} : {proxy.NodeInfo?.Index} in {proxy.NodeInfo?.SectorPath}\n";
+            }
+            Logger.Warning($"Unresolved Proxies are {unresolvedProxyString}", true);
+        }
+        
+        return dict.Values.Except(unresolvedProxies).ToList();
+    }
+
+    private List<AxlSector> ProcessProxyNodes(ConcurrentBag<ProxyNodeTracker> proxyTracker)
+    {
+        var resolvedProxies = ResolveProxyNodes(proxyTracker);
+        
+        var sectors = new List<AxlSector>();
+        var modifiedProxies = resolvedProxies
+            .Where(p => p.NodeInfo != null && p.IsResolved)
+            .Where(p => p.NodesUnderProxyDiff != 0)
+            .GroupBy(p => p.NodeInfo!.SectorPath) 
+            .ToDictionary(
+                g => g.Key, 
+                g => g.ToList()
+            );
+
+        foreach (var sector in modifiedProxies)
+        {
+            var nodes = new List<AxlNodeMutation>();
+            foreach (var proxy in sector.Value)
+            {
+                nodes.Add(new AxlProxyNodeMutationMutation
+                {
+                    DebugName = proxy.NodeInfo.DebugName,
+                    Index = proxy.NodeInfo.Index,
+                    NbNodesUnderProxyDiff = proxy.NodesUnderProxyDiff,
+                    ProxyRef = proxy.ProxyRef,
+                    Type = proxy.NodeInfo.Type
+                });
+            }
+            
+            // not a huge fan of this, but it's cached, so it shouldn't be too bad, would be better to pass the sector through or have a path expected nodes lookup table
+            var abbrSector = _gameFileService.GetSector(sector.Key);
+
+            sectors.Add(new AxlSector
+            {
+                ExpectedNodes = abbrSector.NodeData.Length,
+                Path = sector.Key,
+                NodeMutations = nodes
+            });
+        }
+        return sectors;
+    }
+    
+    private static bool IsNodeTypeProxy(NodeTypeProcessingOptions.Enum nodeType)
+    {
+        return nodeType.ToString().ToLower().Contains("proxy");
+    }
+    
+    private async Task<AxlNodeDeletion?> ProcessNodeAsync(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index, AbbrSector sector, SelectionInput selectionBox, string sectorPath)
     {
         var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
 
+        if (IsNodeTypeProxy(nodeEntry.Type))
+        {
+            if (nodeEntry.ProxyRef == null)
+                return null;
+            
+            proxyTracker.Add(new ProxyNodeTracker
+            {
+                IsResolved = true,
+                ProxyRef = (ulong)nodeEntry.ProxyRef,
+                NodeInfo = new ProxyNodeInfo
+                {
+                    Type = nodeEntry.Type.ToString(),
+                    Index = index,
+                    DebugName = nodeEntry.DebugName,
+                    SectorPath = sectorPath
+                },
+                NodesUnderProxyDiff = 0
+            });
+            
+            return null;
+        }
+        
         if (_settings.NukeOccluders && nodeEntry.Type.ToString().ToLower().Contains("occluder"))
         {
             return new AxlNodeDeletion()
@@ -313,6 +375,16 @@ public class ProcessService
                 
                 if (isInside && !isInstanced)
                 {
+                    if (nodeEntry.ProxyRef != null)
+                    {
+                        proxyTracker.Add(new ProxyNodeTracker
+                        {
+                            IsResolved = false,
+                            NodesUnderProxyDiff = -1,
+                            ProxyRef = (ulong)nodeEntry.ProxyRef
+                        });
+                    }
+                    
                     return new AxlNodeDeletion()
                     {
                         Index = index,
@@ -322,7 +394,17 @@ public class ProcessService
                 }
                 if (isInside && isInstanced)
                 {
-                    return new AxlInstancedNodeDeletion()
+                    if (nodeEntry.ProxyRef != null)
+                    {
+                        proxyTracker.Add(new ProxyNodeTracker
+                        {
+                            IsResolved = false,
+                            NodesUnderProxyDiff = -indices.Count,
+                            ProxyRef = (ulong)nodeEntry.ProxyRef
+                        });
+                    }
+                    
+                    return new AxlInstancedNodeDeletion
                     {
                         Index = index,
                         Type = nodeEntry.Type.ToString(),
@@ -396,7 +478,17 @@ public class ProcessService
                 }
                 if (actorRemoval.Count > 0)
                 {
-                    return new AxlCollisionNodeDeletion()
+                    if (nodeEntry.ProxyRef != null)
+                    {
+                        proxyTracker.Add(new ProxyNodeTracker
+                        {
+                            IsResolved = false,
+                            NodesUnderProxyDiff = -1,
+                            ProxyRef = (ulong)nodeEntry.ProxyRef
+                        });
+                    }
+                    
+                    return new AxlCollisionNodeDeletion
                         {
                             Index = index,
                             Type = nodeEntry.Type.ToString(),
@@ -412,7 +504,17 @@ public class ProcessService
                     var intersection = selectionBox.Obb.Contains(transform.Position);
                     if (intersection != ContainmentType.Disjoint)
                     {
-                        return new AxlNodeDeletion()
+                        if (nodeEntry.ProxyRef != null)
+                        {
+                            proxyTracker.Add(new ProxyNodeTracker
+                            {
+                                IsResolved = false,
+                                NodesUnderProxyDiff = -1,
+                                ProxyRef = (ulong)nodeEntry.ProxyRef
+                            });
+                        }
+                        
+                        return new AxlNodeDeletion
                         {
                             Index = index,
                             Type = nodeEntry.Type.ToString(),
@@ -439,7 +541,7 @@ public class ProcessService
         {
             try
             {
-                return await ProcessNodeAsync(nodeDataEntry, index, sector, selectionBox);
+                return await ProcessNodeAsync(nodeDataEntry, index, sector, selectionBox, sectorPath);
             }
             finally
             {
@@ -628,6 +730,8 @@ public class ProcessService
         _progress.Reset();
         _progress.SetWeight(0.1f, 0.85f, 0.05f);
         
+        proxyTracker.Clear();
+        
         bool customRemovalFileProvided = customRemovalFile != null;
         bool customRemovalDirectoryProvided = customRemovalDirectory != null;
         if (customRemovalFileProvided != customRemovalDirectoryProvided)
@@ -689,16 +793,20 @@ public class ProcessService
             CacheService.Instance.StopListening();
         }
         
-        _progress.AddTarget(2, Progress.ProgressSections.Finalization);
-        List<AxlSector> sectors = new();
+        _progress.AddTarget(3, Progress.ProgressSections.Finalization);
+        List<AxlSector> sectorRemovals = new();
         foreach (var sector in sectorsOutputRaw)
         {
             if (sector != null)
             {
-                sectors.Add(sector);
+                sectorRemovals.Add(sector);
             }
         }
         _progress.AddCurrent(1, Progress.ProgressSections.Finalization);
+        
+        var sectorMutations = ProcessProxyNodes(proxyTracker);
+        var sectors = UtilService.MergeAxlSectors(sectorRemovals, sectorMutations).Item1;
+        
         if (sectors.Count == 0)
         {
             Logger.Warning("No sectors intersect, no output file generated!");
@@ -716,7 +824,8 @@ public class ProcessService
             int nodeCount = 0;
             foreach (var sector in sectors)
             {
-                nodeCount += sector.NodeDeletions.Count;
+                nodeCount += sector?.NodeDeletions?.Count ?? 0;
+                nodeCount += sector?.NodeMutations?.Count ?? 0;
             }
             Logger.Success($"Found {nodeCount} nodes across {sectors.Count} sectors.");
             

@@ -41,9 +41,9 @@ public class AxlNodeBase
     
     [JsonProperty("debugName")]
     public string? DebugName { get; set; }
-    
+
     [JsonProperty("proxyRef")]
-    public string? ProxyRef { get; set; }
+    public ulong? ProxyRef { get; set; }
 }
 
 public class AxlNodeDeletion : AxlNodeBase { }

@@ -56,6 +56,8 @@ public class DirectAbbrSectorParser
             var parsedTypeSuccess = NodeTypeProcessingOptions.Enum.TryParse(type, out NodeTypeProcessingOptions.Enum parsedType);
             if (!parsedTypeSuccess)
                 Logger.Error($"Invalid node type: {type}");
+
+            var proxyRef = node.Chunk?.SourcePrefabHash;
             
             ulong? sectorHash = null;
             AbbrCollisionActors[]? actors = null;
@@ -172,7 +174,8 @@ public class DirectAbbrSectorParser
                 Actors = actors,
                 DebugName = debugName,
                 ResourcePath = resourcePath,
-                Type = parsedType
+                Type = parsedType,
+                ProxyRef = proxyRef
             };
             
             nodeIndex++;
