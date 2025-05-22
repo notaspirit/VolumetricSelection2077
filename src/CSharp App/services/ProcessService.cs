@@ -112,7 +112,8 @@ public class ProcessService
             var newSectorS = mergeChanges?.newSectors != 1 ? "s" : "";
             var newNodesS = mergeChanges?.newNodes != 1 ? "s" : "";
             var newActorsS = mergeChanges?.newActors != 1 ? "s" : "";
-            Logger.Info($"Extended file {outputFilePath} with {mergeChanges.newSectors} new sector{newSectorS}, {mergeChanges.newNodes} new node{newNodesS}, {mergeChanges.newActors} new actor{newActorsS}.");
+            var newInstances = mergeChanges?.newInstances != 1 ? "s" : "";
+            Logger.Info($"Extended file {outputFilePath} with {mergeChanges?.newSectors} new sector{newSectorS}, {mergeChanges?.newNodes} new node{newNodesS}, {mergeChanges?.newInstances} new instance{newInstances}, {mergeChanges?.newActors} new actor{newActorsS}.");
             return;
         }
                 
