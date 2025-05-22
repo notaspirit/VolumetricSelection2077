@@ -31,16 +31,13 @@ namespace VolumetricSelection2077.Services
             var mergedSectors = new Dictionary<string, AxlSector>();
             foreach (var sector in sectors1.Concat(sectors2))
             {
-                Logger.Debug($"All Mutations Proxy before merging: {sector?.NodeMutations?.All(x => x is AxlProxyNodeMutationMutation)}");
                 if (!mergedSectors.TryGetValue(sector.Path, out var existingSector))
                 {
                     mergedSectors[sector.Path] = sector.DeepClone();
-                    Logger.Debug($"All Mutations Proxy after cloning: {mergedSectors[sector.Path]?.NodeMutations?.All(x => x is AxlProxyNodeMutationMutation)}");
                 }
                 else
                 {
                     MergeSectorNodes(existingSector, sector);
-                    Logger.Debug($"All Mutations Proxy after merging: {existingSector?.NodeMutations?.All(x => x is AxlProxyNodeMutationMutation)}");
                 }
             }
 

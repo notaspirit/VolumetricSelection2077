@@ -178,8 +178,6 @@ public class ProcessService
                 sector?.NodeMutations?.Add(proxyNode.Value);
             }
         }
-
-        Logger.Debug($"All Mutations Proxy: {result.SelectMany(x => x.NodeMutations).All(x => x is AxlProxyNodeMutationMutation)}");
         return result;
     }
     
