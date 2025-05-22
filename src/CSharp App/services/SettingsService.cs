@@ -42,6 +42,7 @@ public class SettingsService
         DidUpdate = false;
         CETInstallLocation = "";
         WindowRecoveryState = new();
+        ResolveProxies = true;
     }
     
     public static SettingsService Instance
@@ -102,6 +103,8 @@ public class SettingsService
     
     public WindowRecoveryState WindowRecoveryState { get; set; }
     
+    public bool ResolveProxies { get; set; }
+    
     /// <summary>
     /// Loads the settings or creates a new settings file if it doesn't exist
     /// </summary>
@@ -152,6 +155,7 @@ public class SettingsService
                     CETInstallLocation = settings.CETInstallLocation;
                     CacheModdedResources = settings.CacheModdedResources;
                     WindowRecoveryState = settings.WindowRecoveryState;
+                    ResolveProxies = settings.ResolveProxies;
                 }
             }
             catch (Exception ex)

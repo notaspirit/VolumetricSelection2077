@@ -190,7 +190,7 @@ public class ProcessService
     {
         var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
 
-        if (IsNodeTypeProxy(nodeEntry.Type))
+        if (IsNodeTypeProxy(nodeEntry.Type) && _settings.ResolveProxies)
         {
             if (nodeEntry.ProxyRef == null)
                 return null;

@@ -154,7 +154,7 @@ namespace VolumetricSelection2077.Services
                     var nodesReferencingThisProxy = sectors.Values
                         .Where(s => s.NodeDeletions != null)
                         .SelectMany(s => s.NodeDeletions)
-                        .Where(n => n is AxlNodeBase nodeBase && nodeBase.ProxyRef == proxyNode.ProxyRef)
+                        .Where(n => n is AxlNodeBase nodeBase && nodeBase.ProxyRef == proxyNode.ProxyRef && !nodeBase.Type.ToLower().Contains("proxy"))
                         .ToList();
 
                     var nbNodesChange = 0;

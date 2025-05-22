@@ -377,6 +377,23 @@
                         ItemsSource="{Binding SaveFileModes}"
                         Margin="5"
                         SelectedItem="{Binding SelectedSaveFileMode, Mode=TwoWay}" />
+                    <TextBlock
+                        Grid.Column="0"
+                        Grid.Row="1"
+                        HorizontalAlignment="Left"
+                        IsVisible="{Binding ParameterSelectionVisibility}"
+                        Margin="5"
+                        Text="{x:Static resources:Labels.ResolveProxies}"
+                        ToolTip.Tip="{x:Static resources:ToolTips.ResolveProxies}"
+                        VerticalAlignment="Center" />
+                    <ToggleSwitch
+                        Grid.Column="1"
+                        Grid.Row="1"
+                        IsChecked="{Binding Settings.ResolveProxies}"
+                        IsVisible="{Binding ParameterSelectionVisibility}"
+                        Margin="5"
+                        OffContent="Delete"
+                        OnContent="Resolve" />
                 </Grid>
             </Grid>
             <Grid Grid.Row="6" Margin="5">
