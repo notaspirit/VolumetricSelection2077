@@ -157,6 +157,15 @@ namespace VolumetricSelection2077.Services
                 }
             }
             Logger.Error($"Total proxy nodes after {sectors.Values.Sum(s => s.NodeMutations?.Count ?? 0)}");
+            
+            foreach (var sector in sectors.Values.ToList())
+            {
+                if ((sector.NodeMutations == null || sector.NodeMutations.Count == 0) &&
+                    (sector.NodeDeletions == null || sector.NodeDeletions.Count == 0))
+                {
+                    sectors.Remove(sector.Path);
+                }
+            }
         }
 
         public static SectorMergeChangesCount CalculateDifference(AxlModificationFile merged, AxlModificationFile original)
