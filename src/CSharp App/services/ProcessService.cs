@@ -35,6 +35,7 @@ public class ProcessService
     }
 
     private ConcurrentBag<KeyValuePair<string, AxlProxyNodeMutationMutation>> proxyNodes = new();
+    private Dictionary<string, int> sectorPathToExpectedNodes = new();
     
     private (AxlModificationFile?, SectorMergeChangesCount?)  MergeSectors(string filepath, AxlModificationFile newRemovals)
     {
@@ -152,16 +153,22 @@ public class ProcessService
         {
             if (result.All(x => x.Path != proxyNode.Key))
             {
-                var sector = _gameFileService.GetSector(proxyNode.Key);
-                if (sector == null)
+                var expectedNodes = 0;
+                if (!sectorPathToExpectedNodes.TryGetValue(proxyNode.Key, out expectedNodes))
                 {
-                    Logger.Warning($"Failed to get sector {proxyNode.Key}");
-                    continue;
+                    var sector = _gameFileService.GetSector(proxyNode.Key);
+                    if (sector == null)
+                    {
+                        Logger.Warning($"Failed to get sector {proxyNode.Key}");
+                        continue;
+                    }
+                    expectedNodes = sector.NodeData.Length;
                 }
+
                 result.Add(new AxlSector
                 {
                     Path = proxyNode.Key,
-                    ExpectedNodes = sector.NodeData.Length,
+                    ExpectedNodes = expectedNodes,
                     NodeMutations = new List<AxlNodeMutation> { proxyNode.Value }
                 });
             }
@@ -592,7 +599,7 @@ public class ProcessService
                 Logger.Warning($"Failed to find sector {streamingSectorNameFix}");
                 return null;
             }
-                
+            sectorPathToExpectedNodes.TryAdd(streamingSectorNameFix, sector.NodeData.Length);
             var (successPSS, errorPSS, resultPss) = await ProcessStreamingsector(sector, streamingSectorName, CETOutputFile);
             if (successPSS)
             { 
@@ -640,6 +647,7 @@ public class ProcessService
         _progress.SetWeight(0.1f, 0.85f, 0.05f);
         
         proxyNodes.Clear();
+        sectorPathToExpectedNodes.Clear();
         
         bool customRemovalFileProvided = customRemovalFile != null;
         bool customRemovalDirectoryProvided = customRemovalDirectory != null;
