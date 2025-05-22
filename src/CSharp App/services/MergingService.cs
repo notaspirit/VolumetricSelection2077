@@ -5,9 +5,16 @@ using VolumetricSelection2077.Models;
 
 namespace VolumetricSelection2077.Services
 {
-    public static class MergingService
+    public class MergingService
     {
-        public static AxlModificationFile MergeAxlFiles(AxlModificationFile axl1, AxlModificationFile axl2)
+        private GameFileService _gameFileService;
+        
+        public MergingService()
+        {
+            _gameFileService = GameFileService.Instance;
+        }
+        
+        public AxlModificationFile MergeAxlFiles(AxlModificationFile axl1, AxlModificationFile axl2)
         {
             var result = new AxlModificationFile
             {
@@ -19,7 +26,7 @@ namespace VolumetricSelection2077.Services
             return result;
         }
 
-        public static List<AxlSector> MergeSectors(List<AxlSector> sectors1, List<AxlSector> sectors2)
+        public List<AxlSector> MergeSectors(List<AxlSector> sectors1, List<AxlSector> sectors2)
         {
             var mergedSectors = new Dictionary<string, AxlSector>();
             foreach (var sector in sectors1.Concat(sectors2))
@@ -95,32 +102,58 @@ namespace VolumetricSelection2077.Services
                 var indexInTarget = target.FirstOrDefault(x => x.Index == mutation.Index);
                 if (indexInTarget == null)
                 {
-                    target.Add((AxlProxyNodeMutationMutation)mutation);
+                    target.Add(mutation);
                 }
             }
         }
-        
-        public static void RecalculateNbNodesUnderProxy(Dictionary<string, AxlSector> sectors)
+
+        public void ResolveNullProxyRefs(AxlSector sector)
         {
-            Logger.Error($"Total proxy nodes before {sectors.Values.Sum(s => s.NodeMutations?.Count ?? 0)}");
-            Logger.Debug($"All Mutations Proxy: {sectors.Values.SelectMany(x => x.NodeMutations).All(x => x is AxlProxyNodeMutationMutation)}");
+            var nullProxyRefs = sector.NodeDeletions?.Where(x => x.ProxyRef == null || x.ProxyRef == 0).ToList();
+            if (nullProxyRefs?.Count == 0 || nullProxyRefs == null)
+                return;
+
+            var abbrsector = _gameFileService.GetSector(sector.Path);;
+            foreach (var nullProxyRefNode in nullProxyRefs)
+            {
+                nullProxyRefNode.ProxyRef = abbrsector?.Nodes[abbrsector.NodeData[nullProxyRefNode.Index].NodeIndex].ProxyRef;
+            }
+        }
+        
+        public void RecalculateNbNodesUnderProxy(Dictionary<string, AxlSector> sectors)
+        {
             foreach (var sector in sectors.Values)
             {
+                ResolveNullProxyRefs(sector);
+                
                 if (sector.NodeMutations == null || sector.NodeMutations.Count == 0)
                     continue;
-
                 for (var i = sector.NodeMutations.Count - 1; i >= 0; i--)
                 {
                     var nodeMutation = sector.NodeMutations[i];
                     if (nodeMutation is not AxlProxyNodeMutationMutation proxyNode)
-                        continue;
+                    {
+                        if (nodeMutation.Type.ToLower().Contains("proxy"))
+                        {
+                            nodeMutation = new AxlProxyNodeMutationMutation()
+                            {
+                                Index = nodeMutation.Index,
+                                Type = nodeMutation.Type,
+                                ProxyRef = nodeMutation.ProxyRef,
+                                NbNodesUnderProxyDiff = 0,
+                            };
+                            proxyNode = (AxlProxyNodeMutationMutation)nodeMutation;
+                        }
+                        else
+                            continue;
+                    }
+    
                     if (proxyNode.ProxyRef == null || proxyNode.ProxyRef == 0)
-                    { 
-                        Logger.Debug($"Proxy node {proxyNode.Index} has no proxy ref. Removing.");
-                        Logger.Debug($"nodeMutation index: {sector.NodeMutations.IndexOf(nodeMutation)}");
-                        Logger.Debug($"Removed {sector.NodeMutations.Remove(nodeMutation)}");
+                    {
+                        sector.NodeMutations.RemoveAt(i);
                         continue;
                     }
+                    
                     var nodesReferencingThisProxy = sectors.Values
                         .Where(s => s.NodeDeletions != null)
                         .SelectMany(s => s.NodeDeletions)
@@ -143,20 +176,16 @@ namespace VolumetricSelection2077.Services
                                 break;
                         }
                     }
-                    
+
                     if (nbNodesChange == 0)
                     {
-                        Logger.Debug($"No nodes referencing proxy {proxyNode.ProxyRef} in sector {sector.Path}. Removing.");
-                        Logger.Debug($"nodeMutation index: {sector.NodeMutations.IndexOf(nodeMutation)}");
-                        Logger.Debug($"Removed {sector.NodeMutations.Remove(nodeMutation)}");
-
+                        sector.NodeMutations.RemoveAt(i);
                         continue;
                     }
-                    Logger.Debug($"Setting nbNodesChange to {nbNodesChange} for proxy {proxyNode.ProxyRef} in sector {sector.Path}.");
+                    
                     proxyNode.NbNodesUnderProxyDiff = nbNodesChange;
                 }
             }
-            Logger.Error($"Total proxy nodes after {sectors.Values.Sum(s => s.NodeMutations?.Count ?? 0)}");
             
             foreach (var sector in sectors.Values.ToList())
             {
@@ -177,16 +206,20 @@ namespace VolumetricSelection2077.Services
                            merged.Streaming.Sectors.Sum(s => s.NodeMutations?.Count ?? 0) -
                            original.Streaming.Sectors.Sum(s => s.NodeDeletions?.Count ?? 0) -
                            original.Streaming.Sectors.Sum(s => s.NodeMutations?.Count ?? 0),
-                newActors = merged.Streaming.Sectors.SelectMany(s => s.NodeDeletions)
+                newActors = merged.Streaming.Sectors.Where(s => s.NodeDeletions != null)
+                                .SelectMany(s => s.NodeDeletions)
                                 .Where(n => n is AxlCollisionNodeDeletion)
                                 .Sum(n => (n as AxlCollisionNodeDeletion).ActorDeletions.Count) -
-                            original.Streaming.Sectors.SelectMany(s => s.NodeDeletions)
+                            original.Streaming.Sectors.Where(s => s.NodeDeletions != null)
+                                .SelectMany(s => s.NodeDeletions)
                                 .Where(n => n is AxlCollisionNodeDeletion)
                                 .Sum(n => (n as AxlCollisionNodeDeletion).ActorDeletions.Count),
-                newInstances = merged.Streaming.Sectors.SelectMany(s => s.NodeDeletions)
+                newInstances = merged.Streaming.Sectors.Where(s => s.NodeDeletions != null)
+                                   .SelectMany(s => s.NodeDeletions)
                                    .Where(n => n is AxlInstancedNodeDeletion)
                                    .Sum(n => (n as AxlInstancedNodeDeletion).InstanceDeletions.Count) -
-                               original.Streaming.Sectors.SelectMany(s => s.NodeDeletions)
+                               original.Streaming.Sectors.Where(s => s.NodeDeletions != null)
+                                   .SelectMany(s => s.NodeDeletions)
                                    .Where(n => n is AxlInstancedNodeDeletion)
                                    .Sum(n => (n as AxlInstancedNodeDeletion).InstanceDeletions.Count)
             };

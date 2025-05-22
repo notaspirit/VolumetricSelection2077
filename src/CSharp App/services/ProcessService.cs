@@ -24,12 +24,14 @@ public class ProcessService
 {
     private readonly SettingsService _settings;
     private readonly GameFileService _gameFileService;
+    private readonly MergingService _mergingService;
     private Progress _progress;
     public ProcessService()
     {
         _settings = SettingsService.Instance;
         _gameFileService = GameFileService.Instance;
         _progress = Progress.Instance;
+        _mergingService = new MergingService();
     }
 
     private ConcurrentBag<KeyValuePair<string, AxlProxyNodeMutationMutation>> proxyNodes = new();
@@ -41,7 +43,7 @@ public class ProcessService
         var existingRemovalFile = UtilService.TryParseAxlRemovalFile(fileContent);
         if (existingRemovalFile != null)
         {
-            var mergedFile = MergingService.MergeAxlFiles(existingRemovalFile, newRemovals);
+            var mergedFile = _mergingService.MergeAxlFiles(newRemovals, existingRemovalFile);
             var changes = MergingService.CalculateDifference(mergedFile, existingRemovalFile);
             return (mergedFile, changes);
         }
@@ -712,7 +714,7 @@ public class ProcessService
         _progress.AddCurrent(1, Progress.ProgressSections.Finalization);
 
         var sectorMutations = ProcessProxyNodes(proxyNodes);
-        var sectors = MergingService.MergeSectors(sectorRemovals, sectorMutations);
+        var sectors = _mergingService.MergeSectors(sectorRemovals, sectorMutations);
         
         _progress.AddCurrent(1, Progress.ProgressSections.Finalization);
         if (sectors.Count == 0)
