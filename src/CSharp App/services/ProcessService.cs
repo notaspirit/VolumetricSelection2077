@@ -607,7 +607,7 @@ public class ProcessService
                     Logger.Info("Building Sector Bounds...");
                     try
                     {
-                        await new BoundingBoxBuilderService().BuildBounds(BoundingBoxBuilderService.BuildBoundsMode.Vanilla);
+                        await _boundingBoxBuilderService.BuildBounds(BoundingBoxBuilderService.BuildBoundsMode.Vanilla);
                         Logger.Success("Vanilla Sector BBs       : OK");
                     }
                     catch (Exception e)
