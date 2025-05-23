@@ -408,8 +408,8 @@ public class CacheService
 
         if (!_settings.CacheEnabled)
         {
-            ClearDatabase(CacheDatabases.Vanilla);
-            ClearDatabase(CacheDatabases.Modded, true);
+            ClearDatabase(CacheDatabases.Vanilla, UtilService.ShouldResize(CacheDatabases.Vanilla, GetStats(), _settings.CacheDirectory));
+            ClearDatabase(CacheDatabases.Modded, UtilService.ShouldResize(CacheDatabases.Modded, GetStats(), _settings.CacheDirectory));
         }
             
         

@@ -19,8 +19,6 @@ namespace VolumetricSelection2077
         
         private bool showedDialog;
         private bool moveCache = true;
-
-        private const double ResizeAfterBytes = 1024 * 1024 * 1024; // 1GB
         
         public SettingsWindow()
         {
@@ -62,70 +60,39 @@ namespace VolumetricSelection2077
                 Logger.Error($"Failed to get stats for cache: {ex}");
             }
         }
-        
-        /// <summary>
-        /// Checks if there is enough space on the drive and if the change is significant enough to resize the database
-        /// </summary>
-        /// <param name="db"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentOutOfRangeException">if CacheDatabases.All is passed</exception>
-        private bool ShouldResize(CacheDatabases db)
-        {
-            FileSize sizeToRemove;
-            FileSize totalSize = new FileSize(_settingsViewModel.CacheStats.EstVanillaSize.Bytes + 
-                                              _settingsViewModel.CacheStats.EstModdedSize.Bytes +
-                                              _settingsViewModel.CacheStats.EstVanillaBoundsSize.Bytes +
-                                              _settingsViewModel.CacheStats.EstModdedBoundsSize.Bytes);
-            
-            switch (db)
-            {
-                case CacheDatabases.Vanilla:
-                    sizeToRemove = _settingsViewModel.CacheStats.EstVanillaSize;
-                    break;
-                case CacheDatabases.Modded:
-                    sizeToRemove = _settingsViewModel.CacheStats.EstModdedSize;
-                    break;
-                case CacheDatabases.VanillaBounds:
-                    sizeToRemove = _settingsViewModel.CacheStats.EstVanillaBoundsSize;
-                    break;
-                case CacheDatabases.ModdedBounds:
-                    sizeToRemove = _settingsViewModel.CacheStats.EstModdedBoundsSize;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(db), db, null);
-            }
-            
-            var cacheDriveInfo = new DriveInfo(_settingsViewModel.Settings.CacheDirectory);
-            var freeSpace = (ulong)cacheDriveInfo.AvailableFreeSpace;
-            
-            return sizeToRemove.Bytes > ResizeAfterBytes && freeSpace > totalSize.Bytes - sizeToRemove.Bytes;
-        }
-        
         private async void ClearVanillaCache_Click(object sender, RoutedEventArgs e)
         {
             if(!_cacheService.IsInitialized) return;
-            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Vanilla, ShouldResize(CacheDatabases.Vanilla)));
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Vanilla,
+                UtilService.ShouldResize(CacheDatabases.Vanilla, _settingsViewModel.CacheStats,
+                    _settingsViewModel.Settings.CacheDirectory)));
             UpdateCacheStats();
         }
         
         private async void ClearModdedCache_Click(object sender, RoutedEventArgs e)
         {
             if(!_cacheService.IsInitialized) return;
-            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Modded, ShouldResize(CacheDatabases.Modded)));;
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Modded,
+                UtilService.ShouldResize(CacheDatabases.Modded, _settingsViewModel.CacheStats,
+                    _settingsViewModel.Settings.CacheDirectory)));
             UpdateCacheStats();
         }
         
         private async void ClearVanillaBoundsCache_Click(object sender, RoutedEventArgs e)
         {
             if(!_cacheService.IsInitialized) return;
-            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.VanillaBounds, ShouldResize(CacheDatabases.VanillaBounds)));
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.VanillaBounds,
+                UtilService.ShouldResize(CacheDatabases.VanillaBounds, _settingsViewModel.CacheStats,
+                    _settingsViewModel.Settings.CacheDirectory)));
             UpdateCacheStats();
         }
         
         private async void ClearModdedBoundsCache_Click(object sender, RoutedEventArgs e)
         {
             if(!_cacheService.IsInitialized) return;
-            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.ModdedBounds, ShouldResize(CacheDatabases.ModdedBounds)));
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.ModdedBounds,
+                UtilService.ShouldResize(CacheDatabases.ModdedBounds, _settingsViewModel.CacheStats,
+                    _settingsViewModel.Settings.CacheDirectory)));
             UpdateCacheStats();
         }
 
