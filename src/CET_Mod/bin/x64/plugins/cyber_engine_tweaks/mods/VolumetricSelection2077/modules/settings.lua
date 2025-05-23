@@ -65,7 +65,6 @@ local function init(self)
         self.unpreciseRotation = savedSettings.unpreciseRotation or 1
         self.preciseRotation = savedSettings.preciseRotation or 0.01
         self.precisionBool = savedSettings.precisionBool or false
-        self.RHTRange = savedSettings.RHTRange or 120
         if self.precisionBool == true then
             self.currentMove = self.preciseMove
             self.currentRotation = self.preciseRotation
@@ -83,7 +82,6 @@ local function init(self)
         self.currentRotation = self.unpreciseRotation
         self.preciseRotation = 0.01
         self.precisionBool = false
-        self.RHTRange = 120
     end
 end
 
@@ -106,7 +104,6 @@ local function saveSettings()
         unpreciseRotation = settingsInst.unpreciseRotation,
         preciseRotation = settingsInst.preciseRotation,
         selectionBox = settingsInst.selectionBox,
-        RHTRange = settingsInst.RHTRange
     }
     
     local settingsString = jsonUtils.TableToJSON(settingsTable)
@@ -139,7 +136,6 @@ function settings:update(settingType, value)  -- Changed parameter name from 'ty
         unpreciseRotation = function(v) return type(v) == "number" end,
         preciseRotation = function(v) return type(v) == "number" end,
         selectionBox = function(v) return v == nil or v.__type == "visualizationBox" or v.__type == "box" end,
-        RHTRange = function(v) return type(v) == "number" end
     }
 
     -- Check if valid type and value

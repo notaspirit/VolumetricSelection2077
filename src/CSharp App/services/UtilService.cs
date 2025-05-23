@@ -111,5 +111,48 @@ namespace VolumetricSelection2077.Services
                 return false;
             return true;
         }
+        
+                
+        /// <summary>
+        /// Checks if there is enough space on the drive and if the change is significant enough to resize the database
+        /// </summary>
+        /// <param name="db">database to calculate for</param>
+        /// <param name="stats">current cache stats</param>
+        /// <param name="cacheDirectory">current cache directory</param>
+        /// <param name="resizeAfterBytes">threshold for resizing</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentOutOfRangeException">if CacheDatabases.All is passed</exception>
+        public static bool ShouldResize(CacheDatabases db, CacheService.CacheStats stats, string cacheDirectory, ulong resizeAfterBytes = 1024 * 1024 * 1024)
+        {
+            FileSize sizeToRemove;
+            FileSize totalSize = new FileSize(stats.EstVanillaSize.Bytes + 
+                                              stats.EstModdedSize.Bytes +
+                                              stats.EstVanillaBoundsSize.Bytes +
+                                              stats.EstModdedBoundsSize.Bytes);
+            
+            switch (db)
+            {
+                case CacheDatabases.Vanilla:
+                    sizeToRemove = stats.EstVanillaSize;
+                    break;
+                case CacheDatabases.Modded:
+                    sizeToRemove = stats.EstModdedSize;
+                    break;
+                case CacheDatabases.VanillaBounds:
+                    sizeToRemove = stats.EstVanillaBoundsSize;
+                    break;
+                case CacheDatabases.ModdedBounds:
+                    sizeToRemove = stats.EstModdedBoundsSize;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(db), db, null);
+            }
+            
+            var cacheDriveInfo = new DriveInfo(cacheDirectory);
+            var freeSpace = (ulong)cacheDriveInfo.AvailableFreeSpace;
+            
+            return sizeToRemove.Bytes > resizeAfterBytes && freeSpace > totalSize.Bytes - sizeToRemove.Bytes;
+        }
+
     }
 }

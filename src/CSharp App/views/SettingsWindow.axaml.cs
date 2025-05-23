@@ -6,6 +6,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Interactivity;
+using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
 using VolumetricSelection2077.views;
 
@@ -62,14 +63,36 @@ namespace VolumetricSelection2077
         private async void ClearVanillaCache_Click(object sender, RoutedEventArgs e)
         {
             if(!_cacheService.IsInitialized) return;
-            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Vanilla, true));
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Vanilla,
+                UtilService.ShouldResize(CacheDatabases.Vanilla, _settingsViewModel.CacheStats,
+                    _settingsViewModel.Settings.CacheDirectory)));
             UpdateCacheStats();
         }
         
         private async void ClearModdedCache_Click(object sender, RoutedEventArgs e)
         {
             if(!_cacheService.IsInitialized) return;
-            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Modded, true));
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Modded,
+                UtilService.ShouldResize(CacheDatabases.Modded, _settingsViewModel.CacheStats,
+                    _settingsViewModel.Settings.CacheDirectory)));
+            UpdateCacheStats();
+        }
+        
+        private async void ClearVanillaBoundsCache_Click(object sender, RoutedEventArgs e)
+        {
+            if(!_cacheService.IsInitialized) return;
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.VanillaBounds,
+                UtilService.ShouldResize(CacheDatabases.VanillaBounds, _settingsViewModel.CacheStats,
+                    _settingsViewModel.Settings.CacheDirectory)));
+            UpdateCacheStats();
+        }
+        
+        private async void ClearModdedBoundsCache_Click(object sender, RoutedEventArgs e)
+        {
+            if(!_cacheService.IsInitialized) return;
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.ModdedBounds,
+                UtilService.ShouldResize(CacheDatabases.ModdedBounds, _settingsViewModel.CacheStats,
+                    _settingsViewModel.Settings.CacheDirectory)));
             UpdateCacheStats();
         }
 
