@@ -613,8 +613,8 @@ public class ProcessService
                     catch (Exception e)
                     {
                         Logger.Exception(e, $"Failed to build sector bounds with error {e.Message}");
-                        var failedToFetchRemoteDialogResult = await _dialogService.ShowDialog("Failed to build sector bounds!", "Failed to build sector bounds, do you want to retry or fetch them from remote?", ["Retry", "Fetch Remote", "Cancel"]);
-                        switch (failedToFetchRemoteDialogResult)
+                        var failedToBuildSectorBoundsDialog = await _dialogService.ShowDialog("Failed to build sector bounds!", "Failed to build sector bounds, do you want to retry or fetch them from remote?", ["Retry", "Fetch Remote", "Cancel"]);
+                        switch (failedToBuildSectorBoundsDialog)
                         {
                             case 0:
                                 goto BuildSectorBBs;
