@@ -4,9 +4,11 @@ using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
 using VolumetricSelection2077.Models;
-using WolvenKit.Interfaces.Extensions;
+using VolumetricSelection2077.Converters;
+using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
+using JsonException = Newtonsoft.Json.JsonException;
 
 namespace VolumetricSelection2077.Services
 {
@@ -59,20 +61,42 @@ namespace VolumetricSelection2077.Services
 
         public static AxlModificationFile? TryParseAxlRemovalFile(String input)
         {
+            YamlException? yamlEx = null;
+            JsonException? jsonEx = null;
+            
+            var options = new JsonSerializerSettings 
+            {
+                Converters = { new AxlNodeDeletionConverter(), new AxlNodeMutationConverter() }
+            };
+
             try
             {
-                return JsonConvert.DeserializeObject<AxlModificationFile>(input);
+                return JsonConvert.DeserializeObject<AxlModificationFile>(input, options);
             }
-            catch (JsonException) { }
-            
+            catch (JsonException ex)
+            {
+                jsonEx = ex;
+            }
+
             try
             {
                 var deserializer = new DeserializerBuilder()
                     .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                    .WithTypeConverter(new AxlNodeDeletionTypeConverter())
+                    .WithTypeConverter(new AxlNodeMutationTypeConverter())
+                    .IgnoreUnmatchedProperties()
                     .Build();
                 return deserializer.Deserialize<AxlModificationFile>(input);
             }
-            catch (YamlDotNet.Core.YamlException) { }
+            catch (YamlException ex)
+            {
+                yamlEx = ex;
+            }
+            
+            if (jsonEx != null)
+                Logger.Exception(jsonEx, "Failed to parse Axl Modification File as json");
+            if (yamlEx != null)
+                Logger.Exception(yamlEx, "Failed to parse Axl Modification File as yaml");
             
             return null;
         }

@@ -196,29 +196,31 @@ namespace VolumetricSelection2077.Services
 
         public static SectorMergeChangesCount CalculateDifference(AxlModificationFile merged, AxlModificationFile original)
         {
+            int CountNodeDeletions(List<AxlSector> sectors) =>
+                sectors.Sum(s => s.NodeDeletions?.Count ?? 0);
+
+            int CountNodeMutations(List<AxlSector> sectors) =>
+                sectors.Sum(s => s.NodeMutations?.Count ?? 0);
+
+            int CountCollisionActors(List<AxlSector> sectors) =>
+                sectors.SelectMany(s => s.NodeDeletions ?? Enumerable.Empty<AxlNodeDeletion>())
+                    .OfType<AxlCollisionNodeDeletion>()
+                    .Sum(d => d.ActorDeletions?.Count ?? 0);
+
+            int CountInstanceDeletions(List<AxlSector> sectors) =>
+                sectors.SelectMany(s => s.NodeDeletions ?? Enumerable.Empty<AxlNodeDeletion>())
+                    .OfType<AxlInstancedNodeDeletion>()
+                    .Sum(d => d.InstanceDeletions?.Count ?? 0);
+            
+            Logger.Debug($"Existing Actors: {CountCollisionActors(original.Streaming.Sectors)}, Existing Instances: {CountInstanceDeletions(original.Streaming.Sectors)}");
+            Logger.Debug($"Merged Actors: {CountCollisionActors(merged.Streaming.Sectors)}, Merged Instances: {CountInstanceDeletions(merged.Streaming.Sectors)}");
             return new SectorMergeChangesCount
             {
                 newSectors = merged.Streaming.Sectors.Count - original.Streaming.Sectors.Count,
-                newNodes = merged.Streaming.Sectors.Sum(s => s.NodeDeletions?.Count ?? 0) +
-                           merged.Streaming.Sectors.Sum(s => s.NodeMutations?.Count ?? 0) -
-                           original.Streaming.Sectors.Sum(s => s.NodeDeletions?.Count ?? 0) -
-                           original.Streaming.Sectors.Sum(s => s.NodeMutations?.Count ?? 0),
-                newActors = merged.Streaming.Sectors.Where(s => s.NodeDeletions != null)
-                                .SelectMany(s => s.NodeDeletions)
-                                .Where(n => n is AxlCollisionNodeDeletion)
-                                .Sum(n => (n as AxlCollisionNodeDeletion).ActorDeletions.Count) -
-                            original.Streaming.Sectors.Where(s => s.NodeDeletions != null)
-                                .SelectMany(s => s.NodeDeletions)
-                                .Where(n => n is AxlCollisionNodeDeletion)
-                                .Sum(n => (n as AxlCollisionNodeDeletion).ActorDeletions.Count),
-                newInstances = merged.Streaming.Sectors.Where(s => s.NodeDeletions != null)
-                                   .SelectMany(s => s.NodeDeletions)
-                                   .Where(n => n is AxlInstancedNodeDeletion)
-                                   .Sum(n => (n as AxlInstancedNodeDeletion).InstanceDeletions.Count) -
-                               original.Streaming.Sectors.Where(s => s.NodeDeletions != null)
-                                   .SelectMany(s => s.NodeDeletions)
-                                   .Where(n => n is AxlInstancedNodeDeletion)
-                                   .Sum(n => (n as AxlInstancedNodeDeletion).InstanceDeletions.Count)
+                newNodes = (CountNodeDeletions(merged.Streaming.Sectors) + CountNodeMutations(merged.Streaming.Sectors)) -
+                           (CountNodeDeletions(original.Streaming.Sectors) + CountNodeMutations(original.Streaming.Sectors)),
+                newActors = CountCollisionActors(merged.Streaming.Sectors) - CountCollisionActors(original.Streaming.Sectors),
+                newInstances = CountInstanceDeletions(merged.Streaming.Sectors) - CountInstanceDeletions(original.Streaming.Sectors)
             };
         }
     }
