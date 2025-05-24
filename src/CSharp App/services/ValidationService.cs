@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using System.IO;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using VolumetricSelection2077.Models;
@@ -10,10 +11,20 @@ using YamlDotNet.Serialization;
 
 namespace VolumetricSelection2077.Services
 {
-    public static class ValidationService
+    public class ValidationService
     {
-        private static readonly SettingsService _settingsService = SettingsService.Instance;
+        private readonly SettingsService _settingsService;
+        private readonly CacheService _cacheService;
+        private readonly GameFileService _gameFileService;
         public static readonly char[] InvalidCharacters = Path.GetInvalidPathChars().Concat(new[] { '?', '*', '"', '<', '>', '|', '/' }).Distinct().ToArray();
+
+        public ValidationService()
+        {
+            _settingsService = SettingsService.Instance;
+            _cacheService = CacheService.Instance;
+            _gameFileService = GameFileService.Instance;
+        }
+        
         public enum GamePathResult
         {
             InvalidGamePath,
@@ -82,18 +93,18 @@ namespace VolumetricSelection2077.Services
         /// Checks if Cache Initialization Status matches Settings
         /// </summary>
         /// <returns></returns>
-        public static bool ValidateCacheStatus()
+        public bool ValidateCacheStatus()
         {
-            return CacheService.Instance.IsInitialized;
+            return _cacheService.IsInitialized;
         }
 
         /// <summary>
         /// Checks if the GameFileService is initialized
         /// </summary>
         /// <returns></returns>
-        public static bool ValidateGameFileService()
+        public bool ValidateGameFileService()
         {
-            return GameFileService.Instance.IsInitialized;
+            return _gameFileService.IsInitialized;
         }
         
         /// <summary>
@@ -120,18 +131,18 @@ namespace VolumetricSelection2077.Services
         /// Checks if the all resourcePathFilters are valid regex
         /// </summary>
         /// <returns></returns>
-        public static bool ValidateResourcePathFilter()
+        public bool ValidateResourcePathFilter()
         {
-            return SettingsService.Instance.ResourceNameFilter.Count > 0 ? SettingsService.Instance.ResourceNameFilter.All(x => ValidateRegex(x)) : true;
+            return _settingsService.ResourceNameFilter.Count > 0 ? _settingsService.ResourceNameFilter.All(x => ValidateRegex(x)) : true;
         }
         
         /// <summary>
         /// Checks if the all debugNameFilters are valid regex
         /// </summary>
         /// <returns></returns>
-        public static bool ValidateDebugNameFilter()
+        public bool ValidateDebugNameFilter()
         {
-            return SettingsService.Instance.DebugNameFilter.Count > 0 ? SettingsService.Instance.DebugNameFilter.All(x => ValidateRegex(x)) : true;
+            return _settingsService.DebugNameFilter.Count > 0 ? _settingsService.DebugNameFilter.All(x => ValidateRegex(x)) : true;
         }
         
         public class InputValidationResult
@@ -145,6 +156,8 @@ namespace VolumetricSelection2077.Services
             public PathValidationResult OutputFileName { get; set; }
             public bool ResourceNameFilterValid { get; set; }
             public bool DebugNameFilterValid { get; set; }
+            public bool VanillaSectorBBsBuild { get; set; }
+            public bool ModdedSectorBBsBuild { get; set; }
         }
         
         /// <summary>
@@ -154,7 +167,7 @@ namespace VolumetricSelection2077.Services
         /// <param name="outputFilename">Output filename</param>
         /// <returns></returns>
         /// <exception cref="Exception">Fails to create directory it tried to validate</exception>
-        public static InputValidationResult ValidateInput(string gamePath, string outputFilename)
+        public InputValidationResult ValidateInput(string gamePath, string outputFilename)
         {
             bool cacheStatus = ValidateCacheStatus();
             bool gfsStatus = ValidateGameFileService();
@@ -163,6 +176,8 @@ namespace VolumetricSelection2077.Services
             var validFileName = string.IsNullOrEmpty(outputFilename) ? PathValidationResult.Empty : ValidatePath(@"E:\" + outputFilename + ".xl");
             var resourceNameFilterValid = ValidateResourcePathFilter();
             var debugNameFilterValid = ValidateDebugNameFilter();
+            var vanillaSectorBBsBuild = AreVanillaSectorBBsBuild();
+            var moddedSectorBBsBuild = AreModdedSectorBBsBuild();
                                 
             return new InputValidationResult()
             {
@@ -174,7 +189,9 @@ namespace VolumetricSelection2077.Services
                 SelectionFilePathValidationResult = selFileVR.Item2,
                 OutputFileName = validFileName,
                 ResourceNameFilterValid = resourceNameFilterValid,
-                DebugNameFilterValid = debugNameFilterValid
+                DebugNameFilterValid = debugNameFilterValid,
+                VanillaSectorBBsBuild = vanillaSectorBBsBuild,
+                ModdedSectorBBsBuild = moddedSectorBBsBuild
             };
         }
         
@@ -239,6 +256,30 @@ namespace VolumetricSelection2077.Services
             if (Path.HasExtension(path))
                 return PathValidationResult.ValidFile;
             return PathValidationResult.ValidDirectory;
+        }
+        public bool AreVanillaSectorBBsBuild()
+        {
+            return _cacheService.GetMetadata().AreVanillaSectorBBsBuild;
+        }
+        
+        /// <summary>
+        /// Checks if all currently loaded modded sectors have build bounding boxes
+        /// </summary>
+        /// <returns>true if all modded sectors have bounding boxes or modded resources are disabled</returns>
+        public bool AreModdedSectorBBsBuild()
+        {
+            if (!_settingsService.SupportModdedResources)
+                return true;
+            
+            var inArchiveSectors = _gameFileService.ArchiveManager.GetModArchives()
+                .SelectMany(x => x.Files.Values.Where(y => y.Extension == ".streamingsector").Select(y => y.FileName))
+                .ToList();
+
+            var cachedBBSectors = _cacheService.GetAllEntries(CacheDatabases.ModdedBounds)
+                .Select(x => x.Key)
+                .ToList();
+
+            return inArchiveSectors.All(sector => cachedBBSectors.Contains(sector));
         }
     }
 }

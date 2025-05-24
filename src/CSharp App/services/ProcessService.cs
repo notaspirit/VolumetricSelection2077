@@ -6,8 +6,11 @@ using System.ComponentModel;
 using VolumetricSelection2077.Models;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Reflection.Emit;
 using System.Text.RegularExpressions;
 using DynamicData;
+using MessagePack;
 using VolumetricSelection2077.Parsers;
 using Newtonsoft.Json;
 using SharpDX;
@@ -25,13 +28,21 @@ public class ProcessService
     private readonly SettingsService _settings;
     private readonly GameFileService _gameFileService;
     private readonly MergingService _mergingService;
+    private readonly DialogService _dialogService;
+    private readonly BoundingBoxBuilderService _boundingBoxBuilderService;
+    private readonly CacheService _cacheService;
+    private readonly ValidationService _validationService;
     private Progress _progress;
-    public ProcessService()
+    public ProcessService(DialogService dialogService)
     {
         _settings = SettingsService.Instance;
         _gameFileService = GameFileService.Instance;
         _progress = Progress.Instance;
         _mergingService = new MergingService();
+        _dialogService = dialogService;
+        _boundingBoxBuilderService = new BoundingBoxBuilderService();
+        _cacheService = CacheService.Instance;
+        _validationService = new ValidationService();
     }
 
     private ConcurrentBag<KeyValuePair<string, AxlProxyNodeMutationMutation>> proxyNodes = new();
@@ -500,12 +511,45 @@ public class ProcessService
         };
         return (true, "", result);
     }
+    
+    /// <summary>
+    /// Fetches remote sector bounds from VS2077 Resource repo 
+    /// </summary>
+    /// <returns>true if successful</returns>
+    private async Task<bool> FetchRemoteSectorBBs()
+    {
+        var cacheMetadata = _cacheService.GetMetadata();
+        string fileUrl = $"https://github.com/notaspirit/VolumetricSelection2077Resources/raw/refs/heads/main/SectorBounds/{cacheMetadata.GameVersion}-{cacheMetadata.VS2077Version}.bin";
+        string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "VolumetricSelection2077", "temp", $"{cacheMetadata.GameVersion}-{cacheMetadata.VS2077Version}.bin");
+        Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+        using (HttpClient client = new HttpClient())
+        {
+            try
+            {
+                Logger.Info($"Fetching {fileUrl}...");
+                byte[] fileData = await client.GetByteArrayAsync(fileUrl);
+
+                await File.WriteAllBytesAsync(filePath, fileData);
+            }
+            catch (HttpRequestException e)
+            {
+                Logger.Exception(e, $"Failed to fetch remote sector bounds! {e.Message}");
+                return false;
+            }
+        }
+        
+        _cacheService.LoadSectorBBFromFile(filePath);
+        File.Delete(filePath);
+        return true;
+    }
+    
     /// <summary>
     /// Logs and Evaluates ValidationServiceResult
     /// </summary>
     /// <param name="vr"></param>
     /// <returns>true if all are valid, false if at least one is invalid</returns>
-    private bool EvaluateInputValidation(ValidationService.InputValidationResult vr)
+    private async Task<bool> EvaluateInputValidation(ValidationService.InputValidationResult vr)
     {
         int invalidCount = 0;
         bool invalidRegex = false;
@@ -571,6 +615,92 @@ public class ProcessService
             invalidRegex = true;
         }
         
+        if (vr.VanillaSectorBBsBuild)
+            Logger.Success("Vanilla Sector BBs       : OK");
+        else
+        {
+            var dialogResult = await _dialogService.ShowDialog("Vanilla Sector Bounds not found!", "Vanilla Sector Bounds are not built, do you want to build them now (this will take a while) or fetch prebuild ones from remote?", ["Fetch Remote", "Build", "Cancel"]);
+            switch (dialogResult)
+            {
+                case 0:
+                    RetryFetchingRemote:
+                    Logger.Info("Fetching Sector Bounds from remote...");
+                    var result = await FetchRemoteSectorBBs();
+                    if (result)
+                        Logger.Success("Vanilla Sector BBs       : OK");
+                    else
+                    {
+                        var failedToFetchRemoteDialogResult = await _dialogService.ShowDialog("Failed to fetch remote sector bounds!", "Failed to fetch remote sector bounds, do you want to retry or build them now (this will take a while)?", ["Retry", "Build", "Cancel"]);
+                        switch (failedToFetchRemoteDialogResult)
+                        {
+                            case 0:
+                                goto RetryFetchingRemote;
+                            case 1:
+                                goto BuildSectorBBs;
+                            case 2:
+                                Logger.Error("Vanilla Sector BBs       : User Canceled");
+                                invalidCount++;
+                                break;
+                        }
+                    }
+                    break;
+                case 1:
+                    BuildSectorBBs:
+                    Logger.Info("Building Sector Bounds...");
+                    try
+                    {
+                        await _boundingBoxBuilderService.BuildBounds(BoundingBoxBuilderService.BuildBoundsMode.Vanilla);
+                        Logger.Success("Vanilla Sector BBs       : OK");
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Exception(e, $"Failed to build sector bounds with error {e.Message}");
+                        var failedToBuildSectorBoundsDialog = await _dialogService.ShowDialog("Failed to build sector bounds!", "Failed to build sector bounds, do you want to retry or fetch them from remote?", ["Retry", "Fetch Remote", "Cancel"]);
+                        switch (failedToBuildSectorBoundsDialog)
+                        {
+                            case 0:
+                                goto BuildSectorBBs;
+                            case 1:
+                                goto RetryFetchingRemote;
+                            case 2:
+                                Logger.Error("Vanilla Sector BBs       : User Canceled");
+                                invalidCount++;
+                                break;
+                        }
+                    }
+                    break;
+                case 2:
+                    Logger.Error("Vanilla Sector BBs       : User Canceled");
+                    invalidCount++;
+                    break;
+            }
+        }
+        
+        if (vr.ModdedSectorBBsBuild)
+            Logger.Success("Modded Sector BBs        : OK");
+        else
+        {
+            var dialogResult = await _dialogService.ShowDialog("Modded Sector Bounds not found!", "Not all modded sectors have a build bounding box!", ["Build Missing", "Rebuild All", "Ignore", "Cancel"]);
+            switch (dialogResult)
+            {
+                case 0:
+                    await _boundingBoxBuilderService.BuildBounds(
+                        BoundingBoxBuilderService.BuildBoundsMode.MissingModded);
+                    break;
+                case 1:
+                    await _boundingBoxBuilderService.BuildBounds(
+                        BoundingBoxBuilderService.BuildBoundsMode.RebuildModded);
+                    break;
+                case 2:
+                    Logger.Warning("Modded Sector BBs        : User Ignored");
+                    break;
+                case 3:
+                    Logger.Error("Modded Sector BBs        : User Canceled");
+                    invalidCount++;
+                    break;
+            }
+        }
+        
         if (invalidCount == 0)
         {
             return true;
@@ -610,7 +740,7 @@ public class ProcessService
         }
         catch (Exception e)
         {
-            Logger.Error($"Failed to Processes {streamingSectorName}: {e}");
+            Logger.Exception(e, $"Failed to process sector {streamingSectorName} with error {e.Message}");;
             return null;
         }
     }
@@ -628,8 +758,8 @@ public class ProcessService
 
         try
         {
-            var validationResult = ValidationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename);
-            if (!EvaluateInputValidation(validationResult))
+            var validationResult = _validationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename);
+            if (!await EvaluateInputValidation(validationResult))
                 return (false, "Invalid Input");
         }
         catch (Exception ex)
@@ -685,7 +815,7 @@ public class ProcessService
         
         try
         {
-            CacheService.Instance.StartListening();
+            _cacheService.StartListening();
         }
         catch (Exception ex)
         {
@@ -693,19 +823,35 @@ public class ProcessService
             return (false, "Failed to start listening to write requests in cache service!");
         }
 
+        AxlRemovalSector?[] sectorsOutputRaw;
+
+        var vanillaBoundingBoxes = _cacheService.GetAllEntries(CacheDatabases.VanillaBounds);
         AxlSector?[] sectorsOutputRaw;
+        
+        CETOutputFile.Sectors.Add(vanillaBoundingBoxes
+            .Where(x => CETOutputFile.Aabb.Contains(MessagePackSerializer.Deserialize<BoundingBox>(x.Value)) != ContainmentType.Disjoint)
+            .Select(x => x.Key));
+
+        if (_settings.SupportModdedResources)
+        {
+            var moddedBoundingBoxes = _cacheService.GetAllEntries(CacheDatabases.ModdedBounds);
+            CETOutputFile.Sectors.Add(moddedBoundingBoxes
+                .Where(x => CETOutputFile.Aabb.Contains(MessagePackSerializer.Deserialize<BoundingBox>(x.Value)) != ContainmentType.Disjoint)
+                .Select(x => x.Key));
+        }
+
+        Logger.Info($"Found {CETOutputFile.Sectors.Count} sectors to process...");
         
         try
         {
             _progress.AddTarget(CETOutputFile.Sectors.Count * 2, Progress.ProgressSections.Startup);
             var tasks = CETOutputFile.Sectors.Select(input => Task.Run(() => SectorProcessThread(input, CETOutputFile)))
                 .ToArray();
-
             sectorsOutputRaw = await Task.WhenAll(tasks);
         }
         finally
         {
-            CacheService.Instance.StopListening();
+            _cacheService.StopListening();
         }
         
         _progress.AddTarget(3, Progress.ProgressSections.Finalization);
