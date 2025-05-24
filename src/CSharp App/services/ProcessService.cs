@@ -823,8 +823,6 @@ public class ProcessService
             return (false, "Failed to start listening to write requests in cache service!");
         }
 
-        AxlRemovalSector?[] sectorsOutputRaw;
-
         var vanillaBoundingBoxes = _cacheService.GetAllEntries(CacheDatabases.VanillaBounds);
         AxlSector?[] sectorsOutputRaw;
         
