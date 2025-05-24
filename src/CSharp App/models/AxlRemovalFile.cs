@@ -88,4 +88,8 @@ public class AxlProxyNodeMutationMutation : AxlNodeMutation
     [JsonProperty("nbNodesUnderProxyDiff")]
     [YamlMember(Alias = "nbNodesUnderProxyDiff")]
     public required int NbNodesUnderProxyDiff { get; set; }
+    
+    [JsonProperty("expectedNodesUnderProxy")]
+    [YamlMember(Alias = "expectedNodesUnderProxy")]
+    public uint? ExpectedNodesUnderProxy { get; set; }
 }

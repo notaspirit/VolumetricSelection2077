@@ -60,6 +60,9 @@ namespace VolumetricSelection2077.Models
         
         [Key(5)]
         public ulong? ProxyRef { get; set; }
+        
+        [Key(6)]
+        public uint? ExpectedNodesUnderProxy { get; set; }
     }
 
     [MessagePackObject]

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Force.DeepCloner;
@@ -104,16 +105,32 @@ namespace VolumetricSelection2077.Services
             }
         }
 
-        public void ResolveNullProxyRefs(AxlSector sector)
+        public void ResolveMissingNodeProperties(AxlSector sector)
         {
             var nullProxyRefs = sector.NodeDeletions?.Where(x => x.ProxyRef == null || x.ProxyRef == 0).ToList();
-            if (nullProxyRefs?.Count == 0 || nullProxyRefs == null)
+            var missingExpectedNodes = sector.NodeMutations?.Where(x => x is AxlProxyNodeMutationMutation proxyNode && (proxyNode.ExpectedNodesUnderProxy == null || proxyNode.ExpectedNodesUnderProxy == 0)).Select(x => (AxlProxyNodeMutationMutation)x).ToList();
+            
+            
+            if ((nullProxyRefs?.Count == 0 || nullProxyRefs == null) && (missingExpectedNodes?.Count == 0 || missingExpectedNodes == null))
                 return;
 
-            var abbrsector = _gameFileService.GetSector(sector.Path);;
-            foreach (var nullProxyRefNode in nullProxyRefs)
+            var abbrsector = _gameFileService.GetSector(sector.Path);
+            if (abbrsector == null)
+                return;
+            if (nullProxyRefs != null)
             {
-                nullProxyRefNode.ProxyRef = abbrsector?.Nodes[abbrsector.NodeData[nullProxyRefNode.Index].NodeIndex].ProxyRef;
+                foreach (var nullProxyRefNode in nullProxyRefs)
+                {
+                    nullProxyRefNode.ProxyRef = abbrsector?.Nodes[abbrsector.NodeData[nullProxyRefNode.Index].NodeIndex].ProxyRef;
+                }
+            }
+
+            if (missingExpectedNodes != null)
+            {
+                foreach (var missingExpectedNode in missingExpectedNodes)
+                {
+                    missingExpectedNode.ExpectedNodesUnderProxy = abbrsector?.Nodes[abbrsector.NodeData[missingExpectedNode.Index].NodeIndex].ExpectedNodesUnderProxy;
+                }
             }
         }
         
@@ -121,7 +138,7 @@ namespace VolumetricSelection2077.Services
         {
             foreach (var sector in sectors.Values)
             {
-                ResolveNullProxyRefs(sector);
+                ResolveMissingNodeProperties(sector);
                 
                 if (sector.NodeMutations == null || sector.NodeMutations.Count == 0)
                     continue;
@@ -131,18 +148,8 @@ namespace VolumetricSelection2077.Services
                     if (nodeMutation is not AxlProxyNodeMutationMutation proxyNode)
                     {
                         if (nodeMutation.Type.ToLower().Contains("proxy"))
-                        {
-                            nodeMutation = new AxlProxyNodeMutationMutation()
-                            {
-                                Index = nodeMutation.Index,
-                                Type = nodeMutation.Type,
-                                ProxyRef = nodeMutation.ProxyRef,
-                                NbNodesUnderProxyDiff = 0,
-                            };
-                            proxyNode = (AxlProxyNodeMutationMutation)nodeMutation;
-                        }
-                        else
-                            continue;
+                            Logger.Warning($"Node {nodeMutation.Index}, {sector.Path} references a proxy node, but is not a proxy node mutation. Skipping...");
+                        continue;
                     }
     
                     if (proxyNode.ProxyRef == null || proxyNode.ProxyRef == 0)
@@ -154,7 +161,7 @@ namespace VolumetricSelection2077.Services
                     var nodesReferencingThisProxy = sectors.Values
                         .Where(s => s.NodeDeletions != null)
                         .SelectMany(s => s.NodeDeletions)
-                        .Where(n => n is AxlNodeBase nodeBase && nodeBase.ProxyRef == proxyNode.ProxyRef && !nodeBase.Type.ToLower().Contains("proxy"))
+                        .Where(n => n is AxlNodeBase nodeBase && nodeBase.ProxyRef == proxyNode.ProxyRef)
                         .ToList();
 
                     var nbNodesChange = 0;
@@ -174,6 +181,8 @@ namespace VolumetricSelection2077.Services
                         }
                     }
 
+                    nbNodesChange = Math.Clamp(nbNodesChange, (int?)-proxyNode.ExpectedNodesUnderProxy ?? 0, 0);
+                    
                     if (nbNodesChange == 0)
                     {
                         sector.NodeMutations.RemoveAt(i);

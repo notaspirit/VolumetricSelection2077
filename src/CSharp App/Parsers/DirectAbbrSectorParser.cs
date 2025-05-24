@@ -63,8 +63,14 @@ public class DirectAbbrSectorParser
             AbbrCollisionActors[]? actors = null;
             string? resourcePath = null;
             
+            uint? expectedNbOfNodesUnderProxy = null;
+            
             switch (node.Chunk)
             {
+                case worldPrefabProxyMeshNode proxyNode:
+                    expectedNbOfNodesUnderProxy = proxyNode.NbNodesUnderProxy;
+                    resourcePath = proxyNode.Mesh.DepotPath;
+                    break;
                 case worldMeshNode meshNode:
                     resourcePath = meshNode.Mesh.DepotPath;
                     break;
@@ -175,7 +181,8 @@ public class DirectAbbrSectorParser
                 DebugName = debugName,
                 ResourcePath = resourcePath,
                 Type = parsedType,
-                ProxyRef = proxyRef
+                ProxyRef = proxyRef,
+                ExpectedNodesUnderProxy = expectedNbOfNodesUnderProxy
             };
             
             nodeIndex++;

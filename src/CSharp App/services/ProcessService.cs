@@ -212,7 +212,8 @@ public class ProcessService
                 Index = index,
                 ProxyRef = nodeEntry.ProxyRef,
                 Type = nodeEntry.Type.ToString(),
-                NbNodesUnderProxyDiff = 0
+                NbNodesUnderProxyDiff = 0,
+                ExpectedNodesUnderProxy = nodeEntry.ExpectedNodesUnderProxy ?? 0
             }));
             
             return null;
