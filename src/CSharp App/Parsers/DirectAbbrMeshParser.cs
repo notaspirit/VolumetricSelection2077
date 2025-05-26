@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using SharpDX;
+using VolumetricSelection2077.Converters;
 using VolumetricSelection2077.Models;
 using WolvenKit.Common.PhysX;
 using WolvenKit.RED4.Archive;
@@ -133,13 +134,24 @@ public class DirectAbbrMeshParser
     /// </summary>
     /// <param name="inputMesh"></param>
     /// <returns></returns>
-    /// <remarks>fails to process occlusion meshes as those have a different internal structure</remarks>
+    /// <remarks>returns mesh with just bounding box for occlusion meshes</remarks>
     public static AbbrMesh? ParseFromCMesh(CMesh inputMesh)
     {
-        if (inputMesh.RenderResourceBlob == null)
-            return null;
         if (inputMesh.RenderResourceBlob.Chunk is not rendRenderMeshBlob rendBlob)
-            return null;
+            return new AbbrMesh
+            {
+                SubMeshes =
+                [
+                    new AbbrSubMesh
+                    {
+                        BoundingBox = new BoundingBox
+                        {
+                            Minimum = WolvenkitToSharpDX.Vector3(inputMesh.BoundingBox.Min),
+                            Maximum = WolvenkitToSharpDX.Vector3(inputMesh.BoundingBox.Max)
+                        }
+                    }
+                ]
+            };
 
         int lowestLod = 1;
         var rendInfos = rendBlob.Header.RenderChunkInfos;
