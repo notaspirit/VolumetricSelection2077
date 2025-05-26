@@ -137,7 +137,7 @@ public class DirectAbbrMeshParser
     /// <remarks>returns mesh with just bounding box for occlusion meshes</remarks>
     public static AbbrMesh? ParseFromCMesh(CMesh inputMesh)
     {
-        if (inputMesh.RenderResourceBlob.Chunk is not rendRenderMeshBlob rendBlob)
+        if (inputMesh.RenderResourceBlob is not { Chunk: rendRenderMeshBlob rendBlob })
             return new AbbrMesh
             {
                 SubMeshes =

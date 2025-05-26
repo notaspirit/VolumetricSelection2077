@@ -133,7 +133,7 @@ namespace VolumetricSelection2077.ViewModels
         public string FilterSectionButtonLabel => Labels.FilterCollapseButton +
                                                   $" [ {(Settings.DebugNameFilter.Count == 0 ? 0 : 1) 
                                                         + (Settings.ResourceNameFilter.Count == 0 ? 0 : 1) 
-                                                        + (Settings.NukeOccluders ? 1 : 0) + (Settings.NodeTypeFilter.Cast<bool>().Count( b => b) == 122 ? 0 : 1)} / 4 ]" 
+                                                        + (Settings.NodeTypeFilter.Cast<bool>().Count( b => b) == 122 ? 0 : 1)} / 3 ]"
                                                         + (FilterSelectionVisibility ? " \u02c5" : " \u02c4");
         public bool FilterSelectionVisibility
         {
@@ -143,7 +143,6 @@ namespace VolumetricSelection2077.ViewModels
                 Settings.IsFiltersMWVisible = value;
                 OnPropertyChanged(nameof(FilterSelectionVisibility));
                 OnPropertyChanged(nameof(FilterSectionButtonLabel));
-                OnPropertyChanged(nameof(NukeOccluderBoolSettingsAggressiveVisibility));
                 Settings.SaveSettings();
             }
         }
@@ -269,34 +268,6 @@ namespace VolumetricSelection2077.ViewModels
             {
                 var filtered = _nodeTypeFilterItems.Where(item => item.Label.ToLower().Contains(_searchQuery.ToLower())).ToList();
                 FilteredNodeTypeFilterItems = new ObservableCollection<NodeTypeFilterItem>(filtered);
-            }
-        }
-
-        public bool NukeOccludersBoolSettings
-        {
-            get => Settings.NukeOccluders;
-            set
-            {
-                if (value != Settings.NukeOccluders)
-                {
-                    Settings.NukeOccluders = value;
-                    OnPropertyChanged(nameof(NukeOccludersBoolSettings));
-                    OnPropertyChanged(nameof(NukeOccluderBoolSettingsAggressiveVisibility));
-                    OnPropertyChanged(nameof(FilterSectionButtonLabel));
-                }
-            }
-        }
-
-        public bool NukeOccluderBoolSettingsAggressiveVisibility
-        {
-            get => (Settings.NukeOccluders && FilterSelectionVisibility);
-            set
-            {
-                if (value != Settings.NukeOccluders)
-                {
-                    Settings.NukeOccluders = value;
-                    OnPropertyChanged(nameof(NukeOccludersBoolSettings));
-                }
             }
         }
         
