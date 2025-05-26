@@ -38,6 +38,9 @@ namespace VolumetricSelection2077.Models
         
         [Key(2)]
         public BoundingBox? AABB { get; set; }
+        
+        [Key(3)]
+        public ulong? ProxyRef { get; set; }
     }
 
     [MessagePackObject]
@@ -59,9 +62,6 @@ namespace VolumetricSelection2077.Models
         public string? DebugName { get; set; }
         
         [Key(5)]
-        public ulong? ProxyRef { get; set; }
-        
-        [Key(6)]
         public uint? ExpectedNodesUnderProxy { get; set; }
     }
 

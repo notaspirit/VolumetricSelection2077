@@ -203,14 +203,14 @@ public class ProcessService
 
         if (IsNodeTypeProxy(nodeEntry.Type) && _settings.ResolveProxies)
         {
-            if (nodeEntry.ProxyRef == null)
+            if (nodeDataEntry.ProxyRef == null)
                 return null;
             
             proxyNodes.Add(new KeyValuePair<string, AxlProxyNodeMutationMutation>(sectorPath, new AxlProxyNodeMutationMutation
             {
                 DebugName = nodeEntry.DebugName,
                 Index = index,
-                ProxyRef = nodeEntry.ProxyRef,
+                ProxyRef = nodeDataEntry.ProxyRef,
                 Type = nodeEntry.Type.ToString(),
                 NbNodesUnderProxyDiff = 0,
                 ExpectedNodesUnderProxy = nodeEntry.ExpectedNodesUnderProxy ?? 0
@@ -226,7 +226,7 @@ public class ProcessService
                 Type = nodeEntry.Type.ToString(),
                 Index = index,
                 DebugName = nodeEntry.DebugName,
-                ProxyRef = nodeEntry.ProxyRef,
+                ProxyRef = nodeDataEntry.ProxyRef,
             };
         }
         
@@ -342,7 +342,7 @@ public class ProcessService
                         Index = index,
                         Type = nodeEntry.Type.ToString(),
                         DebugName = nodeEntry.DebugName,
-                        ProxyRef = nodeEntry.ProxyRef,
+                        ProxyRef = nodeDataEntry.ProxyRef,
                     };
                 }
                 if (isInside && isInstanced)
@@ -354,7 +354,7 @@ public class ProcessService
                         DebugName = nodeEntry.DebugName,
                         ExpectedInstances = nodeDataEntry.Transforms.Length,
                         InstanceDeletions = indices,
-                        ProxyRef = nodeEntry.ProxyRef,
+                        ProxyRef = nodeDataEntry.ProxyRef,
                     };
                 }
                 break;
@@ -429,7 +429,7 @@ public class ProcessService
                             ActorDeletions = actorRemoval,
                             ExpectedActors = nodeEntry.Actors.Length,
                             DebugName = nodeEntry.DebugName,
-                            ProxyRef = nodeEntry.ProxyRef,
+                            ProxyRef = nodeDataEntry.ProxyRef,
                         };
                 }
                 break;
@@ -444,7 +444,7 @@ public class ProcessService
                             Index = index,
                             Type = nodeEntry.Type.ToString(),
                             DebugName = nodeEntry.DebugName,
-                            ProxyRef = nodeEntry.ProxyRef,
+                            ProxyRef = nodeDataEntry.ProxyRef,
                         };
                     }
                 }
@@ -864,6 +864,8 @@ public class ProcessService
         }
         _progress.AddCurrent(1, Progress.ProgressSections.Finalization);
 
+        Logger.Info($"Found {proxyNodes.Count} proxies...");
+        
         var sectorMutations = ProcessProxyNodes(proxyNodes);
         var sectors = _mergingService.MergeSectors(sectorRemovals, sectorMutations);
         

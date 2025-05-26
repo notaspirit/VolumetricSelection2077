@@ -121,7 +121,7 @@ namespace VolumetricSelection2077.Services
             {
                 foreach (var nullProxyRefNode in nullProxyRefs)
                 {
-                    nullProxyRefNode.ProxyRef = abbrsector?.Nodes[abbrsector.NodeData[nullProxyRefNode.Index].NodeIndex].ProxyRef;
+                    nullProxyRefNode.ProxyRef = abbrsector.NodeData[nullProxyRefNode.Index].ProxyRef;
                 }
             }
 
@@ -157,7 +157,10 @@ namespace VolumetricSelection2077.Services
                         sector.NodeMutations.RemoveAt(i);
                         continue;
                     }
-                    
+                    /*
+                    if (proxyNode.ExpectedNodesUnderProxy == 0)
+                        Logger.Success($"Found proxy node {sector.Path}, {proxyNode.Index} with no expected nodes under proxy. Skipping...");
+                    */
                     var nodesReferencingThisProxy = sectors.Values
                         .Where(s => s.NodeDeletions != null)
                         .SelectMany(s => s.NodeDeletions)
@@ -180,8 +183,10 @@ namespace VolumetricSelection2077.Services
                                 break;
                         }
                     }
-
-                    nbNodesChange = Math.Clamp(nbNodesChange, (int?)-proxyNode.ExpectedNodesUnderProxy ?? 0, 0);
+                    var clamped = Math.Clamp(nbNodesChange, (int?)-proxyNode.ExpectedNodesUnderProxy ?? 0, 0);
+                    if (clamped != nbNodesChange)
+                        Logger.Warning($"Node {sector.Path}, {proxyNode.Index} has more nodes referencing it than expected (expected {proxyNode.ExpectedNodesUnderProxy}, got {nbNodesChange}).");
+                    nbNodesChange = clamped;
                     
                     if (nbNodesChange == 0)
                     {
@@ -190,6 +195,10 @@ namespace VolumetricSelection2077.Services
                     }
                     
                     proxyNode.NbNodesUnderProxyDiff = nbNodesChange;
+                    
+                    // for testing
+                    // proxyNode.NbNodesUnderProxyDiff = (int?)(-proxyNode.ExpectedNodesUnderProxy - 1) ?? -999;
+                    // proxyNode.NbNodesUnderProxyDiff = (int?)(-proxyNode.ExpectedNodesUnderProxy) ?? 0;
                 }
             }
             
