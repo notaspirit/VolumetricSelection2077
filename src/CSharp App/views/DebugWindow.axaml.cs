@@ -98,4 +98,22 @@ public partial class DebugWindow : Window
             $"{cacheMetadata.GameVersion}-{cacheMetadata.VS2077Version}.bin"));
         _debugWindowViewModel.IsProcessing = false;
     }
+    
+    private async void ListNodeTypes_Click(object? sender, RoutedEventArgs e)
+    {
+        _debugWindowViewModel.IsProcessing = true;
+        try
+        {
+            _dispatcherTimer.Start();
+            await GetSectorStats.Run();
+        }
+        finally
+        {
+            _dispatcherTimer.Stop();
+            string formattedTime = UtilService.FormatElapsedTime(_dispatcherTimer.Elapsed);
+            Logger.Info($"ListNodeTypes finished after: {formattedTime}");
+        }
+
+        _debugWindowViewModel.IsProcessing = false;
+    }
 }
