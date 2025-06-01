@@ -47,8 +47,6 @@ public class BoundingBoxBuilderService
             foreach (var nodeDataEntry in sector.NodeData)
             {
                 var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
-                if (nodeEntry.Type == NodeTypeProcessingOptions.Enum.worldInstancedOccluderNode)
-                    continue;
                 
                 if ((nodeEntry?.ResourcePath?.EndsWith(".mesh") ?? false) || (nodeEntry?.ResourcePath?.EndsWith(".w2mesh") ?? false))
                 {

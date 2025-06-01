@@ -16,7 +16,7 @@ public class AbbrSubMesh
     [Key(0)]
     public required BoundingBox BoundingBox { get; set; }
     [Key(1)]
-    public required Vector3[] Vertices { get; set; }
+    public Vector3[]? Vertices { get; set; }
     [Key(2)]
-    public required uint[][] PolygonIndices { get; set; }
+    public uint[][]? PolygonIndices { get; set; }
 }
