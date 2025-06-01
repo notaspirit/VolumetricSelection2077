@@ -92,4 +92,8 @@ public class AxlProxyNodeMutationMutation : AxlNodeMutation
     [JsonProperty("expectedNodesUnderProxy")]
     [YamlMember(Alias = "expectedNodesUnderProxy")]
     public uint? ExpectedNodesUnderProxy { get; set; }
+    
+    [JsonProperty("questRef")]
+    [YamlMember(Alias = "questRef")]
+    public ulong? QuestRef { get; set; }
 }

@@ -327,7 +327,8 @@ public class DirectAbbrSectorParser
                 NodeIndex = nodeDataEntry.NodeIndex,
                 Transforms = transforms,
                 AABB = nodeBoundingBox,
-                ProxyRef = nodeDataEntry.UkHash1
+                ProxyRef = nodeDataEntry.UkHash1,
+                QuestRef = nodeDataEntry.QuestPrefabRefHash,
             };
             nodeDataIndex++;
         }

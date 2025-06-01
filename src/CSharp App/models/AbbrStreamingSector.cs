@@ -41,6 +41,9 @@ namespace VolumetricSelection2077.Models
         
         [Key(3)]
         public ulong? ProxyRef { get; set; }
+        
+        [Key(4)]
+        public ulong QuestRef { get; set; }
     }
 
     [MessagePackObject]
