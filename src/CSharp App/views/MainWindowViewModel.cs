@@ -315,10 +315,13 @@ namespace VolumetricSelection2077.ViewModels
         
         private void OnNodeTypeFilterItemChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(NodeTypeFilterItem.IsChecked))
-            {
-                CheckedCount = NodeTypeFilterItems.Count(item => item.IsChecked);
-            }
+            if (e.PropertyName != nameof(NodeTypeFilterItem.IsChecked))
+                return;
+            CheckedCount = NodeTypeFilterItems.Count(item => item.IsChecked);
+            if (sender is not NodeTypeFilterItem item1)
+                return;
+            var globalIndex = NodeTypeFilterItems.IndexOf(item1);
+            Settings.NodeTypeFilter[globalIndex] = item1.IsChecked;
         }
         
         public event PropertyChangedEventHandler? PropertyChanged;
