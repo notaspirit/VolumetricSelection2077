@@ -125,6 +125,7 @@ public class CacheService
             if (!ValidationService.ValidateCache(metaData, _settings.GameDirectory, _settings.MinimumCacheVersion))
             {
                 Logger.Warning("Cache is stale, resetting database");
+                ClearMetaData();
                 ClearDatabase(CacheDatabases.All, true, true);
             }
             _isInitialized = true;
@@ -420,6 +421,16 @@ public class CacheService
     }
 
     /// <summary>
+    /// Deletes the cache metadata file if it exists
+    /// </summary>
+    public void ClearMetaData()
+    {
+        var metaDataFilePath = Path.Combine(_settings.CacheDirectory, "metadata.json");
+        if (File.Exists(metaDataFilePath))
+            File.Delete(metaDataFilePath);
+    }
+    
+    /// <summary>
     /// Resizes the environment 
     /// </summary>
     /// <param name="bypass">bypass initialization check => callers responsibility to ensure env is ready</param>
@@ -431,6 +442,14 @@ public class CacheService
         
         string tempCacheDir = Path.Combine(Directory.GetParent(_settings.CacheDirectory)?.FullName, $"temp_cache_{Guid.NewGuid().ToString()}");
         Directory.CreateDirectory(tempCacheDir);
+        
+        var metaDataFilePath = Path.Combine(_settings.CacheDirectory, "metadata.json");
+
+        if (File.Exists(metaDataFilePath))
+        {
+            File.Copy(metaDataFilePath, Path.Combine(tempCacheDir, "metadata.json"));
+        }
+        
         var tempEnv = new LightningEnvironment(tempCacheDir)
         {
             MaxDatabases = 4,
