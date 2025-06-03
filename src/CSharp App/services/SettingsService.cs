@@ -31,8 +31,6 @@ public class SettingsService
         ResourceNameFilter = new();
         DebugNameFilter = new();
         FilterModeOr = true;
-        NukeOccluders = false;
-        NukeOccludersAggressively = false;
         IsFiltersMWVisible = false;
         IsParametersMWVisible = false;
         SaveMode = SaveFileMode.Enum.New;
@@ -90,8 +88,6 @@ public class SettingsService
     public ObservableCollection<string> DebugNameFilter { get; set; }
     
     public bool FilterModeOr { get; set; }
-    public bool NukeOccluders { get; set; }
-    public bool NukeOccludersAggressively { get; set; }
     public bool IsFiltersMWVisible { get; set; }
     public bool IsParametersMWVisible { get; set; }
     public SaveFileMode.Enum SaveMode { get; set; }
@@ -144,8 +140,6 @@ public class SettingsService
                         DebugNameFilter.Add(dnfilter);
                     }
                     FilterModeOr = settings.FilterModeOr;
-                    NukeOccluders = settings.NukeOccluders;
-                    NukeOccludersAggressively = settings.NukeOccludersAggressively;
                     IsFiltersMWVisible = settings.IsFiltersMWVisible;
                     IsParametersMWVisible = settings.IsParametersMWVisible;
                     SaveMode = settings.SaveMode;

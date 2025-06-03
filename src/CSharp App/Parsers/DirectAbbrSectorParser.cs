@@ -308,6 +308,42 @@ public class DirectAbbrSectorParser
                     nodeBoundingBox = new BoundingBox(WolvenkitToSharpDX.Vector3(instancedFoliageNode.FoliageLocalBounds.Min) + WolvenkitToSharpDX.Vector3(nodeDataEntry.Position),
                         WolvenkitToSharpDX.Vector3(instancedFoliageNode.FoliageLocalBounds.Max) + WolvenkitToSharpDX.Vector3(nodeDataEntry.Position));
                     break;
+                case worldInstancedOccluderNode instancedOccluderNode:
+                    transforms = new AbbrSectorTransform[instancedOccluderNode.Buffer.Count];
+                    
+                    int instancedOccluderInstanceIndex = 0;
+                    foreach (var instance in instancedOccluderNode.Buffer)
+                    {
+                        var matrix = new Matrix()
+                        {
+                            M11 = instance.Unknown1.X,
+                            M12 = instance.Unknown1.Y,
+                            M13 = instance.Unknown1.Z,
+                            M14 = instance.Unknown1.W,
+                            M21 = instance.Unknown2.X,
+                            M22 = instance.Unknown2.Y,
+                            M23 = instance.Unknown2.Z,
+                            M24 = instance.Unknown2.W,
+                            M31 = instance.Unknown3.X,
+                            M32 = instance.Unknown3.Y,
+                            M33 = instance.Unknown3.Z,
+                            M34 = instance.Unknown3.W,
+                            M41 = instance.Unknown4.X,
+                            M42 = instance.Unknown4.Y,
+                            M43 = instance.Unknown4.Z,
+                            M44 = instance.Unknown4.W
+                        };
+
+                        transforms[instancedOccluderInstanceIndex] = new AbbrSectorTransform
+                        {
+                            Position = matrix.TranslationVector,
+                            Scale = matrix.ScaleVector,
+                            Rotation = Quaternion.RotationMatrix(matrix)
+                        };
+                        
+                        instancedOccluderInstanceIndex++;
+                    }   
+                    break;
                 default:
                     DefaultLabel:
                     {

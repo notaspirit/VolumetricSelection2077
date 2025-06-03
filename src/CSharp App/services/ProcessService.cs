@@ -162,6 +162,37 @@ public class ProcessService
         var result = new List<AxlSector>();
         foreach (var proxyNode in proxyNodes)
         {
+            var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
+            
+            bool? matchesDebugFilter = null;
+            bool? matchesResourceFilter = null;
+            
+            if (_settings.DebugNameFilter.Count > 0)
+            {
+                matchesDebugFilter = false;
+                foreach (var filter in _settings.DebugNameFilter)
+                {
+                    if (Regex.IsMatch(nodeEntry.DebugName?.ToLower() ?? "", filter))
+                    {
+                        matchesDebugFilter = true;
+                        break;
+                    }
+                }
+                
+            }
+            
+            if (_settings.ResourceNameFilter.Count > 0)
+            {
+                matchesResourceFilter = false;
+                foreach (var filter in _settings.ResourceNameFilter)
+                {
+                    if (Regex.IsMatch(nodeEntry.ResourcePath?.ToLower() ?? "", filter))
+                    {
+                        matchesResourceFilter = true;
+                        break;
+                    }
+                }
+            }
             if (result.All(x => x.Path != proxyNode.Key))
             {
                 var expectedNodes = 0;
@@ -479,27 +510,10 @@ public class ProcessService
         var tasks = sector.NodeData.Select((input, index) => Task.Run(() => ProcessNodeAsyncWithReport(input, index, sector, selectionBox))).ToArray();
 
         var nodeDeletionsRaw = await Task.WhenAll(tasks);
-
-        bool isOnlyOccluders = true;
-        List<AxlNodeDeletion> nodeDeletions = new();
-        foreach (var nodeDeletion in nodeDeletionsRaw)
-        {
-            if (nodeDeletion != null)
-            {
-                nodeDeletions.Add(nodeDeletion);
-                if (!nodeDeletion.Type.ToLower().Contains("occluder"))
-                {
-                    isOnlyOccluders = false;
-                }
-            }
-        }
         
-        if (nodeDeletions.Count == 0)
-        {
-            return (true, "No Nodes Intersect with Box.", null);
-        }
+        List<AxlNodeDeletion> nodeDeletions = nodeDeletionsRaw.OfType<AxlNodeDeletion>().ToList();
 
-        if (_settings.NukeOccludersAggressively == false && _settings.NukeOccluders && isOnlyOccluders)
+        if (nodeDeletions.Count == 0)
         {
             return (true, "No Nodes Intersect with Box.", null);
         }

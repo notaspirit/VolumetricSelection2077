@@ -164,6 +164,9 @@ public static class CollisionCheckService
             ContainmentType aabbContainment = selectionAabb.Contains(transformedAabb);
             if (aabbContainment != ContainmentType.Disjoint)
             {
+                if (submesh.Vertices == null || submesh.PolygonIndices == null)
+                    return true;
+                
                 var adjustedSubmesh = new AbbrSubMesh()
                 {
                     BoundingBox = submesh.BoundingBox,
