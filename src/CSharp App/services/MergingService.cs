@@ -3,16 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using Force.DeepCloner;
 using VolumetricSelection2077.Models;
+using VolumetricSelection2077.Resources;
 
 namespace VolumetricSelection2077.Services
 {
     public class MergingService
     {
         private GameFileService _gameFileService;
+        private SettingsService _settings;
         
         public MergingService()
         {
             _gameFileService = GameFileService.Instance;
+            _settings = SettingsService.Instance;
         }
         
         public AxlModificationFile MergeAxlFiles(AxlModificationFile axl1, AxlModificationFile axl2)
@@ -187,13 +190,18 @@ namespace VolumetricSelection2077.Services
                         .ToList();
                     
                     var nbNodesChange = 0;
+                    var nbInstancesChange = 0;
                     foreach (var node in nodesReferencingThisProxy)
                     {
                         switch (node)
                         {
                             // actor and instanced nodes just need to not be counted at all for the proxy
-                            case AxlCollisionNodeDeletion:
-                            case AxlInstancedNodeDeletion:
+                            // however for the removing logic it is still needed
+                            case AxlCollisionNodeDeletion collisionNode:
+                                nbInstancesChange -= collisionNode.ActorDeletions.Count;
+                                break;
+                            case AxlInstancedNodeDeletion  instancedNode:
+                                nbInstancesChange -= instancedNode.InstanceDeletions.Count;
                                 break;
                             default:
                                 nbNodesChange--;
@@ -203,6 +211,20 @@ namespace VolumetricSelection2077.Services
                     
                     if (nbNodesChange == 0)
                     {
+                        sector.NodeMutations.RemoveAt(i);
+                        continue;
+                    }
+
+                    if ((nbNodesChange + nbInstancesChange) * -1 == proxyNode.ExpectedNodesUnderProxy && _settings.ResolveProxies == ProxyResolvingMode.Enum.ResolveAndDeleteUnreferenced)
+                    {
+                        sector.NodeDeletions ??= new();
+                        sector.NodeDeletions.Add(new AxlNodeDeletion
+                        {
+                            Index = proxyNode.Index,
+                            ProxyRef = proxyNode.ProxyRef,
+                            DebugName = proxyNode.DebugName,
+                            Type = proxyNode.Type
+                        });
                         sector.NodeMutations.RemoveAt(i);
                         continue;
                     }

@@ -200,7 +200,7 @@ public class ProcessService
     {
         var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
 
-        if (IsNodeTypeProxy(nodeEntry.Type) && _settings.ResolveProxies)
+        if (IsNodeTypeProxy(nodeEntry.Type) && _settings.ResolveProxies != ProxyResolvingMode.Enum.Delete)
         {
             if (nodeDataEntry.QuestRef == null)
                 return null;

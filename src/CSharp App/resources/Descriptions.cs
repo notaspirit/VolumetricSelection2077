@@ -26,7 +26,7 @@ namespace VolumetricSelection2077.Resources
             public static string CacheDirectory { get; } = $"Where the cache is saved to, can grow upto 100GB in size (all cached vanilla entries total up to 7.6GB), defaults to {@"%AppData%\VolumetricSelection2077\cache\"}";
             public static string CacheEnabled { get; } = "Caches uncooked game files, significantly improving processing time";
             public static string ClearCache { get; } = "Clear cached vanilla or modded files.";
-            public static string ResolveProxies { get; } = "Whether to resolve proxies and adjust their expected nodes, or to treat them as normal nodes and remove them if they intersect.";
+            public static string ResolveProxies { get; } = "Whether to resolve proxies and adjust their expected nodes, resolve, adjust and remove proxies if no nodes are referencing it anymore, or to treat them as normal nodes and remove them if they intersect.";
         }
 
         public static class Watermarks

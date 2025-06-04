@@ -148,7 +148,6 @@ namespace VolumetricSelection2077.ViewModels
         }
         
         public ObservableCollection<SaveFileMode.Enum> SaveFileModes { get; set; }
-
         public SaveFileMode.Enum SelectedSaveFileMode
         {
             get => Settings.SaveMode;
@@ -159,6 +158,19 @@ namespace VolumetricSelection2077.ViewModels
                 Settings.SaveSettings();
             }
         }
+        
+        public ObservableCollection<ProxyResolvingMode.Enum> ProxyResolvingModes { get; set; }
+        public ProxyResolvingMode.Enum ProxyResolvingMode
+        {
+            get => Settings.ResolveProxies;
+            set
+            {
+                Settings.ResolveProxies = value;
+                OnPropertyChanged(nameof(ProxyResolvingMode));
+                Settings.SaveSettings();
+            }
+        }
+        
         
         public MainWindowViewModel()
         {
@@ -177,6 +189,7 @@ namespace VolumetricSelection2077.ViewModels
             CheckedCount = NodeTypeFilterItems.Count(item => item.IsChecked);
             
             SaveFileModes = new ObservableCollection<SaveFileMode.Enum>(Enum.GetValues(typeof(SaveFileMode.Enum)).Cast<SaveFileMode.Enum>());
+            ProxyResolvingModes = new ObservableCollection<ProxyResolvingMode.Enum>(Enum.GetValues(typeof(ProxyResolvingMode.Enum)).Cast<ProxyResolvingMode.Enum>());
             
             try
             {

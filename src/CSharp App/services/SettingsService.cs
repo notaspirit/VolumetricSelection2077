@@ -40,7 +40,7 @@ public class SettingsService
         DidUpdate = false;
         CETInstallLocation = "";
         WindowRecoveryState = new();
-        ResolveProxies = true;
+        ResolveProxies = ProxyResolvingMode.Enum.ResolveAndDeleteUnreferenced;
     }
     
     public static SettingsService Instance
@@ -99,7 +99,7 @@ public class SettingsService
     
     public WindowRecoveryState WindowRecoveryState { get; set; }
     
-    public bool ResolveProxies { get; set; }
+    public ProxyResolvingMode.Enum ResolveProxies { get; set; }
     
     /// <summary>
     /// Loads the settings or creates a new settings file if it doesn't exist

@@ -348,14 +348,14 @@
                         Text="{x:Static resources:Labels.ResolveProxies}"
                         ToolTip.Tip="{x:Static resources:ToolTips.ResolveProxies}"
                         VerticalAlignment="Center" />
-                    <ToggleSwitch
+                    <ComboBox
                         Grid.Column="1"
                         Grid.Row="1"
-                        IsChecked="{Binding Settings.ResolveProxies}"
+                        HorizontalAlignment="Stretch"
                         IsVisible="{Binding ParameterSelectionVisibility}"
+                        ItemsSource="{Binding ProxyResolvingModes}"
                         Margin="5"
-                        OffContent="Delete"
-                        OnContent="Resolve" />
+                        SelectedItem="{Binding ProxyResolvingMode, Mode=TwoWay}" />
                 </Grid>
             </Grid>
             <Grid Grid.Row="6" Margin="5">
