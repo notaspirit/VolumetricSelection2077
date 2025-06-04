@@ -11,6 +11,7 @@ namespace VolumetricSelection2077.Services
     {
         private GameFileService _gameFileService;
         private SettingsService _settings;
+        private List<ulong?> _deletedQuestRefHashes = new ();
         
         public MergingService()
         {
@@ -110,16 +111,16 @@ namespace VolumetricSelection2077.Services
 
         public void ResolveMissingNodeProperties(AxlSector sector)
         {
-            var nullProxyRefs = sector.NodeDeletions?.Where(x => x.ProxyRef is null or 0).ToList();
+            var nullProxyRefs = sector.NodeDeletions?.Where(x => x.ProxyRef is null).ToList();
             
             var missingExpectedNodes = sector.NodeMutations?.Where(x => x is AxlProxyNodeMutationMutation
             {
-                ExpectedNodesUnderProxy: null or 0
+                ExpectedNodesUnderProxy: null
             }).Select(x => (AxlProxyNodeMutationMutation)x).ToList();
             
             var missingQuestRefProxies = sector.NodeMutations?.Where(x => x is AxlProxyNodeMutationMutation
             {
-                QuestRef: null or 0
+                QuestRef: null
             }).Select(x => (AxlProxyNodeMutationMutation)x).ToList();
             
             if ((nullProxyRefs?.Count == 0 || nullProxyRefs == null) && (missingExpectedNodes?.Count == 0 || missingExpectedNodes == null) && (missingQuestRefProxies?.Count == 0 ||  missingQuestRefProxies == null))
@@ -217,6 +218,7 @@ namespace VolumetricSelection2077.Services
 
                     if ((nbNodesChange + nbInstancesChange) * -1 == proxyNode.ExpectedNodesUnderProxy && _settings.ResolveProxies == ProxyResolvingMode.Enum.ResolveAndDeleteUnreferenced)
                     {
+                        _deletedQuestRefHashes.Add((ulong)proxyNode.QuestRef);
                         sector.NodeDeletions ??= new();
                         sector.NodeDeletions.Add(new AxlNodeDeletion
                         {
@@ -243,14 +245,22 @@ namespace VolumetricSelection2077.Services
             }
 
             var allNodeRemovalProxyRefs = sectors.Values.Where(x => x.NodeDeletions is not null)
-                .SelectMany(x => x.NodeDeletions).Select(x => x.ProxyRef);
+                .SelectMany(x => x.NodeDeletions).Where(x => !IsInstancedNode(x)).Where(x => x.ProxyRef is not 0).Select(x => x.ProxyRef).Distinct();
             var allProxyMutationRefs = sectors.Values.Where(x => x.NodeMutations is not null).SelectMany(x => x.NodeMutations).Select(x =>
                 (x as AxlProxyNodeMutationMutation).QuestRef).Distinct().ToList();
+            allProxyMutationRefs.AddRange(_deletedQuestRefHashes);
+            _deletedQuestRefHashes.Clear();
             var diff = allNodeRemovalProxyRefs.Except(allProxyMutationRefs).ToList();
             
-            Logger.Error($"Found {diff.Count} unresolved proxy references! {string.Join(", ", diff)}");
+            if (diff.Count > 0)
+                Logger.Warning($"Found {diff.Count} unresolved proxy references! {string.Join(", ", diff)}");
         }
 
+        private static bool IsInstancedNode(AxlNodeDeletion node)
+        {
+            return node.Type is nameof(NodeTypeProcessingOptions.Enum.worldInstancedDestructibleMeshNode) or nameof(NodeTypeProcessingOptions.Enum.worldInstancedMeshNode) or nameof(NodeTypeProcessingOptions.Enum.worldCollisionNode);
+        }
+        
         public static SectorMergeChangesCount CalculateDifference(AxlModificationFile merged, AxlModificationFile original)
         {
             int CountNodeDeletions(List<AxlSector> sectors) =>

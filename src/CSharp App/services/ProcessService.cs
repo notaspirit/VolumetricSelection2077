@@ -841,6 +841,9 @@ public class ProcessService
         var sectorMutations = ProcessProxyNodes(proxyNodes);
         var sectors = _mergingService.MergeSectors(sectorRemovals, sectorMutations);
         
+        sectorPathToExpectedNodes.Clear();
+        proxyNodes.Clear();
+        
         _progress.AddCurrent(1, Progress.ProgressSections.Finalization);
         if (sectors.Count == 0)
         {
