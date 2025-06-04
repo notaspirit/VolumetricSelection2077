@@ -162,41 +162,9 @@ public class ProcessService
         var result = new List<AxlSector>();
         foreach (var proxyNode in proxyNodes)
         {
-            var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
-            
-            bool? matchesDebugFilter = null;
-            bool? matchesResourceFilter = null;
-            
-            if (_settings.DebugNameFilter.Count > 0)
-            {
-                matchesDebugFilter = false;
-                foreach (var filter in _settings.DebugNameFilter)
-                {
-                    if (Regex.IsMatch(nodeEntry.DebugName?.ToLower() ?? "", filter))
-                    {
-                        matchesDebugFilter = true;
-                        break;
-                    }
-                }
-                
-            }
-            
-            if (_settings.ResourceNameFilter.Count > 0)
-            {
-                matchesResourceFilter = false;
-                foreach (var filter in _settings.ResourceNameFilter)
-                {
-                    if (Regex.IsMatch(nodeEntry.ResourcePath?.ToLower() ?? "", filter))
-                    {
-                        matchesResourceFilter = true;
-                        break;
-                    }
-                }
-            }
             if (result.All(x => x.Path != proxyNode.Key))
             {
-                var expectedNodes = 0;
-                if (!sectorPathToExpectedNodes.TryGetValue(proxyNode.Key, out expectedNodes))
+                if (!sectorPathToExpectedNodes.TryGetValue(proxyNode.Key, out var expectedNodes))
                 {
                     var sector = _gameFileService.GetSector(proxyNode.Key);
                     if (sector == null)
@@ -234,7 +202,7 @@ public class ProcessService
 
         if (IsNodeTypeProxy(nodeEntry.Type) && _settings.ResolveProxies)
         {
-            if (nodeDataEntry.ProxyRef == null)
+            if (nodeDataEntry.QuestRef == null)
                 return null;
             
             proxyNodes.Add(new KeyValuePair<string, AxlProxyNodeMutationMutation>(sectorPath, new AxlProxyNodeMutationMutation
@@ -244,21 +212,11 @@ public class ProcessService
                 ProxyRef = nodeDataEntry.ProxyRef,
                 Type = nodeEntry.Type.ToString(),
                 NbNodesUnderProxyDiff = 0,
-                ExpectedNodesUnderProxy = nodeEntry.ExpectedNodesUnderProxy ?? 0
+                ExpectedNodesUnderProxy = nodeEntry.ExpectedNodesUnderProxy ?? 0,
+                QuestRef = nodeDataEntry.QuestRef
             }));
             
             return null;
-        }
-        
-        if (_settings.NukeOccluders && nodeEntry.Type.ToString().ToLower().Contains("occluder"))
-        {
-            return new AxlNodeDeletion()
-            {
-                Type = nodeEntry.Type.ToString(),
-                Index = index,
-                DebugName = nodeEntry.DebugName,
-                ProxyRef = nodeDataEntry.ProxyRef,
-            };
         }
         
         bool? matchesDebugFilter = null;

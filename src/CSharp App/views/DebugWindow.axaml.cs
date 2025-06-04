@@ -98,4 +98,11 @@ public partial class DebugWindow : Window
             $"{cacheMetadata.GameVersion}-{cacheMetadata.VS2077Version}.bin"));
         _debugWindowViewModel.IsProcessing = false;
     }
+    
+    private void RunRecalcTest_Click(object? sender, RoutedEventArgs e)
+    {
+        _debugWindowViewModel.IsProcessing = true;
+        TestRecalulateNbNodesUnderProxy.Run();
+        _debugWindowViewModel.IsProcessing = false;
+    }
 }
