@@ -153,17 +153,6 @@ namespace VolumetricSelection2077.Services
         
         public void RecalculateNbNodesUnderProxy(Dictionary<string, AxlSector> sectors)
         {
-            /*
-            Logger.Debug($"All non 0 or null proxy refs: {String.Join(", ", sectors.Values
-                .Where(s => s.NodeDeletions != null)
-                .SelectMany(s => s.NodeDeletions)
-                .Where(n => n is AxlNodeBase nodeBase && nodeBase.ProxyRef is not 0).Select(n => n.ProxyRef)
-                .ToList())}");
-            */
-            
-            // resolving missing node properties makes no difference for the undercounted proxy node
-            // nor does running the method on a finished xl file
-            
             foreach (var sector in sectors.Values)
             { 
                 ResolveMissingNodeProperties(sector);
@@ -180,49 +169,37 @@ namespace VolumetricSelection2077.Services
                     var nodeMutation = sector.NodeMutations[i];
                     if (nodeMutation is not AxlProxyNodeMutationMutation proxyNode)
                     {
-                        if (nodeMutation.Type.ToLower().Contains("proxy"))
+                        if (nodeMutation.Type.Contains("proxy", StringComparison.CurrentCultureIgnoreCase))
                             Logger.Warning($"Node {nodeMutation.Index}, {sector.Path} references a proxy node, but is not a proxy node mutation. Skipping...");
                         continue;
                     }
     
-                    if (proxyNode.QuestRef is null or 0)
+                    if (proxyNode.QuestRef is null or 0 || proxyNode.ExpectedNodesUnderProxy == 0)
                     {
                         sector.NodeMutations.RemoveAt(i);
                         continue;
                     }
-                    /*
-                    if (proxyNode.ExpectedNodesUnderProxy == 0)
-                        Logger.Success($"Found proxy node {sector.Path}, {proxyNode.Index} with no expected nodes under proxy. Skipping...");
-                    */
+
                     var nodesReferencingThisProxy = sectors.Values
                         .Where(s => s.NodeDeletions != null)
                         .SelectMany(s => s.NodeDeletions)
                         .Where(n => n.ProxyRef == proxyNode.QuestRef)
                         .ToList();
-                    if (nodesReferencingThisProxy.Count != 0)
-                        Logger.Debug($"Found {nodesReferencingThisProxy.Count} references for {proxyNode.QuestRef} in {sector.Path}");
                     
                     var nbNodesChange = 0;
                     foreach (var node in nodesReferencingThisProxy)
                     {
                         switch (node)
                         {
-                            // use expected count instead of actual count here due to issue with archiveXl
-                            // axl has even more issues with instanced nodes and proxies, having any instance deletions breaks the proxy
-                            case AxlCollisionNodeDeletion col:
-                                nbNodesChange -= col.ExpectedActors;
-                                break;
-                            case AxlInstancedNodeDeletion inst:
-                                nbNodesChange -= inst.ExpectedInstances;
+                            // actor and instanced nodes just need to not be counted at all for the proxy
+                            case AxlCollisionNodeDeletion:
+                            case AxlInstancedNodeDeletion:
                                 break;
                             default:
                                 nbNodesChange--;
                                 break;
                         }
                     }
-                    
-                    if (nodesReferencingThisProxy.Count != 0)
-                        Logger.Debug($"After counting: {nbNodesChange}");
                     
                     if (nbNodesChange == 0)
                     {
@@ -231,9 +208,6 @@ namespace VolumetricSelection2077.Services
                     }
                     
                     proxyNode.NbNodesUnderProxyDiff = nbNodesChange;
-                    
-                    if (nbNodesChange * -1 > proxyNode.ExpectedNodesUnderProxy)
-                        Logger.Error($"Too many nodes! {nbNodesChange} vs expected {proxyNode.ExpectedNodesUnderProxy}");
                 }
             }
             
