@@ -410,25 +410,14 @@ public class ProcessService
     // also returns null if none of the nodes in the sector are inside the box
     private async Task<(bool success, string error, AxlRemovalSector? result)> ProcessStreamingsector(AbbrSector sector, string sectorPath, SelectionInput selectionBox)
     {
-        async Task<AxlRemovalNodeDeletion?> ProcessNodeAsyncWithReport(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index, AbbrSector sector, SelectionInput selectionBox)
-        {
-            try
-            {
-                return await ProcessNodeAsync(nodeDataEntry, index, sector, selectionBox);
-            }
-            finally
-            {
-                _progress.AddCurrent(1, Progress.ProgressSections.Processing);
-            }
-        }
-        _progress.AddTarget(sector.NodeData.Length, Progress.ProgressSections.Processing);
-        _progress.AddCurrent(1, Progress.ProgressSections.Startup);
-        var tasks = sector.NodeData.Select((input, index) => Task.Run(() => ProcessNodeAsyncWithReport(input, index, sector, selectionBox))).ToArray();
+        var tasks = sector.NodeData.Select((input, index) => Task.Run(() => ProcessNodeAsync(input, index, sector, selectionBox))).ToArray();
 
         var nodeDeletionsRaw = await Task.WhenAll(tasks);
         
         List<AxlRemovalNodeDeletion> nodeDeletions = nodeDeletionsRaw.OfType<AxlRemovalNodeDeletion>().ToList();
 
+        _progress.AddCurrent(1, Progress.ProgressSections.Processing);
+        
         if (nodeDeletions.Count == 0)
         {
             return (true, "No Nodes Intersect with Box.", null);
@@ -648,7 +637,6 @@ public class ProcessService
     private async Task<AxlRemovalSector?> SectorProcessThread(string streamingSectorName, SelectionInput CETOutputFile)
     {
         Logger.Info($"Starting sector process thread for {streamingSectorName}...");
-        _progress.AddCurrent(1, Progress.ProgressSections.Startup);
         try
         {
             string streamingSectorNameFix = Regex.Replace(streamingSectorName, @"\\{2}", @"\");
@@ -703,7 +691,9 @@ public class ProcessService
         Logger.Info("Starting Process...");
         
         _progress.Reset();
-        _progress.SetWeight(0.1f, 0.85f, 0.05f);
+        _progress.SetWeight(0.05f, 0.9f, 0.05f);
+        
+        _progress.AddTarget(2, Progress.ProgressSections.Startup);
         
         bool customRemovalFileProvided = customRemovalFile != null;
         bool customRemovalDirectoryProvided = customRemovalDirectory != null;
@@ -751,6 +741,8 @@ public class ProcessService
             return (false, "Failed to start listening to write requests in cache service!");
         }
 
+        _progress.AddCurrent(1, Progress.ProgressSections.Startup);
+        
         AxlRemovalSector?[] sectorsOutputRaw;
 
         var vanillaBoundingBoxes = _cacheService.GetAllEntries(CacheDatabases.VanillaBounds);
@@ -769,9 +761,11 @@ public class ProcessService
 
         Logger.Info($"Found {CETOutputFile.Sectors.Count} sectors to process...");
         
+        _progress.AddCurrent(1, Progress.ProgressSections.Startup);
+        
         try
         {
-            _progress.AddTarget(CETOutputFile.Sectors.Count * 2, Progress.ProgressSections.Startup);
+            _progress.AddTarget(CETOutputFile.Sectors.Count, Progress.ProgressSections.Processing);
             var tasks = CETOutputFile.Sectors.Select(input => Task.Run(() => SectorProcessThread(input, CETOutputFile)))
                 .ToArray();
             sectorsOutputRaw = await Task.WhenAll(tasks);
