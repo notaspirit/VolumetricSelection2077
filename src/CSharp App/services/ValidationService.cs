@@ -58,12 +58,18 @@ namespace VolumetricSelection2077.Services
         /// </summary>
         /// <param name="gamePath">Path to the root of the game directory</param>
         /// <returns></returns>
-        public static (bool, PathValidationResult) ValidateSelectionFile(string gamePath)
+        public (bool, PathValidationResult) ValidateSelectionFile(string gamePath)
         {
             var vpr = ValidatePath(gamePath);
             if (vpr != PathValidationResult.ValidDirectory)
                 return (false, vpr);
-            string selectionFilePath = Path.Combine(gamePath, "bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "VolumetricSelection2077", "data", "selection.json");
+            string selectionFilePath;
+            if (string.IsNullOrWhiteSpace(_settingsService.CustomSelectionFilePath))
+                selectionFilePath = Path.Combine(_settingsService.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks",
+                    "mods", "VolumetricSelection2077", "data", "selection.json");
+            else
+                selectionFilePath = Path.Combine(_settingsService.CustomSelectionFilePath, "bin", "x64", "plugins", "cyber_engine_tweaks",
+                    "mods", "VolumetricSelection2077", "data", "selection.json");
             return (File.Exists(selectionFilePath), vpr);
         }
         /// <summary>

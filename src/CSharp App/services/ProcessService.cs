@@ -721,8 +721,14 @@ public class ProcessService
         
         if (customRemovalDirectory == null)
         {
-            string CETOuputFilepath = Path.Combine(_settings.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks",
+            string CETOuputFilepath;
+            if (string.IsNullOrWhiteSpace(_settings.CustomSelectionFilePath))
+                CETOuputFilepath= Path.Combine(_settings.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks",
                 "mods", "VolumetricSelection2077", "data", "selection.json");
+            else
+                CETOuputFilepath= Path.Combine(_settings.CustomSelectionFilePath, "bin", "x64", "plugins", "cyber_engine_tweaks",
+                    "mods", "VolumetricSelection2077", "data", "selection.json");
+            
             string CETOutputFileString = File.ReadAllText(CETOuputFilepath);
             ( var successSP, var errorSP, CETOutputFile) = SelectionParser.ParseSelection(CETOutputFileString);
 

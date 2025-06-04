@@ -40,6 +40,7 @@ public class SettingsService
         DidUpdate = false;
         CETInstallLocation = "";
         WindowRecoveryState = new();
+        CustomSelectionFilePath = "";
     }
     
     public static SettingsService Instance
@@ -95,8 +96,8 @@ public class SettingsService
     public string CETInstallLocation { get; set; }
     public bool CacheModdedResources { get; set; }
     public string MinimumCacheVersion { get; } = "1000.0.0-beta7";
-    
     public WindowRecoveryState WindowRecoveryState { get; set; }
+    public string CustomSelectionFilePath { get; set; }
     
     /// <summary>
     /// Loads the settings or creates a new settings file if it doesn't exist
@@ -146,6 +147,7 @@ public class SettingsService
                     CETInstallLocation = settings.CETInstallLocation;
                     CacheModdedResources = settings.CacheModdedResources;
                     WindowRecoveryState = settings.WindowRecoveryState;
+                    CustomSelectionFilePath = settings.CustomSelectionFilePath;
                 }
             }
             catch (Exception ex)

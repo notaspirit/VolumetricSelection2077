@@ -26,6 +26,7 @@ namespace VolumetricSelection2077.Resources
             public static string CacheDirectory { get; } = $"Where the cache is saved to, can grow upto 100GB in size (all cached vanilla entries total up to 7.6GB), defaults to {@"%AppData%\VolumetricSelection2077\cache\"}";
             public static string CacheEnabled { get; } = "Caches uncooked game files, significantly improving processing time";
             public static string ClearCache { get; } = "Clear cached vanilla or modded files.";
+            public static string CustomSelectionFilePath { get; } = "Path to selection file location, e.g. when using mo2 the path to the overwrite folder. If selection file is in the game directory leave this blank.";
         }
 
         public static class Watermarks
@@ -59,5 +60,6 @@ namespace VolumetricSelection2077.Resources
             public static string ClearModdedCache { get; } = "Modded";
             public static string ClearVanillaBoundsCache { get; } = "Vanilla Bounds";
             public static string ClearModdedBoundsCache { get; } = "Modded Bounds";
+            public static string CustomSelectionFilePath { get; } = "Custom Selection File Path";
         }
 }
