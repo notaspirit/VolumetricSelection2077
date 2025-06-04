@@ -293,27 +293,39 @@ public class ProcessService
                             return null;
                     }
                     
+                    bool isInstanced = nodeEntry.Type is NodeTypeProcessingOptions.Enum.worldInstancedDestructibleMeshNode 
+                                                        or NodeTypeProcessingOptions.Enum.worldInstancedMeshNode;
+                    
                     var mesh = _gameFileService.GetCMesh(nodeEntry.ResourcePath);
                     if (mesh == null)
                     {
                         Logger.Warning($"Failed to get CMesh from {nodeEntry.ResourcePath}");
                         return null;
                     }
-                    bool isInside = CollisionCheckService.IsMeshInsideBox(mesh,
+                    var (isInside, instances) = CollisionCheckService.IsMeshInsideBox(mesh,
                         selectionBox.Obb,
                         selectionBox.Aabb,
-                        nodeDataEntry.Transforms);
+                        nodeDataEntry.Transforms,
+                        checkAllTransforms: isInstanced);
+
+                    if (!isInside) 
+                        return null;
                     
-                    if (isInside)
-                    {
-                        return new AxlRemovalNodeDeletion()
+                    if (isInstanced)
+                        return new AxlRemovalNodeDeletion
                         {
                             Index = index,
                             Type = nodeEntry.Type.ToString(),
-                            DebugName = nodeEntry.DebugName
+                            DebugName = nodeEntry.DebugName,
+                            ActorDeletions = instances,
+                            ExpectedActors = nodeDataEntry.Transforms.Length
                         };
-                    }
-                    return null;
+                    return new AxlRemovalNodeDeletion
+                    {
+                        Index = index,
+                        Type = nodeEntry.Type.ToString(),
+                        DebugName = nodeEntry.DebugName
+                    };
                 case CollisionCheck.Types.Collider:
                     List<int> actorRemoval = new List<int>();
                     int actorIndex = 0;
