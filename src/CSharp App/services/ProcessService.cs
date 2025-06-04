@@ -836,10 +836,14 @@ public class ProcessService
         }
         _progress.AddCurrent(1, Progress.ProgressSections.Finalization);
 
-        Logger.Info($"Found {proxyNodes.Count} proxies...");
+        if (_settings.ResolveProxies != ProxyResolvingMode.Enum.Delete)
+            Logger.Info($"Found {proxyNodes.Count} proxies to consider...");
         
         var sectorMutations = ProcessProxyNodes(proxyNodes);
         var sectors = _mergingService.MergeSectors(sectorRemovals, sectorMutations);
+        
+        if (_settings.ResolveProxies != ProxyResolvingMode.Enum.Delete)
+            Logger.Success($"Resolved {sectors.Where(s => s.NodeMutations is not null).SelectMany(s => s.NodeMutations).Count()} proxy nodes.");
         
         sectorPathToExpectedNodes.Clear();
         proxyNodes.Clear();

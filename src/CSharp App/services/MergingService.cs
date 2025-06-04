@@ -279,8 +279,6 @@ namespace VolumetricSelection2077.Services
                     .OfType<AxlInstancedNodeDeletion>()
                     .Sum(d => d.InstanceDeletions?.Count ?? 0);
             
-            Logger.Debug($"Existing Actors: {CountCollisionActors(original.Streaming.Sectors)}, Existing Instances: {CountInstanceDeletions(original.Streaming.Sectors)}");
-            Logger.Debug($"Merged Actors: {CountCollisionActors(merged.Streaming.Sectors)}, Merged Instances: {CountInstanceDeletions(merged.Streaming.Sectors)}");
             return new SectorMergeChangesCount
             {
                 newSectors = merged.Streaming.Sectors.Count - original.Streaming.Sectors.Count,
