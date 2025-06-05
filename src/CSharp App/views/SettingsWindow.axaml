@@ -11,24 +11,7 @@
     xmlns:resources="clr-namespace:VolumetricSelection2077.Resources"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border Margin="5">
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="200" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+        <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
 
             <!--  Header Row  -->
             <Image
@@ -106,6 +89,14 @@
                 Margin="5"
                 Text="Clear Cache"
                 ToolTip.Tip="{x:Static resources:ToolTips.ClearCache}"
+                VerticalAlignment="Center" />
+            <TextBlock
+                Grid.Column="0"
+                Grid.Row="11"
+                HorizontalAlignment="Left"
+                Margin="5"
+                Text="{x:Static resources:Labels.CustomSelectionFilePath}"
+                ToolTip.Tip="{x:Static resources:ToolTips.CustomSelectionFilePath}"
                 VerticalAlignment="Center" />
             <!--  Second Row: Setting Control (e.g., ToggleSwitch)  -->
             <TextBox
@@ -217,6 +208,12 @@
                     </Button.Styles>
                 </Button>
             </Grid>
+            <TextBox
+                Grid.Column="1"
+                Grid.Row="11"
+                Margin="5"
+                Text="{Binding Settings.CustomSelectionFilePath}"
+                Watermark="{x:Static resources:Labels.CustomSelectionFilePath}" />
         </Grid>
     </Border>
 </Window>
