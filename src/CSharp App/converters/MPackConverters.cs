@@ -4,7 +4,7 @@ using MessagePack;
 using MessagePack.Formatters;
 using SharpDX;
 
-namespace VolumetricSelection2077.Converters;
+namespace VolumetricSelection2077.converters;
 
 public class Vector3Formatter : IMessagePackFormatter<Vector3>
 {

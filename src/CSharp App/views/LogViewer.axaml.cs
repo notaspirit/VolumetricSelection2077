@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Avalonia.Controls;
-using Avalonia.Threading;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using DynamicData;
 using Serilog.Events;
-using VolumetricSelection2077.Models;
+using VolumetricSelection2077.models;
 
-namespace VolumetricSelection2077.Views
+namespace VolumetricSelection2077.views
 {
     public partial class LogViewer : UserControl
     {

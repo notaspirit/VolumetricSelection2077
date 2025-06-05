@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace VolumetricSelection2077.ViewModels;
+namespace VolumetricSelection2077.views;
 
 public class DialogWindowViewModel
 {

@@ -1,26 +1,23 @@
 using System;
-using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.ComponentModel;
-using VolumetricSelection2077.Models;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Reflection.Emit;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using DynamicData;
 using MessagePack;
-using VolumetricSelection2077.Parsers;
 using Newtonsoft.Json;
 using SharpDX;
-using VolumetricSelection2077.Resources;
-using VolumetricSelection2077.TestingStuff;
+using VolumetricSelection2077.models;
+using VolumetricSelection2077.Parsers;
+using VolumetricSelection2077.resources;
 using WolvenKit.RED4.Types;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 using Path = System.IO.Path;
 
-namespace VolumetricSelection2077.Services;
+namespace VolumetricSelection2077.services;
 
 public class ProcessService
 {

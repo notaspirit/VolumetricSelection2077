@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using VolumetricSelection2077.ViewModels;
 
 namespace VolumetricSelection2077.views;
 

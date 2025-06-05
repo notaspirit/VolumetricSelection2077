@@ -1,4 +1,4 @@
-namespace VolumetricSelection2077.Models;
+namespace VolumetricSelection2077.models;
 
 public class FileSize
 {

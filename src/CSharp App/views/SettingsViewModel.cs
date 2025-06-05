@@ -2,12 +2,10 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using Avalonia.Media.Imaging;
-using VolumetricSelection2077.Resources;
-using VolumetricSelection2077.Services;
-using VolumetricSelection2077.views;
-using YamlDotNet.Core.Tokens;
+using VolumetricSelection2077.resources;
+using VolumetricSelection2077.services;
 
-namespace VolumetricSelection2077.ViewModels
+namespace VolumetricSelection2077.views
 {
     public class SettingsViewModel : INotifyPropertyChanged
     { 

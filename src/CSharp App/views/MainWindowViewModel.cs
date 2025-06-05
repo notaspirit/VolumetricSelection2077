@@ -1,18 +1,14 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Avalonia.Controls;
-using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Media.Imaging;
-using VolumetricSelection2077.Resources;
-using VolumetricSelection2077.Services;
-using VolumetricSelection2077.views;
-using VolumetricSelection2077.ViewStructures;
+using VolumetricSelection2077.resources;
+using VolumetricSelection2077.services;
+using VolumetricSelection2077.View_Structures;
 
-namespace VolumetricSelection2077.ViewModels
+namespace VolumetricSelection2077.views
 {
     public class MainWindowViewModel : INotifyPropertyChanged
     {

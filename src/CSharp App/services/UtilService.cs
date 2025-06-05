@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
-using VolumetricSelection2077.Models;
-using WolvenKit.Interfaces.Extensions;
+using VolumetricSelection2077.models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace VolumetricSelection2077.Services
+namespace VolumetricSelection2077.services
 {
     public class UtilService
     {

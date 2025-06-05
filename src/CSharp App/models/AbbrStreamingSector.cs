@@ -1,8 +1,8 @@
 using MessagePack;
 using SharpDX;
-using VolumetricSelection2077.Resources;
+using VolumetricSelection2077.resources;
 
-namespace VolumetricSelection2077.Models
+namespace VolumetricSelection2077.models
 {
     [MessagePackObject]
     public class AbbrSector

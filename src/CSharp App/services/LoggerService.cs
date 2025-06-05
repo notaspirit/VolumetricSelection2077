@@ -1,10 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
 using Serilog;
 using Serilog.Core;
-using System;
-using System.IO;
-using System.Collections.Generic;
 
-namespace VolumetricSelection2077.Services
+namespace VolumetricSelection2077.services
 {
     public static class Logger
     {

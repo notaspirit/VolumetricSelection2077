@@ -3,8 +3,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using DynamicData;
-using VolumetricSelection2077.Services;
-using VolumetricSelection2077.ViewModels;
 
 namespace VolumetricSelection2077.views;
 

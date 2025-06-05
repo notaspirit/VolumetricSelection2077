@@ -1,8 +1,9 @@
 <UserControl
-    x:Class="VolumetricSelection2077.Views.LogViewer"
-    x:DataType="views:LogViewer"
+    x:Class="VolumetricSelection2077.views.LogViewer"
+    x:DataType="views1:LogViewer"
     xmlns="https://github.com/avaloniaui"
     xmlns:views="clr-namespace:VolumetricSelection2077.Views"
+    xmlns:views1="clr-namespace:VolumetricSelection2077.views"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid>
         <ScrollViewer

@@ -1,7 +1,7 @@
-using VolumetricSelection2077.Models;
 using Enums = WolvenKit.RED4.Types.Enums;
 using SharpDX;
-using VolumetricSelection2077.Services;
+using VolumetricSelection2077.models;
+using VolumetricSelection2077.services;
 
 namespace VolumetricSelection2077.TestingStuff;
 

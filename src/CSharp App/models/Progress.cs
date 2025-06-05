@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
 using Avalonia.Threading;
-using Tmds.DBus.Protocol;
-using VolumetricSelection2077.Services;
 
-namespace VolumetricSelection2077.Models;
+namespace VolumetricSelection2077.models;
 
 public class ProgressSection
 {

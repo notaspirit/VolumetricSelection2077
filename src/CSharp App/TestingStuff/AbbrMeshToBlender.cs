@@ -4,8 +4,6 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using SharpDX;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Services;
 
 namespace VolumetricSelection2077.TestingStuff;
 

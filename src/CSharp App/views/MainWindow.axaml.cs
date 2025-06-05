@@ -1,24 +1,18 @@
-using Avalonia.Controls;
-using VolumetricSelection2077.Views;
-using VolumetricSelection2077.Services;
 using System;
-using System.ComponentModel;
 using System.IO;
-using Avalonia.Interactivity;
 using System.Threading.Tasks;
-using Avalonia.Threading;
-using System.Diagnostics;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Threading;
 using VolumetricSelection2077.Extensions;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.TestingStuff;
-using VolumetricSelection2077.ViewModels;
-using VolumetricSelection2077.views;
-using VolumetricSelection2077.ViewStructures;
+using VolumetricSelection2077.models;
+using VolumetricSelection2077.services;
+using VolumetricSelection2077.View_Structures;
 
-namespace VolumetricSelection2077;
+namespace VolumetricSelection2077.views;
 public partial class MainWindow : Window
 {
     private readonly ProcessService _processService;

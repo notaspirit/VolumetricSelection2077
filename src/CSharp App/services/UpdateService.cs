@@ -6,7 +6,8 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Octokit;
-namespace VolumetricSelection2077.Services;
+
+namespace VolumetricSelection2077.services;
 
 public class UpdateService
 {

@@ -9,16 +9,12 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using LightningDB;
 using MessagePack;
-using Microsoft.ClearScript.Util.Web;
 using Microsoft.VisualBasic.FileIO;
 using SharpDX;
-using VolumetricSelection2077.Helpers;
-using VolumetricSelection2077.Models;
-using WolvenKit.Core.Extensions;
-using WolvenKit.RED4.Types;
+using VolumetricSelection2077.models;
 using SearchOption = System.IO.SearchOption;
 
-namespace VolumetricSelection2077.Services;
+namespace VolumetricSelection2077.services;
 
 public enum CacheDatabases
 {

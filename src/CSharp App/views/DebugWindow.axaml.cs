@@ -6,9 +6,8 @@ using Avalonia.Controls.Shapes;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using VolumetricSelection2077.Extensions;
-using VolumetricSelection2077.Services;
+using VolumetricSelection2077.services;
 using VolumetricSelection2077.TestingStuff;
-using VolumetricSelection2077.ViewModels;
 using Path = System.IO.Path;
 
 namespace VolumetricSelection2077.views;

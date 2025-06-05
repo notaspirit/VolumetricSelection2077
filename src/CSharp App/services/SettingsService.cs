@@ -1,16 +1,15 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Resources;
+using VolumetricSelection2077.models;
+using VolumetricSelection2077.resources;
 
-namespace VolumetricSelection2077.Services;
+namespace VolumetricSelection2077.services;
 public class SettingsService
 {
     private static SettingsService? _instance;

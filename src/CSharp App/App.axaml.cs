@@ -1,7 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using VolumetricSelection2077.Services;
+using VolumetricSelection2077.services;
 
 namespace VolumetricSelection2077;
 
@@ -16,7 +16,7 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new MainWindow();
+            desktop.MainWindow = new views.MainWindow();
         }
 
         base.OnFrameworkInitializationCompleted();

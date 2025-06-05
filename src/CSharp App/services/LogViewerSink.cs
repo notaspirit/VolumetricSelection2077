@@ -1,10 +1,12 @@
+using System.IO;
+using Avalonia.Threading;
 using Serilog.Core;
 using Serilog.Events;
-using Avalonia.Threading;
-using VolumetricSelection2077.Views;
 using Serilog.Formatting;
 using Serilog.Formatting.Display;
-using System.IO;
+using VolumetricSelection2077.views;
+
+namespace VolumetricSelection2077.services;
 
 public class LogViewerSink : ILogEventSink
 {

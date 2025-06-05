@@ -4,12 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using MessagePack;
 using SharpDX;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Resources;
+using VolumetricSelection2077.models;
+using VolumetricSelection2077.resources;
 using WolvenKit.RED4.Types;
 using Vector3 = SharpDX.Vector3;
 
-namespace VolumetricSelection2077.Services;
+namespace VolumetricSelection2077.services;
 
 public class BoundingBoxBuilderService
 {

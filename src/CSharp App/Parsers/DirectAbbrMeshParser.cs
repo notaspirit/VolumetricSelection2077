@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using SharpDX;
-using VolumetricSelection2077.Models;
+using VolumetricSelection2077.models;
 using WolvenKit.Common.PhysX;
 using WolvenKit.RED4.Archive;
 using WolvenKit.RED4.Archive.CR2W;

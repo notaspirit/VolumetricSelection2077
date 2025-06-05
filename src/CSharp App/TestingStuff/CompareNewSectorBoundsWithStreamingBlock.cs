@@ -1,8 +1,8 @@
 using System.Linq;
 using MessagePack;
 using SharpDX;
-using VolumetricSelection2077.Converters;
-using VolumetricSelection2077.Services;
+using VolumetricSelection2077.converters;
+using VolumetricSelection2077.services;
 using WolvenKit.RED4.Types;
 using Vector3 = SharpDX.Vector3;
 

@@ -1,6 +1,6 @@
 using SharpDX;
 
-namespace VolumetricSelection2077.Converters;
+namespace VolumetricSelection2077.converters;
 
 public class WolvenkitToSharpDX
 {

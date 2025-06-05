@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using MessagePack;
 using SharpDX;
 
-namespace VolumetricSelection2077.Models;
+namespace VolumetricSelection2077.models;
 
 [MessagePackObject]
 public class SectorBBDump
