@@ -1,5 +1,5 @@
 local vector3 = require('classes/vector3')
-local RHTScan = require('modules/RHTIntegration')
+local saveSelectionOutput = require("modules/saveSelectionOutput")
 local visualizationBox = require('classes/visualizationBox')
 local StatusMessage = require('modules/StatusMessage')
 local settings = require('modules/settings')
@@ -14,14 +14,14 @@ local relativeOffset = vector3:new(0, 0, 0)
 local selectionBox = nil
 
 -- Settings
-local versionString = "1000.0.0-beta7"
+local versionString = "1000.0.0-beta8"
 
 local settingsInstance = settings.getInstance()
 local isHighlighted = false
 local isInitialized = false
 
 -- local variables for dragloats in settings tab
-local preciseMoveLocal = 0.001 
+local preciseMoveLocal = 0.001
 local unpreciseMoveLocal = 0.5
 local preciseRotationLocal = 0.01
 local unpreciseRotationLocal = 1.0
@@ -45,7 +45,7 @@ local entityState = {
 -- I think this function gets called every frame? not sure and it works so idk rn
 local function initSelectionBox()
     if isInitialized then return end
-    
+
     -- First initialize the selection box
     if not settingsInstance.selectionBox then
         local newBox = visualizationBox:new(originPoint, scalePoint, rotationPoint)
@@ -65,7 +65,7 @@ local function initSelectionBox()
     preciseMoveLocal = settingsInstance.preciseMove
     unpreciseMoveLocal = settingsInstance.unpreciseMove
     preciseRotationLocal = settingsInstance.preciseRotation
-    unpreciseRotationLocal = settingsInstance.unpreciseRotation    
+    unpreciseRotationLocal = settingsInstance.unpreciseRotation
     RHTRangeLocal = settingsInstance.RHTRange
     isInitialized = true
 end
@@ -138,58 +138,57 @@ end
 -- Controls Tab
 local function controlsTab()
     -- Position Headers
-    if ImGui.BeginTable("PositionHeaders", 5, ImGuiTableFlags.SizingFixedFit) then  -- 5 columns: Label, X, Y, Z, Button
+    if ImGui.BeginTable("PositionHeaders", 5, ImGuiTableFlags.SizingFixedFit) then -- 5 columns: Label, X, Y, Z, Button
         -- Custom header row
         ImGui.TableNextRow()
         ImGui.TableNextColumn()
-        ImGui.SetNextItemWidth(valueWidth)  -- Set width for Type column
+        ImGui.SetNextItemWidth(valueWidth) -- Set width for Type column
         CenteredText("Type", valueWidth)
-        
+
         ImGui.TableNextColumn()
-        ImGui.SetNextItemWidth(valueWidth)  -- Set width for X column
+        ImGui.SetNextItemWidth(valueWidth) -- Set width for X column
         CenteredText("X", valueWidth)
-        
+
         ImGui.TableNextColumn()
-        ImGui.SetNextItemWidth(valueWidth)  -- Set width for Y column
+        ImGui.SetNextItemWidth(valueWidth) -- Set width for Y column
         CenteredText("Y", valueWidth)
-        
+
         ImGui.TableNextColumn()
-        ImGui.SetNextItemWidth(valueWidth)  -- Set width for Z column
+        ImGui.SetNextItemWidth(valueWidth) -- Set width for Z column
         CenteredText("Z", valueWidth)
-        
+
         ImGui.TableNextColumn()
-        ImGui.SetNextItemWidth(valueWidth)  -- Set width for Actions column
+        ImGui.SetNextItemWidth(valueWidth) -- Set width for Actions column
         CenteredText("Actions", valueWidth)
 
         ImGui.TableNextRow()
         ImGui.TableNextColumn()
         ImGui.TableNextColumn()
         ImGui.TableNextColumn()
-        ImGui.SetNextItemWidth(valueWidth)  
-        CenteredText("Box Point 1", valueWidth)
+        ImGui.SetNextItemWidth(valueWidth)
+        CenteredText("Origin (Center)", valueWidth)
         -- Absolute Position Row
         ImGui.TableNextRow()
         ImGui.TableNextColumn()
-        ImGui.SetNextItemWidth(valueWidth) 
+        ImGui.SetNextItemWidth(valueWidth)
         CenteredText("Absolute", valueWidth)
-        
+
         ImGui.TableNextColumn()
         ImGui.SetNextItemWidth(valueWidth)
         originPoint.x, changedOriginX = ImGui.DragFloat("##pos1x", originPoint.x, settingsInstance.currentMove)
-        
+
         ImGui.TableNextColumn()
         ImGui.SetNextItemWidth(valueWidth)
         originPoint.y, changedOriginY = ImGui.DragFloat("##pos1y", originPoint.y, settingsInstance.currentMove)
-        
+
         ImGui.TableNextColumn()
         ImGui.SetNextItemWidth(valueWidth)
         originPoint.z, changedOriginZ = ImGui.DragFloat("##pos1z", originPoint.z, settingsInstance.currentMove)
-        
+
         if changedOriginX or changedOriginY or changedOriginZ then
             selectionBox:setOrigin(originPoint)
             selectionBox:updatePosition()
             settingsInstance:update("selectionBox", selectionBox)
-            
         end
 
         ImGui.TableNextColumn()
@@ -198,64 +197,64 @@ local function controlsTab()
             setPlayerPosition()
             selectionBox:updatePosition()
             settingsInstance:update("selectionBox", selectionBox)
-            
         end
 
         -- Relative Position Row
         ImGui.TableNextRow()
         ImGui.TableNextColumn()
-        ImGui.SetNextItemWidth(valueWidth) 
+        ImGui.SetNextItemWidth(valueWidth)
         CenteredText("Relative", valueWidth)
-        
+
         ImGui.TableNextColumn()
         ImGui.SetNextItemWidth(valueWidth)
-        relativeOffset.x, changedRelativeRotationX = ImGui.DragFloat("##pos1xrel", relativeOffset.x, settingsInstance.currentMove)
-        
+        relativeOffset.x, changedRelativeRotationX = ImGui.DragFloat("##pos1xrel", relativeOffset.x,
+            settingsInstance.currentMove)
+
         ImGui.TableNextColumn()
         ImGui.SetNextItemWidth(valueWidth)
-        relativeOffset.y, changedRelativeRotationY = ImGui.DragFloat("##pos1yrel", relativeOffset.y, settingsInstance.currentMove)
-        
+        relativeOffset.y, changedRelativeRotationY = ImGui.DragFloat("##pos1yrel", relativeOffset.y,
+            settingsInstance.currentMove)
+
         ImGui.TableNextColumn()
         ImGui.SetNextItemWidth(valueWidth)
-        relativeOffset.z, changedRelativeRotationZ = ImGui.DragFloat("##pos1zrel", relativeOffset.z, settingsInstance.currentMove)
+        relativeOffset.z, changedRelativeRotationZ = ImGui.DragFloat("##pos1zrel", relativeOffset.z,
+            settingsInstance.currentMove)
 
         if changedRelativeRotationX or changedRelativeRotationY or changedRelativeRotationZ then
             originPoint = movePoint(originPoint, rotationPoint, relativeOffset)
             selectionBox:setOrigin(originPoint)
             selectionBox:updatePosition()
             settingsInstance:update("selectionBox", selectionBox)
-            
         end
 
         ImGui.TableNextRow()
         ImGui.TableNextColumn()
         ImGui.TableNextColumn()
         ImGui.TableNextColumn()
-        ImGui.SetNextItemWidth(valueWidth)  
+        ImGui.SetNextItemWidth(valueWidth)
         CenteredText("Scale", valueWidth)
         -- Absolute Position Row
         ImGui.TableNextRow()
         ImGui.TableNextColumn()
-        ImGui.SetNextItemWidth(valueWidth) 
+        ImGui.SetNextItemWidth(valueWidth)
         CenteredText("Absolute", valueWidth)
-        
+
         ImGui.TableNextColumn()
         ImGui.SetNextItemWidth(valueWidth)
         scalePoint.x, changedScaleX = ImGui.DragFloat("##scalex", scalePoint.x, settingsInstance.currentMove)
-        
+
         ImGui.TableNextColumn()
         ImGui.SetNextItemWidth(valueWidth)
         scalePoint.y, changedScaleY = ImGui.DragFloat("##scaley", scalePoint.y, settingsInstance.currentMove)
-        
+
         ImGui.TableNextColumn()
         ImGui.SetNextItemWidth(valueWidth)
         scalePoint.z, changedScaleZ = ImGui.DragFloat("##scalez", scalePoint.z, settingsInstance.currentMove)
-        
+
         if changedScaleX or changedScaleY or changedScaleZ then
             selectionBox:setScale(scalePoint)
             selectionBox:updateScale()
             settingsInstance:update("selectionBox", selectionBox)
-            
         end
 
         ImGui.TableNextColumn()
@@ -264,29 +263,28 @@ local function controlsTab()
             resetScale()
             selectionBox:updateScale()
             settingsInstance:update("selectionBox", selectionBox)
-            
         end
 
         ImGui.TableNextRow()
         ImGui.TableNextColumn()
         ImGui.TableNextColumn()
         ImGui.TableNextColumn()
-        ImGui.SetNextItemWidth(valueWidth)  
+        ImGui.SetNextItemWidth(valueWidth)
         CenteredText("Rotation", valueWidth)
         -- Rotation Row
         ImGui.TableNextRow()
         ImGui.TableNextColumn()
-        ImGui.SetNextItemWidth(valueWidth) 
+        ImGui.SetNextItemWidth(valueWidth)
         CenteredText("Absolute", valueWidth)
-        
+
         ImGui.TableNextColumn()
         ImGui.SetNextItemWidth(valueWidth)
         rotationPoint.x, changedRotationX = ImGui.DragFloat("##rotx", rotationPoint.x, settingsInstance.currentRotation)
-        
+
         ImGui.TableNextColumn()
         ImGui.SetNextItemWidth(valueWidth)
         rotationPoint.y, changedRotationY = ImGui.DragFloat("##roty", rotationPoint.y, settingsInstance.currentRotation)
-        
+
         ImGui.TableNextColumn()
         ImGui.SetNextItemWidth(valueWidth)
         rotationPoint.z, changedRotationZ = ImGui.DragFloat("##rotz", rotationPoint.z, settingsInstance.currentRotation)
@@ -295,7 +293,6 @@ local function controlsTab()
             wrapRotation(rotationPoint)
             selectionBox:updatePosition()
             settingsInstance:update("selectionBox", selectionBox)
-            
         end
         ImGui.TableNextColumn()
         ImGui.SetNextItemWidth(valueWidth)
@@ -303,7 +300,6 @@ local function controlsTab()
             resetRotation()
             selectionBox:updatePosition()
             settingsInstance:update("selectionBox", selectionBox)
-            
         end
 
         ImGui.TableNextRow()
@@ -311,13 +307,19 @@ local function controlsTab()
         ImGui.TableNextColumn()
         ImGui.TableNextColumn()
         ImGui.SetNextItemWidth(valueWidth)
-        -- Potential point of confusion for unexperienced users, consider changing name
         -- Change button color to green
-        ImGui.PushStyleColor(ImGuiCol.Button, 0, 180, 0, 0.8)  -- RGBA for green
-        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0, 180, 0, 0.6)  -- Slightly darker green when hovered
+        ImGui.PushStyleColor(ImGuiCol.Button, 0, 180, 0, 0.8)        -- RGBA for green
+        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0, 180, 0, 0.6) -- Slightly darker green when hovered
         ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0, 180, 0, 0.4)  -- Even darker green when active
-        if ImGui.Button("Read RHT Scan") then
-            handleRHTStatus(RHTScan(selectionBox))
+        if ImGui.Button("Save Selection") then
+            local outputTable = {
+                box = selectionBox:toTable(),
+            };
+            if saveSelectionOutput(jsonUtils.TableToJSON(outputTable)) then
+                statusMessage:setMessage("Saved selection to file.", "success", 10);
+            else
+                statusMessage:setMessage("Failed to save selection to file!", "error", 10);
+            end
         end
         ImGui.PopStyleColor(3)
 
@@ -333,7 +335,6 @@ local function controlsTab()
                 selectionBox:resolveEntity()
                 selectionBox:despawn()
             end
-
         end
 
         ImGui.TableNextColumn()
@@ -344,12 +345,10 @@ local function controlsTab()
             else
                 settingsInstance:update("precisionBool", true)
             end
-            
         end
         ImGui.EndTable()
     end
     statusMessage:display()
-    ImGui.Text("Make sure the entire selection is visible")
 end
 
 -- Settings Tab
@@ -360,7 +359,7 @@ local function settingsTab()
         ImGui.TableNextColumn()
         ImGui.Text("Move Precision")
         ImGui.TableNextColumn()
-        
+
         -- Imprecise Move
         ImGui.TableNextRow()
         ImGui.TableNextColumn()
@@ -388,7 +387,8 @@ local function settingsTab()
         ImGui.TableNextColumn()
         ImGui.SetNextItemWidth(valueWidth)
         local newPreciseMove
-        newPreciseMove, changedPreciseMove = ImGui.DragFloat("##preciseMove", preciseMoveLocal, 0.001, 0.0001, unpreciseMoveLocal)
+        newPreciseMove, changedPreciseMove = ImGui.DragFloat("##preciseMove", preciseMoveLocal, 0.001, 0.0001,
+            unpreciseMoveLocal)
         if changedPreciseMove then
             preciseMoveLocal = newPreciseMove
             settingsInstance:update("preciseMove", preciseMoveLocal)
@@ -415,7 +415,8 @@ local function settingsTab()
         ImGui.TableNextColumn()
         ImGui.SetNextItemWidth(valueWidth)
         local newUnpreciseRotation
-        newUnpreciseRotation, changedUnpreciseRotation = ImGui.DragFloat("##inpreciseRotation", unpreciseRotationLocal, 0.01)
+        newUnpreciseRotation, changedUnpreciseRotation = ImGui.DragFloat("##inpreciseRotation", unpreciseRotationLocal,
+            0.01)
         if changedUnpreciseRotation then
             unpreciseRotationLocal = newUnpreciseRotation
             settingsInstance:update("unpreciseRotation", unpreciseRotationLocal)
@@ -428,7 +429,7 @@ local function settingsTab()
             settingsInstance:update("unpreciseRotation", unpreciseRotationLocal)
             retogglePrecision()
         end
-        
+
         -- Precise Rotation
         ImGui.TableNextRow()
         ImGui.TableNextColumn()
@@ -436,7 +437,8 @@ local function settingsTab()
         ImGui.TableNextColumn()
         ImGui.SetNextItemWidth(valueWidth)
         local newPreciseRotation
-        newPreciseRotation, changedPreciseRotation = ImGui.DragFloat("##preciseRotation", preciseRotationLocal, 0.001, 0.0001, unpreciseRotationLocal)
+        newPreciseRotation, changedPreciseRotation = ImGui.DragFloat("##preciseRotation", preciseRotationLocal, 0.001,
+            0.0001, unpreciseRotationLocal)
         if changedPreciseRotation then
             preciseRotationLocal = newPreciseRotation
             settingsInstance:update("preciseRotation", preciseRotationLocal)
@@ -449,38 +451,13 @@ local function settingsTab()
             settingsInstance:update("preciseRotation", preciseRotationLocal)
             retogglePrecision()
         end
-
-        ImGui.TableNextRow()
-        ImGui.TableNextColumn()
-        ImGui.Text("RHT Range")
-        ImGui.TableNextColumn()
-        ImGui.SetNextItemWidth(valueWidth)
-        local newRHTRange
-        newRHTRange, changedRHTRange = ImGui.DragFloat("##RHTRange", RHTRangeLocal, 1, 1, 999)
-        if changedRHTRange then
-            RHTRangeLocal = newRHTRange
-            settingsInstance:update("RHTRange", RHTRangeLocal)
-        end
-        ImGui.TableNextColumn()
-        if ImGui.Button("Reset##RHTRange") then
-            RHTRangeLocal = 120
-            settingsInstance:update("RHTRange", RHTRangeLocal)
-        end
-        ImGui.TableNextColumn()
-        ImGui.Text("RHT Range value *must* match the Max Scanning Distance in World Inspector > Settings > World Scanner")
-        ImGui.TableNextColumn()
-        ImGui.Text("Note that higher ranges than default may miss the higher quality meshes and only remove the proxy, this is a limitation of streaming distances and RHT")
-        ImGui.EndTable()
     end
 end
 
--- Main gui function
 function CETGui()
-    -- initialize the selection box from settings
     if not isInitialized then
         initSelectionBox()
     end
-    -- draw ImGui window
     if ImGui.Begin('VolumetricSelection2077', true, ImGuiWindowFlags.AlwaysAutoResize) then
         if ImGui.BeginTabBar("TabList1") then
             if ImGui.BeginTabItem("Controls") then
@@ -502,22 +479,11 @@ function CETGui()
     ImGui.End()
 end
 
--- Ui if RHT is not installed
-function NoRHTGui()
-    if ImGui.Begin('VolumetricSelection2077') then
-        ImGui.Text("RedHotTools is not installed.")
-    end
-    ImGui.End()
-end
-
--- onShutdown to despawn the selection box
 function onShutdown()
     selectionBox:despawn()
 end
 
--- return function
 return {
     CETGui = CETGui,
-    noRHTGui = NoRHTGui,
     onShutdown = onShutdown
 }

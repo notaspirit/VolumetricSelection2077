@@ -3,7 +3,6 @@ using SharpDX;
 using VolumetricSelection2077.Models;
 using System.Collections.Generic;
 using System.Linq;
-using HelixToolkit.Wpf.SharpDX;
 using OrientedBoundingBox = SharpDX.OrientedBoundingBox;
 using Plane = SharpDX.Plane;
 using Vector3 = SharpDX.Vector3;
@@ -152,8 +151,9 @@ public static class CollisionCheckService
     /// <param name="selectionBoxAabb"></param>
     /// <param name="transforms"></param>
     /// <param name="matrixTransform"></param>
+    /// <param name="checkAllTransforms"></param>
     /// <returns></returns>
-    public static bool IsMeshInsideBox(AbbrMesh mesh, OrientedBoundingBox selectionBoxOBB, BoundingBox selectionBoxAabb, AbbrSectorTransform[]? transforms, Matrix? matrixTransform = null)
+    public static (bool, List<int>) IsMeshInsideBox(AbbrMesh mesh, OrientedBoundingBox selectionBoxOBB, BoundingBox selectionBoxAabb, AbbrSectorTransform[]? transforms, Matrix? matrixTransform = null, bool checkAllTransforms = false)
     {
         static bool IsInsidePrivate(AbbrSubMesh submesh, OrientedBoundingBox selectionObb, BoundingBox selectionAabb, Matrix transform)
         {
@@ -164,6 +164,9 @@ public static class CollisionCheckService
             ContainmentType aabbContainment = selectionAabb.Contains(transformedAabb);
             if (aabbContainment != ContainmentType.Disjoint)
             {
+                if (submesh.Vertices == null || submesh.PolygonIndices == null)
+                    return true;
+                
                 var adjustedSubmesh = new AbbrSubMesh()
                 {
                     BoundingBox = submesh.BoundingBox,
@@ -181,10 +184,12 @@ public static class CollisionCheckService
             return false;
         }
 
+        var outInstances = new List<int>();
+        
         if (transforms == null && matrixTransform == null)
         {
             Logger.Error("IsMeshInsideBox: No transform provided, aborting.");
-            return false;
+            return (false, outInstances);
         }
 
         if (matrixTransform != null)
@@ -193,29 +198,35 @@ public static class CollisionCheckService
             {
                 if (IsInsidePrivate(submesh, selectionBoxOBB, selectionBoxAabb, (Matrix)matrixTransform))
                 {
-                    return true;
+                    if (!checkAllTransforms)
+                        return (true, outInstances);
+                    outInstances.Add(0);
                 }
             }
         }
 
         if (transforms != null)
         {
-            foreach (var submesh in mesh.SubMeshes)
+            var transformIndex = 0;
+            foreach (var transform in transforms)
             {
-                foreach (var transform in transforms)
+                foreach (var submesh in mesh.SubMeshes)
                 {
                     Matrix localTransformMatrix = Matrix.Scaling(transform.Scale) * 
                                                   Matrix.RotationQuaternion(transform.Rotation) * 
                                                   Matrix.Translation(transform.Position);
                     if (IsInsidePrivate(submesh, selectionBoxOBB, selectionBoxAabb, localTransformMatrix))
                     {
-                        return true;
+                        if (!checkAllTransforms)
+                            return (true, outInstances);
+                        outInstances.Add(transformIndex);
                     }
                 }
+                transformIndex++;
             }
         }
         
-        return false;
+        return (outInstances.Count > 0, outInstances);
     }
 
     /// <summary>
@@ -241,7 +252,7 @@ public static class CollisionCheckService
 
         Matrix transformMatrix = shapeTransformMatrix * actorTransformMatrix;
         
-        return IsMeshInsideBox(mesh, selectionBoxObb, selectionBoxAabb,null,  transformMatrix);
+        return IsMeshInsideBox(mesh, selectionBoxObb, selectionBoxAabb,null,  transformMatrix).Item1;
         /* Logger.Debug("\n" +
                      $"Build Collision Mesh Scale with {actorTransform.Scale} * {shapeTransform.Scale} => {combinedScale}\n" +
                      $"Build Collision Mesh Rotation with {actorTransform.Rotation} * {shapeTransform.Rotation} => {combinedRotation}\n" +

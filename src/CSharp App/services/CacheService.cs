@@ -11,6 +11,8 @@ using LightningDB;
 using MessagePack;
 using Microsoft.ClearScript.Util.Web;
 using Microsoft.VisualBasic.FileIO;
+using SharpDX;
+using VolumetricSelection2077.Helpers;
 using VolumetricSelection2077.Models;
 using WolvenKit.Core.Extensions;
 using WolvenKit.RED4.Types;
@@ -22,6 +24,8 @@ public enum CacheDatabases
 {
     Vanilla,
     Modded,
+    VanillaBounds,
+    ModdedBounds,
     All
 }
 
@@ -54,14 +58,18 @@ public class CacheService
     private static CacheService? _instance;
     private SettingsService _settings;
     private LightningEnvironment _env;
-    private static readonly long Gb = 1024 * 1024 * 1024;
+    private static readonly long Kb = 1024;
+    private static readonly long Gb = Kb * Kb * Kb;
     private static readonly int BatchDelay = 1;
     private static readonly int MaxReaders = 512;
     private static readonly long MapSize = Gb * 100;
+    private static readonly ulong EstimatedBoundsEntrySizeInBytes = 116;
     static ConcurrentQueue<WriteRequest> _requestWriteQueue = new();
     private readonly object _lock = new object();
     private LightningDatabase _vanillaDatabase;
     private LightningDatabase _moddedDatabase;
+    private LightningDatabase _vanillaBoundsDatabase;
+    private LightningDatabase _moddedBoundsDatabase;
     private bool _isInitialized;
 
     public bool IsInitialized
@@ -100,7 +108,7 @@ public class CacheService
             
             _env = new LightningEnvironment(_settings.CacheDirectory)
             {
-                MaxDatabases = 2,
+                MaxDatabases = 4,
                 MapSize = MapSize,
                 MaxReaders = MaxReaders
             };
@@ -109,12 +117,15 @@ public class CacheService
             var tx = _env.BeginTransaction();
             _moddedDatabase = tx.OpenDatabase(CacheDatabases.Modded.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
             _vanillaDatabase = tx.OpenDatabase(CacheDatabases.Vanilla.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
+            _moddedBoundsDatabase = tx.OpenDatabase(CacheDatabases.ModdedBounds.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
+            _vanillaBoundsDatabase = tx.OpenDatabase(CacheDatabases.VanillaBounds.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
             tx.Commit();
             
             var metaData = GetMetadata();
             if (!ValidationService.ValidateCache(metaData, _settings.GameDirectory, _settings.MinimumCacheVersion))
             {
                 Logger.Warning("Cache is stale, resetting database");
+                ClearMetaData();
                 ClearDatabase(CacheDatabases.All, true, true);
             }
             _isInitialized = true;
@@ -198,6 +209,54 @@ public class CacheService
             }
         }
         return null;
+    }
+
+    /// <summary>
+    /// Gets all entries from the provided database.
+    /// </summary>
+    /// <param name="db"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception">if cache is not initialized</exception>
+    private KeyValuePair<string, byte[]>[] GetAllEntries(LightningDatabase db)
+    {
+        using var tx = _env.BeginTransaction();
+        KeyValuePair<string, byte[]>[] entries = new KeyValuePair<string, byte[]>[db.DatabaseStats.Entries];
+        using (var cursor = tx.CreateCursor(db))
+        {
+            int i = 0;
+            while (cursor.Next() == MDBResultCode.Success)
+            {
+                entries[i] = new KeyValuePair<string, byte[]>(Encoding.UTF8.GetString(cursor.GetCurrent().key.CopyToNewArray()), cursor.GetCurrent().value.CopyToNewArray());
+                i++;
+            }
+        }
+        return entries;
+    }
+    
+    /// <summary>
+    /// Gets all entries from the specified database.
+    /// </summary>
+    /// <param name="database"></param>
+    /// <returns></returns>
+    /// <remarks>returns null if the cache is not initialized, database doesn't exist or the target is all databases</remarks>
+    public KeyValuePair<string, byte[]>[]? GetAllEntries(CacheDatabases database)
+    {
+        if (!_isInitialized) return null;
+        switch (database)
+        {
+            case CacheDatabases.Vanilla:
+                return GetAllEntries(_vanillaDatabase);
+            case CacheDatabases.Modded:
+                return GetAllEntries(_moddedDatabase);
+            case CacheDatabases.VanillaBounds:
+                return GetAllEntries(_vanillaBoundsDatabase);
+            case CacheDatabases.ModdedBounds:
+                return GetAllEntries(_moddedBoundsDatabase);
+            case CacheDatabases.All:
+                return null;
+            default:
+                return null;
+        }
     }
     
     /// <summary>
@@ -291,6 +350,8 @@ public class CacheService
             
             List<WriteRequest> requestsModded = new();
             List<WriteRequest> requestsVanilla = new();
+            List<WriteRequest> requestsModdedBounds = new();
+            List<WriteRequest> requestsVanillaBounds = new();
             foreach (var request in requests)
             {
                 switch (request.Database)
@@ -300,6 +361,12 @@ public class CacheService
                         break;
                     case CacheDatabases.Modded:
                         requestsModded.Add(request);
+                        break;
+                    case CacheDatabases.VanillaBounds:
+                        requestsVanillaBounds.Add(request);
+                        break;
+                    case CacheDatabases.ModdedBounds:
+                        requestsModdedBounds.Add(request);
                         break;
                 }
             }
@@ -320,12 +387,32 @@ public class CacheService
                     tx.Put(_vanillaDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
                 }
             }
+            
+            if (requestsVanillaBounds.Count > 0)
+            {
+                foreach (var request in requestsVanillaBounds)
+                {
+                    tx.Put(_vanillaBoundsDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                }
+            }
+                
+            if (requestsModdedBounds.Count > 0)
+            {
+                foreach (var request in requestsModdedBounds)
+                {
+                    tx.Put(_moddedBoundsDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                }
+            }
 
             tx.Commit();
         }
 
         if (!_settings.CacheEnabled)
-            ClearDatabase(CacheDatabases.All, true);
+        {
+            ClearDatabase(CacheDatabases.Vanilla, UtilService.ShouldResize(CacheDatabases.Vanilla, GetStats(), _settings.CacheDirectory));
+            ClearDatabase(CacheDatabases.Modded, UtilService.ShouldResize(CacheDatabases.Modded, GetStats(), _settings.CacheDirectory));
+        }
+            
         
         if (wroteExitLog)
         {
@@ -333,6 +420,16 @@ public class CacheService
         }
     }
 
+    /// <summary>
+    /// Deletes the cache metadata file if it exists
+    /// </summary>
+    public void ClearMetaData()
+    {
+        var metaDataFilePath = Path.Combine(_settings.CacheDirectory, "metadata.json");
+        if (File.Exists(metaDataFilePath))
+            File.Delete(metaDataFilePath);
+    }
+    
     /// <summary>
     /// Resizes the environment 
     /// </summary>
@@ -345,14 +442,22 @@ public class CacheService
         
         string tempCacheDir = Path.Combine(Directory.GetParent(_settings.CacheDirectory)?.FullName, $"temp_cache_{Guid.NewGuid().ToString()}");
         Directory.CreateDirectory(tempCacheDir);
+        
+        var metaDataFilePath = Path.Combine(_settings.CacheDirectory, "metadata.json");
+
+        if (File.Exists(metaDataFilePath))
+        {
+            File.Copy(metaDataFilePath, Path.Combine(tempCacheDir, "metadata.json"));
+        }
+        
         var tempEnv = new LightningEnvironment(tempCacheDir)
         {
-            MaxDatabases = 2,
+            MaxDatabases = 4,
             MapSize = MapSize,
             MaxReaders = MaxReaders
         };
         tempEnv.Open();
-        var databases = new [] { CacheDatabases.Vanilla.ToString(), CacheDatabases.Modded.ToString() };
+        var databases = new [] { CacheDatabases.Vanilla.ToString(), CacheDatabases.Modded.ToString(), CacheDatabases.VanillaBounds.ToString(), CacheDatabases.ModdedBounds.ToString() };
 
         foreach (var database in databases)
         {
@@ -428,6 +533,26 @@ public class CacheService
                         }
                     }
                     break;
+                case CacheDatabases.VanillaBounds:
+                    using (var cursor = tx.CreateCursor(_vanillaBoundsDatabase))
+                    {
+                        while (cursor.Next() == MDBResultCode.Success)
+                        {
+                            cursor.Delete();
+                        }
+                    }
+
+                    SetMetaDataVanillaBoundsStatus(false);
+                    break;
+                case CacheDatabases.ModdedBounds:
+                    using (var cursor = tx.CreateCursor(_moddedBoundsDatabase))
+                    {
+                        while (cursor.Next() == MDBResultCode.Success)
+                        {
+                            cursor.Delete();
+                        }
+                    }
+                    break;
                 case CacheDatabases.All:
                     using (var cursor = tx.CreateCursor(_vanillaDatabase))
                     {
@@ -437,6 +562,21 @@ public class CacheService
                         }
                     }
                     using (var cursor = tx.CreateCursor(_moddedDatabase))
+                    {
+                        while (cursor.Next() == MDBResultCode.Success)
+                        {
+                            cursor.Delete();
+                        }
+                    }
+                    using (var cursor = tx.CreateCursor(_vanillaBoundsDatabase))
+                    {
+                        while (cursor.Next() == MDBResultCode.Success)
+                        {
+                            cursor.Delete();
+                        }
+                    }
+                    SetMetaDataVanillaBoundsStatus(false);
+                    using (var cursor = tx.CreateCursor(_moddedBoundsDatabase))
                     {
                         while (cursor.Next() == MDBResultCode.Success)
                         {
@@ -515,58 +655,78 @@ public class CacheService
     public class CacheStats
     {
         public long VanillaEntries { get; set; }
-        public double EstVanillaSize { get; set; }
+        public FileSize EstVanillaSize { get; set; }
         public long ModdedEntries { get; set; }
-        public double EstModdedSize { get; set; }
+        public FileSize EstModdedSize { get; set; }
 
+        public long VanillaBoundsEntries { get; set; }
+        public FileSize EstVanillaBoundsSize { get; set; }
+        public long ModdedBoundsEntries { get; set; }
+        public FileSize EstModdedBoundsSize { get; set; }
+        
         public CacheStats()
         {
             VanillaEntries = -1;
-            EstVanillaSize = -1;
+            EstVanillaSize = new(0);
             ModdedEntries = -1;
-            EstModdedSize = -1;
+            EstModdedSize = new(0);
+            VanillaBoundsEntries = -1;
+            EstVanillaBoundsSize = new(0);
+            ModdedBoundsEntries = -1;
+            EstModdedBoundsSize = new(0);
         }
     }
 
     /// <summary>
     /// Gets cache stats
     /// </summary>
-    /// <returns>populated cache stats if initialized else -1 on all fields</returns>
+    /// <returns>populated cache stats if initialized else -1 on all entry counts and 0 on all size fields</returns>
     public CacheStats GetStats()
     {
         if (!_isInitialized) return new CacheStats();
         DirectoryInfo dirInfo = new DirectoryInfo(_settings.CacheDirectory);
-        long totalSize;
+        ulong totalSize;
         try
         {
-            totalSize = dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
+            totalSize = (ulong)dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(file => file.Length);
         }
         catch (Exception ex)
         {
             Logger.Exception(ex, "Failed to get total size of cache!", true);
             totalSize = 0;
         }
-        long estVanillaSize = 0;
-        long estModdedSize = 0;
+        ulong estVanillaSize = 0;
+        ulong estModdedSize = 0;
         
         using var tx = _env.BeginTransaction();
 
         var vdbStats = _vanillaDatabase.DatabaseStats;
         var mdbStats = _moddedDatabase.DatabaseStats;
+        var vbdbStats = _vanillaBoundsDatabase.DatabaseStats;
+        var mdbdbStats = _moddedBoundsDatabase.DatabaseStats;
+
+        ulong estVanillaBoundsSize = (ulong)vbdbStats.Entries * EstimatedBoundsEntrySizeInBytes;
+        ulong estModdedBoundsSize = (ulong)mdbdbStats.Entries * EstimatedBoundsEntrySizeInBytes;
         
-        var totalEntries = vdbStats.Entries + mdbStats.Entries;
+        var totalSizeWithoutBounds = totalSize - (estVanillaBoundsSize + estModdedBoundsSize);
+        long totalEntries = vdbStats.Entries + mdbStats.Entries;
         if (totalEntries > 0)
         {
-            estVanillaSize = totalSize / totalEntries * vdbStats.Entries;
-            estModdedSize = totalSize / totalEntries * mdbStats.Entries;
+            estVanillaSize = totalSizeWithoutBounds / (ulong)totalEntries * (ulong)vdbStats.Entries;
+            estModdedSize = totalSizeWithoutBounds / (ulong)totalEntries * (ulong)mdbStats.Entries;
         }
         
         return new CacheStats()
         {
             VanillaEntries = vdbStats.Entries,
             ModdedEntries = mdbStats.Entries,
-            EstVanillaSize = (double)estVanillaSize / Gb,
-            EstModdedSize = (double)estModdedSize / Gb,
+            EstVanillaSize = new(estVanillaSize),
+            EstModdedSize = new(estModdedSize),
+            
+            VanillaBoundsEntries = vbdbStats.Entries,
+            ModdedBoundsEntries = mdbdbStats.Entries,
+            EstVanillaBoundsSize = new(estVanillaBoundsSize),
+            EstModdedBoundsSize = new(estModdedBoundsSize)
         };
     }
     
@@ -633,10 +793,12 @@ public class CacheService
     {
         public string VS2077Version { get; set; }
         public string GameVersion { get; set; }
+        public bool AreVanillaSectorBBsBuild { get; set; }
         public CacheDatabaseMetadata(string vs2077Version, string gameVersion)
         {
             VS2077Version = vs2077Version;
             GameVersion = gameVersion;
+            AreVanillaSectorBBsBuild = false;
         }
     }
     
@@ -674,5 +836,83 @@ public class CacheService
         Directory.CreateDirectory(_settings.CacheDirectory);
         File.WriteAllText(filePath, JsonSerializer.Serialize(newMetadata));
         return newMetadata;
+    }
+
+    /// <summary>
+    /// Changes the VanillaSectorBoundsStatus in the metadata.json file.
+    /// </summary>
+    /// <param name="newValue"></param>
+    /// <returns></returns>
+    public bool SetMetaDataVanillaBoundsStatus(bool newValue)
+    {
+        var metadata = GetMetadata();
+        metadata.AreVanillaSectorBBsBuild = newValue;
+        File.WriteAllText(Path.Combine(_settings.CacheDirectory, "metadata.json"), JsonSerializer.Serialize(metadata));
+        return true;
+    }
+
+    /// <summary>
+    /// Dumps sector bounding box data from the cache to a binary file.
+    /// The output file is stored in the user's application data directory within a debug folder, named with the game's version and VS2077 version.
+    /// Intended for internal use only.
+    /// </summary>
+    public void DumpSectorBBToFile()
+    {
+        try
+        {
+            var dump = new SectorBBDump();
+            var cacheMetadata = GetMetadata();
+            dump.GameVersion = cacheMetadata.GameVersion;
+            dump.VS2077Version = cacheMetadata.VS2077Version;
+            dump.Sectors = new List<KeyValuePair<string, BoundingBox>>();
+            using var tx = _env.BeginTransaction();
+            using var cursor = tx.CreateCursor(_vanillaBoundsDatabase);
+            while (cursor.Next() == MDBResultCode.Success)
+            {
+                var entry = cursor.GetCurrent();
+                dump.Sectors.Add(new KeyValuePair<string, BoundingBox>(
+                    Encoding.Default.GetString(entry.Item2.CopyToNewArray()),
+                    MessagePackSerializer.Deserialize<BoundingBox>(entry.Item3.CopyToNewArray())));
+            }
+
+            var filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "debug",
+                $"{dump.GameVersion}-{dump.VS2077Version}.bin");
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+            File.WriteAllBytes(filePath, MessagePackSerializer.Serialize(dump));
+            Logger.Info($"Dumped {dump.Sectors.Count} sector bounds to file {filePath}...");
+        }
+        catch (Exception ex)
+        {
+            Logger.Exception(ex, "Failed to dump sector bounds to file!");       
+        }
+    }
+
+    /// <summary>
+    /// Loads sector bounding boxes from a file into the cache database.
+    /// The file must contain a serialized SectorBBDump object, and it must match the current game version
+    /// and VS2077 version defined in the cache metadata.
+    /// </summary>
+    /// <param name="path">The file path containing the serialized sector bounding boxes.</param>
+    /// <exception cref="Exception">
+    /// Thrown if the file does not exist, or if the file's game version or VS2077 version
+    /// does not match the current cache metadata version.
+    /// </exception>
+    public void LoadSectorBBFromFile(string path)
+    {
+        if (!File.Exists(path))
+            throw new Exception("File does not exist!");
+        ClearDatabase(CacheDatabases.VanillaBounds);
+        var dump = MessagePackSerializer.Deserialize<SectorBBDump>(File.ReadAllBytes(path));
+        var cacheMetadata = GetMetadata();
+        if (dump.GameVersion != cacheMetadata.GameVersion || dump.VS2077Version != cacheMetadata.VS2077Version)
+            throw new Exception("File does not match current cache version!");
+        using var tx = _env.BeginTransaction();
+        foreach (var sector in dump.Sectors)
+        {
+            tx.Put(_vanillaBoundsDatabase, Encoding.UTF8.GetBytes(sector.Key), MessagePackSerializer.Serialize(sector.Value));
+        }
+        tx.Commit();
+        SetMetaDataVanillaBoundsStatus(true);
+        Logger.Info($"Loaded {dump.Sectors.Count} sector bounds from file {path}...");
     }
 }

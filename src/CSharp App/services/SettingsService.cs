@@ -31,8 +31,6 @@ public class SettingsService
         ResourceNameFilter = new();
         DebugNameFilter = new();
         FilterModeOr = true;
-        NukeOccluders = false;
-        NukeOccludersAggressively = false;
         IsFiltersMWVisible = false;
         IsParametersMWVisible = false;
         SaveMode = SaveFileMode.Enum.New;
@@ -42,6 +40,7 @@ public class SettingsService
         DidUpdate = false;
         CETInstallLocation = "";
         WindowRecoveryState = new();
+        CustomSelectionFilePath = "";
     }
     
     public static SettingsService Instance
@@ -89,8 +88,6 @@ public class SettingsService
     public ObservableCollection<string> DebugNameFilter { get; set; }
     
     public bool FilterModeOr { get; set; }
-    public bool NukeOccluders { get; set; }
-    public bool NukeOccludersAggressively { get; set; }
     public bool IsFiltersMWVisible { get; set; }
     public bool IsParametersMWVisible { get; set; }
     public SaveFileMode.Enum SaveMode { get; set; }
@@ -98,9 +95,9 @@ public class SettingsService
     public bool DidUpdate { get; set; }
     public string CETInstallLocation { get; set; }
     public bool CacheModdedResources { get; set; }
-    public string MinimumCacheVersion { get; } = "1000.0.0-beta7";
-    
+    public string MinimumCacheVersion { get; } = "1000.0.0-beta8";
     public WindowRecoveryState WindowRecoveryState { get; set; }
+    public string CustomSelectionFilePath { get; set; }
     
     /// <summary>
     /// Loads the settings or creates a new settings file if it doesn't exist
@@ -141,8 +138,6 @@ public class SettingsService
                         DebugNameFilter.Add(dnfilter);
                     }
                     FilterModeOr = settings.FilterModeOr;
-                    NukeOccluders = settings.NukeOccluders;
-                    NukeOccludersAggressively = settings.NukeOccludersAggressively;
                     IsFiltersMWVisible = settings.IsFiltersMWVisible;
                     IsParametersMWVisible = settings.IsParametersMWVisible;
                     SaveMode = settings.SaveMode;
@@ -152,6 +147,7 @@ public class SettingsService
                     CETInstallLocation = settings.CETInstallLocation;
                     CacheModdedResources = settings.CacheModdedResources;
                     WindowRecoveryState = settings.WindowRecoveryState;
+                    CustomSelectionFilePath = settings.CustomSelectionFilePath;
                 }
             }
             catch (Exception ex)

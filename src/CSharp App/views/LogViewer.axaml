@@ -4,20 +4,67 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:views="clr-namespace:VolumetricSelection2077.Views"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <ScrollViewer Background="#0e1117" Name="LogScrollViewer">
-        <ItemsControl ItemsSource="{Binding LogMessages}">
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <SelectableTextBlock
-                        FontFamily="Cascadia Code, Consolas, Courier New, Monospace"
-                        Text="{Binding Text}"
-                        TextWrapping="Wrap">
-                        <SelectableTextBlock.Foreground>
-                            <Binding Converter="{StaticResource LogLevelColorConverter}" Path="Level" />
-                        </SelectableTextBlock.Foreground>
-                    </SelectableTextBlock>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
-    </ScrollViewer>
+    <Grid>
+        <ScrollViewer
+            Background="#0e1117"
+            HorizontalScrollBarVisibility="Auto"
+            Name="LogScrollViewer">
+            <ListBox
+                Background="Transparent"
+                BorderThickness="0"
+                ItemsSource="{Binding LogMessages}"
+                Margin="0"
+                Name="LogListBox"
+                Padding="0"
+                SelectionMode="Single">
+
+                <ListBox.Styles>
+                    <Style Selector="ListBoxItem">
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Margin" Value="0" />
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="BorderThickness" Value="0" />
+                        <Setter Property="Template">
+                            <ControlTemplate>
+                                <ContentPresenter
+                                    Content="{TemplateBinding Content}"
+                                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                                    Margin="0"
+                                    Padding="0" />
+                            </ControlTemplate>
+                        </Setter>
+                    </Style>
+                    <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="Transparent" />
+                    </Style>
+                    <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+                        <Setter Property="Background" Value="Transparent" />
+                    </Style>
+                    <Style Selector="ListBoxItem:selected:focus /template/ ContentPresenter">
+                        <Setter Property="Background" Value="Transparent" />
+                    </Style>
+                </ListBox.Styles>
+
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel Margin="0" />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <SelectableTextBlock
+                            FontFamily="Cascadia Code, Consolas, Courier New, Monospace"
+                            Margin="0"
+                            Text="{Binding Text}"
+                            TextWrapping="Wrap">
+                            <SelectableTextBlock.Foreground>
+                                <Binding Converter="{StaticResource LogLevelColorConverter}" Path="Level" />
+                            </SelectableTextBlock.Foreground>
+                        </SelectableTextBlock>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </ScrollViewer>
+    </Grid>
 </UserControl>

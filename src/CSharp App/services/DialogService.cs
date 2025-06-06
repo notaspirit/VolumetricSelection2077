@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Threading;
 using VolumetricSelection2077.views;
 using WolvenKit.Common.PhysX;
 
@@ -9,24 +10,25 @@ namespace VolumetricSelection2077.Services;
 
 public class DialogService
 {
-    public enum DialogResult
+    private Window _owner;
+    
+    public DialogService(Window owner)
     {
-        LeftButton,
-        RightButton
+        _owner = owner;
     }
     
-    public static async Task<DialogResult> ShowDialog(string title, string message, string buttonLeftText, string buttonRightText, Window owner)
+    public Task<int> ShowDialog(string title, string message, string[] buttonContents)
     {
-        var dialog = new Dialog
+        return ShowDialog(title, message, buttonContents, _owner);
+    }
+    
+    public static async Task<int> ShowDialog(string title, string message, string[] buttonContents, Window owner)
+    {
+        return await Dispatcher.UIThread.InvokeAsync(async () =>
         {
-            Title = title,
-            Message = message,
-            ButtonLeftText = buttonLeftText,
-            ButtonRightText = buttonRightText
-        };
-        
-        await dialog.ShowDialog(owner);
-        
-        return dialog.DialogResult ? DialogResult.LeftButton : DialogResult.RightButton;
+            var dialog = new Dialog(title, message, buttonContents);
+            await dialog.ShowDialog(owner);
+            return dialog.DialogResult;
+        });
     }
 }

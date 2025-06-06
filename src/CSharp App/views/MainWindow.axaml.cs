@@ -15,6 +15,7 @@ using VolumetricSelection2077.Extensions;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.TestingStuff;
 using VolumetricSelection2077.ViewModels;
+using VolumetricSelection2077.views;
 using VolumetricSelection2077.ViewStructures;
 
 namespace VolumetricSelection2077;
@@ -22,10 +23,9 @@ public partial class MainWindow : Window
 {
     private readonly ProcessService _processService;
     private MainWindowViewModel _mainWindowViewModel;
-    
     private ProgressBar _progressBar;
     private ProgressBar _progressBarBroder;
-    private TextBlock _progressTextBlock;
+    public TextBlock ProgressTextBlock;
     private TrackedDispatchTimer _dispatcherTimer;
     private Progress _progress;
     public MainWindow()
@@ -41,15 +41,15 @@ public partial class MainWindow : Window
         }
         DataContext = new MainWindowViewModel();
         _mainWindowViewModel = DataContext as MainWindowViewModel;
-        _processService = new ProcessService();
+        _processService = new ProcessService(new DialogService(this));
         Closed += OnMainWindowClosed;
         
         _progressBar = this.FindControl<ProgressBar>("ProgressBar");
         _progressBarBroder = this.FindControl<ProgressBar>("ProgressBarBorder");
-        _progressTextBlock = this.FindControl<TextBlock>("TimerTextBlock");
-        if (_progressTextBlock == null || _progressBar == null || _progressBarBroder == null)
+        ProgressTextBlock = this.FindControl<TextBlock>("TimerTextBlock");
+        if (ProgressTextBlock == null || _progressBar == null || _progressBarBroder == null)
         {
-            Logger.Error($"Could not find one or more ui components: ProgressBar: {_progressBar}, TimerTextBlock: {_progressTextBlock}, ProgressBarBorder: {_progressBarBroder}");
+            Logger.Error($"Could not find one or more ui components: ProgressBar: {_progressBar}, TimerTextBlock: {ProgressTextBlock}, ProgressBarBorder: {_progressBarBroder}");
         }
         
         _progressBar.SizeChanged += (s, e) =>
@@ -59,7 +59,7 @@ public partial class MainWindow : Window
         };
         
         _dispatcherTimer = new TrackedDispatchTimer() { Interval = TimeSpan.FromSeconds(1) };
-        _dispatcherTimer.Tick += (s, e) => _progressTextBlock.Text = $"{UtilService.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
+        _dispatcherTimer.Tick += (s, e) => ProgressTextBlock.Text = $"{UtilService.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
         _progress = Progress.Instance;
         _progress.ProgressChanged += (sender, i) =>
         {
@@ -131,32 +131,6 @@ public partial class MainWindow : Window
             string formattedTime = UtilService.FormatElapsedTime(_dispatcherTimer.Elapsed);
             Logger.Info($"Process finished after: {formattedTime}");
             _mainWindowViewModel.MainTaskProcessing = false;
-        }
-    }
-
-    private async void Benchmark_Click(object? sender, RoutedEventArgs e)
-    {
-        if (_mainWindowViewModel.IsProcessing) return;
-        try
-        {
-            _mainWindowViewModel.BenchmarkProcessing = true;
-            _dispatcherTimer.Start();
-            _mainWindowViewModel.Settings.OutputFilename =
-                UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.OutputFilename);
-            OutputFilenameTextBox.Text = _mainWindowViewModel.Settings.OutputFilename;
-            AddQueuedFilters();
-            await Task.Run(() => Benchmarking.Instance.RunBenchmarks());
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Benchmarking failed: {ex}");
-        }
-        finally
-        {
-            _dispatcherTimer.Stop();
-            string formattedTime = UtilService.FormatElapsedTime(_dispatcherTimer.Elapsed);
-            Logger.Info($"Benchmarking finished after: {formattedTime}");
-            _mainWindowViewModel.BenchmarkProcessing = false;
         }
     }
     
@@ -299,9 +273,27 @@ public partial class MainWindow : Window
     }
     
     /// <summary>
+    /// Shows the debug window while making sure only one exists at a time
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    private void DebugWindowButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_mainWindowViewModel.DebugWindowInstance != null) return;
+        _mainWindowViewModel.DebugWindowInstance = new DebugWindow(this);
+        _mainWindowViewModel.DebugWindowInstance.Closed += (_, _) =>
+        {
+            _mainWindowViewModel.DebugWindowInstance = null;
+            _mainWindowViewModel.DebugWindowInstanceChanged();
+        };
+        _mainWindowViewModel.DebugWindowInstance.Show();
+        _mainWindowViewModel.DebugWindowInstanceChanged();
+    }
+    
+    /// <summary>
     /// Adds Filters that are currently in the text box but not yet committed
     /// </summary>
-    private void AddQueuedFilters()
+    public void AddQueuedFilters()
     {
         if (!string.IsNullOrEmpty(ResourceFilterTextBox.Text?.Trim()))
         {
@@ -464,5 +456,6 @@ public partial class MainWindow : Window
         _mainWindowViewModel.Settings.WindowRecoveryState.WindowState = WindowState == WindowState.Maximized ? 2 : 0;
         AddQueuedFilters();
         _mainWindowViewModel.Settings.SaveSettings();
+        _mainWindowViewModel.DebugWindowInstance?.Close();
     }
 }
