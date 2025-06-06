@@ -212,7 +212,7 @@ public class ProcessService
                 matchesDebugFilter = false;
                 foreach (var filter in _settings.DebugNameFilter)
                 {
-                    if (Regex.IsMatch(nodeEntry.DebugName?.ToLower() ?? "", filter))
+                    if (Regex.IsMatch(nodeEntry.DebugName ?? "", filter, RegexOptions.IgnoreCase))
                     {
                         matchesDebugFilter = true;
                         break;
@@ -226,7 +226,7 @@ public class ProcessService
                 matchesResourceFilter = false;
                 foreach (var filter in _settings.ResourceNameFilter)
                 {
-                    if (Regex.IsMatch(nodeEntry.ResourcePath?.ToLower() ?? "", filter))
+                    if (Regex.IsMatch(nodeEntry.ResourcePath ?? "", filter, RegexOptions.IgnoreCase))
                     {
                         matchesResourceFilter = true;
                         break;
