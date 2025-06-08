@@ -15,8 +15,8 @@ Roadmeshes and occluder resources are expected to fail, as well as any modded re
 
 ## Requirements
 - CyberEngineTweaks ([GitHub](https://github.com/maximegmd/CyberEngineTweaks) | [Nexus](https://www.nexusmods.com/cyberpunk2077/mods/107))
-- ArchiveXL ([GitHub](https://github.com/psiberx/cp2077-archive-xl) | [Nexus](https://www.nexusmods.com/cyberpunk2077/mods/4198))
-- RedHotTools ([GitHub](https://github.com/psiberx/cp2077-red-hot-tools))
+- ArchiveXL 1.23.0+ ([GitHub](https://github.com/psiberx/cp2077-archive-xl) | [Nexus](https://www.nexusmods.com/cyberpunk2077/mods/4198))
+- RedHotTools ([GitHub](https://github.com/psiberx/cp2077-red-hot-tools)): not strictly needed for tool functionality but core part of the workflow as it allows hotreloading
 - .NET Runtime 8.0.0+ ([Microsoft](https://dotnet.microsoft.com/en-us/download/dotnet/8.0))
 
 ### Recommended
