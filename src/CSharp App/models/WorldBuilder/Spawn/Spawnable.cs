@@ -1,8 +1,5 @@
 using Newtonsoft.Json;
-using VolumetricSelection2077.Converters;
-using WolvenKit.RED4.Types;
-using Quaternion = SharpDX.Quaternion;
-using Vector4 = SharpDX.Vector4;
+using VolumetricSelection2077.models.WorldBuilder.Structs;
 
 namespace VolumetricSelection2077.Models.WorldBuilder.Spawn;
 
@@ -26,20 +23,14 @@ public class Spawnable
     [JsonProperty("position")]
     public Vector4 Position { get; set; }
     
-    [JsonIgnore]
-    public Quaternion QuatRotation {
-        get => VS2077ToSharpDX.Quaternion(EulerRotation);
-        set => SharpDXToVS2077.EulerAngles(value);
-    }
-
     [JsonProperty("rotation")]
     public EulerAngles EulerRotation { get; set; }
     
     [JsonProperty("primaryRange")]
-    public int PrimaryRange { get; set; }
+    public float PrimaryRange { get; set; }
     
     [JsonProperty("secondaryRange")]
-    public int SecondaryRange { get; set; }
+    public float SecondaryRange { get; set; }
     
     [JsonProperty("uk10")]
     public int Uk10 { get; set; }
@@ -55,7 +46,6 @@ public class Spawnable
         ResourcePath = "base\\spawner\\empty_entity.ent";
         Appearance = "default";
         Position = new Vector4();
-        QuatRotation = new Quaternion();
         PrimaryRange = 120;
         SecondaryRange = 100;
         Uk10 = 1024;

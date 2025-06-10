@@ -13,6 +13,7 @@ using MessagePack;
 using VolumetricSelection2077.Parsers;
 using Newtonsoft.Json;
 using SharpDX;
+using VolumetricSelection2077.Converters;
 using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.TestingStuff;
 using WolvenKit.RED4.Types;
@@ -823,6 +824,14 @@ public class ProcessService
                 nodeCount += sector.NodeDeletions.Count;
             }
             Logger.Success($"Found {nodeCount} nodes across {sectors.Count} sectors.");
+            
+            var options = new JsonSerializerSettings 
+            {
+                Converters = { new WorldBuilderElementJsonConverter(), new WorldBuilderSpawnableJsonConverter()},
+                Formatting = Formatting.Indented
+            };
+            
+            Logger.Info($"{JsonConvert.SerializeObject(new AxlRemovalToWorldBuilder().Convert(removalFile, _settings.OutputFilename), options)}");
             
             SaveFile(removalFile, customRemovalDirectory, customRemovalFile);
         }

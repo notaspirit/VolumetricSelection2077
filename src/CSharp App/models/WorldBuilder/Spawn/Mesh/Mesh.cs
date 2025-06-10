@@ -1,5 +1,6 @@
 using Newtonsoft.Json;
-using SharpDX;
+using WolvenKit.RED4.Types;
+using Vector3 = VolumetricSelection2077.models.WorldBuilder.Structs.Vector3;
 
 namespace VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
 
@@ -12,19 +13,16 @@ public class Mesh : Spawnable
     public bool WindImpulseEnabled { get; set; }
     
     [JsonProperty("castLocalShadows")]
-    public int CastLocalShadows { get; set; }
+    public Enums.shadowsShadowCastingMode CastLocalShadows { get; set; }
     
     [JsonProperty("castRayTracedGlobalShadows")]
-    public int CastRayTracedGlobalShadows { get; set; }
+    public Enums.shadowsShadowCastingMode CastRayTracedGlobalShadows { get; set; }
     
     [JsonProperty("castRayTracedLocalShadows")]
-    public int CastRayTracedLocalShadows { get; set; }
+    public Enums.shadowsShadowCastingMode CastRayTracedLocalShadows { get; set; }
     
     [JsonProperty("castShadows")]
-    public int CastShadows { get; set; }
-    
-    [JsonProperty("bBox")]
-    public BoundingBox BoundingBox { get; set; }
+    public Enums.shadowsShadowCastingMode CastShadows { get; set; }
     
     public Mesh()
     {
@@ -38,7 +36,6 @@ public class Mesh : Spawnable
         CastRayTracedLocalShadows = 0;
         CastShadows = 0;
         
-        BoundingBox = new BoundingBox();
         Uk10 = 1040;
     }
 }

@@ -14,7 +14,7 @@ public class TestWheezeKitSerialization
     {
         if (e is SpawnableElement se)
         {
-            Logger.Debug($"Quat rotation: {se.Spawnable.QuatRotation}, euler rotation : {se.Spawnable.EulerRotation.Pitch}, {se.Spawnable.EulerRotation.Yaw}, {se.Spawnable.EulerRotation.Roll}");
+            // Logger.Debug($"Quat rotation: {se.Spawnable.QuatRotation}, euler rotation : {se.Spawnable.EulerRotation.Pitch}, {se.Spawnable.EulerRotation.Yaw}, {se.Spawnable.EulerRotation.Roll}");
         }
 
         if (e.Children.Count <= 0)
