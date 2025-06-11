@@ -27,7 +27,6 @@ public class SettingsService
         DebugMode = false;
         NodeTypeFilter = new BitArray(122, true);
         ProgramVersion = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion?.Split("+")[0] ?? "Version not found.";
-        SaveAsYaml = false;
         ResourceNameFilter = new();
         DebugNameFilter = new();
         FilterModeOr = true;
@@ -82,8 +81,6 @@ public class SettingsService
     [JsonIgnore]
     public string ProgramVersion { get; set; }
     
-    public bool SaveAsYaml { get; set; }
-    
     public ObservableCollection<string> ResourceNameFilter { get; set; }
     public ObservableCollection<string> DebugNameFilter { get; set; }
     
@@ -98,6 +95,8 @@ public class SettingsService
     public string MinimumCacheVersion { get; } = "1000.0.0-beta8";
     public WindowRecoveryState WindowRecoveryState { get; set; }
     public string CustomSelectionFilePath { get; set; }
+    
+    public SaveFileFormat.Enum SaveFileFormat { get; set; }
     
     /// <summary>
     /// Loads the settings or creates a new settings file if it doesn't exist
@@ -126,7 +125,6 @@ public class SettingsService
                     OutputFilename = settings.OutputFilename;
                     DebugMode = settings.DebugMode;
                     NodeTypeFilter = settings.NodeTypeFilter;
-                    SaveAsYaml = settings.SaveAsYaml;
                     ResourceNameFilter.Clear();
                     foreach (var rpfilter in settings.ResourceNameFilter)
                     {

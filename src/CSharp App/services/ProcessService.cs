@@ -31,6 +31,7 @@ public class ProcessService
     private readonly BoundingBoxBuilderService _boundingBoxBuilderService;
     private readonly CacheService _cacheService;
     private readonly ValidationService _validationService;
+    private readonly PostProcessingService _postProcessingService;
     private Progress _progress;
     public ProcessService(DialogService dialogService)
     {
@@ -41,166 +42,9 @@ public class ProcessService
         _boundingBoxBuilderService = new BoundingBoxBuilderService();
         _cacheService = CacheService.Instance;
         _validationService = new ValidationService();
-    }
-
-    class MergeChanges
-    {
-        public int newSectors { get; set; } = 0;
-        public int newNodes { get; set; } = 0;
-        public int newActors { get; set; } = 0;
+        _postProcessingService = new PostProcessingService();
     }
     
-    private (List<AxlRemovalSector>?,MergeChanges?)  MergeSectors(string filepath, AxlRemovalFile newRemovals)
-    {
-        var changeCount = new MergeChanges();
-        
-        string fileContent = File.ReadAllText(filepath);
-        var exisitngRemovalFile = UtilService.TryParseAxlRemovalFile(fileContent);
-        if (exisitngRemovalFile != null)
-        {
-            var newSectors = newRemovals.Streaming.Sectors;
-            var oldSectors = exisitngRemovalFile.Streaming.Sectors;
-            
-            Dictionary<string, AxlRemovalSector> mergedDict = oldSectors.ToDictionary(x => x.Path);
-
-            foreach (var newSector in newSectors)
-            {
-                if (mergedDict.TryGetValue(newSector.Path, out AxlRemovalSector existingSector))
-                {
-                    Dictionary<int, AxlRemovalNodeDeletion> mergedNodes =
-                        existingSector.NodeDeletions.ToDictionary(x => x.Index);
-                    foreach (var newNode in newSector.NodeDeletions)
-                    {
-                        if (mergedNodes.TryGetValue(newNode.Index, out AxlRemovalNodeDeletion existingNode))
-                        {
-                            if (newNode.ActorDeletions != null || 
-                                newNode.ActorDeletions?.Count > 0 ||
-                                existingNode.ActorDeletions?.Count != null ||
-                                existingNode.ActorDeletions?.Count > 0)
-                            {
-                                existingNode.ExpectedActors =  newNode.ExpectedActors ?? existingNode.ExpectedActors;
-                                HashSet<int> actorSet = new HashSet<int>(newNode.ActorDeletions ?? new List<int>());
-                                actorSet.UnionWith(existingNode.ActorDeletions ?? new List<int>());
-                                existingNode.ActorDeletions = actorSet.ToList();
-                                changeCount.newActors += actorSet.Count - existingNode.ActorDeletions.Count;
-                            }
-                        }
-                        else
-                        {
-                            mergedNodes[newNode.Index] = newNode;
-                            changeCount.newNodes++;
-                            changeCount.newActors += newNode.ActorDeletions?.Count ?? 0;
-                        }
-                    }
-                    existingSector.NodeDeletions = mergedNodes.Values.ToList();
-                }
-                else
-                {
-                    mergedDict[newSector.Path] = newSector;
-                    changeCount.newSectors++;
-                    changeCount.newNodes += newSector.NodeDeletions?.Count ?? 0;
-                    foreach (var newNode in newSector.NodeDeletions)
-                        changeCount.newActors += newNode.ActorDeletions?.Count ?? 0;
-                }
-            }
-            var mergedSectors = mergedDict.Values.ToList();
-            return (mergedSectors, changeCount);
-        }
-        Logger.Error($"Failed to parse existing removal file {filepath}");
-        return (null, null);
-    }
-    
-    private void SaveFile(AxlRemovalFile removalFile, string? customRemovalDirectory = null, string? customRemovalFilename = null)
-    {
-        string outputFilePath;
-        if (customRemovalDirectory == null || customRemovalFilename == null)
-        {
-            if (_settings.SaveToArchiveMods)
-                outputFilePath = Path.Combine(_settings.GameDirectory, "archive", "pc", "mod", _settings.OutputFilename) + ".xl";
-            else if (!string.IsNullOrEmpty(_settings.OutputDirectory))
-                outputFilePath = Path.Combine(_settings.OutputDirectory, _settings.OutputFilename) + ".xl";
-            else
-                throw new Exception(
-                    $"Failed to save output file! Saving to output directory is enabled but no output directory is set!");
-        }
-        else
-        {
-            string fileName = Path.GetFileNameWithoutExtension(customRemovalFilename);
-            outputFilePath = Path.Combine(customRemovalDirectory, fileName) + ".xl";
-        }
-
-        MergeChanges mergeChanges = new();
-        if (_settings.SaveMode == SaveFileMode.Enum.Extend && File.Exists(outputFilePath))
-        {
-           var mergedSectors = MergeSectors(outputFilePath, removalFile);
-           if (mergedSectors.Item1 != null)
-           {
-               removalFile.Streaming.Sectors = mergedSectors.Item1;
-               mergeChanges = mergedSectors.Item2;
-           }
-        }
-        
-        string outputContent;
-        if (_settings.SaveAsYaml)
-        {
-            var serializer = new SerializerBuilder()
-                .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
-                .Build();
-
-            outputContent = serializer.Serialize(removalFile);
-        }
-        else
-        {
-            outputContent = JsonConvert.SerializeObject(removalFile,
-                new JsonSerializerSettings()
-                    { NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented });
-        }
-        
-        
-        Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
-                
-        if (!File.Exists(outputFilePath))
-        {
-            File.WriteAllText(outputFilePath, outputContent);
-            Logger.Info($"Created file {outputFilePath}");
-            return;
-        }
-
-        if (_settings.SaveMode == SaveFileMode.Enum.Extend)
-        {
-            File.WriteAllText(outputFilePath, outputContent);
-            var newSectorS = mergeChanges?.newSectors != 1 ? "s" : "";
-            var newNodesS = mergeChanges?.newNodes != 1 ? "s" : "";
-            var newActorsS = mergeChanges?.newActors != 1 ? "s" : "";
-            Logger.Info($"Extended file {outputFilePath} with {mergeChanges.newSectors} new sector{newSectorS}, {mergeChanges.newNodes} new node{newNodesS}, {mergeChanges.newActors} new actor{newActorsS}.");
-            return;
-        }
-                
-        if (_settings.SaveMode == SaveFileMode.Enum.Overwrite)
-        {
-            File.WriteAllText(outputFilePath, outputContent);
-            Logger.Info($"Overwrote file {outputFilePath}");
-            return;
-        }
-                
-        int totalCount = 1;
-        string outputFilePathWithoutExtension = outputFilePath.Split('.').First();
-        foreach (var file in Directory.GetFiles(Path.GetDirectoryName(outputFilePath), "*.*",
-                     SearchOption.AllDirectories))
-        {
-            if (!file.StartsWith(outputFilePathWithoutExtension)) continue;
-            if (Int32.TryParse(file.Split("+").Last().Split(".").First(), out int count))
-            {
-                if (count >= totalCount) 
-                    totalCount = count + 1;
-            }
-        }
-                
-        string newOutputFilePath = $"{outputFilePathWithoutExtension.Split("+").First()}+{totalCount}.xl";
-        File.WriteAllText(newOutputFilePath, outputContent);
-        Logger.Info($"Created file {newOutputFilePath}");
-    }
     private async Task<AxlRemovalNodeDeletion?> ProcessNodeAsync(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index, AbbrSector sector, SelectionInput selectionBox)
         {
             var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
@@ -785,8 +629,7 @@ public class ProcessService
         try
         {
             _progress.AddTarget(CETOutputFile.Sectors.Count, Progress.ProgressSections.Processing);
-            var tasks = CETOutputFile.Sectors.Select(input => Task.Run(() => SectorProcessThread(input, CETOutputFile)))
-                .ToArray();
+            var tasks = CETOutputFile.Sectors.Select(input => Task.Run(() => SectorProcessThread(input, CETOutputFile)));
             sectorsOutputRaw = await Task.WhenAll(tasks);
         }
         finally
@@ -794,48 +637,9 @@ public class ProcessService
             _cacheService.StopListening();
         }
         
-        _progress.AddTarget(2, Progress.ProgressSections.Finalization);
-        List<AxlRemovalSector> sectors = new();
-        foreach (var sector in sectorsOutputRaw)
-        {
-            if (sector != null)
-            {
-                sectors.Add(sector);
-            }
-        }
-        _progress.AddCurrent(1, Progress.ProgressSections.Finalization);
-        if (sectors.Count == 0)
-        {
-            Logger.Warning("No sectors intersect, no output file generated!");
-        }
-        else
-        {
-            var removalFile = new AxlRemovalFile()
-            {
-                Streaming = new AxlRemovalStreaming()
-                {
-                    Sectors = sectors
-                }
-            };
-            
-            int nodeCount = 0;
-            foreach (var sector in sectors)
-            {
-                nodeCount += sector.NodeDeletions.Count;
-            }
-            Logger.Success($"Found {nodeCount} nodes across {sectors.Count} sectors.");
-            
-            var options = new JsonSerializerSettings 
-            {
-                Converters = { new WorldBuilderElementJsonConverter(), new WorldBuilderSpawnableJsonConverter()},
-                Formatting = Formatting.Indented
-            };
-            
-            Logger.Info($"{JsonConvert.SerializeObject(new AxlRemovalToWorldBuilder().Convert(removalFile, _settings.OutputFilename), options)}");
-            
-            SaveFile(removalFile, customRemovalDirectory, customRemovalFile);
-        }
-        _progress.AddCurrent(1, Progress.ProgressSections.Finalization);
+        
+        _postProcessingService.Run(sectorsOutputRaw);
+        
         return (true, string.Empty);
     }
 }

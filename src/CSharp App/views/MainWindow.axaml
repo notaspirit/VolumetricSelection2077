@@ -290,14 +290,14 @@
                         Text="{x:Static resources:Labels.SaveAsYaml}"
                         ToolTip.Tip="{x:Static resources:ToolTips.SaveAsYaml}"
                         VerticalAlignment="Center" />
-                    <ToggleSwitch
+                    <ComboBox
                         Grid.Column="1"
                         Grid.Row="0"
-                        IsChecked="{Binding Settings.SaveAsYaml}"
+                        HorizontalAlignment="Stretch"
                         IsVisible="{Binding ParameterSelectionVisibility}"
+                        ItemsSource="{Binding SaveFileFormats}"
                         Margin="5"
-                        OffContent="JSON"
-                        OnContent="YAML" />
+                        SelectedItem="{Binding SelectedSaveFileFormat, Mode=TwoWay}" />
                     <TextBlock
                         Grid.Column="0"
                         Grid.Row="1"

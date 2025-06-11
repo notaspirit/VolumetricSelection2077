@@ -160,6 +160,19 @@ namespace VolumetricSelection2077.ViewModels
             }
         }
         
+        public ObservableCollection<SaveFileFormat.Enum> SaveFileFormats { get; set; }
+
+        public SaveFileFormat.Enum SelectedSaveFileFormat
+        {
+            get => Settings.SaveFileFormat;
+            set
+            {
+                Settings.SaveFileFormat = value;
+                OnPropertyChanged(nameof(SelectedSaveFileFormat));
+                Settings.SaveSettings();
+            }
+        }
+        
         public MainWindowViewModel()
         {
             Settings = SettingsService.Instance;
@@ -177,6 +190,7 @@ namespace VolumetricSelection2077.ViewModels
             CheckedCount = NodeTypeFilterItems.Count(item => item.IsChecked);
             
             SaveFileModes = new ObservableCollection<SaveFileMode.Enum>(Enum.GetValues(typeof(SaveFileMode.Enum)).Cast<SaveFileMode.Enum>());
+            SaveFileFormats = new ObservableCollection<SaveFileFormat.Enum>(Enum.GetValues(typeof(SaveFileFormat.Enum)).Cast<SaveFileFormat.Enum>());
             
             try
             {
