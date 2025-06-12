@@ -16,14 +16,18 @@ namespace VolumetricSelection2077.Converters;
 public class AxlRemovalToWorldBuilder
 {
     private GameFileService _gfs;
-
+    private List<string> _warnedTypes;
+    
     public AxlRemovalToWorldBuilder()
     {
         _gfs = GameFileService.Instance;
+        _warnedTypes = new List<string>();
     }
 
     public Element Convert(AxlRemovalFile axlFile, string rootName)
     {
+        _warnedTypes.Clear();
+        
         var root = new PositionableGroup
         {
             Name = rootName
@@ -56,6 +60,7 @@ public class AxlRemovalToWorldBuilder
                 root.Children.Add(sectorGroup);
         }
         
+        _warnedTypes.Clear();
         return root;
     }
 
@@ -134,7 +139,12 @@ public class AxlRemovalToWorldBuilder
                 });
                 break;
             default:
-                Logger.Warning($"{node?.GetType()} is not a supported node type. Skipping");
+                var nodeTypeString = node?.GetType().ToString() ?? "";
+                if (!_warnedTypes.Contains(nodeTypeString))
+                {
+                    Logger.Warning($"{nodeTypeString} is not a supported node type. Skipping...");
+                    _warnedTypes.Add(nodeTypeString);
+                }
                 break;
         }
         return spawnableElements;
