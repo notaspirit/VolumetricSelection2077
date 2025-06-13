@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using Newtonsoft.Json;
 using VolumetricSelection2077.Converters;
 using VolumetricSelection2077.Models;
@@ -10,6 +11,7 @@ using VolumetricSelection2077.Models.WorldBuilder.Favorites;
 using VolumetricSelection2077.Resources;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
+using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 namespace VolumetricSelection2077.Services;
 
@@ -263,7 +265,7 @@ public class PostProcessingService
         
         if (vs2077Favorites.Select(d => d.Value)
             .SelectMany(f => f.Favorites)
-            .All(f => f.Name != _settingsService.OutputFilename.Replace(@"\", @"\\")))
+            .All(f => f.Name != _settingsService.OutputFilename))
         {
             var newestFilePath = vs2077Favorites.Select(d => d.Key).OrderByDescending(k => k.Item2).First();
             
@@ -302,7 +304,12 @@ public class PostProcessingService
                 }
                 else
                 {
-                    favRoot = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(newestFilePath.Item1));
+                    var options = new JsonSerializerSettings
+                    {
+                        Converters =
+                            { new WorldBuilderElementJsonConverter(), new WorldBuilderSpawnableJsonConverter() }
+                    };
+                    favRoot = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(newestFilePath.Item1),  options);
                     favRoot.Favorites.Add(new Favorite
                     {
                         Data = (Positionable)convertedElement,
@@ -322,7 +329,7 @@ public class PostProcessingService
             case SaveFileMode.Enum.Overwrite:
                 var match = vs2077Favorites
                     .SelectMany(kvp => kvp.Value.Favorites
-                        .Where(f => f.Name == _settingsService.OutputFilename.Replace(@"\", @"\\"))
+                        .Where(f => f.Name == _settingsService.OutputFilename)
                         .Select(f => new { Key = kvp.Key, Favorite = f }))
                     .FirstOrDefault()!;
                 
@@ -341,20 +348,20 @@ public class PostProcessingService
                 CreateNew:
                 var matches = vs2077Favorites
                     .SelectMany(kvp => kvp.Value.Favorites
-                        .Where(f => f.Name == _settingsService.OutputFilename.Replace(@"\", @"\\"))
+                        .Where(f => f.Name.StartsWith(_settingsService.OutputFilename))
                         .Select(f => new { Key = kvp.Key, Favorite = f }))
                     .ToList();
-
+                
                 var totalCount = 1;
                 foreach (var newMatch in matches)
                 {
-                    if (!Int32.TryParse(newMatch.Key.Item1.Split("+").Last().Split(".").First(), out int count))
+                    if (!Int32.TryParse(newMatch.Favorite.Name.Split("+").Last(), out int count))
                         continue;
                     if (count >= totalCount)
                         totalCount = count + 1;
                 }
 
-                var newOutputName = _settingsService.OutputFilename + $"{(totalCount > 1 ? "+" + totalCount : "")}";
+                var newOutputName = _settingsService.OutputFilename + $"+{totalCount}";
                 
                 var newestFilePath = vs2077Favorites.Select(d => d.Key).OrderByDescending(k => k.Item2).First();
 

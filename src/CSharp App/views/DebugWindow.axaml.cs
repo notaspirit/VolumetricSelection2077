@@ -105,4 +105,19 @@ public partial class DebugWindow : Window
         TestWheezeKitSerialization.Run();
         _debugWindowViewModel.IsProcessing = false;
     }
+    
+    private void TestQuatEulerConversion_Click(object? sender, RoutedEventArgs e)
+    {
+        _debugWindowViewModel.IsProcessing = true;
+        try
+        {
+            TestEulerQuatConversion.Run();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"TestQuatEulerConversion failed: {ex}");
+        }
+        
+        _debugWindowViewModel.IsProcessing = false;
+    }
 }
