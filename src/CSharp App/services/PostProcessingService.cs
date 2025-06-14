@@ -246,7 +246,7 @@ public class PostProcessingService
         var favoritesPath = Path.Join(_settingsService.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "entSpawner", "data", "favorite");
         var favoritesFileRootName =  Path.Join(favoritesPath, "GeneratedByVS2077");
         
-        var vs2077FavoriteFiles = Directory.GetFiles(favoritesPath, "*.*").Where(f => f.StartsWith(favoritesFileRootName)).ToList();
+        var vs2077FavoriteFiles = Directory.GetFiles(favoritesPath, "*.*").Where(f => f.StartsWith(favoritesFileRootName) && f.EndsWith(".json")).ToList();
         
         Dictionary<(string, int), FavoritesRoot> vs2077Favorites = new Dictionary<(string, int), FavoritesRoot>();
         

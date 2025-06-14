@@ -24,10 +24,15 @@ public class WorldBuilderSpawnableJsonConverter : JsonConverter<Spawnable>
         
         var newSerializer = new JsonSerializer();
         
-        if (obj["node"] != null && obj["node"]?.Value<string>() == "worldMeshNode")
-            return obj.ToObject<Mesh>(newSerializer);
-
-        return obj.ToObject<Spawnable>(newSerializer);
+        switch (obj["node"]?.Value<string>())
+        {
+            case "worldMeshNode":
+                return obj.ToObject<Mesh>(newSerializer);
+            case "worldRotatingMeshNode":
+                return obj.ToObject<RotatingMesh>(newSerializer);
+            default:
+                return obj.ToObject<Spawnable>(newSerializer);
+        }
     }
 
     public override void WriteJson(JsonWriter writer, Spawnable? value, JsonSerializer serializer)
