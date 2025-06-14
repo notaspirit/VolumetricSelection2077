@@ -139,6 +139,7 @@ public class SettingsService
                     IsFiltersMWVisible = settings.IsFiltersMWVisible;
                     IsParametersMWVisible = settings.IsParametersMWVisible;
                     SaveMode = settings.SaveMode;
+                    SaveFileFormat = settings.SaveFileFormat;
                     SupportModdedResources = settings.SupportModdedResources;
                     AutoUpdate = settings.AutoUpdate;
                     DidUpdate = settings.DidUpdate;
