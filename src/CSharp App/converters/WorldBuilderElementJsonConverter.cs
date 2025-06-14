@@ -21,13 +21,23 @@ public class WorldBuilderElementJsonConverter : JsonConverter<Element>
     {
         var obj = JObject.Load(reader);
         
-        Logger.Warning(obj["modulePath"]?.Value<string>() ?? "not found");
-        
         Element element;
-        if (obj["modulePath"]?.Value<string>() == "modules/classes/editor/spawnableElement")
-            element = new SpawnableElement();
-        else
-            element = new Element();
+        switch (obj["modulePath"]?.Value<string>())
+        {
+            case "modules/classes/editor/spawnableElement":
+                element = new SpawnableElement();
+                break;
+            case "modules/classes/editor/positionable":
+                element = new Positionable();
+                break;
+            case "modules/classes/editor/positionableGroup":
+                element = new PositionableGroup();
+                break;
+            default:
+                element = new Element();
+                break;
+        }
+        
         try
         {
             using var jsonReader = obj.CreateReader();
@@ -35,7 +45,7 @@ public class WorldBuilderElementJsonConverter : JsonConverter<Element>
         }
         catch (Exception ex)
         {
-            Logger.Warning($"{ex}");
+            Logger.Debug($"{ex}");
         }
         return element;
     }

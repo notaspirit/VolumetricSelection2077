@@ -21,12 +21,19 @@ public class PostProcessingService
     private readonly SettingsService _settingsService;
     private readonly AxlRemovalToWorldBuilder _removalToWorldBuilder;
     private const long MaxJsonSize = 100 * 1024 * 1024;
+    private readonly JsonSerializerSettings options;
+    
     
     public PostProcessingService()
     {
         _progress = Progress.Instance;
         _settingsService = SettingsService.Instance;
         _removalToWorldBuilder = new AxlRemovalToWorldBuilder();
+        options = new JsonSerializerSettings
+        {
+            Converters =
+                { new WorldBuilderElementJsonConverter(), new WorldBuilderSpawnableJsonConverter() }
+        };
     }
     
     /// <summary>
@@ -249,7 +256,7 @@ public class PostProcessingService
         {
             foreach (var favoriteFile in vs2077FavoriteFiles)
             {
-                var deserialized = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(favoriteFile));
+                var deserialized = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(favoriteFile), options);
                 if (deserialized == null)
                 {
                     Logger.Warning($"Failed to read {favoriteFile}!");
@@ -304,11 +311,6 @@ public class PostProcessingService
                 }
                 else
                 {
-                    var options = new JsonSerializerSettings
-                    {
-                        Converters =
-                            { new WorldBuilderElementJsonConverter(), new WorldBuilderSpawnableJsonConverter() }
-                    };
                     favRoot = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(newestFilePath.Item1),  options);
                     favRoot.Favorites.Add(new Favorite
                     {
@@ -400,7 +402,7 @@ public class PostProcessingService
                     }
                     else
                     {
-                        favRoot = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(newestFilePath.Item1));
+                        favRoot = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(newestFilePath.Item1), options);
                         favRoot.Favorites.Add(new Favorite
                         {
                             Data = (Positionable)convertedElement,
