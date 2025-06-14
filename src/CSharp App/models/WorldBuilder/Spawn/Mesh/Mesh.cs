@@ -28,6 +28,7 @@ public class Mesh : Spawnable
     {
         ModulePath = "mesh/mesh";
         NodeType = "worldMeshNode";
+        ResourcePath = @"base\fx\meshes\cube_debug.mesh";
         Scale = new Vector3(1, 1, 1);
         WindImpulseEnabled = true;
 
