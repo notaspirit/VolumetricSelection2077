@@ -32,7 +32,9 @@ public class PostProcessingService
         options = new JsonSerializerSettings
         {
             Converters =
-                { new WorldBuilderElementJsonConverter(), new WorldBuilderSpawnableJsonConverter() }
+                { new WorldBuilderElementJsonConverter(), new WorldBuilderSpawnableJsonConverter() },
+            NullValueHandling = NullValueHandling.Ignore,
+            Formatting = Formatting.Indented
         };
     }
     
