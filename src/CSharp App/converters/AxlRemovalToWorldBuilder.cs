@@ -75,6 +75,22 @@ public class AxlRemovalToWorldBuilder
         
         switch (node)
         {
+            case worldClothMeshNode clothMeshNode:
+                if ((string?)clothMeshNode.Mesh.DepotPath is null)
+                    return spawnableElements;
+                
+                var spawnableClothMeshNode = new SpawnableElement
+                {
+                    Name = GetSpawnableName(clothMeshNode),
+                    Spawnable = new ClothMesh
+                    {
+                        AffectedByWind = clothMeshNode.AffectedByWind
+                    }
+                };
+            
+                PopulateBaseMesh(ref spawnableClothMeshNode, clothMeshNode, nodeDataEntry);
+                spawnableElements.Add(spawnableClothMeshNode);
+                break;
             case worldRotatingMeshNode rotatingMeshNode:
                 if ((string?)rotatingMeshNode.Mesh.DepotPath is null)
                     return spawnableElements;

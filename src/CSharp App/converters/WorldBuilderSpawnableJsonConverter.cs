@@ -30,6 +30,8 @@ public class WorldBuilderSpawnableJsonConverter : JsonConverter<Spawnable>
                 return obj.ToObject<Mesh>(newSerializer);
             case "worldRotatingMeshNode":
                 return obj.ToObject<RotatingMesh>(newSerializer);
+            case "worldClothMeshNode":
+                return obj.ToObject<ClothMesh>(newSerializer);
             default:
                 return obj.ToObject<Spawnable>(newSerializer);
         }
