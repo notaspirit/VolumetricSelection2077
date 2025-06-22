@@ -75,6 +75,21 @@ public class AxlRemovalToWorldBuilder
         
         switch (node)
         {
+            case worldEffectNode effectNode:
+                if ((string?)effectNode.Effect.DepotPath is null)
+                    return spawnableElements;
+
+                var spawnableEffect = new SpawnableElement
+                {
+                    Name = GetSpawnableName(effectNode),
+                    Spawnable = new Effect
+                    {
+                        ResourcePath = effectNode.Effect.DepotPath
+                    }
+                };
+                PopulateSpawnable(ref spawnableEffect, nodeDataEntry);
+                spawnableElements.Add(spawnableEffect);
+                break;
             case worldStaticParticleNode particleNode:
                 if ((string?)particleNode.ParticleSystem.DepotPath is null)
                     return spawnableElements;
