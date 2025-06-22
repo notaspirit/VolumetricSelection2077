@@ -75,6 +75,23 @@ public class AxlRemovalToWorldBuilder
         
         switch (node)
         {
+            case worldTerrainMeshNode terrainMeshNode:
+                if ((string?)terrainMeshNode.MeshRef.DepotPath is null)
+                    return spawnableElements;
+                
+                var spawnableTerrainMeshNode = new SpawnableElement
+                {
+                    Name = GetSpawnableName(terrainMeshNode),
+                    Spawnable = new Mesh
+                    {
+                        Scale = WolvenkitToSharpDX.Vector3(nodeDataEntry.Scale),
+                        ResourcePath = terrainMeshNode.MeshRef.DepotPath
+                    }
+                };
+                
+                PopulateSpawnable(ref spawnableTerrainMeshNode, nodeDataEntry);
+                spawnableElements.Add(spawnableTerrainMeshNode);
+                break;
             case worldWaterPatchNode waterPatchNode:
                 if ((string?)waterPatchNode.Mesh.DepotPath is null)
                     return spawnableElements;
@@ -82,7 +99,7 @@ public class AxlRemovalToWorldBuilder
                 var spawnableWaterPatchNode = new SpawnableElement
                 {
                     Name = GetSpawnableName(waterPatchNode),
-                    Spawnable = new WaterPatch()
+                    Spawnable = new WaterPatch
                     {
                         Depth = waterPatchNode.Depth
                     }
@@ -201,10 +218,13 @@ public class AxlRemovalToWorldBuilder
 
         mesh.WindImpulseEnabled = meshNode.WindImpulseEnabled;
         
-        PopulateSpawnable(ref se, meshNode, nodeDataEntry);
+        se.Spawnable.ResourcePath = meshNode.Mesh.DepotPath;
+        se.Spawnable.Appearance = meshNode.MeshAppearance;
+        
+        PopulateSpawnable(ref se,nodeDataEntry);
     }
     
-    private static void PopulateSpawnable(ref SpawnableElement se, worldMeshNode meshNode, worldNodeData nodeDataEntry)
+    private static void PopulateSpawnable(ref SpawnableElement se, worldNodeData nodeDataEntry)
     {
         se.Spawnable.Position = WolvenkitToSharpDX.Vector4(nodeDataEntry.Position);
         se.Spawnable.EulerRotation = WolvenkitToSharpDX.Quaternion(nodeDataEntry.Orientation);
@@ -213,10 +233,6 @@ public class AxlRemovalToWorldBuilder
         se.Spawnable.SecondaryRange = nodeDataEntry.UkFloat1;
         se.Spawnable.Uk10 = nodeDataEntry.Uk10;
         se.Spawnable.Uk11 = nodeDataEntry.Uk11;
-
-        se.Spawnable.ResourcePath = meshNode.Mesh.DepotPath;
-        se.Spawnable.Appearance = meshNode.MeshAppearance;
-
     }
 
     private static string GetSpawnableName(worldNode node)
