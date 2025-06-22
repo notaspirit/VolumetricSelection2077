@@ -7,7 +7,6 @@ public struct Vector3
     public float x;
     public float y;
     public float z;
-    public float w;
 
     public Vector3(float x, float y, float z)
     {
@@ -31,6 +30,6 @@ public struct Vector3
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(x, y, z, w);
+        return HashCode.Combine(x, y, z);
     }
 }

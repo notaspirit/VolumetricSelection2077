@@ -75,6 +75,26 @@ public class AxlRemovalToWorldBuilder
         
         switch (node)
         {
+            case worldStaticDecalNode decalNode:
+                if ((string?)decalNode.Material.DepotPath is null)
+                    return spawnableElements;
+
+                var spawnableDecalNode = new SpawnableElement
+                {
+                    Name = GetSpawnableName(decalNode),
+                    Spawnable = new Decal
+                    {
+                        ResourcePath = decalNode.Material.DepotPath,
+                        Alpha = decalNode.Alpha,
+                        AutoHideDistance = decalNode.AutoHideDistance,
+                        HorizontalFlip = decalNode.HorizontalFlip,
+                        VerticalFlip = decalNode.VerticalFlip,
+                        Scale = WolvenkitToSharpDX.Vector3(nodeDataEntry.Scale)
+                    }
+                };
+                PopulateSpawnable(ref spawnableDecalNode, nodeDataEntry);
+                spawnableElements.Add(spawnableDecalNode);
+                break;
             case worldTerrainMeshNode terrainMeshNode:
                 if ((string?)terrainMeshNode.MeshRef.DepotPath is null)
                     return spawnableElements;
