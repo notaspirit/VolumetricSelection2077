@@ -75,6 +75,22 @@ public class AxlRemovalToWorldBuilder
         
         switch (node)
         {
+            case worldStaticParticleNode particleNode:
+                if ((string?)particleNode.ParticleSystem.DepotPath is null)
+                    return spawnableElements;
+
+                var spawnableParticle = new SpawnableElement
+                {
+                    Name = GetSpawnableName(particleNode),
+                    Spawnable = new Particle
+                    {
+                        ResourcePath = particleNode.ParticleSystem.DepotPath,
+                        EmissionRate = particleNode.EmissionRate
+                    }
+                };
+                PopulateSpawnable(ref spawnableParticle, nodeDataEntry);
+                spawnableElements.Add(spawnableParticle);
+                break;
             case worldBendedMeshNode bendedMeshNode:
                 if ((string?)bendedMeshNode.Mesh.DepotPath is null)
                     return spawnableElements;
