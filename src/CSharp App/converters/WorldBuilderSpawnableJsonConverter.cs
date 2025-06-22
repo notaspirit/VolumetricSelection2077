@@ -5,7 +5,7 @@ using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Models.WorldBuilder.Editor;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
-using VolumetricSelection2077.Models.WorldBuilder.Visual;
+using VolumetricSelection2077.models.WorldBuilder.Spawn.Visual;
 
 
 namespace VolumetricSelection2077.Converters;

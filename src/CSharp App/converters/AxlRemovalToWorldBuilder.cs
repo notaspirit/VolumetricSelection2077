@@ -5,7 +5,7 @@ using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Models.WorldBuilder.Editor;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
-using VolumetricSelection2077.Models.WorldBuilder.Visual;
+using VolumetricSelection2077.models.WorldBuilder.Spawn.Visual;
 using VolumetricSelection2077.Services;
 using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.Archive.CR2W;

@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
 
-namespace VolumetricSelection2077.Models.WorldBuilder.Visual;
+namespace VolumetricSelection2077.models.WorldBuilder.Spawn.Visual;
 
 public class WaterPatch : Mesh
 {
