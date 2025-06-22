@@ -35,6 +35,8 @@ public class WorldBuilderSpawnableJsonConverter : JsonConverter<Spawnable>
                 return obj.ToObject<ClothMesh>(newSerializer);
             case "worldWaterPatchNode":
                 return obj.ToObject<WaterPatch>(newSerializer);
+            case "worldStaticDecalNode":
+                return obj.ToObject<Decal>(newSerializer);
             default:
                 return obj.ToObject<Spawnable>(newSerializer);
         }
