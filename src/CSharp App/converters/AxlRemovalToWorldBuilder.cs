@@ -75,6 +75,27 @@ public class AxlRemovalToWorldBuilder
         
         switch (node)
         {
+            case worldBendedMeshNode bendedMeshNode:
+                if ((string?)bendedMeshNode.Mesh.DepotPath is null)
+                    return spawnableElements;
+
+                var spawnableBendedMesh = new SpawnableElement
+                {
+                    Name = GetSpawnableName(bendedMeshNode),
+                    Spawnable = new Mesh
+                    {
+                        Scale = WolvenkitToSharpDX.Vector3(nodeDataEntry.Scale),
+
+                        CastLocalShadows = bendedMeshNode.CastLocalShadows,
+                        CastShadows = bendedMeshNode.CastShadows,
+
+                        ResourcePath = bendedMeshNode.Mesh.DepotPath,
+                        Appearance = bendedMeshNode.MeshAppearance,
+                    }
+                };
+                PopulateSpawnable(ref spawnableBendedMesh, nodeDataEntry);
+                spawnableElements.Add(spawnableBendedMesh);
+                break;
             case worldStaticDecalNode decalNode:
                 if ((string?)decalNode.Material.DepotPath is null)
                     return spawnableElements;
