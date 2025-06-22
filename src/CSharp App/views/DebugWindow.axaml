@@ -48,7 +48,7 @@
         <Button
             Background="#6b82b2"
             Click="DialogTest_Click"
-            Content="Dialog Test"
+            Content="Fafo Count Collision Shapes"
             Grid.Column="1"
             Grid.Row="0"
             Margin="5,5,0,5">

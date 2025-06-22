@@ -79,7 +79,7 @@ public partial class DebugWindow : Window
     private async void DialogTest_Click(object? sender, RoutedEventArgs e)
     {
         _debugWindowViewModel.IsProcessing = true;
-        await TestDialogService.Run(this);
+        await FafoCollisionShapeStats.Run();
         _debugWindowViewModel.IsProcessing = false;
     }
     
