@@ -5,6 +5,7 @@ using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Models.WorldBuilder.Editor;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
+using VolumetricSelection2077.Models.WorldBuilder.Visual;
 
 
 namespace VolumetricSelection2077.Converters;
@@ -32,6 +33,8 @@ public class WorldBuilderSpawnableJsonConverter : JsonConverter<Spawnable>
                 return obj.ToObject<RotatingMesh>(newSerializer);
             case "worldClothMeshNode":
                 return obj.ToObject<ClothMesh>(newSerializer);
+            case "worldWaterPatchNode":
+                return obj.ToObject<WaterPatch>(newSerializer);
             default:
                 return obj.ToObject<Spawnable>(newSerializer);
         }

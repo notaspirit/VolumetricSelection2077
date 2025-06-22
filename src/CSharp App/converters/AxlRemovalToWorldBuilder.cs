@@ -5,6 +5,7 @@ using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Models.WorldBuilder.Editor;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
+using VolumetricSelection2077.Models.WorldBuilder.Visual;
 using VolumetricSelection2077.Services;
 using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.Archive.CR2W;
@@ -63,7 +64,6 @@ public class AxlRemovalToWorldBuilder
         _warnedTypes.Clear();
         return root;
     }
-
     private List<Element> ConvertNode(AxlRemovalNodeDeletion remNode, worldStreamingSector sector, ref AbbrSector? worldSectorAbbr, string sectorPath)
     {
         var nodeData = sector.NodeData.Data as CArray<worldNodeData>;
@@ -75,6 +75,21 @@ public class AxlRemovalToWorldBuilder
         
         switch (node)
         {
+            case worldWaterPatchNode waterPatchNode:
+                if ((string?)waterPatchNode.Mesh.DepotPath is null)
+                    return spawnableElements;
+                
+                var spawnableWaterPatchNode = new SpawnableElement
+                {
+                    Name = GetSpawnableName(waterPatchNode),
+                    Spawnable = new WaterPatch()
+                    {
+                        Depth = waterPatchNode.Depth
+                    }
+                };
+                PopulateBaseMesh(ref spawnableWaterPatchNode, waterPatchNode, nodeDataEntry);
+                spawnableElements.Add(spawnableWaterPatchNode);
+                break;
             case worldClothMeshNode clothMeshNode:
                 if ((string?)clothMeshNode.Mesh.DepotPath is null)
                     return spawnableElements;
