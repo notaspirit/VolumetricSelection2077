@@ -41,6 +41,8 @@ public class WorldBuilderSpawnableJsonConverter : JsonConverter<Spawnable>
                 return obj.ToObject<Particle>(newSerializer);
             case "worldEffectNode":
                 return obj.ToObject<Effect>(newSerializer);
+            case "worldDynamicMeshNode":
+                return obj.ToObject<DynamicMesh>(newSerializer);
             default:
                 return obj.ToObject<Spawnable>(newSerializer);
         }

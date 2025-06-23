@@ -75,6 +75,112 @@ public class AxlRemovalToWorldBuilder
         
         switch (node)
         {
+            case worldFoliageNode foliageNode:
+                if ((string?)foliageNode.Mesh.DepotPath is null)
+                    return spawnableElements;
+
+                worldSectorAbbr ??= _gfs.GetSector(sectorPath);
+                if (worldSectorAbbr == null)
+                    return spawnableElements;
+                var abbrFoliageNodeNodeDataEntry = worldSectorAbbr.NodeData[remNode.Index];
+                foreach (var transform in abbrFoliageNodeNodeDataEntry.Transforms)
+                {
+                    if (remNode.ActorDeletions != null && remNode.ActorDeletions.Count != 0)
+                    {
+                        if (remNode.ActorDeletions.All(x => x != abbrFoliageNodeNodeDataEntry.Transforms.IndexOf(transform)))
+                            continue;
+                    }
+                    
+                    spawnableElements.Add(new SpawnableElement
+                    {
+                        Name = GetSpawnableName(foliageNode),
+                        Spawnable = new Mesh
+                        {
+                            Position = new Vector4(transform.Position, 1),
+                            EulerRotation = transform.Rotation,
+                            Scale = transform.Scale,
+                            
+                            PrimaryRange = nodeDataEntry.MaxStreamingDistance,
+                            SecondaryRange = nodeDataEntry.UkFloat1,
+                            Uk10 = nodeDataEntry.Uk10,
+                            Uk11 = nodeDataEntry.Uk11,
+                    
+                            ResourcePath = foliageNode.Mesh.DepotPath,
+                            Appearance = foliageNode.MeshAppearance,
+                        }
+                    });
+                }
+                break;
+            case worldInstancedDestructibleMeshNode instancedDestructibleMeshNode:
+                if ((string?)instancedDestructibleMeshNode.Mesh.DepotPath is null)
+                    return spawnableElements;
+
+                worldSectorAbbr ??= _gfs.GetSector(sectorPath);
+                if (worldSectorAbbr == null)
+                    return spawnableElements;
+                var abbrInstancedDestructibleMeshNodeDataEntry = worldSectorAbbr.NodeData[remNode.Index];
+                foreach (var transform in abbrInstancedDestructibleMeshNodeDataEntry.Transforms)
+                {
+                    if (remNode.ActorDeletions != null && remNode.ActorDeletions.Count != 0)
+                    {
+                        if (remNode.ActorDeletions.All(x => x != abbrInstancedDestructibleMeshNodeDataEntry.Transforms.IndexOf(transform)))
+                            continue;
+                    }
+                    
+                    spawnableElements.Add(new SpawnableElement
+                    {
+                        Name = GetSpawnableName(instancedDestructibleMeshNode),
+                        Spawnable = new DynamicMesh
+                        {
+                            Position = new Vector4(transform.Position, 1),
+                            EulerRotation = transform.Rotation,
+                            Scale = transform.Scale,
+                    
+                            CastLocalShadows = instancedDestructibleMeshNode.CastLocalShadows,
+                            CastShadows = instancedDestructibleMeshNode.CastShadows,
+                    
+                            PrimaryRange = nodeDataEntry.MaxStreamingDistance,
+                            SecondaryRange = nodeDataEntry.UkFloat1,
+                            Uk10 = nodeDataEntry.Uk10,
+                            Uk11 = nodeDataEntry.Uk11,
+                    
+                            ResourcePath = instancedDestructibleMeshNode.Mesh.DepotPath,
+                            Appearance = instancedDestructibleMeshNode.MeshAppearance,
+                        }
+                    });
+                }
+                break;
+            case worldPhysicalDestructionNode destructionNode:
+                if ((string?)destructionNode.Mesh.DepotPath is null)
+                    return spawnableElements;
+                var spawnabledestructionMesh = new SpawnableElement
+                {
+                    Name = GetSpawnableName(destructionNode),
+                    Spawnable = new DynamicMesh
+                    {
+                        ResourcePath = destructionNode.Mesh.DepotPath,
+                        Appearance = destructionNode.MeshAppearance,
+                        Scale = WolvenkitToSharpDX.Vector3(nodeDataEntry.Scale),
+                    }
+                };
+                PopulateSpawnable(ref spawnabledestructionMesh, nodeDataEntry);
+                spawnableElements.Add(spawnabledestructionMesh);
+                break;
+            case worldDynamicMeshNode dynamicMeshNode:
+                if ((string?)dynamicMeshNode.Mesh.DepotPath is null)
+                    return spawnableElements;
+                
+                var spawnabledynamicMesh = new SpawnableElement
+                {
+                    Name = GetSpawnableName(dynamicMeshNode),
+                    Spawnable = new DynamicMesh
+                    {
+                        StartAsleep = dynamicMeshNode.StartAsleep,
+                    }
+                };
+                PopulateBaseMesh(ref spawnabledynamicMesh, dynamicMeshNode, nodeDataEntry);
+                spawnableElements.Add(spawnabledynamicMesh);
+                break;
             case worldEffectNode effectNode:
                 if ((string?)effectNode.Effect.DepotPath is null)
                     return spawnableElements;
