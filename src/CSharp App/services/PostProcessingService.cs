@@ -71,7 +71,7 @@ public class PostProcessingService
                 SaveAsRemoval(removalFile);
                 break;
             case SaveFileFormat.Enum.WorldBuilder:
-                SaveAsWorldBuilderPrefab(removalFile);
+                SaveAsPrefab(removalFile);
                 break;
         }
     }
@@ -110,18 +110,7 @@ public class PostProcessingService
                 Logger.Info($"Overwrote file {outputFilePath}");
                 return;
             case SaveFileMode.Enum.New:
-                int totalCount = 1;
-                string outputFilePathWithoutExtension = outputFilePath.Split('.').First();
-                foreach (var file in Directory.GetFiles(Path.GetDirectoryName(outputFilePath), "*.*",
-                             SearchOption.AllDirectories))
-                {
-                    if (!file.StartsWith(outputFilePathWithoutExtension)) continue;
-                    if (!Int32.TryParse(file.Split("+").Last().Split(".").First(), out int count))
-                        continue;
-                    if (count >= totalCount) 
-                        totalCount = count + 1;
-                }
-                string newOutputFilePath = $"{outputFilePathWithoutExtension.Split("+").First()}+{totalCount}.xl";
+                var newOutputFilePath = GetOutputFilename(outputFilePath);
                 File.WriteAllText(newOutputFilePath, outputContent);
                 Logger.Info($"Created file {newOutputFilePath}");
                 return;
@@ -129,7 +118,7 @@ public class PostProcessingService
                 throw new ArgumentOutOfRangeException();
         }
     }
-
+    
     private (string, MergeChanges) SerializeAxlRemovalFile(AxlRemovalFile axlRemovalFile, string outputFilePath)
     {
         var mergeChanges = new MergeChanges();
@@ -238,185 +227,119 @@ public class PostProcessingService
     }
     
     /// <summary>
-    /// Saves the AxlRemovalFile as a World Builder prefab.
+    /// Saves the AxlRemovalFile as a world builder prefab
     /// </summary>
     /// <param name="axlRemovalFile"></param>
-    private void SaveAsWorldBuilderPrefab(AxlRemovalFile axlRemovalFile)
+    private void SaveAsPrefab(AxlRemovalFile axlRemovalFile)
     {
-        var favoritesPath = Path.Join(_settingsService.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "entSpawner", "data", "favorite");
-        var favoritesFileRootName =  Path.Join(favoritesPath, "GeneratedByVS2077");
+        var favoritesPath = Path.Join(_settingsService.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "entSpawner", "data", "favorite", "GeneratedByVS2077.json");
+        var logMessage = "";
         
-        var vs2077FavoriteFiles = Directory.GetFiles(favoritesPath, "*.*").Where(f => f.StartsWith(favoritesFileRootName) && f.EndsWith(".json")).ToList();
         
-        Dictionary<(string, int), FavoritesRoot> vs2077Favorites = new Dictionary<(string, int), FavoritesRoot>();
-        
-        if (vs2077FavoriteFiles.Count == 0)
+        var favRoot = new FavoritesRoot
         {
-            vs2077Favorites.Add((favoritesFileRootName + ".json", 0), new FavoritesRoot());
+            Name = "GeneratedByVS2077",
+            Favorites = new()
+        };
+
+        if (!File.Exists(favoritesPath))
+        {
+            favRoot.Favorites.Add(new Favorite
+            {
+                Name =  _settingsService.OutputFilename,
+                Data = (Positionable)_removalToWorldBuilder.Convert(axlRemovalFile, _settingsService.OutputFilename)
+            });
+            logMessage = $"Created prefab {_settingsService.OutputFilename}";
         }
         else
         {
-            foreach (var favoriteFile in vs2077FavoriteFiles)
+            var existingFavorites = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(favoritesPath), new JsonSerializerSettings
             {
-                var deserialized = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(favoriteFile), options);
-                if (deserialized == null)
-                {
-                    Logger.Warning($"Failed to read {favoriteFile}!");
-                    continue;
-                }
-
-                Int32.TryParse(favoriteFile.Split("+").Last().Split(".").First(), out int count);
-                vs2077Favorites.Add((favoriteFile, count), deserialized);
-            }
-        }
-
-        var convertedElement = _removalToWorldBuilder.Convert(axlRemovalFile, _settingsService.OutputFilename);
-        
-        if (vs2077Favorites.Select(d => d.Value)
-            .SelectMany(f => f.Favorites)
-            .All(f => f.Name != _settingsService.OutputFilename))
-        {
-            var newestFilePath = vs2077Favorites.Select(d => d.Key).OrderByDescending(k => k.Item2).First();
+                Converters = { new WorldBuilderElementJsonConverter(), new WorldBuilderSpawnableJsonConverter() },
+                NullValueHandling = NullValueHandling.Ignore,
+                Formatting = Formatting.Indented
+            });
             
-            FavoritesRoot favRoot;
-            if (!File.Exists(newestFilePath.Item1))
+            switch (_settingsService.SaveMode)
             {
-                favRoot = new FavoritesRoot
-                {
-                    Favorites = new()
+                case SaveFileMode.Enum.Overwrite:
+                    var existingOverwritePrefab = existingFavorites?.Favorites.FirstOrDefault(f => f.Name == _settingsService.OutputFilename);
+                    if (existingOverwritePrefab != null)
                     {
-                        new Favorite
-                        {
-                            Data = (Positionable)convertedElement,
-                            Name = _settingsService.OutputFilename
-                        }
+                        existingOverwritePrefab.Data =
+                            (Positionable)_removalToWorldBuilder.Convert(axlRemovalFile,
+                                _settingsService.OutputFilename);
+                        logMessage = $"Overwrote prefab {_settingsService.OutputFilename}";
                     }
-                };
-            }
-            else
-            {
-                var newestFileInfo = new FileInfo(newestFilePath.Item1);
-                if (newestFileInfo.Length >= MaxJsonSize)
-                {
-                    newestFilePath.Item1 = favoritesPath + $"+{newestFilePath.Item2 + 1}.json";
-                    favRoot = new FavoritesRoot
+                    else
+                        goto newPrefab;
+                    break;
+                case SaveFileMode.Enum.Extend:
+                    var existingExtendPrefab = existingFavorites?.Favorites.FirstOrDefault(f => f.Name == _settingsService.OutputFilename);
+                    if (existingExtendPrefab != null)
                     {
-                        Favorites = new()
+                        logMessage = "Not Implemented!";
+                    }
+                    else
+                        goto newPrefab;
+                    break;
+                case SaveFileMode.Enum.New:
+                    newPrefab:
+                    var existingNewPrefab = existingFavorites?.Favorites.FirstOrDefault(f => f.Name == _settingsService.OutputFilename);
+                    if (existingNewPrefab == null)
+                    {
+                        existingFavorites?.Favorites.Add(new Favorite
                         {
-                            new Favorite
-                            {
-                                Data = (Positionable)convertedElement,
-                                Name = _settingsService.OutputFilename
-                            }
-                        }
-                    };
-                }
-                else
-                {
-                    favRoot = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(newestFilePath.Item1),  options);
-                    favRoot.Favorites.Add(new Favorite
-                    {
-                        Data = (Positionable)convertedElement,
-                        Name = _settingsService.OutputFilename
-                    });
-                }
-            }
-
-            var serialized = JsonConvert.SerializeObject(favRoot);
-            File.WriteAllText(newestFilePath.Item1, serialized);
-            Logger.Info($"Created Prefab at {newestFilePath.Item1} with the name {_settingsService.OutputFilename}");
-            return;
-        }
-        
-        switch (_settingsService.SaveMode)
-        {
-            case SaveFileMode.Enum.Overwrite:
-                var match = vs2077Favorites
-                    .SelectMany(kvp => kvp.Value.Favorites
-                        .Where(f => f.Name == _settingsService.OutputFilename)
-                        .Select(f => new { Key = kvp.Key, Favorite = f }))
-                    .FirstOrDefault()!;
-                
-                var key = match.Key;
-                var existingPrefab = match.Favorite;
-                
-                existingPrefab.Data =  (Positionable)convertedElement;
-                var serialized = JsonConvert.SerializeObject(vs2077Favorites[key]);
-                File.WriteAllText(key.Item1, serialized);
-                Logger.Info($"Overwrote Prefab {_settingsService.OutputFilename} in {key.Item1}");
-                return;
-            case SaveFileMode.Enum.Extend:
-                Logger.Warning("Extending Prefabs is not yet implemented, creating a new one instead!");
-                goto CreateNew;
-            case SaveFileMode.Enum.New:
-                CreateNew:
-                var matches = vs2077Favorites
-                    .SelectMany(kvp => kvp.Value.Favorites
-                        .Where(f => f.Name.StartsWith(_settingsService.OutputFilename))
-                        .Select(f => new { Key = kvp.Key, Favorite = f }))
-                    .ToList();
-                
-                var totalCount = 1;
-                foreach (var newMatch in matches)
-                {
-                    if (!Int32.TryParse(newMatch.Favorite.Name.Split("+").Last(), out int count))
-                        continue;
-                    if (count >= totalCount)
-                        totalCount = count + 1;
-                }
-
-                var newOutputName = _settingsService.OutputFilename + $"+{totalCount}";
-                
-                var newestFilePath = vs2077Favorites.Select(d => d.Key).OrderByDescending(k => k.Item2).First();
-
-                FavoritesRoot favRoot;
-                if (!File.Exists(newestFilePath.Item1))
-                {
-                    favRoot = new FavoritesRoot
-                    {
-                        Favorites = new()
-                        {
-                            new Favorite
-                            {
-                                Data = (Positionable)convertedElement,
-                                Name = newOutputName
-                            }
-                        }
-                    };
-                }
-                else
-                {
-                    var newestFileInfo = new FileInfo(newestFilePath.Item1);
-                    if (newestFileInfo.Length >= MaxJsonSize)
-                    {
-                        newestFilePath.Item1 = favoritesPath + $"+{newestFilePath.Item2 + 1}.json";
-                        favRoot = new FavoritesRoot
-                        {
-                            Favorites = new()
-                            {
-                                new Favorite
-                                {
-                                    Data = (Positionable)convertedElement,
-                                    Name = newOutputName
-                                }
-                            }
-                        };
+                            Name = _settingsService.OutputFilename,
+                            Data = (Positionable)_removalToWorldBuilder.Convert(axlRemovalFile,
+                                _settingsService.OutputFilename)
+                        });
+                        logMessage = $"Created prefab {_settingsService.OutputFilename}";
                     }
                     else
                     {
-                        favRoot = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(newestFilePath.Item1), options);
-                        favRoot.Favorites.Add(new Favorite
+                        var newCount = existingFavorites?.Favorites.Count(f => f.Name.StartsWith(_settingsService.OutputFilename));
+                        var newOutputFilename = $"{_settingsService.OutputFilename}+{newCount}";
+                        existingFavorites?.Favorites.Add(new Favorite
                         {
-                            Data = (Positionable)convertedElement,
-                            Name = newOutputName
+                            Name = newOutputFilename,
+                            Data = (Positionable)_removalToWorldBuilder.Convert(axlRemovalFile,
+                                newOutputFilename)
                         });
+                        logMessage = $"Created prefab {newOutputFilename}";
                     }
-                }
-                
-                var newSerialized = JsonConvert.SerializeObject(favRoot);
-                File.WriteAllText(newestFilePath.Item1, newSerialized);
-                Logger.Info($"Created Prefab at {newestFilePath.Item1} with the name {newOutputName}");
-                break;
+                    break;
+            }
+            
+            if (existingFavorites != null)
+                favRoot.Favorites.AddRange(existingFavorites.Favorites);
         }
+        
+        var serialized = JsonConvert.SerializeObject(favRoot, Formatting.Indented);
+        File.WriteAllText(favoritesPath, serialized);
+        Logger.Info(logMessage);
     }
+    
+    private static string GetOutputFilename(string outputFilename)
+    {
+        if (ValidationService.ValidatePath(outputFilename) != ValidationService.PathValidationResult.ValidFile)
+            throw new ArgumentException("Invalid output filename!");
+        
+        if (!File.Exists(outputFilename))
+            return outputFilename;
+        
+        int totalCount = 1;
+        string outputFilePathWithoutExtension = outputFilename.Split('.').First();
+        foreach (var file in Directory.GetFiles(Path.GetDirectoryName(outputFilename), "*.*",
+                     SearchOption.AllDirectories))
+        {
+            if (!file.StartsWith(outputFilePathWithoutExtension)) continue;
+            if (!Int32.TryParse(file.Split("+").Last().Split(".").First(), out int count))
+                continue;
+            if (count >= totalCount) 
+                totalCount = count + 1;
+        }
+        return $"{outputFilePathWithoutExtension.Split("+").First()}+{totalCount}.{outputFilename.Split('.').Last()}";
+    }
+
 }
