@@ -26,7 +26,7 @@ CET Window Manager ([GitHub](https://github.com/notaspirit/CET-Window-Manager) |
 1. Installation
     1. CET Mod
        Either by unzipping it into your game directory or using a mod manager like vortex or mo2.
-       Make sure all requirements are installed (RedHotTools and CET)
+       Make sure all requirements are installed (CET)
     2. VS2077
        Install like you would any other application
 2. Selecting
@@ -34,7 +34,7 @@ CET Window Manager ([GitHub](https://github.com/notaspirit/CET-Window-Manager) |
     1. Enable the Visualizer
     2. Make your selection using the provided controls
        Note that the box scales from the center
-    3. With the selection visible on your screen press the "Read RHT Scan" Button
+    3. With the selection visible on your screen press the "Save Selection" Button
 3. Processing
     1. Open the VS2077 App
     2. In the settings set the path to the root of your game directory
