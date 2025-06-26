@@ -278,7 +278,13 @@ public class PostProcessingService
                     var existingExtendPrefab = existingFavorites?.Favorites.FirstOrDefault(f => f.Name == _settingsService.OutputFilename);
                     if (existingExtendPrefab != null)
                     {
-                        logMessage = "Not Implemented!";
+                        existingExtendPrefab.Data = WorldBuilderMergingService.Merge(existingExtendPrefab, new Favorite
+                        {
+                            Name = _settingsService.OutputFilename,
+                            Data = (Positionable)_removalToWorldBuilder.Convert(axlRemovalFile,
+                                _settingsService.OutputFilename)
+                        }).Data;
+                        logMessage = $"Extended prefab {_settingsService.OutputFilename}";
                     }
                     else
                         goto newPrefab;
