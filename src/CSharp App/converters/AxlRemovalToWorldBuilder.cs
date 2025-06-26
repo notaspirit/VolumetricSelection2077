@@ -48,17 +48,20 @@ public class AxlRemovalToWorldBuilder
 
             AbbrSector? worldSectorAbbr = null;
             
-            var sectorGroup = new PositionableGroup
-            {
-                Name = sector.Path
-            };
-
             foreach (var node in sector.NodeDeletions)
             {
-                sectorGroup.Children.AddRange(ConvertNode(node, wse, ref worldSectorAbbr, sector.Path));
+                var convertedNode = ConvertNode(node, wse, ref worldSectorAbbr, sector.Path);
+                if (convertedNode.Count == 0)
+                    continue;
+                
+                if (root.Children.OfType<PositionableGroup>().All(pg => pg.Name != node.Type))
+                    root.Children.Add(new PositionableGroup
+                    {
+                        Name = node.Type
+                    });
+                var pg = root.Children.OfType<PositionableGroup>().First(pg => pg.Name == node.Type);
+                pg.Children.AddRange(convertedNode);
             }
-            if (sectorGroup.Children.Count > 0)
-                root.Children.Add(sectorGroup);
         }
         
         _warnedTypes.Clear();
