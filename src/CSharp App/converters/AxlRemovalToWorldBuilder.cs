@@ -5,6 +5,7 @@ using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Models.WorldBuilder.Editor;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Entity;
+using VolumetricSelection2077.Models.WorldBuilder.Spawn.Light;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
 using VolumetricSelection2077.models.WorldBuilder.Spawn.Visual;
 using VolumetricSelection2077.Services;
@@ -79,6 +80,46 @@ public class AxlRemovalToWorldBuilder
         
         switch (node)
         {
+            case worldStaticLightNode lightNode:
+                var spawnableLight = new SpawnableElement
+                {
+                    Name = GetSpawnableName(lightNode),
+                    Spawnable = new Light
+                    {
+                        Color = lightNode.Color,
+                        Intensity = lightNode.Intensity,
+                        InnerAngle = lightNode.InnerAngle,
+                        OuterAngle = lightNode.OuterAngle,
+                        Radius = lightNode.Radius,
+                        CapsuleLength = lightNode.CapsuleLength,
+                        AutoHideDistance = lightNode.AutoHideDistance,
+                        FlickerStrength = lightNode.Flicker.FlickerStrength,
+                        FlickerPeriod = lightNode.Flicker.FlickerPeriod,
+                        FlickerOffset = lightNode.Flicker.PositionOffset,
+                        LightType = lightNode.Type,
+                        LocalShadows = lightNode.EnableLocalShadows,
+                        Temperature = lightNode.Temperature,
+                        ScaleVolFog = lightNode.ScaleVolFog,
+                        UseInParticles = lightNode.UseInParticles,
+                        UseInTransparents = lightNode.UseInTransparents,
+                        EV = lightNode.EV,
+                        ShadowFadeDistance = lightNode.ShadowFadeDistance,
+                        ShadowFadeRange = lightNode.ShadowFadeRange,
+                        ContactShadows = lightNode.ContactShadows,
+                        SpotCapsule = lightNode.SpotCapsule,
+                        Softness = lightNode.Softness,
+                        Attenuation = lightNode.Attenuation,
+                        ClampAttenuation = lightNode.ClampAttenuation,
+                        SceneSpecularScale = lightNode.SceneSpecularScale,
+                        SceneDiffuse = lightNode.SceneDiffuse,
+                        RoughnessBias = lightNode.RoughnessBias,
+                        SourceRadius = lightNode.SourceRadius,
+                        Directional = lightNode.Directional,
+                    }
+                };
+                PopulateSpawnable(ref spawnableLight, nodeDataEntry);
+                spawnableElements.Add(spawnableLight);
+                break;
             case worldEntityNode entityNode:
                 if ((string?)entityNode.EntityTemplate.DepotPath is null)
                     return spawnableElements;
