@@ -52,10 +52,6 @@ public class PostProcessingService
             return;
         }
         
-        var nodeCount = nullCheckedSectors.Select(s => s?.NodeDeletions.Count).Sum();
-        var actorCount = nullCheckedSectors.SelectMany(s => s?.NodeDeletions ?? new()).Sum(n => n.ActorDeletions?.Count);
-        Logger.Success($"Found {nodeCount} node deletions and {actorCount} actor deletions across {nullCheckedSectors.Count} sectors.");
-
         var removalFile = new AxlRemovalFile
         {
             Streaming = new AxlRemovalStreaming
@@ -82,6 +78,10 @@ public class PostProcessingService
     /// <param name="axlRemovalFile"></param>
     private void SaveAsRemoval(AxlRemovalFile axlRemovalFile)
     {
+        var nodeCount = axlRemovalFile.Streaming.Sectors.Select(s => s?.NodeDeletions.Count).Sum();
+        var actorCount = axlRemovalFile.Streaming.Sectors.SelectMany(s => s?.NodeDeletions ?? new()).Sum(n => n.ActorDeletions?.Count);
+        Logger.Success($"Found {nodeCount} node deletions and {actorCount} actor deletions across {axlRemovalFile.Streaming.Sectors.Count} sectors");
+        
         var outputFilePath = Path.Join(_settingsService.SaveToArchiveMods ? _settingsService.GameDirectory : _settingsService.OutputDirectory, _settingsService.OutputFilename) + ".xl";
         var (outputContent, mergeChanges) = SerializeAxlRemovalFile(axlRemovalFile, outputFilePath);
         
@@ -242,12 +242,14 @@ public class PostProcessingService
             Favorites = new()
         };
 
+        var convertedData = _removalToWorldBuilder.Convert(axlRemovalFile, _settingsService.OutputFilename);
+        Logger.Success($"Found {convertedData.Children.OfType<PositionableGroup>().Sum(g => g.Children.Count)} WorldBuilder elements");
         if (!File.Exists(favoritesPath))
         {
             favRoot.Favorites.Add(new Favorite
             {
                 Name =  _settingsService.OutputFilename,
-                Data = (Positionable)_removalToWorldBuilder.Convert(axlRemovalFile, _settingsService.OutputFilename)
+                Data = (Positionable)convertedData
             });
             logMessage = $"Created prefab {_settingsService.OutputFilename}";
         }
@@ -267,8 +269,7 @@ public class PostProcessingService
                     if (existingOverwritePrefab != null)
                     {
                         existingOverwritePrefab.Data =
-                            (Positionable)_removalToWorldBuilder.Convert(axlRemovalFile,
-                                _settingsService.OutputFilename);
+                            (Positionable)convertedData;
                         logMessage = $"Overwrote prefab {_settingsService.OutputFilename}";
                     }
                     else
@@ -278,13 +279,14 @@ public class PostProcessingService
                     var existingExtendPrefab = existingFavorites?.Favorites.FirstOrDefault(f => f.Name == _settingsService.OutputFilename);
                     if (existingExtendPrefab != null)
                     {
+                        var existingElementsCount = existingExtendPrefab.Data.Children.OfType<PositionableGroup>().Sum(g => g.Children.Count);
                         existingExtendPrefab.Data = WorldBuilderMergingService.Merge(existingExtendPrefab, new Favorite
                         {
                             Name = _settingsService.OutputFilename,
-                            Data = (Positionable)_removalToWorldBuilder.Convert(axlRemovalFile,
-                                _settingsService.OutputFilename)
+                            Data = (Positionable)convertedData
                         }).Data;
-                        logMessage = $"Extended prefab {_settingsService.OutputFilename}";
+                        var newElementsCount = existingExtendPrefab.Data.Children.OfType<PositionableGroup>().Sum(g => g.Children.Count);
+                        logMessage = $"Extended prefab {_settingsService.OutputFilename} with {newElementsCount - existingElementsCount} new elements";
                     }
                     else
                         goto newPrefab;
@@ -297,8 +299,7 @@ public class PostProcessingService
                         existingFavorites?.Favorites.Add(new Favorite
                         {
                             Name = _settingsService.OutputFilename,
-                            Data = (Positionable)_removalToWorldBuilder.Convert(axlRemovalFile,
-                                _settingsService.OutputFilename)
+                            Data = (Positionable)convertedData
                         });
                         logMessage = $"Created prefab {_settingsService.OutputFilename}";
                     }
@@ -309,8 +310,7 @@ public class PostProcessingService
                         existingFavorites?.Favorites.Add(new Favorite
                         {
                             Name = newOutputFilename,
-                            Data = (Positionable)_removalToWorldBuilder.Convert(axlRemovalFile,
-                                newOutputFilename)
+                            Data = (Positionable)convertedData
                         });
                         logMessage = $"Created prefab {newOutputFilename}";
                     }
