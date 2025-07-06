@@ -141,6 +141,9 @@ public class ProcessService
                     bool isInstanced = nodeEntry.Type is NodeTypeProcessingOptions.Enum.worldInstancedDestructibleMeshNode 
                                                         or NodeTypeProcessingOptions.Enum.worldInstancedMeshNode;
                     
+                    if (!isInstanced && _settings.SaveFileFormat == SaveFileFormat.Enum.WorldBuilder)
+                        isInstanced = nodeEntry.Type is NodeTypeProcessingOptions.Enum.worldInstancedDestructibleMeshNode or NodeTypeProcessingOptions.Enum.worldFoliageNode;
+                    
                     var mesh = _gameFileService.GetCMesh(nodeEntry.ResourcePath);
                     if (mesh == null)
                     {
