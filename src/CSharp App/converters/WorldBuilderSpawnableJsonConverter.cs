@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Models.WorldBuilder.Editor;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn;
+using VolumetricSelection2077.Models.WorldBuilder.Spawn.Entity;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
 using VolumetricSelection2077.models.WorldBuilder.Spawn.Visual;
 
@@ -43,6 +44,8 @@ public class WorldBuilderSpawnableJsonConverter : JsonConverter<Spawnable>
                 return obj.ToObject<Effect>(newSerializer);
             case "worldDynamicMeshNode":
                 return obj.ToObject<DynamicMesh>(newSerializer);
+            case "worldEntityNode":
+                return obj.ToObject<Entity>(newSerializer);
             default:
                 return obj.ToObject<Spawnable>(newSerializer);
         }

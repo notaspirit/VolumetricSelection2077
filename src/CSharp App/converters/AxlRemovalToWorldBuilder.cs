@@ -4,6 +4,7 @@ using DynamicData;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Models.WorldBuilder.Editor;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn;
+using VolumetricSelection2077.Models.WorldBuilder.Spawn.Entity;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
 using VolumetricSelection2077.models.WorldBuilder.Spawn.Visual;
 using VolumetricSelection2077.Services;
@@ -78,6 +79,34 @@ public class AxlRemovalToWorldBuilder
         
         switch (node)
         {
+            case worldEntityNode entityNode:
+                if ((string?)entityNode.EntityTemplate.DepotPath is null)
+                    return spawnableElements;
+
+                var rawEntTemplate = _gfs.ArchiveManager?.GetCR2WFile(entityNode.EntityTemplate.DepotPath);
+                if (rawEntTemplate?.RootChunk is not entEntityTemplate entTemplate)
+                    return spawnableElements;
+
+                var entAppearances = entTemplate.Appearances.Select(a => (string)a.Name).ToArray();
+                var entAppearance = entityNode.AppearanceName == "default"
+                    ? entTemplate.DefaultAppearance
+                    : entityNode.AppearanceName;
+
+                var spawnableEntity = new SpawnableElement
+                {
+                    Name = GetSpawnableName(entityNode),
+                    Spawnable = new Entity
+                    {
+                        Appearance = entAppearance,
+                        Appearances = entAppearances,
+                        AppearanceIndex = entAppearances.ToList().IndexOf(entAppearance),
+                        ResourcePath = entityNode.EntityTemplate.DepotPath
+                    }
+                };
+                
+                PopulateSpawnable(ref spawnableEntity, nodeDataEntry);
+                spawnableElements.Add(spawnableEntity);
+                break;
             case worldFoliageNode foliageNode:
                 if ((string?)foliageNode.Mesh.DepotPath is null)
                     return spawnableElements;
