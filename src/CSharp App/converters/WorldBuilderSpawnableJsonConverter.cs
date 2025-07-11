@@ -1,8 +1,7 @@
 using System;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Models.WorldBuilder.Editor;
+using VolumetricSelection2077.Helpers;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Entity;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Light;
@@ -56,8 +55,6 @@ public class WorldBuilderSpawnableJsonConverter : JsonConverter<Spawnable>
 
     public override void WriteJson(JsonWriter writer, Spawnable? value, JsonSerializer serializer)
     {
-        var newSerializer = new JsonSerializer();
-        
-        newSerializer.Serialize(writer, value);
+        JsonSerializerUtils.CloneWithoutConverters(serializer).Serialize(writer, value);
     }
 }

@@ -1,17 +1,19 @@
 using System.Collections.Generic;
 using System.Linq;
 using DynamicData;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Models.WorldBuilder.Editor;
-using VolumetricSelection2077.Models.WorldBuilder.Spawn;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Entity;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Light;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
 using VolumetricSelection2077.models.WorldBuilder.Spawn.Visual;
 using VolumetricSelection2077.Services;
 using WolvenKit.RED4.Archive.Buffer;
-using WolvenKit.RED4.Archive.CR2W;
+using WolvenKit.RED4.CR2W.JSON;
 using WolvenKit.RED4.Types;
+using Activator = System.Activator;
 using Vector4 = SharpDX.Vector4;
 
 namespace VolumetricSelection2077.Converters;
@@ -141,7 +143,8 @@ public class AxlRemovalToWorldBuilder
                         Appearance = entAppearance,
                         Appearances = entAppearances,
                         AppearanceIndex = entAppearances.ToList().IndexOf(entAppearance),
-                        ResourcePath = entityNode.EntityTemplate.DepotPath
+                        ResourcePath = entityNode.EntityTemplate.DepotPath,
+                        InstanceDataChanges = GetInstanceDataChanges(entityNode)
                     }
                 };
                 
@@ -457,6 +460,40 @@ public class AxlRemovalToWorldBuilder
         return spawnableElements;
     }
 
+    private static Dictionary<string, JObject> GetInstanceDataChanges(worldEntityNode entityNode)
+    {
+        var outDict = new Dictionary<string, JObject>();
+        if (entityNode.InstanceData?.Chunk?.Buffer.Data is not RedPackage instanceData)
+            return outDict;
+
+        foreach (var kvp in instanceData.ChunkDictionary)
+            outDict.Add(kvp.Value.ToString(), CleanInstanceDataChanges(kvp.Key));
+        
+        return outDict;
+    }
+
+    private static JObject CleanInstanceDataChanges(IRedType sparseValue)
+    {
+        var type = sparseValue.GetType();
+        var defaultInstance = Activator.CreateInstance(type);
+        var defaultInstanceJObject = JsonConvert.DeserializeObject<JObject>(RedJsonSerializer.Serialize(defaultInstance));
+
+        var redSerializedJObject = JsonConvert.DeserializeObject<JObject>(RedJsonSerializer.Serialize(sparseValue));
+        var outSerialized = new JObject();
+
+        foreach (var prop in defaultInstanceJObject.Properties())
+        {
+            var matchingProp = redSerializedJObject.Properties().FirstOrDefault(x => x.Name == prop.Name);
+            if (matchingProp == null)
+                continue;
+            
+            if (!JToken.DeepEquals(prop.Value, matchingProp.Value))
+                outSerialized.Add(prop.Name, matchingProp.Value);
+        }
+        return outSerialized;
+    }
+    
+    
     private static void PopulateBaseMesh(ref SpawnableElement se, worldMeshNode meshNode, worldNodeData nodeDataEntry)
     {
         var mesh = (Mesh)se.Spawnable;

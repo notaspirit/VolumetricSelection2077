@@ -11,7 +11,6 @@ using VolumetricSelection2077.Models.WorldBuilder.Favorites;
 using VolumetricSelection2077.Resources;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
-using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 namespace VolumetricSelection2077.Services;
 
@@ -320,8 +319,8 @@ public class PostProcessingService
             if (existingFavorites != null)
                 favRoot.Favorites.AddRange(existingFavorites.Favorites);
         }
-        
-        var serialized = JsonConvert.SerializeObject(favRoot, Formatting.Indented);
+
+        var serialized = JsonConvert.SerializeObject(favRoot, options); 
         File.WriteAllText(favoritesPath, serialized);
         Logger.Info(logMessage);
     }
