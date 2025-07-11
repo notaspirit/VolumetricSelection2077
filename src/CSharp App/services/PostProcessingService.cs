@@ -51,6 +51,8 @@ public class PostProcessingService
             return;
         }
         
+        _progress.AddCurrent(1, Progress.ProgressSections.Finalization);
+        
         var removalFile = new AxlRemovalFile
         {
             Streaming = new AxlRemovalStreaming
@@ -69,6 +71,8 @@ public class PostProcessingService
                 SaveAsPrefab(removalFile);
                 break;
         }
+        
+        _progress.AddCurrent(1, Progress.ProgressSections.Finalization);
     }
 
     /// <summary>
