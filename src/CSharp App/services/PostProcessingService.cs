@@ -235,7 +235,9 @@ public class PostProcessingService
     /// <param name="axlRemovalFile"></param>
     private void SaveAsPrefab(AxlRemovalFile axlRemovalFile)
     {
-        var favoritesPath = Path.Join(_settingsService.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "entSpawner", "data", "favorite", "GeneratedByVS2077.json");
+        var favoritesPath = _settingsService.SaveToArchiveMods ?
+            Path.Join(_settingsService.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "entSpawner", "data", "favorite", "GeneratedByVS2077.json") :
+            Path.Join(_settingsService.OutputDirectory, "GeneratedByVS2077.json");
         var logMessage = "";
         
         
@@ -254,7 +256,7 @@ public class PostProcessingService
                 Name =  _settingsService.OutputFilename,
                 Data = (Positionable)convertedData
             });
-            logMessage = $"Created prefab {_settingsService.OutputFilename}";
+            logMessage = $"Created prefab {_settingsService.OutputFilename} at {favoritesPath}";
         }
         else
         {
@@ -273,7 +275,7 @@ public class PostProcessingService
                     {
                         existingOverwritePrefab.Data =
                             (Positionable)convertedData;
-                        logMessage = $"Overwrote prefab {_settingsService.OutputFilename}";
+                        logMessage = $"Overwrote prefab {_settingsService.OutputFilename} at {favoritesPath}";
                     }
                     else
                         goto newPrefab;
@@ -289,7 +291,7 @@ public class PostProcessingService
                             Data = (Positionable)convertedData
                         }).Data;
                         var newElementsCount = existingExtendPrefab.Data.Children.OfType<PositionableGroup>().Sum(g => g.Children.Count);
-                        logMessage = $"Extended prefab {_settingsService.OutputFilename} with {newElementsCount - existingElementsCount} new elements";
+                        logMessage = $"Extended prefab {_settingsService.OutputFilename} with {newElementsCount - existingElementsCount} new elements at {favoritesPath}";
                     }
                     else
                         goto newPrefab;
@@ -304,7 +306,7 @@ public class PostProcessingService
                             Name = _settingsService.OutputFilename,
                             Data = (Positionable)convertedData
                         });
-                        logMessage = $"Created prefab {_settingsService.OutputFilename}";
+                        logMessage = $"Created prefab {_settingsService.OutputFilename} at {favoritesPath}";
                     }
                     else
                     {
@@ -315,7 +317,7 @@ public class PostProcessingService
                             Name = newOutputFilename,
                             Data = (Positionable)convertedData
                         });
-                        logMessage = $"Created prefab {newOutputFilename}";
+                        logMessage = $"Created prefab {newOutputFilename} at {favoritesPath}";
                     }
                     break;
             }
