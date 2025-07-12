@@ -49,6 +49,6 @@
   <PropertyGroup>
     <Version>1000.0.0.0</Version>
     <FileVersion>1000.0.0.0</FileVersion>
-    <InformationalVersion>1000.0.0-beta8</InformationalVersion>
+    <InformationalVersion>1000.0.0-beta9</InformationalVersion>
   </PropertyGroup>
 </Project>
