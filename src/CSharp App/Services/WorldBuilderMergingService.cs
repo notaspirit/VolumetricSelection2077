@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Avalonia;
-using NAudio.CoreAudioApi;
+using Newtonsoft.Json;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Models.WorldBuilder.Editor;
 using VolumetricSelection2077.Models.WorldBuilder.Favorites;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn;
+using VolumetricSelection2077.Models.WorldBuilder.Spawn.Entity;
+using VolumetricSelection2077.Models.WorldBuilder.Spawn.Light;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
 using VolumetricSelection2077.models.WorldBuilder.Spawn.Visual;
 using VolumetricSelection2077.models.WorldBuilder.Structs;
@@ -123,9 +124,57 @@ public static class WorldBuilderMergingService
             case Particle particle:
                 WriteParticle(particle, bw);
                 break;
+            case Light light:
+                WriteLight(light, bw);
+                break;
+            case Entity entity:
+                WriteEntity(entity, bw);
+                break;
         }
     }
 
+    private static void WriteLight(Light light, BinaryWriter bw)
+    {
+        WriteColor(light.Color, bw);
+        bw.Write(light.Intensity);
+        bw.Write(light.InnerAngle);
+        bw.Write(light.OuterAngle);
+        bw.Write(light.Radius);
+        bw.Write(light.CapsuleLength);
+        bw.Write(light.AutoHideDistance);
+        bw.Write(light.FlickerStrength);
+        bw.Write(light.FlickerPeriod);
+        bw.Write(light.FlickerOffset);
+        bw.Write(light.LightType.ToString());
+        bw.Write(light.LocalShadows);
+        bw.Write(light.Temperature);
+        bw.Write(light.ScaleVolFog);
+        bw.Write(light.UseInParticles);
+        bw.Write(light.UseInTransparents);
+        bw.Write(light.EV);
+        bw.Write(light.ShadowFadeDistance);
+        bw.Write(light.ShadowFadeRange);
+        bw.Write(light.ContactShadows.ToString());
+        bw.Write(light.SpotCapsule);
+        bw.Write(light.Softness);
+        bw.Write(light.Attenuation.ToString());
+        bw.Write(light.ClampAttenuation);
+        bw.Write(light.SceneSpecularScale);
+        bw.Write(light.SceneDiffuse);
+        bw.Write(light.RoughnessBias);
+        bw.Write(light.SourceRadius);
+        bw.Write(light.SourceRadius);
+        bw.Write(light.Directional);
+    }
+        
+    private static void WriteEntity(Entity entity, BinaryWriter bw)
+    {
+        foreach (var app in entity.Appearances)
+            bw.Write(app);
+        bw.Write(entity.AppearanceIndex);
+        bw.Write(JsonConvert.SerializeObject(entity.InstanceDataChanges));
+    }
+        
     private static void WriteParticle(Particle particle, BinaryWriter bw)
     {
         bw.Write(particle.EmissionRate);
@@ -184,6 +233,13 @@ public static class WorldBuilderMergingService
         bw.Write(spawnable.SecondaryRange);
         bw.Write(spawnable.Uk10);
         bw.Write(spawnable.Uk11);
+    }
+
+    private static void WriteColor(Color color, BinaryWriter bw)
+    {
+        bw.Write(color.r);
+        bw.Write(color.g);
+        bw.Write(color.b);
     }
     
     private static void WriteEuler(EulerAngles ea, BinaryWriter bw)
