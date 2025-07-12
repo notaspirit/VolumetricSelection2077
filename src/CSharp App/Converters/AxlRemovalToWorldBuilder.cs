@@ -235,7 +235,7 @@ public class AxlRemovalToWorldBuilder
                     {
                         ResourcePath = destructionNode.Mesh.DepotPath,
                         Appearance = destructionNode.MeshAppearance,
-                        Scale = WolvenkitToSharpDX.Vector3(nodeDataEntry.Scale),
+                        Scale = nodeDataEntry.Scale,
                     }
                 };
                 PopulateSpawnable(ref spawnabledestructionMesh, nodeDataEntry);
@@ -296,7 +296,7 @@ public class AxlRemovalToWorldBuilder
                     Name = GetSpawnableName(bendedMeshNode),
                     Spawnable = new Mesh
                     {
-                        Scale = WolvenkitToSharpDX.Vector3(nodeDataEntry.Scale),
+                        Scale = nodeDataEntry.Scale,
 
                         CastLocalShadows = bendedMeshNode.CastLocalShadows,
                         CastShadows = bendedMeshNode.CastShadows,
@@ -322,7 +322,7 @@ public class AxlRemovalToWorldBuilder
                         AutoHideDistance = decalNode.AutoHideDistance,
                         HorizontalFlip = decalNode.HorizontalFlip,
                         VerticalFlip = decalNode.VerticalFlip,
-                        Scale = WolvenkitToSharpDX.Vector3(nodeDataEntry.Scale)
+                        Scale = nodeDataEntry.Scale
                     }
                 };
                 PopulateSpawnable(ref spawnableDecalNode, nodeDataEntry);
@@ -337,7 +337,7 @@ public class AxlRemovalToWorldBuilder
                     Name = GetSpawnableName(terrainMeshNode),
                     Spawnable = new Mesh
                     {
-                        Scale = WolvenkitToSharpDX.Vector3(nodeDataEntry.Scale),
+                        Scale = nodeDataEntry.Scale,
                         ResourcePath = terrainMeshNode.MeshRef.DepotPath
                     }
                 };
@@ -494,7 +494,7 @@ public class AxlRemovalToWorldBuilder
     private static void PopulateBaseMesh(ref SpawnableElement se, worldMeshNode meshNode, worldNodeData nodeDataEntry)
     {
         var mesh = (Mesh)se.Spawnable;
-        mesh.Scale = WolvenkitToSharpDX.Vector3(nodeDataEntry.Scale);
+        mesh.Scale = nodeDataEntry.Scale;
 
         mesh.CastLocalShadows = meshNode.CastLocalShadows;
         mesh.CastRayTracedLocalShadows = meshNode.CastRayTracedLocalShadows;
@@ -511,8 +511,8 @@ public class AxlRemovalToWorldBuilder
     
     private static void PopulateSpawnable(ref SpawnableElement se, worldNodeData nodeDataEntry)
     {
-        se.Spawnable.Position = WolvenkitToSharpDX.Vector4(nodeDataEntry.Position);
-        se.Spawnable.EulerRotation = WolvenkitToSharpDX.Quaternion(nodeDataEntry.Orientation);
+        se.Spawnable.Position = nodeDataEntry.Position;
+        se.Spawnable.EulerRotation = nodeDataEntry.Orientation;
 
         se.Spawnable.PrimaryRange = nodeDataEntry.MaxStreamingDistance;
         se.Spawnable.SecondaryRange = nodeDataEntry.UkFloat1;

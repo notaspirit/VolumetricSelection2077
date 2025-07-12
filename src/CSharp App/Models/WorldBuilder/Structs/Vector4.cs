@@ -21,6 +21,16 @@ public struct Vector4
     
     public static implicit operator Vector4(SharpDX.Vector4 value) => new (value.X, value.Y, value.Z, value.W);
     
+    public static implicit operator WolvenKit.RED4.Types.Vector4(Vector4 value) => new ()
+    {
+        X = value.x,
+        Y = value.y,
+        Z = value.z,
+        W = value.w,
+    };
+    
+    public static implicit operator Vector4(WolvenKit.RED4.Types.Vector4 value) => new (value.X, value.Y, value.Z, value.W);
+    
     public override bool Equals(object? obj)
     {
         if (obj is Vector4 other)
