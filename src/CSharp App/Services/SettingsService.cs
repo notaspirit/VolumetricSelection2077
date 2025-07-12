@@ -32,6 +32,7 @@ public class SettingsService
         FilterModeOr = true;
         IsFiltersMWVisible = false;
         IsParametersMWVisible = false;
+        SaveFileFormat = Resources.SaveFileFormat.Enum.ArchiveXLJson;
         SaveMode = SaveFileMode.Enum.New;
         SupportModdedResources = false;
         CacheModdedResources = true;
