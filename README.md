@@ -30,7 +30,7 @@ CET Window Manager ([GitHub](https://github.com/notaspirit/CET-Window-Manager) |
     4. Press the green "Save Selection" button
 3. Processing the Selection
     1. Open the VS2077 App
-    2. Set the gamepath in the settings and restart the application\
+    2. Set the gamepath in the settings and restart the application
     3. On the main screen set an output filename and  adjust the parameters and filters as needed
     4. Press the "Find Selected" button on the right
 4. Applying the changes
