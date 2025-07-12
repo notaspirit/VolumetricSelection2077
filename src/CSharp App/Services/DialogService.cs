@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
-using VolumetricSelection2077.views;
+using VolumetricSelection2077.Views;
 using WolvenKit.Common.PhysX;
 
 namespace VolumetricSelection2077.Services;

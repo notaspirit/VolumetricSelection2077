@@ -5,7 +5,7 @@ using VolumetricSelection2077.models.WorldBuilder.Structs;
 
 namespace VolumetricSelection2077.Converters;
 
-public class VS2077ToSharpDX
+public class WorldBuilderToSharpDX
 {
     public static Quaternion Quaternion(EulerAngles eulerAngles)
     {

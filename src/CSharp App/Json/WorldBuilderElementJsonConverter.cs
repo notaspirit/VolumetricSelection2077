@@ -6,7 +6,7 @@ using VolumetricSelection2077.Models.WorldBuilder.Editor;
 using VolumetricSelection2077.Services;
 
 
-namespace VolumetricSelection2077.Converters;
+namespace VolumetricSelection2077.Json;
 
 public class WorldBuilderElementJsonConverter : JsonConverter<Element>
 {

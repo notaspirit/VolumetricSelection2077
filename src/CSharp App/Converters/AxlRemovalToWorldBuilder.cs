@@ -3,6 +3,7 @@ using System.Linq;
 using DynamicData;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using VolumetricSelection2077.Json;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Models.WorldBuilder.Editor;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Entity;
@@ -10,7 +11,6 @@ using VolumetricSelection2077.Models.WorldBuilder.Spawn.Light;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
 using VolumetricSelection2077.models.WorldBuilder.Spawn.Visual;
 using VolumetricSelection2077.Services;
-using WolvenKit.Core.Extensions;
 using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.CR2W.JSON;
 using WolvenKit.RED4.Types;
@@ -163,10 +163,9 @@ public class AxlRemovalToWorldBuilder
                 foreach (var transform in abbrFoliageNodeNodeDataEntry.Transforms)
                 {
                     if (remNode.ActorDeletions != null && remNode.ActorDeletions.Count != 0)
-                    {
                         if (remNode.ActorDeletions.All(x => x != abbrFoliageNodeNodeDataEntry.Transforms.IndexOf(transform)))
                             continue;
-                    }
+                    
                     
                     spawnableElements.Add(new SpawnableElement
                     {
@@ -199,10 +198,9 @@ public class AxlRemovalToWorldBuilder
                 foreach (var transform in abbrInstancedDestructibleMeshNodeDataEntry.Transforms)
                 {
                     if (remNode.ActorDeletions != null && remNode.ActorDeletions.Count != 0)
-                    {
                         if (remNode.ActorDeletions.All(x => x != abbrInstancedDestructibleMeshNodeDataEntry.Transforms.IndexOf(transform)))
                             continue;
-                    }
+                    
                     
                     spawnableElements.Add(new SpawnableElement
                     {
@@ -407,10 +405,8 @@ public class AxlRemovalToWorldBuilder
                 foreach (var transform in abbrInstancedMeshNodeDataEntry.Transforms)
                 {
                     if (remNode.ActorDeletions != null && remNode.ActorDeletions.Count != 0)
-                    {
                         if (remNode.ActorDeletions.All(x => x != abbrInstancedMeshNodeDataEntry.Transforms.IndexOf(transform)))
                             continue;
-                    }
                     
                     spawnableElements.Add(new SpawnableElement
                     {

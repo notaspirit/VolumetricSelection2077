@@ -9,7 +9,7 @@ using VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
 using VolumetricSelection2077.models.WorldBuilder.Spawn.Visual;
 
 
-namespace VolumetricSelection2077.Converters;
+namespace VolumetricSelection2077.Json;
 
 public class WorldBuilderSpawnableJsonConverter : JsonConverter<Spawnable>
 {

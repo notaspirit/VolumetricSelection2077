@@ -6,7 +6,7 @@ using DynamicData;
 using VolumetricSelection2077.Services;
 using VolumetricSelection2077.ViewModels;
 
-namespace VolumetricSelection2077.views;
+namespace VolumetricSelection2077.Views;
 
 public partial class Dialog : Window
 {

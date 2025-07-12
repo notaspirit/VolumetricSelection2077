@@ -4,7 +4,7 @@ using System.IO;
 using Avalonia.Media.Imaging;
 using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.Services;
-using VolumetricSelection2077.views;
+using VolumetricSelection2077.Views;
 using YamlDotNet.Core.Tokens;
 
 namespace VolumetricSelection2077.ViewModels

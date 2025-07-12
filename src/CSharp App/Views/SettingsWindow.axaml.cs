@@ -8,7 +8,7 @@ using Avalonia;
 using Avalonia.Interactivity;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
-using VolumetricSelection2077.views;
+using VolumetricSelection2077.Views;
 
 namespace VolumetricSelection2077
 {

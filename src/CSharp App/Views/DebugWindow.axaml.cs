@@ -11,7 +11,7 @@ using VolumetricSelection2077.TestingStuff;
 using VolumetricSelection2077.ViewModels;
 using Path = System.IO.Path;
 
-namespace VolumetricSelection2077.views;
+namespace VolumetricSelection2077.Views;
 
 public partial class DebugWindow : Window
 {
