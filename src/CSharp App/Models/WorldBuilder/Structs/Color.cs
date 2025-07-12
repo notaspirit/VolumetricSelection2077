@@ -4,11 +4,11 @@ namespace VolumetricSelection2077.models.WorldBuilder.Structs;
 
 public class Color
 {
-    public float r;
-    public float g;
-    public float b;
+    public ushort r;
+    public ushort g;
+    public ushort b;
 
-    public Color(float r, float g, float b)
+    public Color(ushort r, ushort g, ushort b)
     {
         this.r = r;
         this.g = g;
@@ -17,9 +17,9 @@ public class Color
 
     public Color()
     {
-        r = 1;
-        g = 1;
-        b = 1;
+        r = 0;
+        g = 0;
+        b = 0;
     }
 
     public static implicit operator Color(CColor value) => new (value.Red, value.Green, value.Blue);
