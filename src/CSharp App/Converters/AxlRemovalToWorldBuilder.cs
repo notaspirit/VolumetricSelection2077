@@ -3,7 +3,6 @@ using System.Linq;
 using DynamicData;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using VolumetricSelection2077.Json;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Models.WorldBuilder.Editor;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Entity;
@@ -12,6 +11,7 @@ using VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
 using VolumetricSelection2077.models.WorldBuilder.Spawn.Visual;
 using VolumetricSelection2077.Services;
 using WolvenKit.RED4.Archive.Buffer;
+using WolvenKit.RED4.Archive.CR2W;
 using WolvenKit.RED4.CR2W.JSON;
 using WolvenKit.RED4.Types;
 using Activator = System.Activator;
@@ -23,16 +23,19 @@ public class AxlRemovalToWorldBuilder
 {
     private GameFileService _gfs;
     private List<string> _warnedTypes;
+    private Dictionary<string, List<string>> _embeddedResourcePaths;
     
     public AxlRemovalToWorldBuilder()
     {
         _gfs = GameFileService.Instance;
         _warnedTypes = new List<string>();
+        _embeddedResourcePaths = new Dictionary<string, List<string>>();
     }
 
     public Element Convert(AxlRemovalFile axlFile, string rootName)
     {
         _warnedTypes.Clear();
+        _embeddedResourcePaths.Clear();
         
         var root = new PositionableGroup
         {
@@ -55,7 +58,7 @@ public class AxlRemovalToWorldBuilder
             
             foreach (var node in sector.NodeDeletions)
             {
-                var convertedNode = ConvertNode(node, wse, ref worldSectorAbbr, sector.Path);
+                var convertedNode = ConvertNode(node, worldSectorCR2W, ref worldSectorAbbr, sector.Path);
                 if (convertedNode.Count == 0)
                     continue;
                 
@@ -68,12 +71,35 @@ public class AxlRemovalToWorldBuilder
                 pg.Children.AddRange(convertedNode);
             }
         }
+
+
+        var embeddedFilesCount = _embeddedResourcePaths.Values.Sum(v => v.Count);
+        if (embeddedFilesCount > 0)
+        {
+            var formattedPaths = "";
+            foreach (var (key, value) in _embeddedResourcePaths)
+            {
+                formattedPaths += $"{key}\n";
+                foreach (var path in value)
+                {
+                    formattedPaths += $"  {path}\n";
+                }
+                formattedPaths += "\n";
+            }
+            
+            Logger.Warning($"Found {embeddedFilesCount} embedded resource paths. These will need to be manually extracted from their respective sectors and added to the project otherwise they will simply not show up in game.");
+            Logger.Warning("The following paths were found:\n" +
+                           $"{formattedPaths}");
+        }
         
         _warnedTypes.Clear();
+        _embeddedResourcePaths.Clear();
         return root;
     }
-    private List<Element> ConvertNode(AxlRemovalNodeDeletion remNode, worldStreamingSector sector, ref AbbrSector? worldSectorAbbr, string sectorPath)
+    private List<Element> ConvertNode(AxlRemovalNodeDeletion remNode, CR2WFile sectorCR2W, ref AbbrSector? worldSectorAbbr, string sectorPath)
     {
+        var sector = sectorCR2W.RootChunk as worldStreamingSector;
+        
         var nodeData = sector.NodeData.Data as CArray<worldNodeData>;
         
         var nodeDataEntry = nodeData[remNode.Index];
@@ -127,6 +153,8 @@ public class AxlRemovalToWorldBuilder
                 if ((string?)entityNode.EntityTemplate.DepotPath is null)
                     return spawnableElements;
 
+                HandleEmbeddedResourceWarning(entityNode.EntityTemplate.DepotPath, sectorPath, ref sectorCR2W);
+                
                 var rawEntTemplate = _gfs.ArchiveManager?.GetCR2WFile(entityNode.EntityTemplate.DepotPath);
                 if (rawEntTemplate?.RootChunk is not entEntityTemplate entTemplate)
                     return spawnableElements;
@@ -156,6 +184,8 @@ public class AxlRemovalToWorldBuilder
                 if ((string?)foliageNode.Mesh.DepotPath is null)
                     return spawnableElements;
 
+                HandleEmbeddedResourceWarning(foliageNode.Mesh.DepotPath, sectorPath, ref sectorCR2W);
+                
                 worldSectorAbbr ??= _gfs.GetSector(sectorPath);
                 if (worldSectorAbbr == null)
                     return spawnableElements;
@@ -191,6 +221,8 @@ public class AxlRemovalToWorldBuilder
                 if ((string?)instancedDestructibleMeshNode.Mesh.DepotPath is null)
                     return spawnableElements;
 
+                HandleEmbeddedResourceWarning(instancedDestructibleMeshNode.Mesh.DepotPath, sectorPath, ref sectorCR2W);
+                
                 worldSectorAbbr ??= _gfs.GetSector(sectorPath);
                 if (worldSectorAbbr == null)
                     return spawnableElements;
@@ -228,6 +260,9 @@ public class AxlRemovalToWorldBuilder
             case worldPhysicalDestructionNode destructionNode:
                 if ((string?)destructionNode.Mesh.DepotPath is null)
                     return spawnableElements;
+                
+                HandleEmbeddedResourceWarning(destructionNode.Mesh.DepotPath, sectorPath, ref sectorCR2W);
+                
                 var spawnabledestructionMesh = new SpawnableElement
                 {
                     Name = GetSpawnableName(destructionNode),
@@ -245,6 +280,8 @@ public class AxlRemovalToWorldBuilder
                 if ((string?)dynamicMeshNode.Mesh.DepotPath is null)
                     return spawnableElements;
                 
+                HandleEmbeddedResourceWarning(dynamicMeshNode.Mesh.DepotPath, sectorPath, ref sectorCR2W);
+                
                 var spawnabledynamicMesh = new SpawnableElement
                 {
                     Name = GetSpawnableName(dynamicMeshNode),
@@ -260,6 +297,8 @@ public class AxlRemovalToWorldBuilder
                 if ((string?)effectNode.Effect.DepotPath is null)
                     return spawnableElements;
 
+                HandleEmbeddedResourceWarning(effectNode.Effect.DepotPath, sectorPath, ref sectorCR2W);
+                
                 var spawnableEffect = new SpawnableElement
                 {
                     Name = GetSpawnableName(effectNode),
@@ -275,6 +314,8 @@ public class AxlRemovalToWorldBuilder
                 if ((string?)particleNode.ParticleSystem.DepotPath is null)
                     return spawnableElements;
 
+                HandleEmbeddedResourceWarning(particleNode.ParticleSystem.DepotPath, sectorPath, ref sectorCR2W);
+                
                 var spawnableParticle = new SpawnableElement
                 {
                     Name = GetSpawnableName(particleNode),
@@ -291,6 +332,8 @@ public class AxlRemovalToWorldBuilder
                 if ((string?)bendedMeshNode.Mesh.DepotPath is null)
                     return spawnableElements;
 
+                HandleEmbeddedResourceWarning(bendedMeshNode.Mesh.DepotPath, sectorPath, ref sectorCR2W);
+                
                 var spawnableBendedMesh = new SpawnableElement
                 {
                     Name = GetSpawnableName(bendedMeshNode),
@@ -312,6 +355,8 @@ public class AxlRemovalToWorldBuilder
                 if ((string?)decalNode.Material.DepotPath is null)
                     return spawnableElements;
 
+                HandleEmbeddedResourceWarning(decalNode.Material.DepotPath, sectorPath, ref sectorCR2W);
+                
                 var spawnableDecalNode = new SpawnableElement
                 {
                     Name = GetSpawnableName(decalNode),
@@ -332,6 +377,8 @@ public class AxlRemovalToWorldBuilder
                 if ((string?)terrainMeshNode.MeshRef.DepotPath is null)
                     return spawnableElements;
                 
+                HandleEmbeddedResourceWarning(terrainMeshNode.MeshRef.DepotPath, sectorPath, ref sectorCR2W);
+                
                 var spawnableTerrainMeshNode = new SpawnableElement
                 {
                     Name = GetSpawnableName(terrainMeshNode),
@@ -349,6 +396,8 @@ public class AxlRemovalToWorldBuilder
                 if ((string?)waterPatchNode.Mesh.DepotPath is null)
                     return spawnableElements;
                 
+                HandleEmbeddedResourceWarning(waterPatchNode.Mesh.DepotPath, sectorPath, ref sectorCR2W);
+                
                 var spawnableWaterPatchNode = new SpawnableElement
                 {
                     Name = GetSpawnableName(waterPatchNode),
@@ -363,6 +412,8 @@ public class AxlRemovalToWorldBuilder
             case worldClothMeshNode clothMeshNode:
                 if ((string?)clothMeshNode.Mesh.DepotPath is null)
                     return spawnableElements;
+                
+                HandleEmbeddedResourceWarning(clothMeshNode.Mesh.DepotPath, sectorPath, ref sectorCR2W);
                 
                 var spawnableClothMeshNode = new SpawnableElement
                 {
@@ -380,6 +431,8 @@ public class AxlRemovalToWorldBuilder
                 if ((string?)rotatingMeshNode.Mesh.DepotPath is null)
                     return spawnableElements;
 
+                HandleEmbeddedResourceWarning(rotatingMeshNode.Mesh.DepotPath, sectorPath, ref sectorCR2W);
+                
                 var spawnableRotatingMeshNode = new SpawnableElement
                 {
                     Name = GetSpawnableName(rotatingMeshNode),
@@ -398,6 +451,8 @@ public class AxlRemovalToWorldBuilder
                 if ((string?)instancedMeshNode.Mesh.DepotPath is null)
                     return spawnableElements;
 
+                HandleEmbeddedResourceWarning(instancedMeshNode.Mesh.DepotPath, sectorPath, ref sectorCR2W);
+                
                 worldSectorAbbr ??= _gfs.GetSector(sectorPath);
                 if (worldSectorAbbr == null)
                     return spawnableElements;
@@ -435,6 +490,8 @@ public class AxlRemovalToWorldBuilder
                 if ((string?)meshNode.Mesh.DepotPath is null)
                     return spawnableElements;
 
+                HandleEmbeddedResourceWarning(meshNode.Mesh.DepotPath, sectorPath, ref sectorCR2W);
+                
                 var spawnableMeshNode = new SpawnableElement
                 {
                     Name = GetSpawnableName(meshNode),
@@ -541,5 +598,23 @@ public class AxlRemovalToWorldBuilder
         };
         
         return string.IsNullOrEmpty(name) ? "Generated by VS2077" : name;
+    }
+
+    private void HandleEmbeddedResourceWarning(string resourcePath, string sectorPath, ref CR2WFile sector)
+    {
+        if (sector.EmbeddedFiles.All(f => f.FileName != resourcePath))
+            return;
+
+        if (_embeddedResourcePaths.TryGetValue(sectorPath, out var embeddedResourcePaths))
+        {
+            if (embeddedResourcePaths.Contains(resourcePath))
+                return;
+            
+            embeddedResourcePaths.Add(resourcePath);
+        }
+        else
+        {
+            _embeddedResourcePaths.Add(sectorPath, new List<string> { resourcePath });
+        }
     }
 }
