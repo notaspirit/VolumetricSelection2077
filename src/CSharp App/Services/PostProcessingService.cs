@@ -19,8 +19,7 @@ public class PostProcessingService
     private readonly Progress _progress;
     private readonly SettingsService _settingsService;
     private readonly AxlRemovalToWorldBuilder _removalToWorldBuilder;
-    private const long MaxJsonSize = 100 * 1024 * 1024;
-    private readonly JsonSerializerSettings options;
+    private readonly JsonSerializerSettings _jsonOptions;
     
     
     public PostProcessingService()
@@ -28,7 +27,7 @@ public class PostProcessingService
         _progress = Progress.Instance;
         _settingsService = SettingsService.Instance;
         _removalToWorldBuilder = new AxlRemovalToWorldBuilder();
-        options = new JsonSerializerSettings
+        _jsonOptions = new JsonSerializerSettings
         {
             Converters =
                 { new WorldBuilderElementJsonConverter(), new WorldBuilderSpawnableJsonConverter() },
@@ -141,13 +140,7 @@ public class PostProcessingService
         switch (_settingsService.SaveFileFormat)
         {
             case  SaveFileFormat.Enum.ArchiveXLJson:
-                var jsonOptions = new JsonSerializerSettings 
-                {
-                    NullValueHandling = NullValueHandling.Ignore,
-                    Formatting = Formatting.Indented
-                    
-                };
-                outputContent = JsonConvert.SerializeObject(axlRemovalFile, jsonOptions);
+                outputContent = JsonConvert.SerializeObject(axlRemovalFile, _jsonOptions);
                 break;
             case  SaveFileFormat.Enum.ArchiveXLYaml:
                 var serializer = new SerializerBuilder()
@@ -260,12 +253,7 @@ public class PostProcessingService
         }
         else
         {
-            var existingFavorites = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(favoritesPath), new JsonSerializerSettings
-            {
-                Converters = { new WorldBuilderElementJsonConverter(), new WorldBuilderSpawnableJsonConverter() },
-                NullValueHandling = NullValueHandling.Ignore,
-                Formatting = Formatting.Indented
-            });
+            var existingFavorites = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(favoritesPath), _jsonOptions);
             
             switch (_settingsService.SaveMode)
             {
@@ -326,7 +314,7 @@ public class PostProcessingService
                 favRoot.Favorites.AddRange(existingFavorites.Favorites);
         }
 
-        var serialized = JsonConvert.SerializeObject(favRoot, options); 
+        var serialized = JsonConvert.SerializeObject(favRoot, _jsonOptions); 
         File.WriteAllText(favoritesPath, serialized);
         Logger.Info(logMessage);
     }
