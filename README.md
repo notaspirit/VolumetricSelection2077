@@ -3,10 +3,11 @@
 
 ![GitHub all releases](https://img.shields.io/github/downloads/notaspirit/VolumetricSelection2077/total) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/notaspirit/VolumetricSelection2077) ![GitHub latest release date](https://img.shields.io/github/release-date/notaspirit/VolumetricSelection2077)
 
-VolumetricSelection2077 is a tool for selecting nodes in the world of Cyberpunk2077 using a convienient in game selection box without any size constraints.
+VolumetricSelection2077 (VS2077) is a tool for selecting nodes in the world of Cyberpunk2077 using a convienient in game selection box without any size constraints.
 Currently it supports multiple output formats: Removal using ArchiveXL (in both yaml and json) as well as WorldBuilder Prefabs (Note that WorldBuilder struggles with very large selections e.g. 10k+ objects).
 
 ## Requirements
+### YOU NEED BOTH THE VS2077 CET MOD AND THE VS2077 APP (EITHER PORTABLE OR VIA THE INSTALLER), GET BOTH FROM THE RELEASES SECTION
 - CyberEngineTweaks ([GitHub](https://github.com/maximegmd/CyberEngineTweaks) | [Nexus](https://www.nexusmods.com/cyberpunk2077/mods/107))
 - ArchiveXL 1.23.0+ ([GitHub](https://github.com/psiberx/cp2077-archive-xl) | [Nexus](https://www.nexusmods.com/cyberpunk2077/mods/4198))
 - WorldBuilder ([GitHub](https://github.com/justarandomguyintheinternet/CP77_entSpawner) | [Nexus](https://www.nexusmods.com/cyberpunk2077/mods/20660))
