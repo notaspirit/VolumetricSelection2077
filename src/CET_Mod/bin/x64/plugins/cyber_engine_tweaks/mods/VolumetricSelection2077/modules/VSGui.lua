@@ -451,6 +451,7 @@ local function settingsTab()
             settingsInstance:update("preciseRotation", preciseRotationLocal)
             retogglePrecision()
         end
+        ImGui.EndTable()
     end
 end
 
