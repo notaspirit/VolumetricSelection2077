@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Spatial.Euclidean;
+using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
 
 namespace VolumetricSelection2077.TestingStuff;
 
-public class TestEulerQuatConversion
+public class TestEulerQuatConversion : IDebugTool
 {
     private class Element
     {
@@ -50,7 +51,7 @@ public class TestEulerQuatConversion
 
     private const float TOLERANCE = 0.1f;
     
-    public static void Run()
+    public void Run()
     {
         Dictionary<RotationOrder, int> rotOrderFreqency =  new Dictionary<RotationOrder, int>();
          

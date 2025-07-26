@@ -49,7 +49,7 @@
             Background="#6b82b2"
             Click="DialogTest_Click"
             Content="Dialog Test"
-            Grid.Column="1"
+            Grid.Column="0"
             Grid.Row="0"
             Margin="5,5,0,5">
             <Button.Styles>
@@ -62,8 +62,8 @@
             Background="#6b82b2"
             Click="DumpSectorBounds_Click"
             Content="Dump Sector Bounds"
-            Grid.Column="0"
-            Grid.Row="1"
+            Grid.Column="1"
+            Grid.Row="0"
             Margin="5,5,0,5">
             <Button.Styles>
                 <Style Selector="Button:pointerover /template/ ContentPresenter">
@@ -75,21 +75,8 @@
             Background="#6b82b2"
             Click="LoadSectorBounds_Click"
             Content="Load Sector Bounds"
-            Grid.Column="1"
-            Grid.Row="1"
-            Margin="5,5,0,5">
-            <Button.Styles>
-                <Style Selector="Button:pointerover /template/ ContentPresenter">
-                    <Setter Property="Background" Value="#455472" />
-                </Style>
-            </Button.Styles>
-        </Button>
-        <Button
-            Background="#6b82b2"
-            Click="TestWheezeKitSerialization_Click"
-            Content="Test Wkit Serialization"
             Grid.Column="2"
-            Grid.Row="1"
+            Grid.Row="0"
             Margin="5,5,0,5">
             <Button.Styles>
                 <Style Selector="Button:pointerover /template/ ContentPresenter">
@@ -99,16 +86,43 @@
         </Button>
         <Button
             Background="#6b82b2"
-            Click="TestQuatEulerConversion_Click"
-            Content="Test Quat Euler Conversion"
+            Click="RunTestCommand_Click"
+            Content="Run Test Command"
             Grid.Column="0"
-            Grid.Row="2"
+            Grid.ColumnSpan="3"
+            Grid.Row="1"
             Margin="5,5,0,5">
             <Button.Styles>
                 <Style Selector="Button:pointerover /template/ ContentPresenter">
                     <Setter Property="Background" Value="#455472" />
                 </Style>
             </Button.Styles>
+            <FlyoutBase.AttachedFlyout>
+                <Flyout Placement="BottomEdgeAlignedLeft" ShowMode="Transient">
+                    <ListBox
+                        ItemsSource="{Binding DebugServices}"
+                        Margin="0"
+                        Padding="0"
+                        SelectionMode="Single">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Button
+                                    Background="#6b82b2"
+                                    Click="RunDebugService_Click"
+                                    Content="{Binding Key}"
+                                    Margin="-5">
+                                    <Button.Styles>
+                                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                            <Setter Property="Background" Value="#455472" />
+                                        </Style>
+                                    </Button.Styles>
+                                </Button>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                </Flyout>
+            </FlyoutBase.AttachedFlyout>
         </Button>
     </Grid>
 </Window>

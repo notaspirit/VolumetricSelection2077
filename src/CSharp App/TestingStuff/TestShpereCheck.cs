@@ -5,9 +5,9 @@ using VolumetricSelection2077.Services;
 
 namespace VolumetricSelection2077.TestingStuff;
 
-public class TestShpereCheck
+public class TestShpereCheck : IDebugTool
 {
-    public static void Run()
+    public void Run()
     {
         var defaultTransform = new AbbrSectorTransform()
         {
