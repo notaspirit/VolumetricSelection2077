@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using VolumetricSelection2077.Models;
 using System.IO;
 using System.Linq;
@@ -46,223 +48,223 @@ public class ProcessService
     }
     
     private async Task<AxlRemovalNodeDeletion?> ProcessNodeAsync(AbbrStreamingSectorNodeDataEntry nodeDataEntry, int index, AbbrSector sector, SelectionInput selectionBox)
+    {
+        var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
+        
+        bool? matchesDebugFilter = null;
+        bool? matchesResourceFilter = null;
+        
+        if (_settings.DebugNameFilter.Count > 0)
         {
-            var nodeEntry = sector.Nodes[nodeDataEntry.NodeIndex];
-            
-            bool? matchesDebugFilter = null;
-            bool? matchesResourceFilter = null;
-            
-            if (_settings.DebugNameFilter.Count > 0)
+            matchesDebugFilter = false;
+            foreach (var filter in _settings.DebugNameFilter)
             {
-                matchesDebugFilter = false;
-                foreach (var filter in _settings.DebugNameFilter)
+                if (Regex.IsMatch(nodeEntry.DebugName ?? "", filter, RegexOptions.IgnoreCase))
                 {
-                    if (Regex.IsMatch(nodeEntry.DebugName ?? "", filter, RegexOptions.IgnoreCase))
-                    {
-                        matchesDebugFilter = true;
-                        break;
-                    }
-                }
-                
-            }
-            
-            if (_settings.ResourceNameFilter.Count > 0)
-            {
-                matchesResourceFilter = false;
-                foreach (var filter in _settings.ResourceNameFilter)
-                {
-                    if (Regex.IsMatch(nodeEntry.ResourcePath ?? "", filter, RegexOptions.IgnoreCase))
-                    {
-                        matchesResourceFilter = true;
-                        break;
-                    }
+                    matchesDebugFilter = true;
+                    break;
                 }
             }
+            
+        }
+        
+        if (_settings.ResourceNameFilter.Count > 0)
+        {
+            matchesResourceFilter = false;
+            foreach (var filter in _settings.ResourceNameFilter)
+            {
+                if (Regex.IsMatch(nodeEntry.ResourcePath ?? "", filter, RegexOptions.IgnoreCase))
+                {
+                    matchesResourceFilter = true;
+                    break;
+                }
+            }
+        }
 
-            if (matchesDebugFilter != null && matchesResourceFilter != null)
+        if (matchesDebugFilter != null && matchesResourceFilter != null)
+        {
+            if (_settings.FilterModeOr)
             {
-                if (_settings.FilterModeOr)
-                {
-                    if (!((bool)matchesDebugFilter || (bool)matchesResourceFilter))
-                    {
-                        return null;
-                    }
-                }
-                else
-                {
-                    if (!((bool)matchesDebugFilter && (bool)matchesResourceFilter))
-                    {
-                        return null;
-                    }
-                }
-            } 
-            else if (matchesDebugFilter.HasValue && matchesDebugFilter == false)
-            {
-                return null;
-            }
-            else if (matchesResourceFilter.HasValue && matchesResourceFilter == false)
-            {
-                return null;
-            }
-            
-            int nodeTypeTableIndex = NodeTypeProcessingOptions.NodeTypeOptions.IndexOf(nodeEntry.Type.ToString());
-            if (nodeTypeTableIndex == -1)
-            {
-                Logger.Warning($"Node {nodeEntry.Type} is not part of the assumed node type set! Please report this issue. Processing node regardless.");
-            }
-            else
-            {
-                if (_settings.NodeTypeFilter[nodeTypeTableIndex] != true)
+                if (!((bool)matchesDebugFilter || (bool)matchesResourceFilter))
                 {
                     return null;
                 }
             }
-            
-            CollisionCheck.Types entryType = CollisionCheck.Types.Default;
-            if ((nodeEntry.ResourcePath?.EndsWith(@".mesh") ?? false) || (nodeEntry.ResourcePath?.EndsWith(@".w2mesh") ?? false))
+            else
             {
-                entryType = CollisionCheck.Types.Mesh;
-            } 
-            else if (nodeEntry.SectorHash != null && (nodeEntry.Actors != null || nodeEntry.Actors?.Length > 0))
-            {
-                entryType = CollisionCheck.Types.Collider;
+                if (!((bool)matchesDebugFilter && (bool)matchesResourceFilter))
+                {
+                    return null;
+                }
             }
-
-            switch (entryType)
+        } 
+        else if (matchesDebugFilter.HasValue && matchesDebugFilter == false)
+        {
+            return null;
+        }
+        else if (matchesResourceFilter.HasValue && matchesResourceFilter == false)
+        {
+            return null;
+        }
+        
+        int nodeTypeTableIndex = NodeTypeProcessingOptions.NodeTypeOptions.IndexOf(nodeEntry.Type.ToString());
+        if (nodeTypeTableIndex == -1)
+        {
+            Logger.Warning($"Node {nodeEntry.Type} is not part of the assumed node type set! Please report this issue. Processing node regardless.");
+        }
+        else
+        {
+            if (_settings.NodeTypeFilter[nodeTypeTableIndex] != true)
             {
-                case CollisionCheck.Types.Mesh:
-                    if (nodeDataEntry.AABB != null)
-                    {
-                        BoundingBox nodeAABB = (BoundingBox)nodeDataEntry.AABB;
-                        if (selectionBox.Obb.Contains(ref nodeAABB) == ContainmentType.Disjoint)
-                            return null;
-                    }
-                    
-                    bool isInstanced = nodeEntry.Type is NodeTypeProcessingOptions.Enum.worldInstancedDestructibleMeshNode 
-                                                        or NodeTypeProcessingOptions.Enum.worldInstancedMeshNode;
-                    
-                    if (!isInstanced && _settings.SaveFileFormat == SaveFileFormat.Enum.WorldBuilder)
-                        isInstanced = nodeEntry.Type is NodeTypeProcessingOptions.Enum.worldFoliageNode;
-                    
-                    var mesh = _gameFileService.GetCMesh(nodeEntry.ResourcePath);
-                    if (mesh == null)
-                    {
-                        Logger.Warning($"Failed to get CMesh from {nodeEntry.ResourcePath}");
-                        return null;
-                    }
-                    var (isInside, instances) = CollisionCheckService.IsMeshInsideBox(mesh,
-                        selectionBox.Obb,
-                        selectionBox.Aabb,
-                        nodeDataEntry.Transforms,
-                        checkAllTransforms: isInstanced);
+                return null;
+            }
+        }
+        
+        CollisionCheck.Types entryType = CollisionCheck.Types.Default;
+        if ((nodeEntry.ResourcePath?.EndsWith(@".mesh") ?? false) || (nodeEntry.ResourcePath?.EndsWith(@".w2mesh") ?? false))
+        {
+            entryType = CollisionCheck.Types.Mesh;
+        } 
+        else if (nodeEntry.SectorHash != null && (nodeEntry.Actors != null || nodeEntry.Actors?.Length > 0))
+        {
+            entryType = CollisionCheck.Types.Collider;
+        }
 
-                    if (!isInside) 
+        switch (entryType)
+        {
+            case CollisionCheck.Types.Mesh:
+                if (nodeDataEntry.AABB != null)
+                {
+                    BoundingBox nodeAABB = (BoundingBox)nodeDataEntry.AABB;
+                    if (selectionBox.Obb.Contains(ref nodeAABB) == ContainmentType.Disjoint)
                         return null;
-                    
-                    if (isInstanced)
-                        return new AxlRemovalNodeDeletion
-                        {
-                            Index = index,
-                            Type = nodeEntry.Type.ToString(),
-                            DebugName = nodeEntry.DebugName,
-                            ActorDeletions = instances,
-                            ExpectedActors = nodeDataEntry.Transforms.Length
-                        };
+                }
+                
+                bool isInstanced = nodeEntry.Type is NodeTypeProcessingOptions.Enum.worldInstancedDestructibleMeshNode 
+                                                    or NodeTypeProcessingOptions.Enum.worldInstancedMeshNode;
+                
+                if (!isInstanced && _settings.SaveFileFormat == SaveFileFormat.Enum.WorldBuilder)
+                    isInstanced = nodeEntry.Type is NodeTypeProcessingOptions.Enum.worldFoliageNode;
+                
+                var mesh = _gameFileService.GetCMesh(nodeEntry.ResourcePath);
+                if (mesh == null)
+                {
+                    Logger.Warning($"Failed to get CMesh from {nodeEntry.ResourcePath}");
+                    return null;
+                }
+                var (isInside, instances) = CollisionCheckService.IsMeshInsideBox(mesh,
+                    selectionBox.Obb,
+                    selectionBox.Aabb,
+                    nodeDataEntry.Transforms,
+                    checkAllTransforms: isInstanced);
+
+                if (!isInside) 
+                    return null;
+                
+                if (isInstanced)
                     return new AxlRemovalNodeDeletion
                     {
                         Index = index,
                         Type = nodeEntry.Type.ToString(),
-                        DebugName = nodeEntry.DebugName
+                        DebugName = nodeEntry.DebugName,
+                        ActorDeletions = instances,
+                        ExpectedActors = nodeDataEntry.Transforms.Length
                     };
-                case CollisionCheck.Types.Collider:
-                    List<int> actorRemoval = new List<int>();
-                    int actorIndex = 0;
-                    foreach (var actor in nodeEntry.Actors)
+                return new AxlRemovalNodeDeletion
+                {
+                    Index = index,
+                    Type = nodeEntry.Type.ToString(),
+                    DebugName = nodeEntry.DebugName
+                };
+            case CollisionCheck.Types.Collider:
+                List<int> actorRemoval = new List<int>();
+                int actorIndex = 0;
+                foreach (var actor in nodeEntry.Actors)
+                {
+                    var shapeIntersects = false;
+                    var sectorHash = nodeEntry.SectorHash;
+                    var transformActor = actor.Transform;
+                    
+                    foreach (var shape in actor.Shapes)
                     {
-                        var shapeIntersects = false;
-                        var sectorHash = nodeEntry.SectorHash;
-                        var transformActor = actor.Transform;
-                        
-                        foreach (var shape in actor.Shapes)
+                        switch (shape.ShapeType)
                         {
-                            switch (shape.ShapeType)
-                            {
-                                case Enums.physicsShapeType.TriangleMesh:
-                                case Enums.physicsShapeType.ConvexMesh:
-                                    var collisionMesh = await _gameFileService.GetPhysXMesh((ulong)sectorHash, (ulong)shape.Hash);
-                                    if (collisionMesh == null)
-                                    {
-                                        Logger.Warning($"Failed to get PhysX Mesh from {sectorHash} : {shape.Hash}");
-                                        continue;
-                                    }
-                                    bool isCollisionMeshInsideBox = CollisionCheckService.IsCollisonMeshInsideSelectionBox(collisionMesh, selectionBox.Obb, selectionBox.Aabb, transformActor, shape.Transform);
-                                    if (isCollisionMeshInsideBox)
-                                    {
-                                        shapeIntersects = true;
-                                        goto breakShapeLoop;
-                                    }
-                                    break;
-                                case Enums.physicsShapeType.Box:
-                                    bool isCollisionBoxInsideBox = CollisionCheckService.IsCollisionBoxInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb);
-                                    if (isCollisionBoxInsideBox)
-                                    {
-                                        shapeIntersects = true;
-                                        goto breakShapeLoop;
-                                    }
-                                    break;
-                                case Enums.physicsShapeType.Capsule:
-                                    bool isCollisionCapsuleInsideBox = CollisionCheckService.IsCollisionCapsuleInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb);
-                                    if (isCollisionCapsuleInsideBox)
-                                    {
-                                        shapeIntersects = true;
-                                        goto breakShapeLoop;
-                                    }
-                                    break;
-                                case Enums.physicsShapeType.Sphere:
-                                    bool intersects = CollisionCheckService.IsCollisionSphereInsideSelectionBox(shape, transformActor, selectionBox.Obb);
-                                    if (intersects)
-                                    {
-                                        shapeIntersects = true;
-                                        goto breakShapeLoop;
-                                    }
-                                    break;
-                            }
+                            case Enums.physicsShapeType.TriangleMesh:
+                            case Enums.physicsShapeType.ConvexMesh:
+                                var collisionMesh = await _gameFileService.GetPhysXMesh((ulong)sectorHash, (ulong)shape.Hash);
+                                if (collisionMesh == null)
+                                {
+                                    Logger.Warning($"Failed to get PhysX Mesh from {sectorHash} : {shape.Hash}");
+                                    continue;
+                                }
+                                bool isCollisionMeshInsideBox = CollisionCheckService.IsCollisonMeshInsideSelectionBox(collisionMesh, selectionBox.Obb, selectionBox.Aabb, transformActor, shape.Transform);
+                                if (isCollisionMeshInsideBox)
+                                {
+                                    shapeIntersects = true;
+                                    goto breakShapeLoop;
+                                }
+                                break;
+                            case Enums.physicsShapeType.Box:
+                                bool isCollisionBoxInsideBox = CollisionCheckService.IsCollisionBoxInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb);
+                                if (isCollisionBoxInsideBox)
+                                {
+                                    shapeIntersects = true;
+                                    goto breakShapeLoop;
+                                }
+                                break;
+                            case Enums.physicsShapeType.Capsule:
+                                bool isCollisionCapsuleInsideBox = CollisionCheckService.IsCollisionCapsuleInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb);
+                                if (isCollisionCapsuleInsideBox)
+                                {
+                                    shapeIntersects = true;
+                                    goto breakShapeLoop;
+                                }
+                                break;
+                            case Enums.physicsShapeType.Sphere:
+                                bool intersects = CollisionCheckService.IsCollisionSphereInsideSelectionBox(shape, transformActor, selectionBox.Obb);
+                                if (intersects)
+                                {
+                                    shapeIntersects = true;
+                                    goto breakShapeLoop;
+                                }
+                                break;
                         }
-                        
-                        breakShapeLoop:
-                        if (shapeIntersects)
-                        {
-                            actorRemoval.Add(actorIndex);
-                        }
-                        actorIndex++;
                     }
-                    if (actorRemoval.Count > 0)
+                    
+                    breakShapeLoop:
+                    if (shapeIntersects)
+                    {
+                        actorRemoval.Add(actorIndex);
+                    }
+                    actorIndex++;
+                }
+                if (actorRemoval.Count > 0)
+                {
+                    return new AxlRemovalNodeDeletion()
+                        {
+                            Index = index,
+                            Type = nodeEntry.Type.ToString(),
+                            ActorDeletions = actorRemoval,
+                            ExpectedActors = nodeEntry.Actors.Length,
+                            DebugName = nodeEntry.DebugName
+                        };
+                }
+                return null;
+            case CollisionCheck.Types.Default:
+                foreach (var transform in nodeDataEntry.Transforms)
+                {
+                    var intersection = selectionBox.Obb.Contains(transform.Position);
+                    if (intersection != ContainmentType.Disjoint)
                     {
                         return new AxlRemovalNodeDeletion()
-                            {
-                                Index = index,
-                                Type = nodeEntry.Type.ToString(),
-                                ActorDeletions = actorRemoval,
-                                ExpectedActors = nodeEntry.Actors.Length,
-                                DebugName = nodeEntry.DebugName
-                            };
-                    }
-                    return null;
-                case CollisionCheck.Types.Default:
-                    foreach (var transform in nodeDataEntry.Transforms)
-                    {
-                        var intersection = selectionBox.Obb.Contains(transform.Position);
-                        if (intersection != ContainmentType.Disjoint)
                         {
-                            return new AxlRemovalNodeDeletion()
-                            {
-                                Index = index,
-                                Type = nodeEntry.Type.ToString(),
-                                DebugName = nodeEntry.DebugName
-                            };
-                        }
+                            Index = index,
+                            Type = nodeEntry.Type.ToString(),
+                            DebugName = nodeEntry.DebugName
+                        };
                     }
-                    return null;
+                }
+                return null;
             }
 
             return null;
