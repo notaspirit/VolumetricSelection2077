@@ -9,9 +9,9 @@ using VolumetricSelection2077.Services;
 
 namespace VolumetricSelection2077.TestingStuff;
 
-public class TestCache
+public class TestCache : IDebugTool
 {
-    public static async Task Run()
+    public void Run()
     {
         Logger.Info("Starting cache testing...");
 

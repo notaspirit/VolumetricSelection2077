@@ -2,16 +2,19 @@ using System.Linq;
 using MessagePack;
 using SharpDX;
 using VolumetricSelection2077.Converters;
+using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
 using WolvenKit.RED4.Types;
 using Vector3 = SharpDX.Vector3;
 
 namespace VolumetricSelection2077.TestingStuff;
 
-public class CompareNewSectorBoundsWithStreamingBlock
+public class CompareNewSectorBoundsWithStreamingBlock : IDebugTool
 {
-    public static void Run(GameFileService gfs, CacheService cs)
+    public void Run()
     {
+        var gfs = GameFileService.Instance;
+        var cs = CacheService.Instance;
         Logger.Info("Getting basegame streamingblock...");
         if (cs.IsInitialized == false)
         {

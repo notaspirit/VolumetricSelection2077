@@ -1,10 +1,11 @@
+using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
 
 namespace VolumetricSelection2077.TestingStuff;
 
-public class TestCacheResizing
+public class TestCacheResizing : IDebugTool
 {
-    public static void Run()
+    public void Run()
     {
         Logger.Info("Starting Cache Resize Test...");
         int sampleSize = 100;

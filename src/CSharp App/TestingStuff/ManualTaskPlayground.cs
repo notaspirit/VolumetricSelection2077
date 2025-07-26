@@ -1,10 +1,11 @@
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
+using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
 
 namespace VolumetricSelection2077.TestingStuff;
 
-public class ManualTaskPlayground
+public class ManualTaskPlayground : IDebugTool
 {
     private static ConcurrentQueue<TaskCompletionSource<string?>> tasks = new();
     
@@ -36,7 +37,7 @@ public class ManualTaskPlayground
     }
     
     
-    public static async Task Run()
+    public static async Task RunAsync()
     {
         Logger.Info("Starting playground");
         _ = Task.Run(() => RunLoop());
@@ -44,5 +45,10 @@ public class ManualTaskPlayground
         Logger.Info("Enqueuing task");
         var result = await enqueueTask();
         Logger.Info($"Completed task: {result}");
+    }
+
+    public void Run()
+    {
+        RunAsync().Wait();
     }
 }

@@ -1,6 +1,7 @@
 using System.IO;
 using Newtonsoft.Json;
 using VolumetricSelection2077.Json;
+using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Models.WorldBuilder.Editor;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
@@ -8,7 +9,7 @@ using VolumetricSelection2077.Services;
 
 namespace VolumetricSelection2077.TestingStuff;
 
-public class TestWheezeKitSerialization
+public class TestWheezeKitSerialization : IDebugTool
 {
     private static void LogResourcePathsRecursively(Element e)
     {
@@ -23,7 +24,7 @@ public class TestWheezeKitSerialization
             LogResourcePathsRecursively(child);
     }
     
-    public static void Run()
+    public void Run()
     {
         Logger.Debug("Starting Wheeze Kit Deserialization Test...");
         var testFilePath = @"E:\Games\Cyberpunk 2077\bin\x64\plugins\cyber_engine_tweaks\mods\entSpawner\data\objects\Huge Penthouse Mockup.json";
