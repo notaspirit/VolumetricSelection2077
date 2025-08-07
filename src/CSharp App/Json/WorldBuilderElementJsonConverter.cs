@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using DynamicData.Kernel;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using VolumetricSelection2077.Helpers;
@@ -19,39 +21,45 @@ public class WorldBuilderElementJsonConverter : JsonConverter<Element>
         bool hasExistingValue,
         JsonSerializer serializer)
     {
-        var obj = JObject.Load(reader);
-        
-        Element element;
-        switch (obj["modulePath"]?.Value<string>())
+        var elementListConverter = serializer.Converters.FirstOrOptional(x => x is WorldBuilderElementListConverter);
+        if (elementListConverter == null)
         {
-            case "modules/classes/editor/spawnableElement":
-                element = new SpawnableElement();
-                break;
-            case "modules/classes/editor/positionable":
-                element = new Positionable();
-                break;
-            case "modules/classes/editor/positionableGroup":
-                element = new PositionableGroup();
-                break;
-            default:
-                element = new Element();
-                break;
+            serializer.Converters.Add(new WorldBuilderElementListConverter());
         }
         
+        var CC = serializer.Converters.First(x => x == this);
+        serializer.Converters.Remove(CC);
         try
         {
-            using var jsonReader = obj.CreateReader();
-            serializer.Populate(jsonReader, element);
+            var obj = JObject.Load(reader);
+            switch (obj["modulePath"]?.Value<string>())
+            {
+                case "modules/classes/editor/spawnableElement":
+                    return obj.ToObject<SpawnableElement>(serializer);
+                case "modules/classes/editor/positionable":
+                    return obj.ToObject<Positionable>(serializer);
+                case "modules/classes/editor/positionableGroup":
+                    return obj.ToObject<PositionableGroup>(serializer);
+                default:
+                    return obj.ToObject<Element>(serializer);
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            Logger.Debug($"{ex}");
+            serializer.Converters.Add(CC);
+            if (elementListConverter == null)
+            {
+                serializer.Converters.Remove(serializer.Converters.First(x => x is WorldBuilderElementListConverter));
+            }
         }
-        return element;
+
     }
 
     public override void WriteJson(JsonWriter writer, Element? value, JsonSerializer serializer)
     {
-        JsonSerializerUtils.CloneWithoutConverters(serializer).Serialize(writer, value);
+        var CC = serializer.Converters.First(x => x == this);
+        serializer.Converters.Remove(CC);
+        serializer.Serialize(writer, value);
+        serializer.Converters.Add(CC);
     }
 }
