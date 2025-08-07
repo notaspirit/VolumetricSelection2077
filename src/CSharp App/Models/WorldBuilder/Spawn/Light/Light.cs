@@ -7,7 +7,7 @@ namespace VolumetricSelection2077.Models.WorldBuilder.Spawn.Light;
 public class Light : Visualized
 {
     [JsonProperty("color")]
-    public Color Color { get; set; }
+    public float[] Color { get; set; }
     
     [JsonProperty("intensity")]
     public float Intensity { get; set; }
@@ -99,7 +99,7 @@ public class Light : Visualized
         ModulePath = "light/light";
         NodeType = "worldStaticLightNode";
         
-        Color = new Color(1, 1, 1);
+        Color = new float[] { 1f, 1f, 1f };
         Intensity = 100;
         InnerAngle = 20;
         OuterAngle = 60;
