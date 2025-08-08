@@ -14,7 +14,7 @@ local relativeOffset = vector3:new(0, 0, 0)
 local selectionBox = nil
 
 -- Settings
-local versionString = "1000.0.0-beta9"
+local versionString = "1000.0.0-beta10"
 
 local settingsInstance = settings.getInstance()
 local isHighlighted = false
@@ -451,6 +451,7 @@ local function settingsTab()
             settingsInstance:update("preciseRotation", preciseRotationLocal)
             retogglePrecision()
         end
+        ImGui.EndTable()
     end
 end
 

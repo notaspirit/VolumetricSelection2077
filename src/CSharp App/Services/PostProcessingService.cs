@@ -30,7 +30,10 @@ public class PostProcessingService
         _jsonOptions = new JsonSerializerSettings
         {
             Converters =
-                { new WorldBuilderElementJsonConverter(), new WorldBuilderSpawnableJsonConverter() },
+                { new WorldBuilderElementJsonConverter(),
+                    new WorldBuilderSpawnableJsonConverter(),
+                    new WorldBuilderElementListConverter(),
+                    new ColorToColorArray() },
             NullValueHandling = NullValueHandling.Ignore,
             Formatting = Formatting.Indented
         };

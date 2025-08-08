@@ -1,11 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Shapes;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using VolumetricSelection2077.Extensions;
+using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
 using VolumetricSelection2077.TestingStuff;
 using VolumetricSelection2077.ViewModels;
@@ -98,26 +101,17 @@ public partial class DebugWindow : Window
             $"{cacheMetadata.GameVersion}-{cacheMetadata.VS2077Version}.bin"));
         _debugWindowViewModel.IsProcessing = false;
     }
-    
-    private void TestWheezeKitSerialization_Click(object? sender, RoutedEventArgs e)
+
+    private async void RunDebugService_Click(object? sender, RoutedEventArgs e)
     {
-        _debugWindowViewModel.IsProcessing = true;
-        TestWheezeKitSerialization.Run();
-        _debugWindowViewModel.IsProcessing = false;
+        if (sender is Button btn && btn.DataContext is KeyValuePair<string, IDebugTool> item)
+        {
+            await Task.Run(() => item.Value.Run());
+        }
     }
-    
-    private void TestQuatEulerConversion_Click(object? sender, RoutedEventArgs e)
+
+    private void RunTestCommand_Click(object? sender, RoutedEventArgs e)
     {
-        _debugWindowViewModel.IsProcessing = true;
-        try
-        {
-            TestEulerQuatConversion.Run();
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"TestQuatEulerConversion failed: {ex}");
-        }
-        
-        _debugWindowViewModel.IsProcessing = false;
+        FlyoutBase.ShowAttachedFlyout(sender as Button);
     }
 }

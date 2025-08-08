@@ -1,14 +1,15 @@
 using System;
 using System.Data;
 using System.Security.Authentication;
+using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
 using WolvenKit.Modkit.Exceptions;
 
 namespace VolumetricSelection2077.TestingStuff;
 
-public class TestLoggerRefactor
+public class TestLoggerRefactor : IDebugTool
 {
-    public static void Run()
+    public void Run()
     {
         Logger.Info("Regular Info message");
         Logger.Warning("Regular Warning message");

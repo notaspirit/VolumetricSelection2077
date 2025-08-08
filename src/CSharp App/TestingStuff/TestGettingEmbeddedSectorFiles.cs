@@ -1,12 +1,13 @@
+using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
 using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.Types;
 
 namespace VolumetricSelection2077.TestingStuff;
 
-public class TestGettingEmbeddedSectorFiles
+public class TestGettingEmbeddedSectorFiles : IDebugTool
 {
-    public static void Run()
+    public void Run()
     {
         var gfs = GameFileService.Instance;
         string testSector = @"base\worlds\03_night_city\_compiled\default\exterior_4_-7_0_0.streamingsector";

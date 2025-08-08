@@ -2,10 +2,6 @@ VSGui = require("modules/VSGui")
 
 local isOverlayVisible = false
 
-registerForEvent('onInit', function()
-    mod.ready = true
-end)
-
 registerForEvent('onOverlayOpen', function()
     isOverlayVisible = true
 end)

@@ -1,10 +1,11 @@
+using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
 
 namespace VolumetricSelection2077.TestingStuff;
 
-public class TestPathValidator
+public class TestPathValidator : IDebugTool
 {
-    public static void Run()
+    public void Run()
     {
         var validDir = @"E:\Games\Cyberpunk 2077";
         var validFile = @"E:\Games\Cyberpunk 2077.zip";

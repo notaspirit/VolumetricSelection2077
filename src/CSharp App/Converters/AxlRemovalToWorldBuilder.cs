@@ -115,7 +115,7 @@ public class AxlRemovalToWorldBuilder
                     Name = GetSpawnableName(lightNode),
                     Spawnable = new Light
                     {
-                        Color = lightNode.Color,
+                        Color = new float[] { lightNode.Color.Red / 255f, lightNode.Color.Green / 255f, lightNode.Color.Blue / 255f },
                         Intensity = lightNode.Intensity,
                         InnerAngle = lightNode.InnerAngle,
                         OuterAngle = lightNode.OuterAngle,
