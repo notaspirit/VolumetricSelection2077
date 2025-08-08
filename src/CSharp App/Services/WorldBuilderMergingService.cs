@@ -235,11 +235,11 @@ public static class WorldBuilderMergingService
         bw.Write(spawnable.Uk11);
     }
 
-    private static void WriteColor(Color color, BinaryWriter bw)
+    private static void WriteColor(float[] color, BinaryWriter bw)
     {
-        bw.Write(color.r);
-        bw.Write(color.g);
-        bw.Write(color.b);
+        bw.Write(color[0]);
+        bw.Write(color[1]);
+        bw.Write(color[2]);
     }
     
     private static void WriteEuler(EulerAngles ea, BinaryWriter bw)
