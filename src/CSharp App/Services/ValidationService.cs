@@ -39,7 +39,7 @@ namespace VolumetricSelection2077.Services
         public static (GamePathResult, PathValidationResult) ValidateGamePath(string gamePath)
         {
             var validatePath = ValidatePath(gamePath);
-            if (validatePath != PathValidationResult.ValidDirectory)
+            if (validatePath != PathValidationResult.Valid)
                 return (GamePathResult.InvalidGamePath, validatePath);
             
             string archiveContentPath = Path.Combine(gamePath, "archive", "pc", "content");
@@ -61,7 +61,7 @@ namespace VolumetricSelection2077.Services
         public (bool, PathValidationResult) ValidateSelectionFile(string gamePath)
         {
             var vpr = ValidatePath(gamePath);
-            if (vpr != PathValidationResult.ValidDirectory)
+            if (vpr != PathValidationResult.Valid)
                 return (false, vpr);
             string selectionFilePath;
             if (string.IsNullOrWhiteSpace(_settingsService.CustomSelectionFilePath))
@@ -81,7 +81,7 @@ namespace VolumetricSelection2077.Services
         public static (bool, PathValidationResult) ValidateAndCreateDirectory(string directory)
         {
             var vpr = ValidatePath(directory);
-            if (vpr != PathValidationResult.ValidDirectory)
+            if (vpr != PathValidationResult.Valid)
                 return (false, vpr);
             try
             {
@@ -232,8 +232,7 @@ namespace VolumetricSelection2077.Services
             Drive,
             LeadingOrTrailingSpace,
             TooLong,
-            ValidFile,
-            ValidDirectory
+            Valid
         }
 
         /// <summary>
@@ -258,10 +257,8 @@ namespace VolumetricSelection2077.Services
 
             if (parts.Any(part => part != part.Trim()))
                 return PathValidationResult.LeadingOrTrailingSpace;
-
-            if (Path.HasExtension(path))
-                return PathValidationResult.ValidFile;
-            return PathValidationResult.ValidDirectory;
+            
+            return PathValidationResult.Valid;
         }
         public bool AreVanillaSectorBBsBuild()
         {
