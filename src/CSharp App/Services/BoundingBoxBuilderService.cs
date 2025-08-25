@@ -64,11 +64,15 @@ public class BoundingBoxBuilderService
 
                     foreach (var transform in nodeDataEntry.Transforms)
                     {
+                        var transformMatrix = Matrix.Scaling(transform.Scale) *
+                                              Matrix.RotationQuaternion(transform.Rotation) *
+                                              Matrix.Translation(transform.Position);
+                        
                         foreach (var submesh in mesh.SubMeshes)
                         {
-                            var halfExtends = submesh.BoundingBox.Size / 2 * transform.Scale;
-                            var transformedAabb = new BoundingBox(submesh.BoundingBox.Center - halfExtends, submesh.BoundingBox.Center + halfExtends);
-                            foreach (var corner in transformedAabb.GetCorners())
+                            var transformedObb = new OrientedBoundingBox(submesh.BoundingBox);
+                            transformedObb.Transform(transformMatrix);
+                            foreach (var corner in transformedObb.GetCorners())
                             {
                                 min = Vector3.Min(min, corner);
                                 max = Vector3.Max(max, corner);
@@ -79,11 +83,16 @@ public class BoundingBoxBuilderService
                 {
                     foreach (var actor in nodeEntry.Actors)
                     {
+                        var actorTransformMatrix = Matrix.Scaling(actor.Transform.Scale) *
+                                                      Matrix.RotationQuaternion(actor.Transform.Rotation) *
+                                                      Matrix.Translation(actor.Transform.Position);
+                        
                         foreach (var shape in actor.Shapes)
                         {
-                            Matrix actorTransformMatrix = Matrix.Scaling(actor.Transform.Scale) *
-                                                              Matrix.RotationQuaternion(actor.Transform.Rotation) *
-                                                              Matrix.Translation(actor.Transform.Position);
+                            var shapeTransformMatrix = Matrix.Scaling(new Vector3(1,1,1)) * 
+                                                              Matrix.RotationQuaternion(shape.Transform.Rotation) * 
+                                                              Matrix.Translation(shape.Transform.Position);
+                            var summedTransformMatrix = shapeTransformMatrix * actorTransformMatrix;
                             switch (shape.ShapeType)
                             {
                                 case Enums.physicsShapeType.TriangleMesh:
@@ -100,15 +109,10 @@ public class BoundingBoxBuilderService
                                         continue;
                                     }
                                     
-                                    Matrix shapeTransformMatrixMesh = Matrix.Scaling(new Vector3(1,1,1)) * 
-                                                                     Matrix.RotationQuaternion(shape.Transform.Rotation) * 
-                                                                     Matrix.Translation(shape.Transform.Position);
-                                    
-                                    Matrix transformMatrixMesh = shapeTransformMatrixMesh * actorTransformMatrix;
                                     foreach (var submesh in collisionMesh.SubMeshes)
                                     {
                                         OrientedBoundingBox obb = new(submesh.BoundingBox);
-                                        obb.Transform(transformMatrixMesh);
+                                        obb.Transform(summedTransformMatrix);
                                         foreach (var corner in obb.GetCorners())
                                         {
                                             min = Vector3.Min(min, corner);
@@ -117,14 +121,8 @@ public class BoundingBoxBuilderService
                                     }
                                     break;
                                 case Enums.physicsShapeType.Box:
-                                    Matrix shapeTransformMatrixBox = Matrix.Scaling(new Vector3(1,1,1)) * 
-                                                                  Matrix.RotationQuaternion(shape.Transform.Rotation) * 
-                                                                  Matrix.Translation(shape.Transform.Position);
-
-                                    Matrix transformMatrixBox = shapeTransformMatrixBox * actorTransformMatrix;
-                                    
                                     OrientedBoundingBox collisionBox = new(-shape.Transform.Scale, shape.Transform.Scale);
-                                    collisionBox.Transform(transformMatrixBox);
+                                    collisionBox.Transform(summedTransformMatrix);
                                     foreach (var corner in collisionBox.GetCorners())
                                     {
                                         min = Vector3.Min(min, corner);
@@ -135,14 +133,8 @@ public class BoundingBoxBuilderService
                                     float height = shape.Transform.Scale.Y + 2 * actor.Transform.Scale.X;   
                                     Vector3 shapeSizeAsBox = new Vector3(shape.Transform.Scale.X, shape.Transform.Scale.X, height / 2f);
                                     
-                                    Matrix shapeTransformMatrixCapsule = Matrix.Scaling(new Vector3(1,1,1)) * 
-                                                                  Matrix.RotationQuaternion(shape.Transform.Rotation) * 
-                                                                  Matrix.Translation(shape.Transform.Position);
-
-                                    Matrix transformMatrixCapsule = shapeTransformMatrixCapsule * actorTransformMatrix;
-        
                                     OrientedBoundingBox capsuleObb = new(-shapeSizeAsBox, shapeSizeAsBox);
-                                    capsuleObb.Transform(transformMatrixCapsule);
+                                    capsuleObb.Transform(summedTransformMatrix);
                                     foreach (var corner in capsuleObb.GetCorners())
                                     {
                                         min = Vector3.Min(min, corner);
@@ -150,14 +142,8 @@ public class BoundingBoxBuilderService
                                     }
                                     break;
                                 case Enums.physicsShapeType.Sphere:
-                                    Matrix shapeTransformMatrixSphere = Matrix.Scaling(new Vector3(1,1,1)) * 
-                                                                         Matrix.RotationQuaternion(shape.Transform.Rotation) * 
-                                                                         Matrix.Translation(shape.Transform.Position);
-
-                                    Matrix transformMatrixSphere = shapeTransformMatrixSphere * actorTransformMatrix;
-                                    
                                     OrientedBoundingBox sphereObb = new(new Vector3(-shape.Transform.Scale.X), new Vector3(shape.Transform.Scale.X));
-                                    sphereObb.Transform(transformMatrixSphere);
+                                    sphereObb.Transform(summedTransformMatrix);
                                     foreach (var corner in sphereObb.GetCorners())
                                     {
                                         min = Vector3.Min(min, corner);
