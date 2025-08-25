@@ -78,10 +78,7 @@ public class CacheService
     }
     private static bool IsProcessing { get; set; } = false;
     
-    private CacheService()
-    {
-        Initialize();
-    }
+    private CacheService() { }
     public static CacheService Instance
     {
         get
