@@ -373,7 +373,9 @@ public class CacheService
             {
                 foreach (var request in requestsModded)
                 {
-                    tx.Put(_moddedDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    var status = tx.Put(_moddedDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    if (status != MDBResultCode.Success)
+                        Logger.Error($"Failed to write data with key {request.Key} to {request.Database} with status {status}");
                 }
             }
             
@@ -381,7 +383,9 @@ public class CacheService
             {
                 foreach (var request in requestsVanilla)
                 {
-                    tx.Put(_vanillaDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    var status = tx.Put(_vanillaDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    if (status != MDBResultCode.Success)
+                        Logger.Error($"Failed to write data with key {request.Key} to {request.Database} with status {status}");
                 }
             }
             
@@ -389,7 +393,9 @@ public class CacheService
             {
                 foreach (var request in requestsVanillaBounds)
                 {
-                    tx.Put(_vanillaBoundsDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    var status = tx.Put(_vanillaBoundsDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    if (status != MDBResultCode.Success)
+                        Logger.Error($"Failed to write data with key {request.Key} to {request.Database} with status {status}");
                 }
             }
                 
@@ -397,11 +403,15 @@ public class CacheService
             {
                 foreach (var request in requestsModdedBounds)
                 {
-                    tx.Put(_moddedBoundsDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    var status = tx.Put(_moddedBoundsDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    if (status != MDBResultCode.Success)
+                        Logger.Error($"Failed to write data with key {request.Key} to {request.Database} with status {status}");
                 }
             }
 
-            tx.Commit();
+            var commitStatus = tx.Commit();
+            if (commitStatus != MDBResultCode.Success)
+                Logger.Error($"Failed to commit {requests.Length} entries to cache with status {commitStatus}");
         }
 
         if (!_settings.CacheEnabled)

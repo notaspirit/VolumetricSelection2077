@@ -198,6 +198,9 @@ public class BoundingBoxBuilderService
         if (!_gameFileService.IsInitialized)
             throw new Exception("Game file service is not initialized!");
         
+        if (!_cacheService.IsInitialized)
+            throw new Exception("Cache service is not initialized!");
+        
         _progress.Reset();
         _progress.SetWeight(0f, 1f, 0f);
 
@@ -228,9 +231,10 @@ public class BoundingBoxBuilderService
         
         _cacheService.StartListening();
         
-        List<Task> tasks = vanillaSectors.Select(x => Task.Run(() => ProcessStreamingsector(x, CacheDatabases.VanillaBounds))).ToList();
-        tasks.AddRange(moddedSectors.Select(x =>
+        List<Task> tasks = vanillaSectors.Distinct().Select(x => Task.Run(() => ProcessStreamingsector(x, CacheDatabases.VanillaBounds))).ToList();
+        tasks.AddRange(moddedSectors.Distinct().Select(x =>
             Task.Run(() => ProcessStreamingsector(x, CacheDatabases.ModdedBounds))));
+        Logger.Info($"Building Bounds for {tasks.Count} Sectors...");
         await Task.WhenAll(tasks);
         
         _cacheService.StopListening();
