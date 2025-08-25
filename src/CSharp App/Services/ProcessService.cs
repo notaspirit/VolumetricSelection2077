@@ -333,7 +333,7 @@ public class ProcessService
     {
         int invalidCount = 0;
         bool invalidRegex = false;
-        if (vr.OutputFileName == ValidationService.PathValidationResult.ValidFile)
+        if (vr.OutputFileName == ValidationService.PathValidationResult.Valid)
             Logger.Success("Filename                 : OK");
         else
         {
@@ -372,7 +372,7 @@ public class ProcessService
             Logger.Success("Selection File           : OK");
         else
         {
-            string invalidReason = vr.SelectionFilePathValidationResult == ValidationService.PathValidationResult.ValidDirectory ? "Not found" : $"Invalid file path {vr.SelectionFilePathValidationResult}";
+            string invalidReason = vr.SelectionFilePathValidationResult == ValidationService.PathValidationResult.Valid ? "Not found" : $"Invalid file path {vr.SelectionFilePathValidationResult}";
             Logger.Error($"Selection File           : {invalidReason}");
             invalidCount++;
         }
@@ -399,7 +399,10 @@ public class ProcessService
             Logger.Success("Vanilla Sector BBs       : OK");
         else
         {
-            var dialogResult = await _dialogService.ShowDialog("Vanilla Sector Bounds not found!", "Vanilla Sector Bounds are not built, do you want to build them now (this will take a while) or fetch prebuild ones from remote?", ["Fetch Remote", "Build", "Cancel"]);
+            var dialogResult = await _dialogService.ShowDialog("Vanilla Sector Bounds not found!", "Vanilla Sector Bounds are not built, do you want to build them now (this will take a while) or fetch prebuild ones from remote?", 
+                [new DialogButton("Fetch Remote", DialogButtonStyling.Enum.Primary),
+                    new DialogButton("Build", DialogButtonStyling.Enum.Secondary),
+                    new DialogButton("Cancel", DialogButtonStyling.Enum.Destructive)]);
             switch (dialogResult)
             {
                 case 0:
@@ -410,7 +413,10 @@ public class ProcessService
                         Logger.Success("Vanilla Sector BBs       : OK");
                     else
                     {
-                        var failedToFetchRemoteDialogResult = await _dialogService.ShowDialog("Failed to fetch remote sector bounds!", "Failed to fetch remote sector bounds, do you want to retry or build them now (this will take a while)?", ["Retry", "Build", "Cancel"]);
+                        var failedToFetchRemoteDialogResult = await _dialogService.ShowDialog("Failed to fetch remote sector bounds!", "Failed to fetch remote sector bounds, do you want to retry or build them now (this will take a while)?", 
+                        [new DialogButton("Retry", DialogButtonStyling.Enum.Primary),
+                            new DialogButton("Build", DialogButtonStyling.Enum.Secondary),
+                            new DialogButton("Cancel", DialogButtonStyling.Enum.Destructive)]);
                         switch (failedToFetchRemoteDialogResult)
                         {
                             case 0:
@@ -435,7 +441,10 @@ public class ProcessService
                     catch (Exception e)
                     {
                         Logger.Exception(e, $"Failed to build sector bounds with error {e.Message}");
-                        var failedToBuildSectorBoundsDialog = await _dialogService.ShowDialog("Failed to build sector bounds!", "Failed to build sector bounds, do you want to retry or fetch them from remote?", ["Retry", "Fetch Remote", "Cancel"]);
+                        var failedToBuildSectorBoundsDialog = await _dialogService.ShowDialog("Failed to build sector bounds!", "Failed to build sector bounds, do you want to retry or fetch them from remote?", 
+                        [new DialogButton("Retry", DialogButtonStyling.Enum.Primary),
+                            new DialogButton("Fetch Remote", DialogButtonStyling.Enum.Secondary),
+                            new DialogButton("Cancel", DialogButtonStyling.Enum.Destructive)]);
                         switch (failedToBuildSectorBoundsDialog)
                         {
                             case 0:
@@ -460,7 +469,11 @@ public class ProcessService
             Logger.Success("Modded Sector BBs        : OK");
         else
         {
-            var dialogResult = await _dialogService.ShowDialog("Modded Sector Bounds not found!", "Not all modded sectors have a build bounding box!", ["Build Missing", "Rebuild All", "Ignore", "Cancel"]);
+            var dialogResult = await _dialogService.ShowDialog("Modded Sector Bounds not found!", "Not all modded sectors have a build bounding box!", 
+            [new DialogButton("Build Missing", DialogButtonStyling.Enum.Primary),
+                new DialogButton("Rebuild All", DialogButtonStyling.Enum.Secondary),
+                new DialogButton("Ignore", DialogButtonStyling.Enum.Secondary),
+                new DialogButton("Cancel", DialogButtonStyling.Enum.Destructive)]);
             switch (dialogResult)
             {
                 case 0:

@@ -376,7 +376,9 @@ public class CacheService
             {
                 foreach (var request in requestsModded)
                 {
-                    tx.Put(_moddedDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    var status = tx.Put(_moddedDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    if (status != MDBResultCode.Success)
+                        Logger.Error($"Failed to write data with key {request.Key} to {request.Database} with status {status}");
                 }
             }
             
@@ -384,7 +386,9 @@ public class CacheService
             {
                 foreach (var request in requestsVanilla)
                 {
-                    tx.Put(_vanillaDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    var status = tx.Put(_vanillaDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    if (status != MDBResultCode.Success)
+                        Logger.Error($"Failed to write data with key {request.Key} to {request.Database} with status {status}");
                 }
             }
             
@@ -392,7 +396,9 @@ public class CacheService
             {
                 foreach (var request in requestsVanillaBounds)
                 {
-                    tx.Put(_vanillaBoundsDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    var status = tx.Put(_vanillaBoundsDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    if (status != MDBResultCode.Success)
+                        Logger.Error($"Failed to write data with key {request.Key} to {request.Database} with status {status}");
                 }
             }
                 
@@ -400,11 +406,15 @@ public class CacheService
             {
                 foreach (var request in requestsModdedBounds)
                 {
-                    tx.Put(_moddedBoundsDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    var status = tx.Put(_moddedBoundsDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    if (status != MDBResultCode.Success)
+                        Logger.Error($"Failed to write data with key {request.Key} to {request.Database} with status {status}");
                 }
             }
 
-            tx.Commit();
+            var commitStatus = tx.Commit();
+            if (commitStatus != MDBResultCode.Success)
+                Logger.Error($"Failed to commit {requests.Length} entries to cache with status {commitStatus}");
         }
 
         if (!_settings.CacheEnabled)
@@ -607,7 +617,7 @@ public class CacheService
         if (fromPath == toPath) return true;
 
         var toPathVr = ValidationService.ValidatePath(toPath);
-        if (toPathVr != ValidationService.PathValidationResult.ValidDirectory)
+        if (toPathVr != ValidationService.PathValidationResult.Valid)
             throw new ArgumentException($"Invalid target path provided: {toPathVr}");
 
         DirectoryInfo fromInfo;
@@ -623,7 +633,7 @@ public class CacheService
         else
         {
             var fromPathVr = ValidationService.ValidatePath(fromPath);
-            if (fromPathVr != ValidationService.PathValidationResult.ValidDirectory)
+            if (fromPathVr != ValidationService.PathValidationResult.Valid)
                 throw new ArgumentException($"Invalid source path provided: {fromPathVr}");
             fromInfo = new DirectoryInfo(fromPath);
             fromExists = fromInfo.Exists;
@@ -810,7 +820,7 @@ public class CacheService
     public CacheDatabaseMetadata GetMetadata()
     {
         string filePath = Path.Combine(_settings.CacheDirectory, "metadata.json");
-        if (ValidationService.ValidatePath(filePath) != ValidationService.PathValidationResult.ValidFile)
+        if (ValidationService.ValidatePath(filePath) != ValidationService.PathValidationResult.Valid)
             throw new Exception("Cache directory is invalid!");
         
         if (File.Exists(filePath))
@@ -821,7 +831,7 @@ public class CacheService
         }
         
         var gameExePath = Path.Combine(_settings.GameDirectory, "bin", "x64", "Cyberpunk2077.exe");
-        if (ValidationService.ValidatePath(filePath) != ValidationService.PathValidationResult.ValidFile)
+        if (ValidationService.ValidatePath(filePath) != ValidationService.PathValidationResult.Valid)
             throw new Exception("Game directory is invalid!");
         
         if (!File.Exists(gameExePath))

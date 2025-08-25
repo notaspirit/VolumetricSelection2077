@@ -22,7 +22,7 @@ namespace VolumetricSelection2077.Services
         public static void Initialize(string logDirectory)
         {
             var vR = ValidationService.ValidatePath(logDirectory);
-            if (vR != ValidationService.PathValidationResult.ValidDirectory)
+            if (vR != ValidationService.PathValidationResult.Valid)
                 throw new ArgumentException($"Invalid log directory: {logDirectory}, {vR}");
 
             Directory.CreateDirectory(logDirectory);
