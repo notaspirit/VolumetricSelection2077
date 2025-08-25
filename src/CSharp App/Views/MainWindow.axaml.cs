@@ -384,20 +384,7 @@ public partial class MainWindow : Window
             return false;
         }
     }
-
-    private string? TryGetGamePathFromWolvenKit()
-    {
-        var wkitConfigFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "REDModding", "WolvenKit", "config.json");
-        if (!File.Exists(wkitConfigFile))
-            return null;
-        var config = File.ReadAllText(wkitConfigFile);
-        var json = Newtonsoft.Json.Linq.JObject.Parse(config);
-        var gamepath = json["CP77ExecutablePath"]?.ToString();
-        if (string.IsNullOrEmpty(gamepath))
-            return null;
-        gamepath = gamepath.Replace("\\bin\\x64\\Cyberpunk2077.exe", "");
-        return gamepath;
-    }
+    
     protected override async void OnOpened(EventArgs e)
     {
         base.OnOpened(e);
@@ -413,18 +400,6 @@ public partial class MainWindow : Window
         
         Logger.Info($"VS2077 Version: {_mainWindowViewModel.Settings.ProgramVersion}");
         _mainWindowViewModel.IsProcessing = true;
-
-        if (string.IsNullOrEmpty(_mainWindowViewModel.Settings.GameDirectory))
-        {
-            var gamePathFromWkit = TryGetGamePathFromWolvenKit();
-            if (!string.IsNullOrEmpty(gamePathFromWkit))
-            {
-                _mainWindowViewModel.Settings.GameDirectory = gamePathFromWkit;
-                _mainWindowViewModel.Settings.SaveSettings();
-                Logger.Info($"Found Game Path from WolvenKit: {_mainWindowViewModel.Settings.GameDirectory}");
-            }
-        }
-        
         var validationResult = ValidationService.ValidateGamePath(_mainWindowViewModel.Settings.GameDirectory).Item1;
         if (!(validationResult == ValidationService.GamePathResult.Valid ||
               validationResult == ValidationService.GamePathResult.CetNotFound))
@@ -468,20 +443,9 @@ public partial class MainWindow : Window
         {
             Logger.Exception(ex, "Failed to Check for Updates.");
         }
-
-        var successCs = false;
-        try
-        {
-            CacheService.Instance.Initialize();
-            successCs = true;
-        }
-        catch (Exception ex)
-        {
-            Logger.Exception(ex, "Failed to initialize CacheService");
-        }
-
-        var successGfs = await Task.Run(() => GameFileService.Instance.Initialize());
-        if (successGfs && successCs)
+        var success = await Task.Run(() => GameFileService.Instance.Initialize());
+        
+        if (success)
             _mainWindowViewModel.AppInitialized = true;
         _mainWindowViewModel.IsProcessing = false;
     }
