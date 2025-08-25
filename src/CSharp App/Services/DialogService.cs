@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
+using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Views;
 using WolvenKit.Common.PhysX;
 
@@ -17,12 +18,12 @@ public class DialogService
         _owner = owner;
     }
     
-    public Task<int> ShowDialog(string title, string message, string[] buttonContents)
+    public Task<int> ShowDialog(string title, string message, DialogButton[] buttonContents)
     {
         return ShowDialog(title, message, buttonContents, _owner);
     }
     
-    public static async Task<int> ShowDialog(string title, string message, string[] buttonContents, Window owner)
+    public static async Task<int> ShowDialog(string title, string message, DialogButton[] buttonContents, Window owner)
     {
         return await Dispatcher.UIThread.InvokeAsync(async () =>
         {

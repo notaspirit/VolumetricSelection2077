@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using DynamicData;
+using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
 using VolumetricSelection2077.ViewModels;
 
@@ -12,7 +13,7 @@ public partial class Dialog : Window
 {
     private DialogWindowViewModel? _dialogWindowViewModel;
     
-    public Dialog(string title, string message, string[] buttons)
+    public Dialog(string title, string message, DialogButton[] buttons)
     {
         InitializeComponent();
         Opened += OnOpened;
@@ -37,9 +38,9 @@ public partial class Dialog : Window
     private bool buttonClicked = false;
     private void DynamicButton_Click(object? sender, RoutedEventArgs e)
     {
-        if (sender is Button button && button.DataContext is string buttonText)
+        if (sender is Button button && button.DataContext is DialogButton dialogButton)
         {
-            DialogResult = _dialogWindowViewModel?.ButtonContents.IndexOf(buttonText) ?? -1;
+            DialogResult = _dialogWindowViewModel?.ButtonContents.IndexOf(dialogButton) ?? -1;
             buttonClicked = true;
             Close();
         }
