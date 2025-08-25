@@ -23,7 +23,8 @@ public class DebugWindowViewModel
         {nameof(TestPathValidator), new TestPathValidator()},
         {nameof(TestSectorAABBTime), new TestSectorAABBTime()},
         {nameof(TestShpereCheck), new TestShpereCheck()},
-        {nameof(TestWheezeKitSerialization), new TestWheezeKitSerialization()}
+        {nameof(TestWheezeKitSerialization), new TestWheezeKitSerialization()},
+        {nameof(BuildKnownBadSectorVerbose), new BuildKnownBadSectorVerbose()}
     };
     
     public DebugWindowViewModel(Window mainWindow)
