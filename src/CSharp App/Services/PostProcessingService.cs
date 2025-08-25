@@ -87,7 +87,12 @@ public class PostProcessingService
         var actorCount = axlRemovalFile.Streaming.Sectors.SelectMany(s => s?.NodeDeletions ?? new()).Sum(n => n.ActorDeletions?.Count);
         Logger.Success($"Found {nodeCount} node deletions and {actorCount} actor deletions across {axlRemovalFile.Streaming.Sectors.Count} sectors");
         
-        var outputFilePath = Path.Join(_settingsService.SaveToArchiveMods ? _settingsService.GameDirectory : _settingsService.OutputDirectory, _settingsService.OutputFilename) + ".xl";
+        string outputFilePath;
+        if (_settingsService.SaveToArchiveMods)
+            outputFilePath = Path.Join(_settingsService.GameDirectory, "archive", "pc", "mod", _settingsService.OutputFilename) + ".xl";
+        else
+            outputFilePath = Path.Join(_settingsService.OutputDirectory, _settingsService.OutputFilename) + ".xl";
+        
         var (outputContent, mergeChanges) = SerializeAxlRemovalFile(axlRemovalFile, outputFilePath);
         
         Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
