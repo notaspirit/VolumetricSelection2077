@@ -324,7 +324,7 @@ public class PostProcessingService
     
     private static string GetOutputFilename(string outputFilename)
     {
-        if (ValidationService.ValidatePath(outputFilename) != ValidationService.PathValidationResult.ValidFile)
+        if (ValidationService.ValidatePath(outputFilename) != ValidationService.PathValidationResult.Valid)
             throw new ArgumentException("Invalid output filename!");
         
         if (!File.Exists(outputFilename))

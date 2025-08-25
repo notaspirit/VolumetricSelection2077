@@ -333,7 +333,7 @@ public class ProcessService
     {
         int invalidCount = 0;
         bool invalidRegex = false;
-        if (vr.OutputFileName == ValidationService.PathValidationResult.ValidFile)
+        if (vr.OutputFileName == ValidationService.PathValidationResult.Valid)
             Logger.Success("Filename                 : OK");
         else
         {
@@ -372,7 +372,7 @@ public class ProcessService
             Logger.Success("Selection File           : OK");
         else
         {
-            string invalidReason = vr.SelectionFilePathValidationResult == ValidationService.PathValidationResult.ValidDirectory ? "Not found" : $"Invalid file path {vr.SelectionFilePathValidationResult}";
+            string invalidReason = vr.SelectionFilePathValidationResult == ValidationService.PathValidationResult.Valid ? "Not found" : $"Invalid file path {vr.SelectionFilePathValidationResult}";
             Logger.Error($"Selection File           : {invalidReason}");
             invalidCount++;
         }

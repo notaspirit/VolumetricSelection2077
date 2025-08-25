@@ -105,8 +105,10 @@ namespace VolumetricSelection2077.Services
         /// <exception cref="ArgumentException">given filepath is invalid</exception>
         public static bool IsDirectoryEmpty(string path)
         {
-            if (ValidationService.ValidatePath(path) != ValidationService.PathValidationResult.ValidDirectory)
+            if (ValidationService.ValidatePath(path) != ValidationService.PathValidationResult.Valid)
                 throw new ArgumentException($"Path is invalid.");
+            if (!Directory.Exists(path))
+                throw new ArgumentException($"Path does not exist or is not Directory.");
             if (Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories).Any())
                 return false;
             return true;
