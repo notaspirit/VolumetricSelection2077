@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using DynamicData.Kernel;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using VolumetricSelection2077.Models.WorldBuilder.Editor;
+using VolumetricSelection2077.Services;
 
 namespace VolumetricSelection2077.Json;
 
@@ -12,27 +14,18 @@ public class WorldBuilderElementListConverter : JsonConverter<List<Element>>
     public override List<Element>? ReadJson(JsonReader reader, Type objectType, List<Element>? existingValue, bool hasExistingValue,
         JsonSerializer serializer)
     {
-        var currentConverter = serializer.Converters.First(x => x == this);
-        serializer.Converters.Remove(currentConverter);
-        var elementConverter = serializer.Converters.FirstOrOptional(x => x is WorldBuilderElementJsonConverter);
-        if (elementConverter == null)
-        {
-            serializer.Converters.Add(new WorldBuilderElementJsonConverter());
-        }
-        var deserialized = serializer.Deserialize<List<Element>>(reader);
-        serializer.Converters.Add(currentConverter);
-        if (elementConverter == null)
-        {
-            serializer.Converters.Remove(serializer.Converters.First(x => x is WorldBuilderElementJsonConverter));
-        }
-        return deserialized;
+        var cleanSerializer = UtilService.CreateChildSerializer(serializer, typeof(WorldBuilderElementListConverter));
+        if (cleanSerializer.Converters.All(c => c.GetType() != typeof(WorldBuilderElementJsonConverter)))
+            cleanSerializer.Converters.Add(new WorldBuilderElementJsonConverter());
+        var arr = JArray.Load(reader);
+        return arr.ToObject<List<Element>>(cleanSerializer);
     }
     
     public override void WriteJson(JsonWriter writer, List<Element>? value, JsonSerializer serializer)
     {
-        var currentConverter = serializer.Converters.First(x => x == this);
-        serializer.Converters.Remove(currentConverter);
-        serializer.Serialize(writer, value);
-        serializer.Converters.Add(currentConverter);
+        var cleanSerializer = UtilService.CreateChildSerializer(serializer, typeof(WorldBuilderElementListConverter));
+        if (cleanSerializer.Converters.All(c => c.GetType() != typeof(WorldBuilderElementJsonConverter)))
+            cleanSerializer.Converters.Add(new WorldBuilderElementJsonConverter());
+        cleanSerializer.Serialize(writer, value);
     }
 }

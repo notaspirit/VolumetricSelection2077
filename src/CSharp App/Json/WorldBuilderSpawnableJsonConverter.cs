@@ -24,50 +24,42 @@ public class WorldBuilderSpawnableJsonConverter : JsonConverter<Spawnable>
         bool hasExistingValue,
         JsonSerializer serializer)
     {
-        var obj = JObject.Load(reader);
+        var cleanSerializer = UtilService.CreateChildSerializer(serializer, typeof(WorldBuilderSpawnableJsonConverter));
         
-        var CC = serializer.Converters.First(x => x == this);
-        serializer.Converters.Remove(CC);
+        var obj = JObject.Load(reader);
+        switch (obj["node"]?.Value<string>())
+        {
+            case "worldMeshNode":
+                return obj.ToObject<Mesh>(cleanSerializer);
+            case "worldRotatingMeshNode":
+                return obj.ToObject<RotatingMesh>(cleanSerializer);
+            case "worldClothMeshNode":
+                return obj.ToObject<ClothMesh>(cleanSerializer);
+            case "worldWaterPatchNode":
+                return obj.ToObject<WaterPatch>(cleanSerializer);
+            case "worldStaticDecalNode":
+                return obj.ToObject<Decal>(cleanSerializer);
+            case "worldStaticParticleNode":
+                return obj.ToObject<Particle>(cleanSerializer);
+            case "worldEffectNode":
+                return obj.ToObject<Effect>(cleanSerializer);
+            case "worldDynamicMeshNode":
+                return obj.ToObject<DynamicMesh>(cleanSerializer);
+            case "worldEntityNode":
+                if (cleanSerializer.Converters.All(c => c.GetType() != typeof(DictStringJObjectConverter)))
+                    cleanSerializer.Converters.Add(new DictStringJObjectConverter());
+                return obj.ToObject<Entity>(cleanSerializer);
+            case "worldStaticLightNode":
+                return obj.ToObject<Light>(cleanSerializer);
+            default:
+                return obj.ToObject<Spawnable>(cleanSerializer);
+        }
 
-        try
-        {
-            switch (obj["node"]?.Value<string>())
-            {
-                case "worldMeshNode":
-                    return obj.ToObject<Mesh>(serializer);
-                case "worldRotatingMeshNode":
-                    return obj.ToObject<RotatingMesh>(serializer);
-                case "worldClothMeshNode":
-                    return obj.ToObject<ClothMesh>(serializer);
-                case "worldWaterPatchNode":
-                    return obj.ToObject<WaterPatch>(serializer);
-                case "worldStaticDecalNode":
-                    return obj.ToObject<Decal>(serializer);
-                case "worldStaticParticleNode":
-                    return obj.ToObject<Particle>(serializer);
-                case "worldEffectNode":
-                    return obj.ToObject<Effect>(serializer);
-                case "worldDynamicMeshNode":
-                    return obj.ToObject<DynamicMesh>(serializer);
-                case "worldEntityNode":
-                    return obj.ToObject<Entity>(serializer);
-                case "worldStaticLightNode":
-                    return obj.ToObject<Light>(serializer);
-                default:
-                    return obj.ToObject<Spawnable>(serializer);
-            }
-        }
-        finally
-        {
-            serializer.Converters.Add(CC);
-        }
     }
 
     public override void WriteJson(JsonWriter writer, Spawnable? value, JsonSerializer serializer)
     {
-        var CC = serializer.Converters.First(x => x == this);
-        serializer.Converters.Remove(CC);
-        serializer.Serialize(writer, value);
-        serializer.Converters.Add(CC);
+        var cleanSerializer = UtilService.CreateChildSerializer(serializer, typeof(WorldBuilderSpawnableJsonConverter));
+        cleanSerializer.Serialize(writer, value);
     }
 }
