@@ -139,6 +139,16 @@ end
 local function controlsTab()
     -- Position Headers
     if ImGui.BeginTable("PositionHeaders", 5, ImGuiTableFlags.SizingFixedFit) then -- 5 columns: Label, X, Y, Z, Button
+        if (ImGui.IsKeyDown(ImGuiKey.LeftShift)) then
+            if (settingsInstance.precisionBool == false) then
+                settingsInstance:update("precisionBool", true)
+            end
+        else
+            if (settingsInstance.precisionBool == true) then
+                settingsInstance:update("precisionBool", false)
+            end
+        end
+    
         -- Custom header row
         ImGui.TableNextRow()
         ImGui.TableNextColumn()
@@ -339,13 +349,7 @@ local function controlsTab()
 
         ImGui.TableNextColumn()
         ImGui.SetNextItemWidth(valueWidth)
-        if ImGui.Button(string.format("Precision [%s]", settingsInstance.precisionBool and "ON" or "OFF")) then
-            if settingsInstance.precisionBool then
-                settingsInstance:update("precisionBool", false)
-            else
-                settingsInstance:update("precisionBool", true)
-            end
-        end
+        ImGui.Text(string.format("Precision [%s]", settingsInstance.precisionBool and "ON" or "OFF"))
         ImGui.EndTable()
     end
     statusMessage:display()
