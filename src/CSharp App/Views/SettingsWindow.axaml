@@ -7,11 +7,12 @@
     x:Class="VolumetricSelection2077.SettingsWindow"
     x:DataType="local:ViewModels.SettingsViewModel"
     xmlns="https://github.com/avaloniaui"
+    xmlns:controls="clr-namespace:VolumetricSelection2077.Controls"
     xmlns:local="clr-namespace:VolumetricSelection2077"
     xmlns:resources="clr-namespace:VolumetricSelection2077.Resources"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border Margin="5">
-        <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+        <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
 
             <!--  Header Row  -->
             <Image
@@ -97,6 +98,22 @@
                 Margin="5"
                 Text="{x:Static resources:Labels.CustomSelectionFilePath}"
                 ToolTip.Tip="{x:Static resources:ToolTips.CustomSelectionFilePath}"
+                VerticalAlignment="Center" />
+            <TextBlock
+                Grid.Column="0"
+                Grid.Row="12"
+                HorizontalAlignment="Left"
+                Margin="5"
+                Text="{x:Static resources:Labels.BackupDirectory}"
+                ToolTip.Tip="{x:Static resources:ToolTips.BackupDirectory}"
+                VerticalAlignment="Center" />
+            <TextBlock
+                Grid.Column="0"
+                Grid.Row="13"
+                HorizontalAlignment="Left"
+                Margin="5"
+                Text="{x:Static resources:Labels.MaxBackupFiles}"
+                ToolTip.Tip="{x:Static resources:ToolTips.MaxBackupFiles}"
                 VerticalAlignment="Center" />
             <!--  Second Row: Setting Control (e.g., ToggleSwitch)  -->
             <TextBox
@@ -214,6 +231,18 @@
                 Margin="5"
                 Text="{Binding Settings.CustomSelectionFilePath}"
                 Watermark="{x:Static resources:Labels.CustomSelectionFilePath}" />
+            <TextBox
+                Grid.Column="1"
+                Grid.Row="12"
+                Margin="5"
+                Text="{Binding Settings.BackupDirectory}"
+                Watermark="{x:Static resources:Labels.BackupDirectory}" />
+            <controls:Int32TextBox
+                Grid.Column="1"
+                Grid.Row="13"
+                Margin="5"
+                Text="{Binding Settings.MaxBackupFiles, UpdateSourceTrigger=LostFocus}"
+                Watermark="{x:Static resources:Labels.MaxBackupFiles}" />
         </Grid>
     </Border>
 </Window>
