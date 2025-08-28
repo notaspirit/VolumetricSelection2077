@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Newtonsoft.Json;
 using VolumetricSelection2077.Converters;
 using VolumetricSelection2077.Json;
@@ -96,11 +97,12 @@ public class PostProcessingService
         var (outputContent, mergeChanges) = SerializeAxlRemovalFile(axlRemovalFile, outputFilePath);
         
         Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
-                
+        
         if (!File.Exists(outputFilePath))
         {
             File.WriteAllText(outputFilePath, outputContent);
             Logger.Info($"Created file {outputFilePath}");
+            WriteBackupFile(outputFilePath, outputContent);
             return;
         }
 
@@ -113,16 +115,19 @@ public class PostProcessingService
                 var newNodesS = mergeChanges?.newNodes != 1 ? "s" : "";
                 var newActorsS = mergeChanges?.newActors != 1 ? "s" : "";
                 Logger.Info($"Extended file {outputFilePath} with {mergeChanges.newSectors} new sector{newSectorS}, {mergeChanges.newNodes} new node{newNodesS}, {mergeChanges.newActors} new actor{newActorsS}.");
+                WriteBackupFile(outputFilePath, outputContent);
                 return;
             }
             case SaveFileMode.Enum.Overwrite:
                 File.WriteAllText(outputFilePath, outputContent);
                 Logger.Info($"Overwrote file {outputFilePath}");
+                WriteBackupFile(outputFilePath, outputContent);
                 return;
             case SaveFileMode.Enum.New:
                 var newOutputFilePath = GetOutputFilename(outputFilePath);
                 File.WriteAllText(newOutputFilePath, outputContent);
                 Logger.Info($"Created file {newOutputFilePath}");
+                WriteBackupFile(newOutputFilePath, outputContent);
                 return;
             default:
                 throw new ArgumentOutOfRangeException();
@@ -325,6 +330,7 @@ public class PostProcessingService
         var serialized = JsonConvert.SerializeObject(favRoot, _jsonOptions); 
         File.WriteAllText(favoritesPath, serialized);
         Logger.Info(logMessage);
+        WriteBackupFile(favoritesPath, serialized);
     }
     
     private static string GetOutputFilename(string outputFilename)
@@ -349,4 +355,52 @@ public class PostProcessingService
         return $"{outputFilePathWithoutExtension.Split("+").First()}+{totalCount}.{outputFilename.Split('.').Last()}";
     }
 
+    private void WriteBackupFile(string originalOutputFilePath, string content)
+    {
+        var dirName = $"{Path.GetFileNameWithoutExtension(originalOutputFilePath)}-{_settingsService.SaveMode}-{_settingsService.SaveFileFormat}-{DateTime.Now:yyyy-MM-dd-HH-mm-ss}";
+        var dirPath = Path.Join(_settingsService.BackupDirectory, dirName);
+        Directory.CreateDirectory(dirPath);
+        File.WriteAllText(Path.Join(dirPath, Path.GetFileName(originalOutputFilePath)), content);
+
+        string selectionFilePath;
+        var relativePath = Path.Join("bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "VolumetricSelection2077",
+            "data", "selection.json");
+        if (!string.IsNullOrEmpty(_settingsService.CustomSelectionFilePath))
+            selectionFilePath = Path.Join(_settingsService.CustomSelectionFilePath, relativePath);
+        else 
+            selectionFilePath = Path.Join(_settingsService.GameDirectory, relativePath);
+        // read and write instead of copying to update timestamp
+        File.WriteAllText(Path.Join(dirPath, Path.GetFileName(selectionFilePath)), File.ReadAllText(selectionFilePath));
+        File.WriteAllText(Path.Join(dirPath, "settings.json"), JsonConvert.SerializeObject(_settingsService, Formatting.Indented));
+        var latestLogFile = new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "Logs")).GetFiles("*.txt").OrderByDescending(f => f.LastWriteTime).FirstOrDefault();
+        if (latestLogFile != null)
+        {
+            string logContent;
+            using (var fs = new FileStream(latestLogFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var reader = new StreamReader(fs, Encoding.UTF8))
+            {
+                logContent = reader.ReadToEnd();
+            }
+            File.WriteAllText(Path.Join(dirPath, "log.txt"), logContent);
+        }
+            
+        var dirInfo = new DirectoryInfo(_settingsService.BackupDirectory);
+        if (dirInfo.GetDirectories().Length <= _settingsService.MaxBackupFiles)
+            return;
+        
+        HashSet<string> dirsToDelete = new();
+        HashSet<string> dirsToKeep = new();
+        foreach (var file in dirInfo.GetFiles("*", SearchOption.AllDirectories).OrderByDescending(f => f.LastWriteTime))
+        {
+            if (dirsToKeep.Count > _settingsService.MaxBackupFiles)
+            {
+                dirsToDelete.Add(file.Directory.FullName);
+                continue;
+            }
+            dirsToKeep.Add(file.Directory.FullName);
+        }
+
+        foreach (var dir in dirsToDelete)
+            Directory.Delete(dir, true);
+    }
 }
