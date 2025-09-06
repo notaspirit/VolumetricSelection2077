@@ -22,6 +22,11 @@ public class SelectionParser
             return (false, "No rotation values found!", null);
         }
         
+        float? quatRotX = jsonInput?["box"]?["rotationQuat"]?["i"]?.GetValue<float>();
+        float? quatRotY = jsonInput?["box"]?["rotationQuat"]?["j"]?.GetValue<float>();
+        float? quatRotZ = jsonInput?["box"]?["rotationQuat"]?["k"]?.GetValue<float>();
+        float? quatRotW = jsonInput?["box"]?["rotationQuat"]?["r"]?.GetValue<float>();
+        
         float? originX = jsonInput?["box"]?["origin"]?["x"]?.GetValue<float>();
         float? originY = jsonInput?["box"]?["origin"]?["y"]?.GetValue<float>();
         float? originZ = jsonInput?["box"]?["origin"]?["z"]?.GetValue<float>();
@@ -39,8 +44,19 @@ public class SelectionParser
         {
             return (false, "No scale values found!", null);
         }
-        Matrix selectionBoxMatrix = Matrix.RotationYawPitchRoll(
-            MathUtil.DegreesToRadians((float)rotX), MathUtil.DegreesToRadians((float)rotY), MathUtil.DegreesToRadians((float)rotZ));
+
+        Matrix selectionBoxMatrix;
+        if (quatRotX.HasValue && quatRotY.HasValue && quatRotZ.HasValue && quatRotW.HasValue)
+        {
+            selectionBoxMatrix = Matrix.RotationQuaternion(new Quaternion(
+                (float)quatRotX, (float)quatRotY, (float)quatRotZ, (float)quatRotW));
+        }
+        else
+        {
+            selectionBoxMatrix = Matrix.RotationYawPitchRoll(
+                MathUtil.DegreesToRadians((float)rotX), MathUtil.DegreesToRadians((float)rotY), MathUtil.DegreesToRadians((float)rotZ));
+        }
+        
         Vector3 halfScale = new Vector3((float)scaleX / 2, (float)scaleY / 2, (float)scaleZ / 2);
         OrientedBoundingBox obb =
             new OrientedBoundingBox(new Vector3(-halfScale.X, -halfScale.Y, -halfScale.Z), halfScale);

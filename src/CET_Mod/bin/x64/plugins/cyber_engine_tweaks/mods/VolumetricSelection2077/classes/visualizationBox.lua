@@ -93,11 +93,10 @@ function visualizationBox:LogCurrentStats()
     if not self.entity then return end
     local rotation = self.entity:GetWorldOrientation()
     local position = self.entity:GetWorldPosition()
-    local rotationEuler = position:ToEulerAngles()
     print("Current Box Position as read from the game:")
     print(string.format("Rotation Quat: i: [%f] j: [%f] k: [%f] r: [%f]", rotation.i, rotation.j, rotation.k, rotation.r))
-    print(string.format("Rotation Euler: X: [%f] Y: [%f] Z: [%f]", rotationEuler.Pitch, rotationEuler.Roll, rotationEuler.Yaw))
-    print(string.format("Position: X: [%f] Y: [%f] Z: [%f] W: [%f]", position.X, position.Y, position.Z, position.W))
+    print(string.format("Rotation Euler: X: [%f] Y: [%f] Z: [%f]", self.rotation.x, self.rotation.y, self.rotation.z))
+    --print(string.format("Position: X: [%f] Y: [%f] Z: [%f] W: [%f]", position.X, position.Y, position.Z, position.W))
 end
 
 return visualizationBox
