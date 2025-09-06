@@ -1,4 +1,5 @@
 VSGui = require("modules/VSGui")
+local GameSession = require("libs/GameSession")
 
 local isOverlayVisible = false
 
@@ -18,4 +19,12 @@ end)
 
 registerForEvent("onShutdown", function ()
     VSGui.onShutdown()
+end)
+
+registerForEvent("onInit", function ()
+    GameSession.Listen(function(state)
+        if tostring(state.event) == "Start" then
+            VSGui.onSaveLoaded()
+        end
+    end)
 end)

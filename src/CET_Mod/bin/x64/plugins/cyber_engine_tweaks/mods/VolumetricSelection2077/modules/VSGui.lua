@@ -108,10 +108,6 @@ local function movePoint(point, rotation, distance)
     return modifiedVector
 end
 
-local function handleRHTStatus(RHTResult)
-    statusMessage:setMessage(RHTResult.text, RHTResult.type)
-end
-
 local function requestEntity()
     entityState.requestedEntity = true
     entityState.requestEndTime = ImGui.GetTime() + 0.1
@@ -484,7 +480,12 @@ function onShutdown()
     selectionBox:despawn()
 end
 
+function onSaveLoaded()
+    isHighlighted = false
+end
+
 return {
     CETGui = CETGui,
-    onShutdown = onShutdown
+    onShutdown = onShutdown,
+    onSaveLoaded = onSaveLoaded
 }
