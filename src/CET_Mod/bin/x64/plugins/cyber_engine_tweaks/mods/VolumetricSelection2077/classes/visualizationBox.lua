@@ -22,30 +22,13 @@ function visualizationBox:new(origin, scale, rotation)
     return instance
 end
 
--- Converts a rotation vector to a quaternion
-function ToQuaternion(rotation)
-    local cy = math.cos(rotation.z * 0.5)
-    local sy = math.sin(rotation.z * 0.5)
-    local cp = math.cos(rotation.y * 0.5)
-    local sp = math.sin(rotation.y * 0.5)
-    local cr = math.cos(rotation.x * 0.5)
-    local sr = math.sin(rotation.x * 0.5)
-
-    local w = cr * cp * cy + sr * sp * sy
-    local x = sr * cp * cy - cr * sp * sy
-    local y = cr * sp * cy + sr * cp * sy
-    local z = cr * cp * sy - sr * sp * cy
-
-    return Quaternion.new(x, y, z, w)
-end
-
 function visualizationBox:spawn()
     local statusMessage = StatusMessage.getInstance()
     if self.entity then return end
     local entityPath = "vs2077\\customcube.ent"
     local worldTransform = WorldTransform.new()
     worldTransform:SetPosition(ToVector4({x = self.origin.x, y = self.origin.y, z = self.origin.z, w = 1}))
-    worldTransform:SetOrientation(ToQuaternion(self.rotation))
+    worldTransform:SetOrientation(EulerAngles.new(self.rotation.x, self.rotation.y, self.rotation.z):ToQuat())
     self.entityID = exEntitySpawner.Spawn(entityPath, worldTransform)
     if not self.entityID then
         statusMessage:setMessage("Failed to spawn visualization box", "error")
