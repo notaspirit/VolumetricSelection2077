@@ -27,6 +27,8 @@ namespace VolumetricSelection2077.Resources
             public static string CacheEnabled { get; } = "Caches uncooked game files, significantly improving processing time";
             public static string ClearCache { get; } = "Clear cached vanilla or modded files.";
             public static string CustomSelectionFilePath { get; } = "Path to the custom selection file location (e.g. MO2's overwrite folder). The same folder structure as found in the game directory is expected. If selection file is in the game directory leave this blank.";
+            public static string MaxBackupFiles { get; } = "Maximum number of backup files to keep, older files will be deleted. Does not affect the output directory.";
+            public static string BackupDirectory { get; } = "Directory to save backups of the selection and output after every run.";
         }
 
         public static class Watermarks
@@ -37,6 +39,7 @@ namespace VolumetricSelection2077.Resources
             public static string CETInstallLocation { get;  } ="VS2077 CET installation directory";
             public static string CustomOutputDirectory { get; } = "Custom Output Directory";
             public static string CacheDirectory { get; } = "Cache Directory";
+            
         }
 
         public static class Labels
@@ -61,5 +64,7 @@ namespace VolumetricSelection2077.Resources
             public static string ClearVanillaBoundsCache { get; } = "Vanilla Bounds";
             public static string ClearModdedBoundsCache { get; } = "Modded Bounds";
             public static string CustomSelectionFilePath { get; } = "MO2 Overwrite Folder";
+            public static string BackupDirectory { get; } = "Backup Directory";
+            public static string MaxBackupFiles { get; } = "Max Backup Files";
         }
 }
