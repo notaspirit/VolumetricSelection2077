@@ -100,6 +100,12 @@ public class PostProcessingService
         
         if (!File.Exists(outputFilePath))
         {
+            if (_settingsService.SaveMode == SaveFileMode.Enum.Subtract)
+            {
+                Logger.Error($"No Existing File to remove from found at {outputFilePath}");
+                return;
+            }
+            
             File.WriteAllText(outputFilePath, outputContent);
             Logger.Info($"Created file {outputFilePath}");
             WriteBackupFile(outputFilePath, outputContent);
@@ -129,6 +135,14 @@ public class PostProcessingService
                 Logger.Info($"Created file {newOutputFilePath}");
                 WriteBackupFile(newOutputFilePath, outputContent);
                 return;
+            case SaveFileMode.Enum.Subtract:
+                File.WriteAllText(outputFilePath, outputContent);
+                var remSectorS = mergeChanges?.newSectors != 1 ? "s" : "";
+                var remNodesS = mergeChanges?.newNodes != 1 ? "s" : "";
+                var remActorsS = mergeChanges?.newActors != 1 ? "s" : "";
+                Logger.Info($"Removed {mergeChanges.newSectors} sector{remSectorS}, {mergeChanges.newNodes} node{remNodesS}, {mergeChanges.newActors} actor{remActorsS} from file {outputFilePath}.");
+                WriteBackupFile(outputFilePath, outputContent);
+                return;
             default:
                 throw new ArgumentOutOfRangeException();
         }
@@ -137,15 +151,22 @@ public class PostProcessingService
     private (string, MergeChanges) SerializeAxlRemovalFile(AxlRemovalFile axlRemovalFile, string outputFilePath)
     {
         var mergeChanges = new MergeChanges();
-        
-        if (_settingsService.SaveMode == SaveFileMode.Enum.Extend && File.Exists(outputFilePath))
+
+        if (File.Exists(outputFilePath))
         {
             string fileContent = File.ReadAllText(outputFilePath);
             var existingRemovals = UtilService.TryParseAxlRemovalFile(fileContent);
             if (existingRemovals == null)
                 throw new FileLoadException($"Failed to find or parse existing Removal File at {outputFilePath}!"); 
-            
-            (axlRemovalFile, mergeChanges) = MergeSectors(existingRemovals, axlRemovalFile);
+
+            if (_settingsService.SaveMode == SaveFileMode.Enum.Extend)
+            {
+                (axlRemovalFile, mergeChanges) = MergeSectors(existingRemovals, axlRemovalFile);
+            }
+            else if (_settingsService.SaveMode == SaveFileMode.Enum.Subtract)
+            {
+                (axlRemovalFile, mergeChanges) = SubtractRemovals(existingRemovals, axlRemovalFile);
+            }
         }
         
         string outputContent;
@@ -233,6 +254,52 @@ public class PostProcessingService
             }
         };
         return (mergedRemovalFile, changeCount);
+    }
+
+    private static (AxlRemovalFile, MergeChanges) SubtractRemovals(AxlRemovalFile baseFile, AxlRemovalFile subtraction)
+    {
+        var mc = new MergeChanges();
+        foreach (var sector in subtraction.Streaming.Sectors)
+        {
+            var baseSector = baseFile.Streaming.Sectors.FirstOrDefault(s => s.Path == sector.Path);
+            if (baseSector == null)
+                continue;
+            
+            foreach (var node in sector.NodeDeletions)
+            {
+                var baseNode = baseSector.NodeDeletions.FirstOrDefault(n => n.Index == node.Index);
+                if (baseNode == null)
+                    continue;
+                
+                if (node.ActorDeletions != null && baseNode.ActorDeletions != null)
+                {
+                    var baseActorSet = new HashSet<int>(baseNode.ActorDeletions);
+                    var subActorSet = new HashSet<int>(node.ActorDeletions);
+                    var diff = baseActorSet.Except(subActorSet).ToList();
+                    baseNode.ActorDeletions = diff;
+                    mc.newActors += diff.Count;
+                    
+                    if (baseNode.ActorDeletions.Count == 0)
+                    {
+                        baseSector.NodeDeletions.Remove(baseNode);
+                        mc.newNodes++;
+                    }
+                }
+                else
+                {
+                    baseSector.NodeDeletions.Remove(baseNode);
+                    mc.newNodes++;
+                }
+            }
+
+            if (baseSector.NodeDeletions.Count == 0)
+            {
+                baseFile.Streaming.Sectors.Remove(baseSector);
+                mc.newSectors++;
+            }
+        }
+        
+        return (baseFile, mc);
     }
     
     /// <summary>

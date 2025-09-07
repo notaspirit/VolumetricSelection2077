@@ -6,6 +6,7 @@ public class SaveFileMode
     {
         New,
         Overwrite,
-        Extend
+        Extend,
+        Subtract
     }
 }
