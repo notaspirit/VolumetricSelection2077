@@ -369,38 +369,21 @@ public class PostProcessingService
             selectionFilePath = Path.Join(_settingsService.CustomSelectionFilePath, relativePath);
         else 
             selectionFilePath = Path.Join(_settingsService.GameDirectory, relativePath);
-        // read and write instead of copying to update timestamp
-        File.WriteAllText(Path.Join(dirPath, Path.GetFileName(selectionFilePath)), File.ReadAllText(selectionFilePath));
+
+        File.Copy(selectionFilePath, Path.Join(dirPath, Path.GetFileName(selectionFilePath)));
         File.WriteAllText(Path.Join(dirPath, "settings.json"), JsonConvert.SerializeObject(_settingsService, Formatting.Indented));
         var latestLogFile = new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "Logs")).GetFiles("*.txt").OrderByDescending(f => f.LastWriteTime).FirstOrDefault();
         if (latestLogFile != null)
         {
-            string logContent;
-            using (var fs = new FileStream(latestLogFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            using (var reader = new StreamReader(fs, Encoding.UTF8))
-            {
-                logContent = reader.ReadToEnd();
-            }
-            File.WriteAllText(Path.Join(dirPath, "log.txt"), logContent);
+            File.Copy(latestLogFile.FullName, Path.Join(dirPath, Path.GetFileName(latestLogFile.FullName)));
         }
             
         var dirInfo = new DirectoryInfo(_settingsService.BackupDirectory);
         if (dirInfo.GetDirectories().Length <= _settingsService.MaxBackupFiles)
             return;
         
-        HashSet<string> dirsToDelete = new();
-        HashSet<string> dirsToKeep = new();
-        foreach (var file in dirInfo.GetFiles("*", SearchOption.AllDirectories).OrderByDescending(f => f.LastWriteTime))
-        {
-            if (dirsToKeep.Count > _settingsService.MaxBackupFiles)
-            {
-                dirsToDelete.Add(file.Directory.FullName);
-                continue;
-            }
-            dirsToKeep.Add(file.Directory.FullName);
-        }
-
+        var dirsToDelete = dirInfo.GetDirectories().OrderByDescending(d => d.LastWriteTime).Skip(_settingsService.MaxBackupFiles);
         foreach (var dir in dirsToDelete)
-            Directory.Delete(dir, true);
+            dir.Delete(true);
     }
 }
