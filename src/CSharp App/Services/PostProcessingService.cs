@@ -256,6 +256,12 @@ public class PostProcessingService
         return (mergedRemovalFile, changeCount);
     }
 
+    /// <summary>
+    /// Subtracts the AxlRemovalFile from the baseFile
+    /// </summary>
+    /// <param name="baseFile"></param>
+    /// <param name="subtraction"></param>
+    /// <returns></returns>
     private static (AxlRemovalFile, MergeChanges) SubtractRemovals(AxlRemovalFile baseFile, AxlRemovalFile subtraction)
     {
         var mc = new MergeChanges();
@@ -324,12 +330,19 @@ public class PostProcessingService
         Logger.Success($"Found {convertedData.Children.OfType<PositionableGroup>().Sum(g => g.Children.Count)} WorldBuilder elements");
         if (!File.Exists(favoritesPath))
         {
+            if (_settingsService.SaveMode == SaveFileMode.Enum.Subtract)
+            {
+                Logger.Error($"No Existing File to remove from found at {favoritesPath}");
+                return;
+            }
+            
             favRoot.Favorites.Add(new Favorite
             {
                 Name =  _settingsService.OutputFilename,
                 Data = (Positionable)convertedData
             });
             logMessage = $"Created prefab {_settingsService.OutputFilename} at {favoritesPath}";
+
         }
         else
         {
@@ -386,6 +399,25 @@ public class PostProcessingService
                             Data = (Positionable)convertedData
                         });
                         logMessage = $"Created prefab {newOutputFilename} at {favoritesPath}";
+                    }
+                    break;
+                case SaveFileMode.Enum.Subtract:
+                    var existingSubtractPrefab = existingFavorites?.Favorites.FirstOrDefault(f => f.Name == _settingsService.OutputFilename);
+                    if (existingSubtractPrefab != null)
+                    {
+                        var existingElementsCount = existingSubtractPrefab.Data.Children.OfType<PositionableGroup>().Sum(g => g.Children.Count);
+                        existingSubtractPrefab.Data = WorldBuilderMergingService.Subtract(existingSubtractPrefab, new Favorite
+                        {
+                            Name = _settingsService.OutputFilename,
+                            Data = (Positionable)convertedData
+                        }).Data;
+                        var newElementsCount = existingSubtractPrefab.Data.Children.OfType<PositionableGroup>().Sum(g => g.Children.Count);
+                        logMessage = $"Removed {(newElementsCount - existingElementsCount) * -1} elements from prefab {_settingsService.OutputFilename} at {favoritesPath}";
+                    }
+                    else
+                    {
+                        Logger.Error($"No Existing prefab to remove from found at {favoritesPath}");
+                        return;
                     }
                     break;
             }

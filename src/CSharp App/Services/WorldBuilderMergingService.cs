@@ -47,10 +47,45 @@ public static class WorldBuilderMergingService
         return new Favorite
         {
             Name = favoriteA.Name,
-            Data = result,
+            Data = result
         };
     }
 
+    public static Favorite Subtract(Favorite baseFavorite, Favorite subtractionFavorite)
+    {
+        var baseElements = new List<WorldBuilderMergingStruct>();
+        var subtractionElements = new List<WorldBuilderMergingStruct>();
+        
+        HashFavorite(ref baseElements, baseFavorite);
+        HashFavorite(ref subtractionElements, subtractionFavorite);
+        
+        var uniqueElements = baseElements.Except(subtractionElements).ToList();
+        
+        var result = new PositionableGroup
+        {
+            Name = baseFavorite.Name,
+            Children = new()
+        };
+
+        foreach (var element in uniqueElements)
+        {
+            if (result.Children.All(x => x is PositionableGroup pg && pg.Name != element.ParentName))
+                result.Children.Add(new PositionableGroup
+                {
+                    Name = element.ParentName,
+                    Children = new()
+                });
+            var parent = result.Children.OfType<PositionableGroup>().First(x => x.Name == element.ParentName);
+            parent.Children.Add(element.SpawnableElement);
+        }
+        
+        return new Favorite
+        {
+            Name = baseFavorite.Name,
+            Data = result
+        };
+    }
+    
     private static void HashFavorite(ref List<WorldBuilderMergingStruct> results, Favorite favorite)
     {
         foreach (var element in favorite.Data.Children)
