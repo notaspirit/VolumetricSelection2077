@@ -486,6 +486,8 @@ end
 
 function onSaveLoaded()
     isHighlighted = false
+    selectionBox.entity = nil
+    selectionBox.entityID = nil
 end
 
 return {
