@@ -131,6 +131,41 @@ local function retogglePrecision()
     end
 end
 
+local function syncVisualizierPosition()
+    local selectionFile = io.open("data/selection.json", "r")
+    if not selectionFile then
+        return
+    end
+
+    local settingsString = selectionFile:read("*a")
+    selectionFile:close()
+
+    local success, selectionTable = pcall(function()
+        return jsonUtils.JSONToTable(settingsString)
+    end)
+    if not success or not selectionTable or not selectionTable.box then
+        print("Failed to parse selection file")
+        statusMessage:setMessage("Failed to parse selection file", "error")
+        return
+    end
+
+    originPoint = vector3:new(selectionTable.box.origin.x, selectionTable.box.origin.y, selectionTable.box.origin.z)
+    scalePoint = vector3:new(selectionTable.box.scale.x, selectionTable.box.scale.y, selectionTable.box.scale.z)
+    rotationPoint = vector3:new(selectionTable.box.rotation.x, selectionTable.box.rotation.y, selectionTable.box.rotation.z)
+
+
+    selectionBox:setOrigin(originPoint)
+    selectionBox:setScale(scalePoint)
+    selectionBox:setRotation(rotationPoint)
+
+    if isHighlighted then
+        selectionBox:updatePosition()
+        selectionBox:updateScale()
+    end
+    
+    settingsInstance:update("selectionBox", selectionBox)
+end
+
 -- Controls Tab
 local function controlsTab()
     -- Position Headers
@@ -346,6 +381,11 @@ local function controlsTab()
         ImGui.TableNextColumn()
         ImGui.SetNextItemWidth(valueWidth)
         ImGui.Text(string.format("Precision [%s]", settingsInstance.precisionBool and "ON" or "OFF"))
+
+        ImGui.TableNextColumn()
+        if ImGui.Button("Sync Visualizer##visualizerPosition") then
+            syncVisualizierPosition()
+        end
         ImGui.EndTable()
     end
     statusMessage:display()
