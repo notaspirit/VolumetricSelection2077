@@ -36,6 +36,7 @@ public class SettingsService
         CacheModdedResources = true;
         AutoUpdate = true;
         DidUpdate = false;
+        GameRunningDuringUpdate = false;
         CETInstallLocation = "";
         WindowRecoveryState = new();
         CustomSelectionFilePath = "";
@@ -91,6 +92,7 @@ public class SettingsService
     public SaveFileMode.Enum SaveMode { get; set; }
     public bool AutoUpdate { get; set; }
     public bool DidUpdate { get; set; }
+    public bool GameRunningDuringUpdate { get; set; }
     public string CETInstallLocation { get; set; }
     public bool CacheModdedResources { get; set; }
     public string MinimumCacheVersion { get; } = "1000.0.0-beta11";
@@ -145,6 +147,7 @@ public class SettingsService
                     SupportModdedResources = settings.SupportModdedResources;
                     AutoUpdate = settings.AutoUpdate;
                     DidUpdate = settings.DidUpdate;
+                    GameRunningDuringUpdate = settings.GameRunningDuringUpdate;
                     CETInstallLocation = settings.CETInstallLocation;
                     CacheModdedResources = settings.CacheModdedResources;
                     WindowRecoveryState = settings.WindowRecoveryState;
