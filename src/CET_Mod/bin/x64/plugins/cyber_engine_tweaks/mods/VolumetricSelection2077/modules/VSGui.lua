@@ -16,7 +16,7 @@ local selectionBox = nil
 -- Settings
 local versionString = "1000.0.0-beta11"
 
-local settingsInstance = settings.getInstance()
+local settingsInstance
 local isHighlighted = false
 local isInitialized = false
 
@@ -496,6 +496,9 @@ local function settingsTab()
 end
 
 function CETGui()
+	if not settingsInstance then
+		settingsInstance = settings.getInstance()
+	end
     if not isInitialized then
         initSelectionBox()
     end
