@@ -177,6 +177,7 @@ public class UpdateService
         string downloadPathApp = Path.Combine(rootTempPath, "latest-release-app.zip");
         string downloadPathCet = Path.Combine(rootTempPath, "latest-release-cet.zip");
         string unzipPath = Path.Combine(rootTempPath, "unzip");
+        string unzipPathCetTemp = Path.Combine(rootTempPath, "unzip-cet");
         Directory.CreateDirectory(unzipPath);
         
         try
@@ -214,7 +215,19 @@ public class UpdateService
             }
             Directory.CreateDirectory(unzipPath);
             ZipFile.ExtractToDirectory(downloadPathApp, unzipPath, true);
-            ZipFile.ExtractToDirectory(downloadPathCet, unzipPathCet, true);
+            ZipFile.ExtractToDirectory(downloadPathCet, unzipPathCetTemp, true);
+            MoveDirectoryWithOverwrite(Path.Join(unzipPathCetTemp, "bin"), Path.Join(unzipPathCet, "bin"));
+            try
+            {
+                MoveDirectoryWithOverwrite(Path.Join(unzipPathCetTemp, "archive", "pc", "mod"),
+                    Path.Join(unzipPathCet, "archive", "pc", "mod"));
+            }
+            catch
+            {
+                MoveDirectoryWithOverwrite(Path.Join(unzipPathCetTemp, "archive", "pc", "mod"),
+                    Path.Join(unzipPathCet, "archive", "pc", "hot"));
+                SettingsService.Instance.GameRunningDuringUpdate = true;
+            }
         }
         catch (Exception ex)
         {
@@ -268,5 +281,22 @@ objShell.Run ""powershell.exe -ExecutionPolicy Bypass -File """"{scriptPath}""""
         var client = new GitHubClient(new ProductHeaderValue("VolumetricSelection2077"));
         var release = await client.Repository.Release.GetLatest("notaspirit", "VolumetricSelection2077");
         return (release.TagName.Replace("v", ""), release.Body);
+    }
+    
+    private static void MoveDirectoryWithOverwrite(string source, string destination)
+    {
+        if (!Directory.Exists(source))
+        {
+            throw new DirectoryNotFoundException($"Source directory '{source}' does not exist or could not be found.");
+        }
+
+        foreach (var file in Directory.GetFiles(source, "*", SearchOption.AllDirectories))
+        {
+            var destFile = Path.Combine(destination, Path.GetFileName(file));
+            
+            Directory.CreateDirectory(Path.GetDirectoryName(destFile)!);
+            File.Move(file, destFile, true);
+        }
+        Directory.Delete(source, true);
     }
 }
