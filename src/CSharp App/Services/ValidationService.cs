@@ -7,6 +7,9 @@ using System.Linq;
 using VolumetricSelection2077.Models;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using VolumetricSelection2077.Json;
+using VolumetricSelection2077.Models.WorldBuilder.Favorites;
+using VolumetricSelection2077.Resources;
 using YamlDotNet.Serialization;
 
 namespace VolumetricSelection2077.Services
@@ -164,6 +167,7 @@ namespace VolumetricSelection2077.Services
             public bool DebugNameFilterValid { get; set; }
             public bool VanillaSectorBBsBuild { get; set; }
             public bool ModdedSectorBBsBuild { get; set; }
+            public bool SubtractionTargetExists { get; set; }
         }
         
         /// <summary>
@@ -184,7 +188,8 @@ namespace VolumetricSelection2077.Services
             var debugNameFilterValid = ValidateDebugNameFilter();
             var vanillaSectorBBsBuild = AreVanillaSectorBBsBuild();
             var moddedSectorBBsBuild = AreModdedSectorBBsBuild();
-                                
+            var subtractionTargetExists = SubtractionTargetExists();
+            
             return new InputValidationResult()
             {
                 CacheStatus = cacheStatus,
@@ -197,8 +202,53 @@ namespace VolumetricSelection2077.Services
                 ResourceNameFilterValid = resourceNameFilterValid,
                 DebugNameFilterValid = debugNameFilterValid,
                 VanillaSectorBBsBuild = vanillaSectorBBsBuild,
-                ModdedSectorBBsBuild = moddedSectorBBsBuild
+                ModdedSectorBBsBuild = moddedSectorBBsBuild,
+                SubtractionTargetExists = subtractionTargetExists
             };
+        }
+        
+        private static bool SubtractionTargetExists()
+        {
+            switch (SettingsService.Instance.SaveFileFormat)
+            {
+                case SaveFileFormat.Enum.ArchiveXLYaml:
+                case SaveFileFormat.Enum.ArchiveXLJson:
+                    if (SettingsService.Instance.SaveToArchiveMods)
+                    {
+                        return File.Exists(Path.Join(SettingsService.Instance.GameDirectory, "archive", "pc", "mod", SettingsService.Instance.OutputFilename + ".xl"));
+                    }
+                    else
+                    {
+                        return File.Exists(Path.Join(SettingsService.Instance.OutputDirectory, SettingsService.Instance.OutputFilename + ".xl"));
+                    }
+                case SaveFileFormat.Enum.WorldBuilder:
+                    string pathToCheck;
+                    if (SettingsService.Instance.SaveToArchiveMods)
+                    {
+                        pathToCheck = Path.Join(SettingsService.Instance.GameDirectory, "bin", "x64", "plugins",
+                            "cyber_engine_tweaks", "mods", "entSpawner", "data", "favorite", "GeneratedByVS2077.json");
+                    }
+                    else
+                    {
+                        pathToCheck = Path.Join(SettingsService.Instance.OutputDirectory, "GeneratedByVS2077.json");
+                    }
+                    if (!File.Exists(pathToCheck))
+                        return false;
+                    
+                    var favRoot = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(pathToCheck), new JsonSerializerSettings
+                    {
+                        Converters =
+                        { new WorldBuilderElementJsonConverter(),
+                            new WorldBuilderSpawnableJsonConverter(),
+                            new WorldBuilderElementListConverter(),
+                            new ColorToColorArray() },
+                        NullValueHandling = NullValueHandling.Ignore,
+                        Formatting = Formatting.Indented
+                    });
+                    return favRoot?.Favorites.Any(x => x.Name == SettingsService.Instance.OutputFilename) ?? false;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
         
         /// <summary>
