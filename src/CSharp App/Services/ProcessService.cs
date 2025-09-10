@@ -394,6 +394,19 @@ public class ProcessService
             invalidCount++;
             invalidRegex = true;
         }
+
+        if (_settings.SaveMode == SaveFileMode.Enum.Subtract)
+        {
+            if (vr.SubtractionTargetExists)
+            {
+                Logger.Success("Subtraction Target       : OK");
+            }
+            else
+            {
+                Logger.Error("Subtraction Target       : Not found");
+                invalidCount++;
+            }
+        }
         
         if (vr.VanillaSectorBBsBuild)
             Logger.Success("Vanilla Sector BBs       : OK");

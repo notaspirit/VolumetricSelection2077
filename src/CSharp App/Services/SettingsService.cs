@@ -1,12 +1,10 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Resources;
 
@@ -38,9 +36,12 @@ public class SettingsService
         CacheModdedResources = true;
         AutoUpdate = true;
         DidUpdate = false;
+        GameRunningDuringUpdate = false;
         CETInstallLocation = "";
         WindowRecoveryState = new();
         CustomSelectionFilePath = "";
+        BackupDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "OutputBackup");
+        MaxBackupFiles = 10;
     }
     
     public static SettingsService Instance
@@ -72,7 +73,7 @@ public class SettingsService
     [JsonIgnore]
     public BitArray NodeTypeFilter { get; set; }
     
-    [JsonPropertyName("NodeTypeFilter")]
+    [JsonProperty("NodeTypeFilter")]
     public bool[] NodeTypeFilterProxy
     {
         get => NodeTypeFilter.Cast<bool>().ToArray();
@@ -91,13 +92,15 @@ public class SettingsService
     public SaveFileMode.Enum SaveMode { get; set; }
     public bool AutoUpdate { get; set; }
     public bool DidUpdate { get; set; }
+    public bool GameRunningDuringUpdate { get; set; }
     public string CETInstallLocation { get; set; }
     public bool CacheModdedResources { get; set; }
     public string MinimumCacheVersion { get; } = "1000.0.0-beta11";
     public WindowRecoveryState WindowRecoveryState { get; set; }
     public string CustomSelectionFilePath { get; set; }
-    
+    public string BackupDirectory { get; set; }
     public SaveFileFormat.Enum SaveFileFormat { get; set; }
+    public int MaxBackupFiles { get; set; }
     
     /// <summary>
     /// Loads the settings or creates a new settings file if it doesn't exist
@@ -113,7 +116,7 @@ public class SettingsService
             try
             {
                 var json = File.ReadAllText(SettingsFilePath);
-                var settings = JsonSerializer.Deserialize<SettingsService>(json);
+                var settings = JsonConvert.DeserializeObject<SettingsService>(json);
                 if (settings != null)
                 {
                     GameDirectory = settings.GameDirectory;
@@ -144,10 +147,13 @@ public class SettingsService
                     SupportModdedResources = settings.SupportModdedResources;
                     AutoUpdate = settings.AutoUpdate;
                     DidUpdate = settings.DidUpdate;
+                    GameRunningDuringUpdate = settings.GameRunningDuringUpdate;
                     CETInstallLocation = settings.CETInstallLocation;
                     CacheModdedResources = settings.CacheModdedResources;
                     WindowRecoveryState = settings.WindowRecoveryState;
                     CustomSelectionFilePath = settings.CustomSelectionFilePath;
+                    BackupDirectory = settings.BackupDirectory;
+                    MaxBackupFiles = settings.MaxBackupFiles;
                 }
             }
             catch (Exception ex)
@@ -164,11 +170,7 @@ public class SettingsService
     {
         try
         {
-            var options = new JsonSerializerOptions
-            {
-                WriteIndented = true
-            };
-            var json = JsonSerializer.Serialize(this, options);
+            var json = JsonConvert.SerializeObject(this, Formatting.Indented);
             var directory = Path.GetDirectoryName(SettingsFilePath);
             if (!Directory.Exists(directory) && directory != null)
                 Directory.CreateDirectory(directory);

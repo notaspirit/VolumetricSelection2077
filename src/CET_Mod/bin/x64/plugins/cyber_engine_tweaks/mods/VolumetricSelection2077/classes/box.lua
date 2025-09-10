@@ -90,6 +90,7 @@ function box:setOrigin(newOrigin)
 end
 
 function box:toTable()
+	local quat = EulerAngles.new(self.rotation.x, self.rotation.y, self.rotation.z):ToQuat()
     return {
         origin = {x = self.origin.x, y = self.origin.y, z = self.origin.z},
         min = {x = self.min.x, y = self.min.y, z = self.min.z},
@@ -102,7 +103,8 @@ function box:toTable()
             return verts
         end)(),
         scale = {x = self.scale.x, y = self.scale.y, z = self.scale.z},
-        rotation = {x = self.rotation.x, y = self.rotation.y, z = self.rotation.z}
+        rotation = {x = self.rotation.x, y = self.rotation.y, z = self.rotation.z},
+        rotationQuat = {i = quat.i, j = quat.j, k = quat.k, r = quat.r}
     }
 end
 

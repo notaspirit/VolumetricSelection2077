@@ -13,6 +13,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using VolumetricSelection2077.Extensions;
 using VolumetricSelection2077.Models;
+using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.TestingStuff;
 using VolumetricSelection2077.ViewModels;
 using VolumetricSelection2077.ViewStructures;
@@ -413,10 +414,17 @@ public partial class MainWindow : Window
         {
             if (_mainWindowViewModel.Settings.DidUpdate)
             {
+                await DialogService.ShowDialog("Game Is Running",
+                    "The game was running during the update, to apply changes restart the game or reload CET mods.",
+                    new[]
+                    {
+                        new DialogButton("Ok", DialogButtonStyling.Enum.Primary)
+                    }, this);
                 var changelog = await UpdateService.GetChangelog();
                 Logger.Success($"Successfully updated to {changelog.Item1}");
                 Logger.Info($"Changelog:" +
                             $"\n{changelog.Item2}");
+                _mainWindowViewModel.Settings.GameRunningDuringUpdate = false;
                 _mainWindowViewModel.Settings.DidUpdate = false;
                 _mainWindowViewModel.Settings.SaveSettings();
             }

@@ -36,39 +36,19 @@ function vector3:scale(scalar)
 end
 
 function vector3:distance(other)
-    return math.sqrt((self.x - other.x)^2 + (self.y - other.y)^2 + (self.z - other.z)^2)
-end
-
--- Function to convert degrees to radians
-local function degToRad(degrees)
-    return degrees * math.pi / 180
+    return Vector4.Distance(
+        Vector4.new(self.x, self.y, self.z, 0),
+        Vector4.new(other.x, other.y, other.z, 0)
+    )
 end
 
 -- Function to rotate a vector by given rotation angles
 local function rotateVector3(vector, rotation)
-    local radX = degToRad(rotation.x)
-    local radY = degToRad(rotation.y)
-    local radZ = degToRad(rotation.z)
-
-    -- Rotation around X-axis
-    local cosX = math.cos(radX)
-    local sinX = math.sin(radX)
-    local y1 = vector.y * cosX - vector.z * sinX
-    local z1 = vector.y * sinX + vector.z * cosX
-
-    -- Rotation around Y-axis
-    local cosY = math.cos(radY)
-    local sinY = math.sin(radY)
-    local x2 = vector.x * cosY + z1 * sinY
-    local z2 = -vector.x * sinY + z1 * cosY
-
-    -- Rotation around Z-axis
-    local cosZ = math.cos(radZ)
-    local sinZ = math.sin(radZ)
-    local x3 = x2 * cosZ - y1 * sinZ
-    local y3 = x2 * sinZ + y1 * cosZ
-
-    return vector3:new(x3, y3, z2)
+    local v4 = Vector4.new(vector.x, vector.y, vector.z, 0)
+    local ea = EulerAngles.new(rotation.x, rotation.y, rotation.z)
+    local m = Matrix.BuiltRotation(ea)
+    local rotatedV4 = Vector4.Transform(m, v4)
+    return vector3:new(rotatedV4.x, rotatedV4.y, rotatedV4.z)
 end
 
 

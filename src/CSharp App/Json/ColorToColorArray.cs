@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using VolumetricSelection2077.Helpers;
-using VolumetricSelection2077.models.WorldBuilder.Structs;
+using VolumetricSelection2077.Services;
 
 namespace VolumetricSelection2077.Json;
 
@@ -26,11 +24,9 @@ public class ColorToColorArray : JsonConverter<float[]>
                     throw new JsonSerializationException("Color object must contain r, g, and b properties.");
                 return new float[] { obj["r"].Value<float>() / 255f, obj["g"].Value<float>() / 255f, obj["b"].Value<float>() / 255f };
             case JsonToken.StartArray:
-                var CC = serializer.Converters.First(x => x == this);
-                serializer.Converters.Remove(CC);
-                var deserialized = serializer.Deserialize<float[]>(reader);
-                serializer.Converters.Add(CC);
-                return deserialized;
+                var cleanSerializer = UtilService.CreateChildSerializer(serializer, typeof(ColorToColorArray));
+                var arr = JArray.Load(reader);
+                return arr.ToObject<float[]>(cleanSerializer);
             default:
                 throw new JsonSerializationException($"Unexpected token {reader.TokenType} when parsing color.");
         }
@@ -38,9 +34,7 @@ public class ColorToColorArray : JsonConverter<float[]>
 
     public override void WriteJson(JsonWriter writer, float[]? value, JsonSerializer serializer)
     {
-        var CC = serializer.Converters.First(x => x == this);
-        serializer.Converters.Remove(CC);
-        serializer.Serialize(writer, value);
-        serializer.Converters.Add(CC);
+        var cleanSerializer = UtilService.CreateChildSerializer(serializer, typeof(ColorToColorArray));
+        cleanSerializer.Serialize(writer, value);
     }
 }
