@@ -247,7 +247,7 @@ namespace VolumetricSelection2077.Services
                     });
                     return favRoot?.Favorites.Any(x => x.Name == SettingsService.Instance.OutputFilename) ?? false;
                 default:
-                    return false;
+                    throw new ArgumentOutOfRangeException();
             }
         }
         

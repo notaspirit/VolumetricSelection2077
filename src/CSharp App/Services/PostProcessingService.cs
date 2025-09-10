@@ -154,19 +154,22 @@ public class PostProcessingService
 
         if (File.Exists(outputFilePath))
         {
-            string fileContent = File.ReadAllText(outputFilePath);
-            var existingRemovals = UtilService.TryParseAxlRemovalFile(fileContent);
-            if (existingRemovals == null)
-                throw new FileLoadException($"Failed to find or parse existing Removal File at {outputFilePath}!"); 
+            AxlRemovalFile? existingRemovals = null;
 
-            if (_settingsService.SaveMode == SaveFileMode.Enum.Extend)
+            if (_settingsService.SaveMode is SaveFileMode.Enum.Extend or SaveFileMode.Enum.Subtract)
             {
-                (axlRemovalFile, mergeChanges) = MergeSectors(existingRemovals, axlRemovalFile);
+                var fileContent = File.ReadAllText(outputFilePath);
+                existingRemovals = UtilService.TryParseAxlRemovalFile(fileContent);
+                if (existingRemovals == null)
+                    throw new FileLoadException($"Failed to find or parse existing Removal File at {outputFilePath}!"); 
             }
-            else if (_settingsService.SaveMode == SaveFileMode.Enum.Subtract)
+
+            (axlRemovalFile, mergeChanges) = _settingsService.SaveMode switch
             {
-                (axlRemovalFile, mergeChanges) = SubtractRemovals(existingRemovals, axlRemovalFile);
-            }
+                SaveFileMode.Enum.Extend => MergeSectors(existingRemovals!, axlRemovalFile),
+                SaveFileMode.Enum.Subtract => SubtractRemovals(existingRemovals!, axlRemovalFile),
+                _ => (axlRemovalFile, mergeChanges)
+            };
         }
         
         string outputContent;
