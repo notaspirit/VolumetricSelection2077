@@ -36,8 +36,8 @@ You need **both the VS2077 CET mod and the VS2077 App** (portable or installer).
 
 ### Optional / Recommended
 
-* **RedHotTools** ([GitHub](https://github.com/psiberx/cp2077-red-hot-tools)) – Not strictly required, but allows hot reloading for faster workflow.
-* **CET Window Manager** ([GitHub](https://github.com/notaspirit/CET-Window-Manager) | [Nexus](https://www.nexusmods.com/cyberpunk2077/mods/18448)) – Helps hide unused CET windows for better visibility during selection.
+* **RedHotTools** ([GitHub](https://github.com/psiberx/cp2077-red-hot-tools)): Not strictly required, but allows hot reloading for faster workflow.
+* **CET Window Manager** ([GitHub](https://github.com/notaspirit/CET-Window-Manager) | [Nexus](https://www.nexusmods.com/cyberpunk2077/mods/18448)): Helps hide unused CET windows for better visibility during selection.
 
 ---
 
@@ -45,11 +45,11 @@ You need **both the VS2077 CET mod and the VS2077 App** (portable or installer).
 
 ### 1. CET Mod
 
-Install like any other Cyberpunk 2077 mod—either manually or via a mod manager.
+Install like any other Cyberpunk 2077 mod, either manually or via a mod manager.
 
 ### 2. VS2077 App
 
-Install like any other Windows application—either with the installer or as a portable version.
+Install like any other Windows application, either with the installer or as a portable version.
 
 ---
 
