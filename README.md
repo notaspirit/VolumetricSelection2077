@@ -1,4 +1,4 @@
-# VolumetricSelection2077 (VS2077)
+# VolumetricSelection2077
 
 ![GitHub all releases](https://img.shields.io/github/downloads/notaspirit/VolumetricSelection2077/total) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/notaspirit/VolumetricSelection2077) ![GitHub latest release date](https://img.shields.io/github/release-date/notaspirit/VolumetricSelection2077)
 
