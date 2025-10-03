@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 using Avalonia.Controls;
-using VolumetricSelection2077.ViewModels;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.TestingStuff;
 
-namespace VolumetricSelection2077.Views;
+namespace VolumetricSelection2077.ViewModels;
 
 public class DebugWindowViewModel
 {
