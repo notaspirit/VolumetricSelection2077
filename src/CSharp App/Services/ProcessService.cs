@@ -434,7 +434,7 @@ public class ProcessService
                     Logger.Info("Building Sector Bounds...");
                     try
                     {
-                        await _boundingBoxBuilderService.BuildBounds(BoundingBoxBuilderService.BuildBoundsMode.Vanilla);
+                        await _boundingBoxBuilderService.BuildBounds(BuildBoundsMode.Vanilla);
                         Logger.Success("Vanilla Sector BBs       : OK");
                     }
                     catch (Exception e)
@@ -477,11 +477,11 @@ public class ProcessService
             {
                 case 0:
                     await _boundingBoxBuilderService.BuildBounds(
-                        BoundingBoxBuilderService.BuildBoundsMode.MissingModded);
+                        BuildBoundsMode.MissingModded);
                     break;
                 case 1:
                     await _boundingBoxBuilderService.BuildBounds(
-                        BoundingBoxBuilderService.BuildBoundsMode.RebuildModded);
+                        BuildBoundsMode.RebuildModded);
                     break;
                 case 2:
                     Logger.Warning("Modded Sector BBs        : User Ignored");

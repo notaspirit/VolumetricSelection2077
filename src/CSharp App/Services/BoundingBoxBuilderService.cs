@@ -15,13 +15,11 @@ public class BoundingBoxBuilderService
 {
     private readonly CacheService _cacheService;
     private readonly GameFileService _gameFileService;
-    private readonly SettingsService _settings;
     private readonly Progress _progress;
     public BoundingBoxBuilderService()
     {
         _cacheService = CacheService.Instance;
         _gameFileService = GameFileService.Instance;
-        _settings = SettingsService.Instance;
         _progress = Progress.Instance;
     }
     /// <summary>
@@ -180,14 +178,7 @@ public class BoundingBoxBuilderService
             _progress.AddCurrent(1, Progress.ProgressSections.Processing);
         }
     }
-
-    public enum BuildBoundsMode
-    {
-        All,
-        Vanilla,
-        RebuildModded,
-        MissingModded
-    }
+    
     /// <summary>
     /// Builds bounding boxes for all sectors matching the provided mode
     /// </summary>
