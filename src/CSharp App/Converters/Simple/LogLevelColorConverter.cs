@@ -1,10 +1,10 @@
+using System;
+using System.Globalization;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
 using Serilog.Events;
-using System;
-using System.Globalization;
 
-namespace VolumetricSelection2077.Resources
+namespace VolumetricSelection2077.Converters.Simple
 {
     public class LogLevelColorConverter : IValueConverter
     {

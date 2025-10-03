@@ -3,11 +3,12 @@
     x:Class="VolumetricSelection2077.App"
     xmlns="https://github.com/avaloniaui"
     xmlns:local="clr-namespace:VolumetricSelection2077.Resources"
+    xmlns:simple="clr-namespace:VolumetricSelection2077.Converters.Simple"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Application.Resources>
         <ResourceDictionary>
-            <local:LogLevelColorConverter x:Key="LogLevelColorConverter" />
+            <simple:LogLevelColorConverter x:Key="LogLevelColorConverter" />
             <ResourceDictionary.MergedDictionaries>
                 <ResourceInclude Source="avares://LoadingIndicators.Avalonia/LoadingIndicators.axaml" />
             </ResourceDictionary.MergedDictionaries>
