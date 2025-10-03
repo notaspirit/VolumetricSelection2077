@@ -3,6 +3,7 @@ using Serilog.Core;
 using System;
 using System.IO;
 using System.Collections.Generic;
+using VolumetricSelection2077.Enums;
 
 namespace VolumetricSelection2077.Services
 {
@@ -22,7 +23,7 @@ namespace VolumetricSelection2077.Services
         public static void Initialize(string logDirectory)
         {
             var vR = ValidationService.ValidatePath(logDirectory);
-            if (vR != ValidationService.PathValidationResult.Valid)
+            if (vR != PathValidationResult.Valid)
                 throw new ArgumentException($"Invalid log directory: {logDirectory}, {vR}");
 
             Directory.CreateDirectory(logDirectory);

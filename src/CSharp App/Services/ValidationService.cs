@@ -22,7 +22,7 @@ namespace VolumetricSelection2077.Services
         private readonly SettingsService _settingsService;
         private readonly CacheService _cacheService;
         private readonly GameFileService _gameFileService;
-        public static readonly char[] InvalidCharacters = Path.GetInvalidPathChars().Concat(new[] { '?', '*', '"', '<', '>', '|', '/' }).Distinct().ToArray();
+        private static readonly char[] InvalidCharacters = Path.GetInvalidPathChars().Concat(new[] { '?', '*', '"', '<', '>', '|', '/' }).Distinct().ToArray();
 
         public ValidationService()
         {
@@ -31,53 +31,28 @@ namespace VolumetricSelection2077.Services
             _gameFileService = GameFileService.Instance;
         }
         
-        public enum GamePathResult
-        {
-            InvalidGamePath,
-            CetNotFound,
-            Valid
-        }
         /// <summary>
         /// Checks if the given directory is a valid game install
         /// </summary>
         /// <param name="gamePath">the directory to check</param>
         /// <returns></returns>
-        public static (GamePathResult, PathValidationResult) ValidateGamePath(string gamePath)
+        public static (GamePathValidationResult, PathValidationResult) ValidateGamePath(string gamePath)
         {
             var validatePath = ValidatePath(gamePath);
             if (validatePath != PathValidationResult.Valid)
-                return (GamePathResult.InvalidGamePath, validatePath);
+                return (GamePathValidationResult.InvalidGamePath, validatePath);
             
             string archiveContentPath = Path.Combine(gamePath, "archive", "pc", "content");
             string archiveEp1Path = Path.Combine(gamePath, "archive", "pc", "ep1");
             string CETModPath = Path.Combine(gamePath, "bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "VolumetricSelection2077", "data");
 
             if (!Directory.Exists(archiveContentPath) || !Directory.Exists(archiveEp1Path))
-                return (GamePathResult.InvalidGamePath, validatePath);
+                return (GamePathValidationResult.InvalidGamePath, validatePath);
             if (!Directory.Exists(CETModPath))
-                return (GamePathResult.CetNotFound, validatePath);
-            return (GamePathResult.Valid, validatePath);
+                return (GamePathValidationResult.CetNotFound, validatePath);
+            return (GamePathValidationResult.Valid, validatePath);
         }
         
-        /// <summary>
-        /// Checks if the selection file exists 
-        /// </summary>
-        /// <param name="gamePath">Path to the root of the game directory</param>
-        /// <returns></returns>
-        public (bool, PathValidationResult) ValidateSelectionFile(string gamePath)
-        {
-            var vpr = ValidatePath(gamePath);
-            if (vpr != PathValidationResult.Valid)
-                return (false, vpr);
-            string selectionFilePath;
-            if (string.IsNullOrWhiteSpace(_settingsService.CustomSelectionFilePath))
-                selectionFilePath = Path.Combine(_settingsService.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks",
-                    "mods", "VolumetricSelection2077", "data", "selection.json");
-            else
-                selectionFilePath = Path.Combine(_settingsService.CustomSelectionFilePath, "bin", "x64", "plugins", "cyber_engine_tweaks",
-                    "mods", "VolumetricSelection2077", "data", "selection.json");
-            return (File.Exists(selectionFilePath), vpr);
-        }
         /// <summary>
         /// Checks if the directory is a valid path and creates it if it doesn't exist
         /// </summary>
@@ -99,78 +74,6 @@ namespace VolumetricSelection2077.Services
                 return (false, vpr);
             }
             return (true, vpr);
-        }
-
-        /// <summary>
-        /// Checks if Cache Initialization Status matches Settings
-        /// </summary>
-        /// <returns></returns>
-        public bool ValidateCacheStatus()
-        {
-            return _cacheService.IsInitialized;
-        }
-
-        /// <summary>
-        /// Checks if the GameFileService is initialized
-        /// </summary>
-        /// <returns></returns>
-        public bool ValidateGameFileService()
-        {
-            return _gameFileService.IsInitialized;
-        }
-        
-        /// <summary>
-        /// Checks if the given regex is valid
-        /// </summary>
-        /// <param name="regex"></param>
-        /// <returns></returns>
-        public static bool ValidateRegex(string regex)
-        {
-            if (string.IsNullOrEmpty(regex))
-                return false;
-            try
-            {
-                Regex.IsMatch("", regex);
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-        
-        /// <summary>
-        /// Checks if the all resourcePathFilters are valid regex
-        /// </summary>
-        /// <returns></returns>
-        public bool ValidateResourcePathFilter()
-        {
-            return _settingsService.ResourceNameFilter.Count > 0 ? _settingsService.ResourceNameFilter.All(x => ValidateRegex(x)) : true;
-        }
-        
-        /// <summary>
-        /// Checks if the all debugNameFilters are valid regex
-        /// </summary>
-        /// <returns></returns>
-        public bool ValidateDebugNameFilter()
-        {
-            return _settingsService.DebugNameFilter.Count > 0 ? _settingsService.DebugNameFilter.All(x => ValidateRegex(x)) : true;
-        }
-        
-        public class InputValidationResult
-        {
-            public bool CacheStatus { get; set; }
-            public bool GameFileServiceStatus { get; set; }
-            public bool ValidOutputDirectory { get; set; }
-            public PathValidationResult OutputDirectroyPathValidationResult { get; set; }
-            public bool SelectionFileExists { get; set; }
-            public PathValidationResult SelectionFilePathValidationResult { get; set; }
-            public PathValidationResult OutputFileName { get; set; }
-            public bool ResourceNameFilterValid { get; set; }
-            public bool DebugNameFilterValid { get; set; }
-            public bool VanillaSectorBBsBuild { get; set; }
-            public bool ModdedSectorBBsBuild { get; set; }
-            public bool SubtractionTargetExists { get; set; }
         }
         
         /// <summary>
@@ -210,6 +113,53 @@ namespace VolumetricSelection2077.Services
             };
         }
         
+        /// <summary>
+        /// Checks if the Cache via it's metadata
+        /// </summary>
+        /// <param name="metadata"></param>
+        /// <param name="gamePath">Path to the root of the game directory</param>
+        /// <param name="minimumProgramVersion">Oldest VS2077 that the cache can be from</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException">Did not find game executable</exception>
+        public static bool ValidateCache(CacheDatabaseMetadata metadata, string gamePath, string minimumProgramVersion)
+        {
+            var gameExePath = Path.Combine(gamePath, "bin", "x64", "Cyberpunk2077.exe");
+            if (!File.Exists(gameExePath))
+                throw new ArgumentException("Could not find Game Executable.");
+            
+            var fileVerInfo = FileVersionInfo.GetVersionInfo(gameExePath);
+            if (fileVerInfo.ProductVersion != metadata.GameVersion)
+                return false;
+
+            return metadata.VS2077Version == minimumProgramVersion;
+        }
+
+        /// <summary>
+        ///  Checks if a given path is valid, not if it exists
+        /// </summary>
+        /// <param name="path">The path to check</param>
+        /// <returns>Enum describing validation outcome</returns>
+        public static PathValidationResult ValidatePath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return PathValidationResult.Empty;
+            
+            if (path.IndexOfAny(InvalidCharacters) != -1) return PathValidationResult.InvalidCharacters;
+
+            if (!Path.IsPathFullyQualified(path)) return PathValidationResult.Relative;
+            
+            if (Path.GetPathRoot(path)?.Equals(path, StringComparison.OrdinalIgnoreCase) == true) 
+                return PathValidationResult.Drive;
+            
+            if (path.Length >= 260) return PathValidationResult.TooLong;
+            
+            var parts = path.Split(Path.DirectorySeparatorChar);
+
+            if (parts.Any(part => part != part.Trim()))
+                return PathValidationResult.LeadingOrTrailingSpace;
+            
+            return PathValidationResult.Valid;
+        }
+
         private static bool SubtractionTargetExists()
         {
             switch (SettingsService.Instance.SaveFileFormat)
@@ -246,66 +196,7 @@ namespace VolumetricSelection2077.Services
             }
         }
         
-        /// <summary>
-        /// Checks if the Cache via it's metadata
-        /// </summary>
-        /// <param name="metadata"></param>
-        /// <param name="gamePath">Path to the root of the game directory</param>
-        /// <param name="minimumProgramVersion">Oldest VS2077 that the cache can be from</param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException">Did not find game executable</exception>
-        public static bool ValidateCache(CacheDatabaseMetadata metadata, string gamePath, string minimumProgramVersion)
-        {
-            var gameExePath = Path.Combine(gamePath, "bin", "x64", "Cyberpunk2077.exe");
-            if (!File.Exists(gameExePath))
-                throw new ArgumentException("Could not find Game Executable.");
-            
-            var fileVerInfo = FileVersionInfo.GetVersionInfo(gameExePath);
-            if (fileVerInfo.ProductVersion != metadata.GameVersion)
-                return false;
-
-            if (metadata.VS2077Version != minimumProgramVersion)
-                return false;
-            return true;
-        }
-
-        public enum PathValidationResult
-        {
-            InvalidCharacters,
-            Empty,
-            Relative,
-            Drive,
-            LeadingOrTrailingSpace,
-            TooLong,
-            Valid
-        }
-
-        /// <summary>
-        ///  Checks if a given path is valid, not if it exists
-        /// </summary>
-        /// <param name="path">The path to check</param>
-        /// <returns>Enum describing validation outcome</returns>
-        public static PathValidationResult ValidatePath(string path)
-        {
-            if (string.IsNullOrWhiteSpace(path)) return PathValidationResult.Empty;
-            
-            if (path.IndexOfAny(InvalidCharacters) != -1) return PathValidationResult.InvalidCharacters;
-
-            if (!Path.IsPathFullyQualified(path)) return PathValidationResult.Relative;
-            
-            if (Path.GetPathRoot(path)?.Equals(path, StringComparison.OrdinalIgnoreCase) == true) 
-                return PathValidationResult.Drive;
-            
-            if (path.Length >= 260) return PathValidationResult.TooLong;
-            
-            var parts = path.Split(Path.DirectorySeparatorChar);
-
-            if (parts.Any(part => part != part.Trim()))
-                return PathValidationResult.LeadingOrTrailingSpace;
-            
-            return PathValidationResult.Valid;
-        }
-        public bool AreVanillaSectorBBsBuild()
+        private bool AreVanillaSectorBBsBuild()
         {
             return _cacheService.GetMetadata().AreVanillaSectorBBsBuild;
         }
@@ -314,7 +205,7 @@ namespace VolumetricSelection2077.Services
         /// Checks if all currently loaded modded sectors have build bounding boxes
         /// </summary>
         /// <returns>true if all modded sectors have bounding boxes or modded resources are disabled</returns>
-        public bool AreModdedSectorBBsBuild()
+        private bool AreModdedSectorBBsBuild()
         {
             if (!_settingsService.SupportModdedResources)
                 return true;
@@ -328,6 +219,82 @@ namespace VolumetricSelection2077.Services
                 .ToList();
 
             return inArchiveSectors.All(sector => cachedBBSectors.Contains(sector));
+        }
+        
+        /// <summary>
+        /// Checks if the selection file exists 
+        /// </summary>
+        /// <param name="gamePath">Path to the root of the game directory</param>
+        /// <returns></returns>
+        private (bool, PathValidationResult) ValidateSelectionFile(string gamePath)
+        {
+            var vpr = ValidatePath(gamePath);
+            if (vpr != PathValidationResult.Valid)
+                return (false, vpr);
+            string selectionFilePath;
+            if (string.IsNullOrWhiteSpace(_settingsService.CustomSelectionFilePath))
+                selectionFilePath = Path.Combine(_settingsService.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks",
+                    "mods", "VolumetricSelection2077", "data", "selection.json");
+            else
+                selectionFilePath = Path.Combine(_settingsService.CustomSelectionFilePath, "bin", "x64", "plugins", "cyber_engine_tweaks",
+                    "mods", "VolumetricSelection2077", "data", "selection.json");
+            return (File.Exists(selectionFilePath), vpr);
+        }
+        
+        /// <summary>
+        /// Checks if Cache Initialization Status matches Settings
+        /// </summary>
+        /// <returns></returns>
+        private bool ValidateCacheStatus()
+        {
+            return _cacheService.IsInitialized;
+        }
+
+        /// <summary>
+        /// Checks if the GameFileService is initialized
+        /// </summary>
+        /// <returns></returns>
+        private bool ValidateGameFileService()
+        {
+            return _gameFileService.IsInitialized;
+        }
+        
+        /// <summary>
+        /// Checks if the given regex is valid
+        /// </summary>
+        /// <param name="regex"></param>
+        /// <returns></returns>
+        private static bool ValidateRegex(string regex)
+        {
+            if (string.IsNullOrEmpty(regex))
+                return false;
+            try
+            {
+                Regex.IsMatch("", regex);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+        
+        /// <summary>
+        /// Checks if the all resourcePathFilters are valid regex
+        /// </summary>
+        /// <returns></returns>
+        private bool ValidateResourcePathFilter()
+        {
+            return _settingsService.ResourceNameFilter.Count > 0 ? _settingsService.ResourceNameFilter.All(x => ValidateRegex(x)) : true;
+        }
+        
+        /// <summary>
+        /// Checks if the all debugNameFilters are valid regex
+        /// </summary>
+        /// <returns></returns>
+        private bool ValidateDebugNameFilter()
+        {
+            return _settingsService.DebugNameFilter.Count > 0 ? _settingsService.DebugNameFilter.All(x => ValidateRegex(x)) : true;
         }
     }
 }

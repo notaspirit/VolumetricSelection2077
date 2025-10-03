@@ -6,6 +6,8 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Octokit;
+using VolumetricSelection2077.Enums;
+
 namespace VolumetricSelection2077.Services;
 
 public class UpdateService
@@ -129,7 +131,7 @@ public class UpdateService
             string unzipPathCet;
             if (string.IsNullOrEmpty(SettingsService.Instance.CETInstallLocation))
             {
-                if (ValidationService.ValidateGamePath(SettingsService.Instance.GameDirectory).Item1 != ValidationService.GamePathResult.Valid)
+                if (ValidationService.ValidateGamePath(SettingsService.Instance.GameDirectory).Item1 != GamePathValidationResult.Valid)
                 {
                     throw new Exception("Could not find valid target location to install VS2077 CET. Please set the game path or custom directory in the settings and restart the application to try again.");
                 }

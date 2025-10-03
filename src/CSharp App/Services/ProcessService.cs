@@ -315,11 +315,11 @@ public class ProcessService
     /// </summary>
     /// <param name="vr"></param>
     /// <returns>true if all are valid, false if at least one is invalid</returns>
-    private async Task<bool> EvaluateInputValidation(ValidationService.InputValidationResult vr)
+    private async Task<bool> EvaluateInputValidation(VEnums.InputValidationResult vr)
     {
         int invalidCount = 0;
         bool invalidRegex = false;
-        if (vr.OutputFileName == ValidationService.PathValidationResult.Valid)
+        if (vr.OutputFileName == VEnums.PathValidationResult.Valid)
             Logger.Success("Filename                 : OK");
         else
         {
@@ -358,7 +358,7 @@ public class ProcessService
             Logger.Success("Selection File           : OK");
         else
         {
-            string invalidReason = vr.SelectionFilePathValidationResult == ValidationService.PathValidationResult.Valid ? "Not found" : $"Invalid file path {vr.SelectionFilePathValidationResult}";
+            string invalidReason = vr.SelectionFilePathValidationResult == VEnums.PathValidationResult.Valid ? "Not found" : $"Invalid file path {vr.SelectionFilePathValidationResult}";
             Logger.Error($"Selection File           : {invalidReason}");
             invalidCount++;
         }
