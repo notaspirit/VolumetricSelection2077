@@ -1,24 +1,17 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.ComponentModel;
 using VolumetricSelection2077.Models;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Reflection.Emit;
 using System.Text.RegularExpressions;
 using DynamicData;
 using MessagePack;
 using VolumetricSelection2077.Parsers;
-using Newtonsoft.Json;
+using VEnums = VolumetricSelection2077.Enums;
+using WEnums = WolvenKit.RED4.Types.Enums;
 using SharpDX;
-using VolumetricSelection2077.Converters;
-using VolumetricSelection2077.Resources;
-using VolumetricSelection2077.TestingStuff;
-using WolvenKit.RED4.Types;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 using Path = System.IO.Path;
 
 namespace VolumetricSelection2077.Services;
@@ -105,32 +98,25 @@ public class ProcessService
                 return null;
             }
             
-            int nodeTypeTableIndex = NodeTypeProcessingOptions.NodeTypeOptions.IndexOf(nodeEntry.Type.ToString());
-            if (nodeTypeTableIndex == -1)
+            if (_settings.NodeTypeFilter[(int)nodeEntry.Type] != true)
             {
-                Logger.Warning($"Node {nodeEntry.Type} is not part of the assumed node type set! Please report this issue. Processing node regardless.");
-            }
-            else
-            {
-                if (_settings.NodeTypeFilter[nodeTypeTableIndex] != true)
-                {
-                    return null;
-                }
+                return null;
             }
             
-            CollisionCheck.Types entryType = CollisionCheck.Types.Default;
+            
+            VEnums.CollisionCheckTypes entryType = VEnums.CollisionCheckTypes.Default;
             if ((nodeEntry.ResourcePath?.EndsWith(@".mesh") ?? false) || (nodeEntry.ResourcePath?.EndsWith(@".w2mesh") ?? false))
             {
-                entryType = CollisionCheck.Types.Mesh;
+                entryType = VEnums.CollisionCheckTypes.Mesh;
             } 
             else if (nodeEntry.SectorHash != null && (nodeEntry.Actors != null || nodeEntry.Actors?.Length > 0))
             {
-                entryType = CollisionCheck.Types.Collider;
+                entryType = VEnums.CollisionCheckTypes.Collider;
             }
 
             switch (entryType)
             {
-                case CollisionCheck.Types.Mesh:
+                case VEnums.CollisionCheckTypes.Mesh:
                     if (nodeDataEntry.AABB != null)
                     {
                         BoundingBox nodeAABB = (BoundingBox)nodeDataEntry.AABB;
@@ -138,11 +124,11 @@ public class ProcessService
                             return null;
                     }
                     
-                    bool isInstanced = nodeEntry.Type is NodeTypeProcessingOptions.Enum.worldInstancedDestructibleMeshNode 
-                                                        or NodeTypeProcessingOptions.Enum.worldInstancedMeshNode;
+                    bool isInstanced = nodeEntry.Type is VEnums.NodeTypeProcessingOptions.worldInstancedDestructibleMeshNode 
+                                                        or VEnums.NodeTypeProcessingOptions.worldInstancedMeshNode;
                     
-                    if (!isInstanced && _settings.SaveFileFormat == SaveFileFormat.Enum.WorldBuilder)
-                        isInstanced = nodeEntry.Type is NodeTypeProcessingOptions.Enum.worldFoliageNode;
+                    if (!isInstanced && _settings.SaveFileFormat == VEnums.SaveFileFormat.WorldBuilder)
+                        isInstanced = nodeEntry.Type is VEnums.NodeTypeProcessingOptions.worldFoliageNode;
                     
                     var mesh = _gameFileService.GetCMesh(nodeEntry.ResourcePath);
                     if (mesh == null)
@@ -174,7 +160,7 @@ public class ProcessService
                         Type = nodeEntry.Type.ToString(),
                         DebugName = nodeEntry.DebugName
                     };
-                case CollisionCheck.Types.Collider:
+                case VEnums.CollisionCheckTypes.Collider:
                     List<int> actorRemoval = new List<int>();
                     int actorIndex = 0;
                     foreach (var actor in nodeEntry.Actors)
@@ -187,8 +173,8 @@ public class ProcessService
                         {
                             switch (shape.ShapeType)
                             {
-                                case Enums.physicsShapeType.TriangleMesh:
-                                case Enums.physicsShapeType.ConvexMesh:
+                                case WEnums.physicsShapeType.TriangleMesh:
+                                case WEnums.physicsShapeType.ConvexMesh:
                                     var collisionMesh = await _gameFileService.GetPhysXMesh((ulong)sectorHash, (ulong)shape.Hash);
                                     if (collisionMesh == null)
                                     {
@@ -202,7 +188,7 @@ public class ProcessService
                                         goto breakShapeLoop;
                                     }
                                     break;
-                                case Enums.physicsShapeType.Box:
+                                case WEnums.physicsShapeType.Box:
                                     bool isCollisionBoxInsideBox = CollisionCheckService.IsCollisionBoxInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb);
                                     if (isCollisionBoxInsideBox)
                                     {
@@ -210,7 +196,7 @@ public class ProcessService
                                         goto breakShapeLoop;
                                     }
                                     break;
-                                case Enums.physicsShapeType.Capsule:
+                                case WEnums.physicsShapeType.Capsule:
                                     bool isCollisionCapsuleInsideBox = CollisionCheckService.IsCollisionCapsuleInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb);
                                     if (isCollisionCapsuleInsideBox)
                                     {
@@ -218,7 +204,7 @@ public class ProcessService
                                         goto breakShapeLoop;
                                     }
                                     break;
-                                case Enums.physicsShapeType.Sphere:
+                                case WEnums.physicsShapeType.Sphere:
                                     bool intersects = CollisionCheckService.IsCollisionSphereInsideSelectionBox(shape, transformActor, selectionBox.Obb);
                                     if (intersects)
                                     {
@@ -248,7 +234,7 @@ public class ProcessService
                             };
                     }
                     return null;
-                case CollisionCheck.Types.Default:
+                case VEnums.CollisionCheckTypes.Default:
                     foreach (var transform in nodeDataEntry.Transforms)
                     {
                         var intersection = selectionBox.Obb.Contains(transform.Position);
@@ -395,7 +381,7 @@ public class ProcessService
             invalidRegex = true;
         }
 
-        if (_settings.SaveMode == SaveFileMode.Enum.Subtract)
+        if (_settings.SaveMode == VEnums.SaveFileMode.Subtract)
         {
             if (vr.SubtractionTargetExists)
             {
@@ -413,9 +399,9 @@ public class ProcessService
         else
         {
             var dialogResult = await _dialogService.ShowDialog("Vanilla Sector Bounds not found!", "Vanilla Sector Bounds are not built, do you want to build them now (this will take a while) or fetch prebuild ones from remote?", 
-                [new DialogButton("Fetch Remote", DialogButtonStyling.Enum.Primary),
-                    new DialogButton("Build", DialogButtonStyling.Enum.Secondary),
-                    new DialogButton("Cancel", DialogButtonStyling.Enum.Destructive)]);
+                [new DialogButton("Fetch Remote", VEnums.DialogButtonStyling.Primary),
+                    new DialogButton("Build", VEnums.DialogButtonStyling.Secondary),
+                    new DialogButton("Cancel", VEnums.DialogButtonStyling.Destructive)]);
             switch (dialogResult)
             {
                 case 0:
@@ -427,9 +413,9 @@ public class ProcessService
                     else
                     {
                         var failedToFetchRemoteDialogResult = await _dialogService.ShowDialog("Failed to fetch remote sector bounds!", "Failed to fetch remote sector bounds, do you want to retry or build them now (this will take a while)?", 
-                        [new DialogButton("Retry", DialogButtonStyling.Enum.Primary),
-                            new DialogButton("Build", DialogButtonStyling.Enum.Secondary),
-                            new DialogButton("Cancel", DialogButtonStyling.Enum.Destructive)]);
+                        [new DialogButton("Retry", VEnums.DialogButtonStyling.Primary),
+                            new DialogButton("Build", VEnums.DialogButtonStyling.Secondary),
+                            new DialogButton("Cancel", VEnums.DialogButtonStyling.Destructive)]);
                         switch (failedToFetchRemoteDialogResult)
                         {
                             case 0:
@@ -455,9 +441,9 @@ public class ProcessService
                     {
                         Logger.Exception(e, $"Failed to build sector bounds with error {e.Message}");
                         var failedToBuildSectorBoundsDialog = await _dialogService.ShowDialog("Failed to build sector bounds!", "Failed to build sector bounds, do you want to retry or fetch them from remote?", 
-                        [new DialogButton("Retry", DialogButtonStyling.Enum.Primary),
-                            new DialogButton("Fetch Remote", DialogButtonStyling.Enum.Secondary),
-                            new DialogButton("Cancel", DialogButtonStyling.Enum.Destructive)]);
+                        [new DialogButton("Retry", VEnums.DialogButtonStyling.Primary),
+                            new DialogButton("Fetch Remote", VEnums.DialogButtonStyling.Secondary),
+                            new DialogButton("Cancel", VEnums.DialogButtonStyling.Destructive)]);
                         switch (failedToBuildSectorBoundsDialog)
                         {
                             case 0:
@@ -483,10 +469,10 @@ public class ProcessService
         else
         {
             var dialogResult = await _dialogService.ShowDialog("Modded Sector Bounds not found!", "Not all modded sectors have a build bounding box!", 
-            [new DialogButton("Build Missing", DialogButtonStyling.Enum.Primary),
-                new DialogButton("Rebuild All", DialogButtonStyling.Enum.Secondary),
-                new DialogButton("Ignore", DialogButtonStyling.Enum.Secondary),
-                new DialogButton("Cancel", DialogButtonStyling.Enum.Destructive)]);
+            [new DialogButton("Build Missing", VEnums.DialogButtonStyling.Primary),
+                new DialogButton("Rebuild All", VEnums.DialogButtonStyling.Secondary),
+                new DialogButton("Ignore", VEnums.DialogButtonStyling.Secondary),
+                new DialogButton("Cancel", VEnums.DialogButtonStyling.Destructive)]);
             switch (dialogResult)
             {
                 case 0:

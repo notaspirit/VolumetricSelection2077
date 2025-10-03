@@ -1,5 +1,5 @@
 using Newtonsoft.Json;
-using WolvenKit.RED4.Types;
+using WEnums = WolvenKit.RED4.Types.Enums;
 using Vector3 = VolumetricSelection2077.models.WorldBuilder.Structs.Vector3;
 
 namespace VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
@@ -13,16 +13,16 @@ public class Mesh : Spawnable
     public bool WindImpulseEnabled { get; set; }
     
     [JsonProperty("castLocalShadows")]
-    public Enums.shadowsShadowCastingMode CastLocalShadows { get; set; }
+    public WEnums.shadowsShadowCastingMode CastLocalShadows { get; set; }
     
     [JsonProperty("castRayTracedGlobalShadows")]
-    public Enums.shadowsShadowCastingMode CastRayTracedGlobalShadows { get; set; }
+    public WEnums.shadowsShadowCastingMode CastRayTracedGlobalShadows { get; set; }
     
     [JsonProperty("castRayTracedLocalShadows")]
-    public Enums.shadowsShadowCastingMode CastRayTracedLocalShadows { get; set; }
+    public WEnums.shadowsShadowCastingMode CastRayTracedLocalShadows { get; set; }
     
     [JsonProperty("castShadows")]
-    public Enums.shadowsShadowCastingMode CastShadows { get; set; }
+    public WEnums.shadowsShadowCastingMode CastShadows { get; set; }
     
     public Mesh()
     {

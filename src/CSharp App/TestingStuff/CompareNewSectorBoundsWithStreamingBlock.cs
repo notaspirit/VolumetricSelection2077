@@ -5,6 +5,7 @@ using VolumetricSelection2077.Converters;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
 using WolvenKit.RED4.Types;
+using WEnums = WolvenKit.RED4.Types.Enums;
 using Vector3 = SharpDX.Vector3;
 
 namespace VolumetricSelection2077.TestingStuff;
@@ -37,8 +38,8 @@ public class CompareNewSectorBoundsWithStreamingBlock : IDebugTool
             return;
         }
         
-        var exteriorSectors = streamingBlockRoot.Descriptors.Where(x => x.Category == Enums.worldStreamingSectorCategory.Exterior).ToList();
-        var interiorSectors = streamingBlockRoot.Descriptors.Where(x => x.Category == Enums.worldStreamingSectorCategory.Interior).ToList();
+        var exteriorSectors = streamingBlockRoot.Descriptors.Where(x => x.Category == WEnums.worldStreamingSectorCategory.Exterior).ToList();
+        var interiorSectors = streamingBlockRoot.Descriptors.Where(x => x.Category == WEnums.worldStreamingSectorCategory.Interior).ToList();
         
         Logger.Info($"Found {exteriorSectors.Count} exterior sectors and {interiorSectors.Count} interior sectors. in base streaming block.");
         

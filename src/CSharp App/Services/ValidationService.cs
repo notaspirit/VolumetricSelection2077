@@ -7,6 +7,7 @@ using System.Linq;
 using VolumetricSelection2077.Models;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Json;
 using VolumetricSelection2077.Models.WorldBuilder.Favorites;
 using VolumetricSelection2077.Resources;
@@ -211,8 +212,8 @@ namespace VolumetricSelection2077.Services
         {
             switch (SettingsService.Instance.SaveFileFormat)
             {
-                case SaveFileFormat.Enum.ArchiveXLYaml:
-                case SaveFileFormat.Enum.ArchiveXLJson:
+                case SaveFileFormat.ArchiveXLYaml:
+                case SaveFileFormat.ArchiveXLJson:
                     if (SettingsService.Instance.SaveToArchiveMods)
                     {
                         return File.Exists(Path.Join(SettingsService.Instance.GameDirectory, "archive", "pc", "mod", SettingsService.Instance.OutputFilename + ".xl"));
@@ -221,7 +222,7 @@ namespace VolumetricSelection2077.Services
                     {
                         return File.Exists(Path.Join(SettingsService.Instance.OutputDirectory, SettingsService.Instance.OutputFilename + ".xl"));
                     }
-                case SaveFileFormat.Enum.WorldBuilder:
+                case SaveFileFormat.WorldBuilder:
                     string pathToCheck;
                     if (SettingsService.Instance.SaveToArchiveMods)
                     {

@@ -1,6 +1,5 @@
 using Newtonsoft.Json;
-using VolumetricSelection2077.models.WorldBuilder.Structs;
-using WolvenKit.RED4.Types;
+using WEnums = WolvenKit.RED4.Types.Enums;
 
 namespace VolumetricSelection2077.Models.WorldBuilder.Spawn.Light;
 
@@ -37,7 +36,7 @@ public class Light : Visualized
     public float FlickerOffset { get; set; }
     
     [JsonProperty("lightType")]
-    public Enums.ELightType LightType { get; set; }
+    public WEnums.ELightType LightType { get; set; }
     
     [JsonProperty("localShadows")]
     public bool LocalShadows { get; set; }
@@ -64,7 +63,7 @@ public class Light : Visualized
     public float ShadowFadeRange { get; set; }
     
     [JsonProperty("contactShadows")]
-    public Enums.rendContactShadowReciever ContactShadows { get; set; }
+    public WEnums.rendContactShadowReciever ContactShadows { get; set; }
     
     [JsonProperty("spotCapsule")]
     public bool SpotCapsule { get; set; }
@@ -73,7 +72,7 @@ public class Light : Visualized
     public float Softness { get; set; }
     
     [JsonProperty("attenuation")]
-    public Enums.rendLightAttenuation Attenuation { get; set; }
+    public WEnums.rendLightAttenuation Attenuation { get; set; }
     
     [JsonProperty("clampAttenuation")]
     public bool ClampAttenuation { get; set; }
@@ -109,7 +108,7 @@ public class Light : Visualized
         FlickerStrength = 0;
         FlickerPeriod = 0.2f;
         FlickerOffset = 0;
-        LightType = Enums.ELightType.LT_Spot;
+        LightType = WEnums.ELightType.LT_Spot;
         LocalShadows = true;
         Temperature = -1;
         ScaleVolFog = 0;
@@ -118,10 +117,10 @@ public class Light : Visualized
         EV = 0;
         ShadowFadeDistance = 10;
         ShadowFadeRange = 5;
-        ContactShadows = Enums.rendContactShadowReciever.CSR_None;
+        ContactShadows = WEnums.rendContactShadowReciever.CSR_None;
         SpotCapsule = false;
         Softness = 2;
-        Attenuation = Enums.rendLightAttenuation.LA_InverseSquare;
+        Attenuation = WEnums.rendLightAttenuation.LA_InverseSquare;
         ClampAttenuation = false;
         SceneSpecularScale = 100;
         SceneDiffuse = true;

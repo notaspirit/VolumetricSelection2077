@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 using SharpDX;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
-using WolvenKit.RED4.Types;
+using WEnums = WolvenKit.RED4.Types.Enums;
 using Vector3 = SharpDX.Vector3;
 
 namespace VolumetricSelection2077.TestingStuff;
@@ -86,8 +86,8 @@ public class BuildKnownBadSectorVerbose : IDebugTool
                             var summedTransformMatrix = shapeTransformMatrix * actorTransformMatrix;
                             switch (shape.ShapeType)
                             {
-                                case Enums.physicsShapeType.TriangleMesh:
-                                case Enums.physicsShapeType.ConvexMesh:
+                                case WEnums.physicsShapeType.TriangleMesh:
+                                case WEnums.physicsShapeType.ConvexMesh:
                                     var collisionMesh = await _gameFileService.GetPhysXMesh((ulong)nodeEntry.SectorHash,
                                         (ulong)shape.Hash);
                                     if (collisionMesh == null)
@@ -111,7 +111,7 @@ public class BuildKnownBadSectorVerbose : IDebugTool
                                         }
                                     }
                                     break;
-                                case Enums.physicsShapeType.Box:
+                                case WEnums.physicsShapeType.Box:
                                     OrientedBoundingBox collisionBox = new(-shape.Transform.Scale, shape.Transform.Scale);
                                     collisionBox.Transform(summedTransformMatrix);
                                     foreach (var corner in collisionBox.GetCorners())
@@ -120,7 +120,7 @@ public class BuildKnownBadSectorVerbose : IDebugTool
                                         max = Vector3.Max(max, corner);
                                     }
                                     break;
-                                case Enums.physicsShapeType.Capsule:
+                                case WEnums.physicsShapeType.Capsule:
                                     float height = shape.Transform.Scale.Y + 2 * actor.Transform.Scale.X;   
                                     Vector3 shapeSizeAsBox = new Vector3(shape.Transform.Scale.X, shape.Transform.Scale.X, height / 2f);
                                     
@@ -132,7 +132,7 @@ public class BuildKnownBadSectorVerbose : IDebugTool
                                         max = Vector3.Max(max, corner);
                                     }
                                     break;
-                                case Enums.physicsShapeType.Sphere:
+                                case WEnums.physicsShapeType.Sphere:
                                     OrientedBoundingBox sphereObb = new(new Vector3(-shape.Transform.Scale.X), new Vector3(shape.Transform.Scale.X));
                                     sphereObb.Transform(summedTransformMatrix);
                                     foreach (var corner in sphereObb.GetCorners())

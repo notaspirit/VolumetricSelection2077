@@ -1,16 +1,14 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Avalonia.Controls;
-using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Media.Imaging;
 using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.Services;
 using VolumetricSelection2077.Views;
 using VolumetricSelection2077.ViewStructures;
+using VolumetricSelection2077.Enums;
 
 namespace VolumetricSelection2077.ViewModels
 {
@@ -147,9 +145,9 @@ namespace VolumetricSelection2077.ViewModels
             }
         }
         
-        public ObservableCollection<SaveFileMode.Enum> SaveFileModes { get; set; }
+        public ObservableCollection<SaveFileMode> SaveFileModes { get; set; }
 
-        public SaveFileMode.Enum SelectedSaveFileMode
+        public SaveFileMode SelectedSaveFileMode
         {
             get => Settings.SaveMode;
             set
@@ -160,9 +158,9 @@ namespace VolumetricSelection2077.ViewModels
             }
         }
         
-        public ObservableCollection<SaveFileFormat.Enum> SaveFileFormats { get; set; }
+        public ObservableCollection<SaveFileFormat> SaveFileFormats { get; set; }
 
-        public SaveFileFormat.Enum SelectedSaveFileFormat
+        public SaveFileFormat SelectedSaveFileFormat
         {
             get => Settings.SaveFileFormat;
             set
@@ -180,17 +178,18 @@ namespace VolumetricSelection2077.ViewModels
             _resourceNameFilter.CollectionChanged += ResourceNameFilter_CollectionChanged;
             Settings.DebugNameFilter.CollectionChanged += DebugNameFilter_CollectionChanged;
             _nodeTypeFilterItems = new();
-            for (int i = 0; i < NodeTypeProcessingOptions.NodeTypeOptions.Length; i++)
+            var enumValues = Enum.GetValues(typeof(NodeTypeProcessingOptions));
+            for (int i = 0; i < enumValues.Length; i++)
             {
-                var item = new NodeTypeFilterItem(NodeTypeProcessingOptions.NodeTypeOptions[i], i, Settings.NodeTypeFilter);
+                var item = new NodeTypeFilterItem(enumValues.GetValue(i)?.ToString() ?? " ", i, Settings.NodeTypeFilter);
                 item.PropertyChanged += OnNodeTypeFilterItemChanged;
                 NodeTypeFilterItems.Add(item);
             }
             _filteredNodeTypeFilterItems = _nodeTypeFilterItems;
             CheckedCount = NodeTypeFilterItems.Count(item => item.IsChecked);
             
-            SaveFileModes = new ObservableCollection<SaveFileMode.Enum>(Enum.GetValues(typeof(SaveFileMode.Enum)).Cast<SaveFileMode.Enum>());
-            SaveFileFormats = new ObservableCollection<SaveFileFormat.Enum>(Enum.GetValues(typeof(SaveFileFormat.Enum)).Cast<SaveFileFormat.Enum>());
+            SaveFileModes = new ObservableCollection<SaveFileMode>(Enum.GetValues(typeof(SaveFileMode)).Cast<SaveFileMode>());
+            SaveFileFormats = new ObservableCollection<SaveFileFormat>(Enum.GetValues(typeof(SaveFileFormat)).Cast<SaveFileFormat>());
             
             try
             {

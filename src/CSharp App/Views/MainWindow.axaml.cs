@@ -11,6 +11,7 @@ using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Extensions;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Resources;
@@ -443,7 +444,7 @@ public partial class MainWindow : Window
                     "The game was running during the update, to apply changes restart the game or reload CET mods.",
                     new[]
                     {
-                        new DialogButton("Ok", DialogButtonStyling.Enum.Primary)
+                        new DialogButton("Ok", DialogButtonStyling.Primary)
                     }, this);
                 var changelog = await UpdateService.GetChangelog();
                 Logger.Success($"Successfully updated to {changelog.Item1}");

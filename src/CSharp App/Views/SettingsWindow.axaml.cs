@@ -6,6 +6,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Interactivity;
+using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.Services;
@@ -105,7 +106,7 @@ namespace VolumetricSelection2077
                 e.Cancel = true;
                 var result = await DialogService.ShowDialog("Cache Path Changed!",
                     "Move the current cache, or initialize a new cache at the new location (creating one if none exists)?",
-                    new [] { new DialogButton("Move", DialogButtonStyling.Enum.Primary), new DialogButton("Initialize", DialogButtonStyling.Enum.Secondary) },
+                    new [] { new DialogButton("Move", DialogButtonStyling.Primary), new DialogButton("Initialize", DialogButtonStyling.Secondary) },
                     this);
                 moveCache = result == 0;
                 Close();

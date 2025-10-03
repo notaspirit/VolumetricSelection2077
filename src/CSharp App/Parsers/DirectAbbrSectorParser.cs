@@ -3,8 +3,8 @@ using System.Linq;
 using MessagePack;
 using SharpDX;
 using VolumetricSelection2077.Converters;
+using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.Services;
 using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.Archive.CR2W;
@@ -53,7 +53,7 @@ public class DirectAbbrSectorParser
         {
             var debugName = node.Chunk?.DebugName;
             var type = node.Chunk?.GetType().Name ?? "Unknown";
-            var parsedTypeSuccess = NodeTypeProcessingOptions.Enum.TryParse(type, out NodeTypeProcessingOptions.Enum parsedType);
+            var parsedTypeSuccess = Enum.TryParse(type, out NodeTypeProcessingOptions parsedType);
             if (!parsedTypeSuccess)
                 Logger.Error($"Invalid node type: {type}");
             
@@ -132,7 +132,7 @@ public class DirectAbbrSectorParser
                                     break;
                             }
 
-                            var parsedShapeType = Enums.physicsShapeType.TryParse(shapeTypeString, out Enums.physicsShapeType shapeType);
+                            var parsedShapeType = Enum.TryParse(shapeTypeString, out WolvenKit.RED4.Types.Enums.physicsShapeType shapeType);
                             if (!parsedShapeType)
                                 Logger.Error($"Invalid shape type: {shapeTypeString}");
                             

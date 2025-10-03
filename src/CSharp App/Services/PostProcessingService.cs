@@ -2,14 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Newtonsoft.Json;
 using VolumetricSelection2077.Converters;
+using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Json;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Models.WorldBuilder.Editor;
 using VolumetricSelection2077.Models.WorldBuilder.Favorites;
-using VolumetricSelection2077.Resources;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -66,11 +65,11 @@ public class PostProcessingService
         
         switch (_settingsService.SaveFileFormat)
         {
-            case SaveFileFormat.Enum.ArchiveXLJson:
-            case SaveFileFormat.Enum.ArchiveXLYaml:
+            case SaveFileFormat.ArchiveXLJson:
+            case SaveFileFormat.ArchiveXLYaml:
                 SaveAsRemoval(removalFile);
                 break;
-            case SaveFileFormat.Enum.WorldBuilder:
+            case SaveFileFormat.WorldBuilder:
                 SaveAsPrefab(removalFile);
                 break;
         }
@@ -100,7 +99,7 @@ public class PostProcessingService
         
         if (!File.Exists(outputFilePath))
         {
-            if (_settingsService.SaveMode == SaveFileMode.Enum.Subtract)
+            if (_settingsService.SaveMode == SaveFileMode.Subtract)
             {
                 Logger.Error($"No Existing File to remove from found at {outputFilePath}");
                 return;
@@ -114,7 +113,7 @@ public class PostProcessingService
 
         switch (_settingsService.SaveMode)
         {
-            case SaveFileMode.Enum.Extend:
+            case SaveFileMode.Extend:
             {
                 File.WriteAllText(outputFilePath, outputContent);
                 var newSectorS = mergeChanges?.newSectors != 1 ? "s" : "";
@@ -124,18 +123,18 @@ public class PostProcessingService
                 WriteBackupFile(outputFilePath, outputContent);
                 return;
             }
-            case SaveFileMode.Enum.Overwrite:
+            case SaveFileMode.Overwrite:
                 File.WriteAllText(outputFilePath, outputContent);
                 Logger.Info($"Overwrote file {outputFilePath}");
                 WriteBackupFile(outputFilePath, outputContent);
                 return;
-            case SaveFileMode.Enum.New:
+            case SaveFileMode.New:
                 var newOutputFilePath = GetOutputFilename(outputFilePath);
                 File.WriteAllText(newOutputFilePath, outputContent);
                 Logger.Info($"Created file {newOutputFilePath}");
                 WriteBackupFile(newOutputFilePath, outputContent);
                 return;
-            case SaveFileMode.Enum.Subtract:
+            case SaveFileMode.Subtract:
                 File.WriteAllText(outputFilePath, outputContent);
                 var remSectorS = mergeChanges?.newSectors != 1 ? "s" : "";
                 var remNodesS = mergeChanges?.newNodes != 1 ? "s" : "";
@@ -156,7 +155,7 @@ public class PostProcessingService
         {
             AxlRemovalFile? existingRemovals = null;
 
-            if (_settingsService.SaveMode is SaveFileMode.Enum.Extend or SaveFileMode.Enum.Subtract)
+            if (_settingsService.SaveMode is SaveFileMode.Extend or SaveFileMode.Subtract)
             {
                 var fileContent = File.ReadAllText(outputFilePath);
                 existingRemovals = UtilService.TryParseAxlRemovalFile(fileContent);
@@ -166,8 +165,8 @@ public class PostProcessingService
 
             (axlRemovalFile, mergeChanges) = _settingsService.SaveMode switch
             {
-                SaveFileMode.Enum.Extend => MergeSectors(existingRemovals!, axlRemovalFile),
-                SaveFileMode.Enum.Subtract => SubtractRemovals(existingRemovals!, axlRemovalFile),
+                SaveFileMode.Extend => MergeSectors(existingRemovals!, axlRemovalFile),
+                SaveFileMode.Subtract => SubtractRemovals(existingRemovals!, axlRemovalFile),
                 _ => (axlRemovalFile, mergeChanges)
             };
         }
@@ -176,10 +175,10 @@ public class PostProcessingService
 
         switch (_settingsService.SaveFileFormat)
         {
-            case  SaveFileFormat.Enum.ArchiveXLJson:
+            case  SaveFileFormat.ArchiveXLJson:
                 outputContent = JsonConvert.SerializeObject(axlRemovalFile, _jsonOptions);
                 break;
-            case  SaveFileFormat.Enum.ArchiveXLYaml:
+            case  SaveFileFormat.ArchiveXLYaml:
                 var serializer = new SerializerBuilder()
                     .WithNamingConvention(CamelCaseNamingConvention.Instance)
                     .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
@@ -333,7 +332,7 @@ public class PostProcessingService
         Logger.Success($"Found {convertedData.Children.OfType<PositionableGroup>().Sum(g => g.Children.Count)} WorldBuilder elements");
         if (!File.Exists(favoritesPath))
         {
-            if (_settingsService.SaveMode == SaveFileMode.Enum.Subtract)
+            if (_settingsService.SaveMode == SaveFileMode.Subtract)
             {
                 Logger.Error($"No Existing File to remove from found at {favoritesPath}");
                 return;
@@ -353,7 +352,7 @@ public class PostProcessingService
             
             switch (_settingsService.SaveMode)
             {
-                case SaveFileMode.Enum.Overwrite:
+                case SaveFileMode.Overwrite:
                     var existingOverwritePrefab = existingFavorites?.Favorites.FirstOrDefault(f => f.Name == _settingsService.OutputFilename);
                     if (existingOverwritePrefab != null)
                     {
@@ -364,7 +363,7 @@ public class PostProcessingService
                     else
                         goto newPrefab;
                     break;
-                case SaveFileMode.Enum.Extend:
+                case SaveFileMode.Extend:
                     var existingExtendPrefab = existingFavorites?.Favorites.FirstOrDefault(f => f.Name == _settingsService.OutputFilename);
                     if (existingExtendPrefab != null)
                     {
@@ -380,7 +379,7 @@ public class PostProcessingService
                     else
                         goto newPrefab;
                     break;
-                case SaveFileMode.Enum.New:
+                case SaveFileMode.New:
                     newPrefab:
                     var existingNewPrefab = existingFavorites?.Favorites.FirstOrDefault(f => f.Name == _settingsService.OutputFilename);
                     if (existingNewPrefab == null)
@@ -404,7 +403,7 @@ public class PostProcessingService
                         logMessage = $"Created prefab {newOutputFilename} at {favoritesPath}";
                     }
                     break;
-                case SaveFileMode.Enum.Subtract:
+                case SaveFileMode.Subtract:
                     var existingSubtractPrefab = existingFavorites?.Favorites.FirstOrDefault(f => f.Name == _settingsService.OutputFilename);
                     if (existingSubtractPrefab != null)
                     {

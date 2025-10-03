@@ -1,5 +1,5 @@
 using VolumetricSelection2077.Models;
-using Enums = WolvenKit.RED4.Types.Enums;
+using WEnums = WolvenKit.RED4.Types.Enums;
 using SharpDX;
 using VolumetricSelection2077.Services;
 
@@ -22,7 +22,7 @@ public class TestShpereCheck : IDebugTool
         
         var sphereInside1 = new AbbrActorShapes()
         {
-            ShapeType = Enums.physicsShapeType.Sphere,
+            ShapeType = WEnums.physicsShapeType.Sphere,
             Transform = new AbbrSectorTransform()
             {
                 Rotation = new Quaternion(),
@@ -33,7 +33,7 @@ public class TestShpereCheck : IDebugTool
         
         var sphereInside2 = new AbbrActorShapes()
         {
-            ShapeType = Enums.physicsShapeType.Sphere,
+            ShapeType = WEnums.physicsShapeType.Sphere,
             Transform = new AbbrSectorTransform()
             {
                 Rotation = new Quaternion(),
@@ -44,7 +44,7 @@ public class TestShpereCheck : IDebugTool
         
         var sphereOutside = new AbbrActorShapes()
         {
-            ShapeType = Enums.physicsShapeType.Sphere,
+            ShapeType = WEnums.physicsShapeType.Sphere,
             Transform = new AbbrSectorTransform()
             {
                 Rotation = new Quaternion(),

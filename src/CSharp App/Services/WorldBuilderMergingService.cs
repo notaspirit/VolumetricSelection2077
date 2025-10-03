@@ -18,7 +18,7 @@ namespace VolumetricSelection2077.Services;
 
 public static class WorldBuilderMergingService
 {
-    private static JsonSerializerSettings _jsonOptions = new JsonSerializerSettings
+    private static readonly JsonSerializerSettings JsonOptions = new JsonSerializerSettings
     {
         Converters =
         { new WorldBuilderElementJsonConverter(),
@@ -108,7 +108,7 @@ public static class WorldBuilderMergingService
     /// <remarks>Reserialization is necessary to avoid quirks like -0.0 being turned into 0.0 only in one set despite being different on the bit level</remarks>
     private static Favorite ReJsonSerialize(Favorite favorite)
     {
-        return JsonConvert.DeserializeObject<Favorite>(JsonConvert.SerializeObject(favorite, _jsonOptions), _jsonOptions)!;
+        return JsonConvert.DeserializeObject<Favorite>(JsonConvert.SerializeObject(favorite, JsonOptions), JsonOptions)!;
     }
     
     private static void HashFavorite(ref List<WorldBuilderMergingStruct> results, Favorite favorite)
@@ -179,7 +179,7 @@ public static class WorldBuilderMergingService
             case Decal decal:
                 WriteDecal(decal, bw);
                 break;
-            case Effect effect:
+            case Effect:
                 break;
             case Particle particle:
                 WriteParticle(particle, bw);
