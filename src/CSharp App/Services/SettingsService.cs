@@ -6,8 +6,8 @@ using System.Linq;
 using System.Reflection;
 using Newtonsoft.Json;
 using VolumetricSelection2077.Enums;
+using VolumetricSelection2077.Json.Helpers;
 using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Resources;
 
 namespace VolumetricSelection2077.Services;
 public class SettingsService
@@ -117,7 +117,7 @@ public class SettingsService
             try
             {
                 var json = File.ReadAllText(SettingsFilePath);
-                var settings = JsonConvert.DeserializeObject<SettingsService>(json);
+                var settings = JsonConvert.DeserializeObject<SettingsService>(json, JsonSerializerPresets.Default);
                 if (settings != null)
                 {
                     GameDirectory = settings.GameDirectory;
@@ -171,7 +171,7 @@ public class SettingsService
     {
         try
         {
-            var json = JsonConvert.SerializeObject(this, Formatting.Indented);
+            var json = JsonConvert.SerializeObject(this, JsonSerializerPresets.Default);
             var directory = Path.GetDirectoryName(SettingsFilePath);
             if (!Directory.Exists(directory) && directory != null)
                 Directory.CreateDirectory(directory);

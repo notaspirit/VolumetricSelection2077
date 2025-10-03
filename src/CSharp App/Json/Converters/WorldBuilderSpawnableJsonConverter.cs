@@ -1,8 +1,7 @@
 using System;
 using System.Linq;
-using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
-using VolumetricSelection2077.Helpers;
+using Newtonsoft.Json.Linq;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Entity;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Light;
@@ -10,8 +9,7 @@ using VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
 using VolumetricSelection2077.models.WorldBuilder.Spawn.Visual;
 using VolumetricSelection2077.Services;
 
-
-namespace VolumetricSelection2077.Json;
+namespace VolumetricSelection2077.Json.Converters;
 
 public class WorldBuilderSpawnableJsonConverter : JsonConverter<Spawnable>
 {

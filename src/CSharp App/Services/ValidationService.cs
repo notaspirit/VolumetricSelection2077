@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Json;
+using VolumetricSelection2077.Json.Converters;
+using VolumetricSelection2077.Json.Helpers;
 using VolumetricSelection2077.Models.WorldBuilder.Favorites;
 using VolumetricSelection2077.Resources;
 using YamlDotNet.Serialization;
@@ -235,17 +237,9 @@ namespace VolumetricSelection2077.Services
                     }
                     if (!File.Exists(pathToCheck))
                         return false;
-                    
-                    var favRoot = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(pathToCheck), new JsonSerializerSettings
-                    {
-                        Converters =
-                        { new WorldBuilderElementJsonConverter(),
-                            new WorldBuilderSpawnableJsonConverter(),
-                            new WorldBuilderElementListConverter(),
-                            new ColorToColorArray() },
-                        NullValueHandling = NullValueHandling.Ignore,
-                        Formatting = Formatting.Indented
-                    });
+
+                    var favRoot = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(pathToCheck),
+                        JsonSerializerPresets.WorldBuilder);
                     return favRoot?.Favorites.Any(x => x.Name == SettingsService.Instance.OutputFilename) ?? false;
                 default:
                     throw new ArgumentOutOfRangeException();

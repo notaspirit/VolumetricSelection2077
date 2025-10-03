@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using VolumetricSelection2077.Services;
 
-namespace VolumetricSelection2077.Json;
+namespace VolumetricSelection2077.Json.Converters;
 
 public class DictStringJObjectConverter : JsonConverter<Dictionary<string, JObject>>
 {

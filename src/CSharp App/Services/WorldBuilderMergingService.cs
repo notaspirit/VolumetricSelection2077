@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
-using VolumetricSelection2077.Json;
+using VolumetricSelection2077.Json.Helpers;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Models.WorldBuilder.Editor;
 using VolumetricSelection2077.Models.WorldBuilder.Favorites;
@@ -18,19 +18,6 @@ namespace VolumetricSelection2077.Services;
 
 public static class WorldBuilderMergingService
 {
-    private static readonly JsonSerializerSettings JsonOptions = new JsonSerializerSettings
-    {
-        Converters =
-        { new WorldBuilderElementJsonConverter(),
-            new WorldBuilderSpawnableJsonConverter(),
-            new WorldBuilderElementListConverter(),
-            new ColorToColorArray(),
-            new NormalizeZeroConverter()
-        },
-        NullValueHandling = NullValueHandling.Ignore,
-        Formatting = Formatting.Indented
-    };
-    
     public static Favorite Merge(Favorite favoriteA, Favorite favoriteB)
     {
         var mergedRaw = new List<WorldBuilderMergingStruct>();
@@ -108,7 +95,7 @@ public static class WorldBuilderMergingService
     /// <remarks>Reserialization is necessary to avoid quirks like -0.0 being turned into 0.0 only in one set despite being different on the bit level</remarks>
     private static Favorite ReJsonSerialize(Favorite favorite)
     {
-        return JsonConvert.DeserializeObject<Favorite>(JsonConvert.SerializeObject(favorite, JsonOptions), JsonOptions)!;
+        return JsonConvert.DeserializeObject<Favorite>(JsonConvert.SerializeObject(favorite, JsonSerializerPresets.WorldBuilder), JsonSerializerPresets.WorldBuilder)!;
     }
     
     private static void HashFavorite(ref List<WorldBuilderMergingStruct> results, Favorite favorite)

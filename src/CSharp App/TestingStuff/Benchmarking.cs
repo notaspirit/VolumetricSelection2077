@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using VolumetricSelection2077.Json.Helpers;
 using VolumetricSelection2077.Services;
 using WolvenKit.RED4.Types;
 
@@ -130,9 +131,7 @@ public class Benchmarking
             averageTime = UtilService.FormatElapsedTime(avgProcssTime)
         };
 
-        string serializedResults = JsonConvert.SerializeObject(resultsFile,
-            new JsonSerializerSettings()
-                { NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented });
+        string serializedResults = JsonConvert.SerializeObject(resultsFile, JsonSerializerPresets.Default);
 
         string outPath = Path.Combine(benchOutputDir, "results.json");
         File.WriteAllText(outPath, serializedResults);

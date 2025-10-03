@@ -1,12 +1,11 @@
 using System;
 using System.Linq;
-using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using VolumetricSelection2077.Models.WorldBuilder.Editor;
 using VolumetricSelection2077.Services;
 
-
-namespace VolumetricSelection2077.Json;
+namespace VolumetricSelection2077.Json.Converters;
 
 public class WorldBuilderElementJsonConverter : JsonConverter<Element>
 {

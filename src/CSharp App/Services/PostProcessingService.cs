@@ -5,7 +5,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using VolumetricSelection2077.Converters;
 using VolumetricSelection2077.Enums;
-using VolumetricSelection2077.Json;
+using VolumetricSelection2077.Json.Helpers;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Models.WorldBuilder.Editor;
 using VolumetricSelection2077.Models.WorldBuilder.Favorites;
@@ -19,7 +19,6 @@ public class PostProcessingService
     private readonly Progress _progress;
     private readonly SettingsService _settingsService;
     private readonly AxlRemovalToWorldBuilder _removalToWorldBuilder;
-    private readonly JsonSerializerSettings _jsonOptions;
     
     
     public PostProcessingService()
@@ -27,16 +26,6 @@ public class PostProcessingService
         _progress = Progress.Instance;
         _settingsService = SettingsService.Instance;
         _removalToWorldBuilder = new AxlRemovalToWorldBuilder();
-        _jsonOptions = new JsonSerializerSettings
-        {
-            Converters =
-                { new WorldBuilderElementJsonConverter(),
-                    new WorldBuilderSpawnableJsonConverter(),
-                    new WorldBuilderElementListConverter(),
-                    new ColorToColorArray() },
-            NullValueHandling = NullValueHandling.Ignore,
-            Formatting = Formatting.Indented
-        };
     }
     
     /// <summary>
@@ -176,7 +165,7 @@ public class PostProcessingService
         switch (_settingsService.SaveFileFormat)
         {
             case  SaveFileFormat.ArchiveXLJson:
-                outputContent = JsonConvert.SerializeObject(axlRemovalFile, _jsonOptions);
+                outputContent = JsonConvert.SerializeObject(axlRemovalFile, JsonSerializerPresets.WorldBuilder);
                 break;
             case  SaveFileFormat.ArchiveXLYaml:
                 var serializer = new SerializerBuilder()
@@ -348,7 +337,7 @@ public class PostProcessingService
         }
         else
         {
-            var existingFavorites = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(favoritesPath), _jsonOptions);
+            var existingFavorites = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(favoritesPath), JsonSerializerPresets.WorldBuilder);
             
             switch (_settingsService.SaveMode)
             {
@@ -428,7 +417,7 @@ public class PostProcessingService
                 favRoot.Favorites.AddRange(existingFavorites.Favorites);
         }
 
-        var serialized = JsonConvert.SerializeObject(favRoot, _jsonOptions); 
+        var serialized = JsonConvert.SerializeObject(favRoot, JsonSerializerPresets.WorldBuilder);
         File.WriteAllText(favoritesPath, serialized);
         Logger.Info(logMessage);
         WriteBackupFile(favoritesPath, serialized);

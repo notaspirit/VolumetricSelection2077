@@ -3,9 +3,9 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using VolumetricSelection2077.Services;
 
-namespace VolumetricSelection2077.Json;
+namespace VolumetricSelection2077.Json.Converters;
 
-public class ColorToColorArray : JsonConverter<float[]>
+public class ColorToColorArrayConverter : JsonConverter<float[]>
 {
     public override bool CanWrite => true;
 
@@ -24,7 +24,7 @@ public class ColorToColorArray : JsonConverter<float[]>
                     throw new JsonSerializationException("Color object must contain r, g, and b properties.");
                 return new float[] { obj["r"].Value<float>() / 255f, obj["g"].Value<float>() / 255f, obj["b"].Value<float>() / 255f };
             case JsonToken.StartArray:
-                var cleanSerializer = UtilService.CreateChildSerializer(serializer, typeof(ColorToColorArray));
+                var cleanSerializer = UtilService.CreateChildSerializer(serializer, typeof(ColorToColorArrayConverter));
                 var arr = JArray.Load(reader);
                 return arr.ToObject<float[]>(cleanSerializer);
             default:
@@ -34,7 +34,7 @@ public class ColorToColorArray : JsonConverter<float[]>
 
     public override void WriteJson(JsonWriter writer, float[]? value, JsonSerializer serializer)
     {
-        var cleanSerializer = UtilService.CreateChildSerializer(serializer, typeof(ColorToColorArray));
+        var cleanSerializer = UtilService.CreateChildSerializer(serializer, typeof(ColorToColorArrayConverter));
         cleanSerializer.Serialize(writer, value);
     }
 }
