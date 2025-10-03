@@ -1,6 +1,4 @@
-using System;
-using System.Collections.Generic;
-
+// ReSharper disable InconsistentNaming
 namespace VolumetricSelection2077.Enums;
 
 public enum NodeTypeProcessingOptions : byte
@@ -128,3 +126,4 @@ public enum NodeTypeProcessingOptions : byte
     worldWaterPatchNode,
     worldWaterPatchProxyMeshNode
 }
+// ReSharper restore InconsistentNaming
