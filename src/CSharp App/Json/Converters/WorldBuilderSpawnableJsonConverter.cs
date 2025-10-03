@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using VolumetricSelection2077.Json.Helpers;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Entity;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Light;
@@ -22,7 +23,7 @@ public class WorldBuilderSpawnableJsonConverter : JsonConverter<Spawnable>
         bool hasExistingValue,
         JsonSerializer serializer)
     {
-        var cleanSerializer = UtilService.CreateChildSerializer(serializer, typeof(WorldBuilderSpawnableJsonConverter));
+        var cleanSerializer = JsonSerializerUtils.CreateChildSerializer(serializer, typeof(WorldBuilderSpawnableJsonConverter));
         
         var obj = JObject.Load(reader);
         switch (obj["node"]?.Value<string>())
@@ -57,7 +58,7 @@ public class WorldBuilderSpawnableJsonConverter : JsonConverter<Spawnable>
 
     public override void WriteJson(JsonWriter writer, Spawnable? value, JsonSerializer serializer)
     {
-        var cleanSerializer = UtilService.CreateChildSerializer(serializer, typeof(WorldBuilderSpawnableJsonConverter));
+        var cleanSerializer = JsonSerializerUtils.CreateChildSerializer(serializer, typeof(WorldBuilderSpawnableJsonConverter));
         cleanSerializer.Serialize(writer, value);
     }
 }

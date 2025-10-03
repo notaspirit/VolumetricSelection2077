@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using VolumetricSelection2077.Json.Helpers;
 using VolumetricSelection2077.Services;
 
 namespace VolumetricSelection2077.Json.Converters;
@@ -11,7 +12,7 @@ public class DictStringJObjectConverter : JsonConverter<Dictionary<string, JObje
     public override Dictionary<string, JObject>? ReadJson(JsonReader reader, Type objectType, Dictionary<string, JObject>? existingValue, bool hasExistingValue,
         JsonSerializer serializer)
     {
-        var cleanSerializer = UtilService.CreateChildSerializer(serializer, typeof(DictStringJObjectConverter));
+        var cleanSerializer = JsonSerializerUtils.CreateChildSerializer(serializer, typeof(DictStringJObjectConverter));
         switch (reader.TokenType)
         {
             case JsonToken.StartArray:
@@ -31,7 +32,7 @@ public class DictStringJObjectConverter : JsonConverter<Dictionary<string, JObje
     
     public override void WriteJson(JsonWriter writer, Dictionary<string, JObject>? value, JsonSerializer serializer)
     {
-        var cleanSerializer = UtilService.CreateChildSerializer(serializer, typeof(DictStringJObjectConverter));
+        var cleanSerializer = JsonSerializerUtils.CreateChildSerializer(serializer, typeof(DictStringJObjectConverter));
         cleanSerializer.Serialize(writer, value);
     }
 }

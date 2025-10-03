@@ -91,7 +91,7 @@ public partial class CacheService
             {
                 Logger.Warning("Cache is stale, resetting database");
                 ClearMetaData();
-                ClearDatabase(CacheDatabases.All, true, true);
+                ClearDatabase(CacheDatabases.All, true);
             }
             _isInitialized = true;
         }
@@ -213,12 +213,13 @@ public partial class CacheService
     /// Removes all entries from a database
     /// </summary>
     /// <param name="database">target database(s)</param>
-    /// <param name="resize">resize environment after removing</param>
     /// <param name="bypass">bypass initialization check</param>
     /// <exception cref="Exception">Cache service is not initialized</exception>
-    public void ClearDatabase(CacheDatabases database, bool resize = false, bool bypass = false)
+    public void ClearDatabase(CacheDatabases database, bool bypass = false)
     {
         if (!_isInitialized && !bypass) throw new Exception("Cache service must be initialized before calling ClearDatabase");
+        var resize = ShouldResize(database, GetStats(), _settings.CacheDirectory);
+        
         try
         {
             
@@ -581,5 +582,49 @@ public partial class CacheService
         var metaDataFilePath = Path.Combine(_settings.CacheDirectory, "metadata.json");
         if (File.Exists(metaDataFilePath))
             File.Delete(metaDataFilePath);
+    }
+    
+    /// <summary>
+    /// Checks if there is enough space on the drive and if the change is significant enough to resize the database
+    /// </summary>
+    /// <param name="db">database to calculate for</param>
+    /// <param name="stats">current cache stats</param>
+    /// <param name="cacheDirectory">current cache directory</param>
+    /// <param name="resizeAfterBytes">threshold for resizing</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentOutOfRangeException">if CacheDatabases.All is passed</exception>
+    private static bool ShouldResize(CacheDatabases db, CacheStats stats, string cacheDirectory, ulong resizeAfterBytes = 1024 * 1024 * 1024)
+    {
+        FileSize sizeToRemove;
+        FileSize totalSize = new FileSize(stats.EstVanillaSize.Bytes + 
+                                          stats.EstModdedSize.Bytes +
+                                          stats.EstVanillaBoundsSize.Bytes +
+                                          stats.EstModdedBoundsSize.Bytes);
+        
+        switch (db)
+        {
+            case CacheDatabases.Vanilla:
+                sizeToRemove = stats.EstVanillaSize;
+                break;
+            case CacheDatabases.Modded:
+                sizeToRemove = stats.EstModdedSize;
+                break;
+            case CacheDatabases.VanillaBounds:
+                sizeToRemove = stats.EstVanillaBoundsSize;
+                break;
+            case CacheDatabases.ModdedBounds:
+                sizeToRemove = stats.EstModdedBoundsSize;
+                break;
+            case CacheDatabases.All:
+                sizeToRemove = totalSize;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(db), db, null);
+        }
+        
+        var cacheDriveInfo = new DriveInfo(cacheDirectory);
+        var freeSpace = (ulong)cacheDriveInfo.AvailableFreeSpace;
+        
+        return sizeToRemove.Bytes > resizeAfterBytes && freeSpace > totalSize.Bytes - sizeToRemove.Bytes;
     }
 }

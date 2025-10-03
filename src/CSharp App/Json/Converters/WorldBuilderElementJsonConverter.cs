@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using VolumetricSelection2077.Json.Helpers;
 using VolumetricSelection2077.Models.WorldBuilder.Editor;
 using VolumetricSelection2077.Services;
 
@@ -18,7 +19,7 @@ public class WorldBuilderElementJsonConverter : JsonConverter<Element>
         bool hasExistingValue,
         JsonSerializer serializer)
     {
-        var cleanSerializer = UtilService.CreateChildSerializer(serializer, typeof(WorldBuilderElementJsonConverter));
+        var cleanSerializer = JsonSerializerUtils.CreateChildSerializer(serializer, typeof(WorldBuilderElementJsonConverter));
         if (cleanSerializer.Converters.All(c => c.GetType() != typeof(WorldBuilderElementListConverter)))
             cleanSerializer.Converters.Add(new WorldBuilderElementListConverter());
         
@@ -38,7 +39,7 @@ public class WorldBuilderElementJsonConverter : JsonConverter<Element>
 
     public override void WriteJson(JsonWriter writer, Element? value, JsonSerializer serializer)
     {
-        var cleanSerializer = UtilService.CreateChildSerializer(serializer, typeof(WorldBuilderElementJsonConverter));
+        var cleanSerializer = JsonSerializerUtils.CreateChildSerializer(serializer, typeof(WorldBuilderElementJsonConverter));
         cleanSerializer.Serialize(writer, value);
     }
 }

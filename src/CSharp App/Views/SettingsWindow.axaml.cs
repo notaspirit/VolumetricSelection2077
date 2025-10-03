@@ -65,36 +65,28 @@ namespace VolumetricSelection2077
         private async void ClearVanillaCache_Click(object sender, RoutedEventArgs e)
         {
             if(!_cacheService.IsInitialized) return;
-            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Vanilla,
-                UtilService.ShouldResize(CacheDatabases.Vanilla, _settingsViewModel.CacheStats,
-                    _settingsViewModel.Settings.CacheDirectory)));
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Vanilla));
             UpdateCacheStats();
         }
         
         private async void ClearModdedCache_Click(object sender, RoutedEventArgs e)
         {
             if(!_cacheService.IsInitialized) return;
-            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Modded,
-                UtilService.ShouldResize(CacheDatabases.Modded, _settingsViewModel.CacheStats,
-                    _settingsViewModel.Settings.CacheDirectory)));
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Modded));
             UpdateCacheStats();
         }
         
         private async void ClearVanillaBoundsCache_Click(object sender, RoutedEventArgs e)
         {
             if(!_cacheService.IsInitialized) return;
-            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.VanillaBounds,
-                UtilService.ShouldResize(CacheDatabases.VanillaBounds, _settingsViewModel.CacheStats,
-                    _settingsViewModel.Settings.CacheDirectory)));
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.VanillaBounds));
             UpdateCacheStats();
         }
         
         private async void ClearModdedBoundsCache_Click(object sender, RoutedEventArgs e)
         {
             if(!_cacheService.IsInitialized) return;
-            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.ModdedBounds,
-                UtilService.ShouldResize(CacheDatabases.ModdedBounds, _settingsViewModel.CacheStats,
-                    _settingsViewModel.Settings.CacheDirectory)));
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.ModdedBounds));
             UpdateCacheStats();
         }
 
