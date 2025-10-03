@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using SharpDX;
+using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
 using WEnums = WolvenKit.RED4.Types.Enums;

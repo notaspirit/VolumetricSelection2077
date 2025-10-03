@@ -2,6 +2,7 @@ using System.Linq;
 using MessagePack;
 using SharpDX;
 using VolumetricSelection2077.Converters.Simple;
+using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
 using WolvenKit.RED4.Types;

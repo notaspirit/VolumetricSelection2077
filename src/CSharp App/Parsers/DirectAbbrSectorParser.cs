@@ -42,7 +42,7 @@ public class DirectAbbrSectorParser
                     Logger.Warning($"Failed to parse embedded file {efile.FileName}");
                     continue;
                 }
-                CacheService.Instance.WriteSingleEntry(new WriteRequest(efile.FileName, MessagePackSerializer.Serialize(parsedMesh)));
+                CacheService.Instance.WriteSingleEntry(new WriteCacheRequest(efile.FileName, MessagePackSerializer.Serialize(parsedMesh)));
             }
         }
         

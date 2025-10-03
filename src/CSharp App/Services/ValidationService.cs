@@ -254,7 +254,7 @@ namespace VolumetricSelection2077.Services
         /// <param name="minimumProgramVersion">Oldest VS2077 that the cache can be from</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException">Did not find game executable</exception>
-        public static bool ValidateCache(CacheService.CacheDatabaseMetadata metadata, string gamePath, string minimumProgramVersion)
+        public static bool ValidateCache(CacheDatabaseMetadata metadata, string gamePath, string minimumProgramVersion)
         {
             var gameExePath = Path.Combine(gamePath, "bin", "x64", "Cyberpunk2077.exe");
             if (!File.Exists(gameExePath))

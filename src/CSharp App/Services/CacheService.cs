@@ -9,51 +9,18 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using LightningDB;
 using MessagePack;
-using Microsoft.ClearScript.Util.Web;
 using Microsoft.VisualBasic.FileIO;
 using SharpDX;
-using VolumetricSelection2077.Helpers;
+using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Models;
-using WolvenKit.Core.Extensions;
-using WolvenKit.RED4.Types;
 using SearchOption = System.IO.SearchOption;
 
 namespace VolumetricSelection2077.Services;
 
-public enum CacheDatabases
-{
-    Vanilla,
-    Modded,
-    VanillaBounds,
-    ModdedBounds,
-    All
-}
-
-public class ReadRequest
-{
-    public CacheDatabases Database { get; set; }
-    public string Key { get; set; }
-    public ReadRequest(string key, CacheDatabases database = CacheDatabases.Vanilla)
-    {
-        Key = key;
-        Database = database;
-    }
-}
-
-public class WriteRequest
-{
-    public CacheDatabases Database { get; set; }
-    public string Key { get; set; }
-    public byte[] Data { get; set; }
-    public WriteRequest(string key, byte[] data, CacheDatabases database = CacheDatabases.Vanilla)
-    {
-        Key = key;
-        Data = data;
-        Database = database;
-    }
-}
-
-public class CacheService
+/// <summary>
+/// This part of the class is responsible for managing the instance, lightingdb and debug / metadata. 
+/// </summary>
+public partial class CacheService
 {
     private static CacheService? _instance;
     private SettingsService _settings;
@@ -64,7 +31,7 @@ public class CacheService
     private static readonly int MaxReaders = 512;
     private static readonly long MapSize = Gb * 100;
     private static readonly ulong EstimatedBoundsEntrySizeInBytes = 116;
-    static ConcurrentQueue<WriteRequest> _requestWriteQueue = new();
+    static ConcurrentQueue<WriteCacheRequest> _requestWriteQueue = new();
     private readonly object _lock = new object();
     private LightningDatabase _vanillaDatabase;
     private LightningDatabase _moddedDatabase;
@@ -90,6 +57,7 @@ public class CacheService
             return _instance;
         }
     }
+    
     /// <summary>
     /// Initializes the Cache Service at the directory defined in the settings, sets Initialized bool if successful
     /// </summary>
@@ -170,271 +138,6 @@ public class CacheService
     public void StopListening()
     {
         IsProcessing = false;
-    }
-    
-    /// <summary>
-    /// Gets a single entry from the cache 
-    /// </summary>
-    /// <param name="request"></param>
-    /// <returns>null if db is not supported, value doesn't exist or cache service is uninitialized</returns>
-    public byte[]? GetEntry(ReadRequest request)
-    {
-        if (!_isInitialized) return null;
-        using var tx = _env.BeginTransaction();
-        LightningDatabase[] dbs;
-        switch (request.Database)
-        {
-            case CacheDatabases.Vanilla:
-                dbs = new[] { _vanillaDatabase };
-                break;
-            case CacheDatabases.Modded:
-                dbs = new[] { _moddedDatabase };
-                break;
-            case CacheDatabases.All:
-                dbs = new[] { _vanillaDatabase, _moddedDatabase };
-                break;
-            default:
-                return null;
-        }
-
-        foreach (LightningDatabase db in dbs)
-        {
-            var (code, _, value) = tx.Get(db, Encoding.UTF8.GetBytes(request.Key));
-            if (code == MDBResultCode.Success)
-            {
-                return value.CopyToNewArray();
-            }
-        }
-        return null;
-    }
-
-    /// <summary>
-    /// Gets all entries from the provided database.
-    /// </summary>
-    /// <param name="db"></param>
-    /// <returns></returns>
-    /// <exception cref="Exception">if cache is not initialized</exception>
-    private KeyValuePair<string, byte[]>[] GetAllEntries(LightningDatabase db)
-    {
-        using var tx = _env.BeginTransaction();
-        KeyValuePair<string, byte[]>[] entries = new KeyValuePair<string, byte[]>[db.DatabaseStats.Entries];
-        using (var cursor = tx.CreateCursor(db))
-        {
-            int i = 0;
-            while (cursor.Next() == MDBResultCode.Success)
-            {
-                entries[i] = new KeyValuePair<string, byte[]>(Encoding.UTF8.GetString(cursor.GetCurrent().key.CopyToNewArray()), cursor.GetCurrent().value.CopyToNewArray());
-                i++;
-            }
-        }
-        return entries;
-    }
-    
-    /// <summary>
-    /// Gets all entries from the specified database.
-    /// </summary>
-    /// <param name="database"></param>
-    /// <returns></returns>
-    /// <remarks>returns null if the cache is not initialized, database doesn't exist or the target is all databases</remarks>
-    public KeyValuePair<string, byte[]>[]? GetAllEntries(CacheDatabases database)
-    {
-        if (!_isInitialized) return null;
-        switch (database)
-        {
-            case CacheDatabases.Vanilla:
-                return GetAllEntries(_vanillaDatabase);
-            case CacheDatabases.Modded:
-                return GetAllEntries(_moddedDatabase);
-            case CacheDatabases.VanillaBounds:
-                return GetAllEntries(_vanillaBoundsDatabase);
-            case CacheDatabases.ModdedBounds:
-                return GetAllEntries(_moddedBoundsDatabase);
-            case CacheDatabases.All:
-                return null;
-            default:
-                return null;
-        }
-    }
-    
-    /// <summary>
-    /// Writes a single entry to the cache
-    /// </summary>
-    /// <param name="request"></param>
-    /// <exception cref="Exception">Cache is uninitialized</exception>
-    public void WriteSingleEntry(WriteRequest request)
-    {
-        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling WriteSingleEntry");
-        using var tx = _env.BeginTransaction();
-        switch (request.Database)
-        {
-            case CacheDatabases.Vanilla:
-                tx.Put(_vanillaDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
-                break;
-            case CacheDatabases.Modded:
-                tx.Put(_moddedDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
-                break;
-        }
-        tx.Commit();
-    }
-    
-    /// <summary>
-    /// Enqueues AbbrSector (serialized on a background thread) to be written to cache
-    /// </summary>
-    /// <param name="path">game file path</param>
-    /// <param name="sector"></param>
-    /// <param name="database"></param>
-    public void WriteEntry(string path, AbbrSector sector, CacheDatabases database)
-    {
-        if (!_isInitialized) return;
-        _ = Task.Run(() =>
-        {
-            var request = new WriteRequest(path, MessagePackSerializer.Serialize(sector), database);
-            _requestWriteQueue.Enqueue(request);
-        });
-    }
-    
-    /// <summary>
-    /// Enqueues AbbrMesh (serialized on a background thread) to be written to cache
-    /// </summary>
-    /// <param name="path">game file path</param>
-    /// <param name="mesh"></param>
-    /// <param name="database"></param>
-    public void WriteEntry(string path, AbbrMesh mesh, CacheDatabases database)
-    {
-        if (!_isInitialized) return;
-        _ = Task.Run(() =>
-        {
-            var request = new WriteRequest(path, MessagePackSerializer.Serialize(mesh), database);
-            _requestWriteQueue.Enqueue(request);
-        });
-    }
-    
-    /// <summary>
-    /// Enqueues serialized data to be written to cache
-    /// </summary>
-    /// <param name="request"></param>
-    public void WriteEntry(WriteRequest request)
-    {
-        if (!_isInitialized) return;
-        _requestWriteQueue.Enqueue(request);
-    }
-    
-    /// <summary>
-    /// Loops while IsProcessing is true or request queue is > 0, writes all entries in bulk to cache
-    /// </summary>
-    /// <exception cref="Exception">Cache Service is not initialized</exception>
-    private async Task ProcessWriteQueue()
-    {
-        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling ProcessWriteQueue");
-        bool wroteExitLog = false;
-        while (IsProcessing || _requestWriteQueue.Count > 0)
-        {
-            await Task.Delay(BatchDelay);
-            if (!IsProcessing && !wroteExitLog && _requestWriteQueue.Count > 0)
-            {
-                Logger.Warning($"Continuing to write {_requestWriteQueue.Count} entries to cache, do not close the application...");
-                wroteExitLog = true;
-            }
-
-            if (!(_requestWriteQueue.Count > 0)) continue;
-            WriteRequest[] requests;
-    
-            lock (_lock)
-            {
-                requests = _requestWriteQueue.ToArray();
-                _requestWriteQueue.Clear();
-            }
-            
-            List<WriteRequest> requestsModded = new();
-            List<WriteRequest> requestsVanilla = new();
-            List<WriteRequest> requestsModdedBounds = new();
-            List<WriteRequest> requestsVanillaBounds = new();
-            foreach (var request in requests)
-            {
-                switch (request.Database)
-                {
-                    case CacheDatabases.Vanilla:
-                        requestsVanilla.Add(request);
-                        break;
-                    case CacheDatabases.Modded:
-                        requestsModded.Add(request);
-                        break;
-                    case CacheDatabases.VanillaBounds:
-                        requestsVanillaBounds.Add(request);
-                        break;
-                    case CacheDatabases.ModdedBounds:
-                        requestsModdedBounds.Add(request);
-                        break;
-                }
-            }
-            
-            using var tx = _env.BeginTransaction();
-            if (requestsModded.Count > 0)
-            {
-                foreach (var request in requestsModded)
-                {
-                    var status = tx.Put(_moddedDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
-                    if (status != MDBResultCode.Success)
-                        Logger.Error($"Failed to write data with key {request.Key} to {request.Database} with status {status}");
-                }
-            }
-            
-            if (requestsVanilla.Count > 0)
-            {
-                foreach (var request in requestsVanilla)
-                {
-                    var status = tx.Put(_vanillaDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
-                    if (status != MDBResultCode.Success)
-                        Logger.Error($"Failed to write data with key {request.Key} to {request.Database} with status {status}");
-                }
-            }
-            
-            if (requestsVanillaBounds.Count > 0)
-            {
-                foreach (var request in requestsVanillaBounds)
-                {
-                    var status = tx.Put(_vanillaBoundsDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
-                    if (status != MDBResultCode.Success)
-                        Logger.Error($"Failed to write data with key {request.Key} to {request.Database} with status {status}");
-                }
-            }
-                
-            if (requestsModdedBounds.Count > 0)
-            {
-                foreach (var request in requestsModdedBounds)
-                {
-                    var status = tx.Put(_moddedBoundsDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
-                    if (status != MDBResultCode.Success)
-                        Logger.Error($"Failed to write data with key {request.Key} to {request.Database} with status {status}");
-                }
-            }
-
-            var commitStatus = tx.Commit();
-            if (commitStatus != MDBResultCode.Success)
-                Logger.Error($"Failed to commit {requests.Length} entries to cache with status {commitStatus}");
-        }
-
-        if (!_settings.CacheEnabled)
-        {
-            ClearDatabase(CacheDatabases.Vanilla, UtilService.ShouldResize(CacheDatabases.Vanilla, GetStats(), _settings.CacheDirectory));
-            ClearDatabase(CacheDatabases.Modded, UtilService.ShouldResize(CacheDatabases.Modded, GetStats(), _settings.CacheDirectory));
-        }
-            
-        
-        if (wroteExitLog)
-        {
-            Logger.Success("Finished writing all queued entries to cache");
-        }
-    }
-
-    /// <summary>
-    /// Deletes the cache metadata file if it exists
-    /// </summary>
-    public void ClearMetaData()
-    {
-        var metaDataFilePath = Path.Combine(_settings.CacheDirectory, "metadata.json");
-        if (File.Exists(metaDataFilePath))
-            File.Delete(metaDataFilePath);
     }
     
     /// <summary>
@@ -659,31 +362,6 @@ public class CacheService
         return true;
     }
 
-    public class CacheStats
-    {
-        public long VanillaEntries { get; set; }
-        public FileSize EstVanillaSize { get; set; }
-        public long ModdedEntries { get; set; }
-        public FileSize EstModdedSize { get; set; }
-
-        public long VanillaBoundsEntries { get; set; }
-        public FileSize EstVanillaBoundsSize { get; set; }
-        public long ModdedBoundsEntries { get; set; }
-        public FileSize EstModdedBoundsSize { get; set; }
-        
-        public CacheStats()
-        {
-            VanillaEntries = -1;
-            EstVanillaSize = new(0);
-            ModdedEntries = -1;
-            EstModdedSize = new(0);
-            VanillaBoundsEntries = -1;
-            EstVanillaBoundsSize = new(0);
-            ModdedBoundsEntries = -1;
-            EstModdedBoundsSize = new(0);
-        }
-    }
-
     /// <summary>
     /// Gets cache stats
     /// </summary>
@@ -736,21 +414,6 @@ public class CacheService
             EstModdedBoundsSize = new(estModdedBoundsSize)
         };
     }
-    
-    public class DataBaseSample
-    {
-        public int moddedEntriesCount { get; set; }
-        public int vanillaEntriesCount { get; set; }
-        public string[] moddedEntriesSample { get; set; }
-        public string[] vanillaEntriesSample { get; set; }
-        public DataBaseSample(int moddedEntriesCount, int vanillaEntriesCount, string[] moddedEntriesSample, string[] vanillaEntriesSample)
-        {
-            this.moddedEntriesCount = moddedEntriesCount;
-            this.vanillaEntriesCount = vanillaEntriesCount;
-            this.moddedEntriesSample = moddedEntriesSample;
-            this.vanillaEntriesSample = vanillaEntriesSample;
-        }
-    }
 
     /// <summary>
     /// Gets a sample of all cache entries (only used for testing)
@@ -758,7 +421,7 @@ public class CacheService
     /// <param name="sampleSize"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    public DataBaseSample GetSample(int sampleSize)
+    public CacheDatabaseSample GetSample(int sampleSize)
     {
         if (!_isInitialized) throw new Exception("Cache service must be initialized before calling GetSample");
         var moddedSample = new string[sampleSize];
@@ -793,20 +456,7 @@ public class CacheService
             cursor.First();
             moddedCount = cursor.AsEnumerable().Count();
         }
-        return new DataBaseSample(moddedCount, vanillaCount, moddedSample, vanillaSample);
-    }
-
-    public class CacheDatabaseMetadata
-    {
-        public string VS2077Version { get; set; }
-        public string GameVersion { get; set; }
-        public bool AreVanillaSectorBBsBuild { get; set; }
-        public CacheDatabaseMetadata(string vs2077Version, string gameVersion)
-        {
-            VS2077Version = vs2077Version;
-            GameVersion = gameVersion;
-            AreVanillaSectorBBsBuild = false;
-        }
+        return new CacheDatabaseSample(moddedCount, vanillaCount, moddedSample, vanillaSample);
     }
     
     /// <summary>
@@ -921,5 +571,15 @@ public class CacheService
         tx.Commit();
         SetMetaDataVanillaBoundsStatus(true);
         Logger.Info($"Loaded {dump.Sectors.Count} sector bounds from file {path}...");
+    }
+
+    /// <summary>
+    /// Deletes the cache metadata file if it exists
+    /// </summary>
+    private void ClearMetaData()
+    {
+        var metaDataFilePath = Path.Combine(_settings.CacheDirectory, "metadata.json");
+        if (File.Exists(metaDataFilePath))
+            File.Delete(metaDataFilePath);
     }
 }

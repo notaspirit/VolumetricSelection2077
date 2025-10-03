@@ -623,7 +623,7 @@ public class ProcessService
         
         AxlRemovalSector?[] sectorsOutputRaw;
 
-        var vanillaBoundingBoxes = _cacheService.GetAllEntries(CacheDatabases.VanillaBounds);
+        var vanillaBoundingBoxes = _cacheService.GetAllEntries(VEnums.CacheDatabases.VanillaBounds);
         
         CETOutputFile.Sectors.Add(vanillaBoundingBoxes
             .Where(x => CETOutputFile.Aabb.Contains(MessagePackSerializer.Deserialize<BoundingBox>(x.Value)) != ContainmentType.Disjoint)
@@ -631,7 +631,7 @@ public class ProcessService
 
         if (_settings.SupportModdedResources)
         {
-            var moddedBoundingBoxes = _cacheService.GetAllEntries(CacheDatabases.ModdedBounds);
+            var moddedBoundingBoxes = _cacheService.GetAllEntries(VEnums.CacheDatabases.ModdedBounds);
             CETOutputFile.Sectors.Add(moddedBoundingBoxes
                 .Where(x => CETOutputFile.Aabb.Contains(MessagePackSerializer.Deserialize<BoundingBox>(x.Value)) != ContainmentType.Disjoint)
                 .Select(x => x.Key));

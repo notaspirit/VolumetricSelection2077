@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using VolumetricSelection2077.Enums;
 using WolvenKit;
 using WolvenKit.Common.Services;
 using WolvenKit.Core.Interfaces;
@@ -137,7 +138,7 @@ public class GameFileService
     {
         if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
 
-        var cachedMesh = _cacheService.GetEntry(new ReadRequest(path, _readCacheTarget));
+        var cachedMesh = _cacheService.GetEntry(new ReadCacheRequest(path, _readCacheTarget));
         if (MessagePackHelper.TryDeserialize<AbbrMesh>(cachedMesh, out var mesh)) return mesh;
         
         var rawMesh = ArchiveManager.GetCR2WFile(path);
@@ -176,7 +177,7 @@ public class GameFileService
     public AbbrSector? GetSector(string path)
     {
         if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
-        var cachedSector = _cacheService.GetEntry(new ReadRequest(path, _readCacheTarget));
+        var cachedSector = _cacheService.GetEntry(new ReadCacheRequest(path, _readCacheTarget));
         if (MessagePackHelper.TryDeserialize<AbbrSector>(cachedSector, out var mesh))
         {
             return mesh;

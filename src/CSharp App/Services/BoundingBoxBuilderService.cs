@@ -29,7 +29,7 @@ public class BoundingBoxBuilderService
     /// </summary>
     /// <param name="sectorPath">path to the sector within the archives</param>
     /// <param name="database">database to save the output to</param>
-    public async Task ProcessStreamingsector(string sectorPath, CacheDatabases? database)
+    public async Task ProcessStreamingsector(string sectorPath, VEnums.CacheDatabases? database)
     {
         try
         {
@@ -169,7 +169,7 @@ public class BoundingBoxBuilderService
             else
                 bb = new BoundingBox(min, max);
             if (database != null)
-                _cacheService.WriteEntry(new WriteRequest(sectorPath, MessagePackSerializer.Serialize(bb), (CacheDatabases)database));
+                _cacheService.WriteEntry(new WriteCacheRequest(sectorPath, MessagePackSerializer.Serialize(bb), (VEnums.CacheDatabases)database));
         }
         catch (Exception e)
         {
@@ -222,7 +222,7 @@ public class BoundingBoxBuilderService
                 moddedSectors = _gameFileService.ArchiveManager.GetModArchives().SelectMany(x => x.Files.Values.Where(y => y.Extension == ".streamingsector").Select(y => y.FileName)).ToList();
                 break;
             case BuildBoundsMode.MissingModded:
-                var cachedModdedBounds = _cacheService.GetAllEntries(CacheDatabases.ModdedBounds).Select(x => x.Key).ToList();;
+                var cachedModdedBounds = _cacheService.GetAllEntries(VEnums.CacheDatabases.ModdedBounds).Select(x => x.Key).ToList();;
                 var archiveModdedSectors = _gameFileService.ArchiveManager.GetModArchives().SelectMany(x => x.Files.Values.Where(y => y.Extension == ".streamingsector").Select(y => y.FileName)).ToList();
                 moddedSectors = archiveModdedSectors.Except(cachedModdedBounds).ToList();
                 break;
@@ -231,9 +231,9 @@ public class BoundingBoxBuilderService
         
         _cacheService.StartListening();
         
-        List<Task> tasks = vanillaSectors.Distinct().Select(x => Task.Run(() => ProcessStreamingsector(x, CacheDatabases.VanillaBounds))).ToList();
+        List<Task> tasks = vanillaSectors.Distinct().Select(x => Task.Run(() => ProcessStreamingsector(x, VEnums.CacheDatabases.VanillaBounds))).ToList();
         tasks.AddRange(moddedSectors.Distinct().Select(x =>
-            Task.Run(() => ProcessStreamingsector(x, CacheDatabases.ModdedBounds))));
+            Task.Run(() => ProcessStreamingsector(x, VEnums.CacheDatabases.ModdedBounds))));
         Logger.Info($"Building Bounds for {tasks.Count} Sectors...");
         await Task.WhenAll(tasks);
         

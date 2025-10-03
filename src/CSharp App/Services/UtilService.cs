@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
+using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Models;
 using WolvenKit.Interfaces.Extensions;
 using YamlDotNet.Serialization;
@@ -124,7 +125,7 @@ namespace VolumetricSelection2077.Services
         /// <param name="resizeAfterBytes">threshold for resizing</param>
         /// <returns></returns>
         /// <exception cref="ArgumentOutOfRangeException">if CacheDatabases.All is passed</exception>
-        public static bool ShouldResize(CacheDatabases db, CacheService.CacheStats stats, string cacheDirectory, ulong resizeAfterBytes = 1024 * 1024 * 1024)
+        public static bool ShouldResize(CacheDatabases db, CacheStats stats, string cacheDirectory, ulong resizeAfterBytes = 1024 * 1024 * 1024)
         {
             FileSize sizeToRemove;
             FileSize totalSize = new FileSize(stats.EstVanillaSize.Bytes + 

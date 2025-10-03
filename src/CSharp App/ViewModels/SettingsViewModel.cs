@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using Avalonia.Media.Imaging;
+using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.Services;
 using VolumetricSelection2077.Views;
@@ -14,8 +15,8 @@ namespace VolumetricSelection2077.ViewModels
 
         public SettingsViewPersistentCache PersistentCache { get; }
 
-        private CacheService.CacheStats _cacheStats;
-        public CacheService.CacheStats CacheStats
+        private CacheStats _cacheStats;
+        public CacheStats CacheStats
         {
             get => _cacheStats;
             set
@@ -68,12 +69,12 @@ namespace VolumetricSelection2077.ViewModels
                 if (CacheService.Instance.IsInitialized)
                     CacheStats = CacheService.Instance.GetStats();
                 else
-                    CacheStats = new CacheService.CacheStats();
+                    CacheStats = new CacheStats();
             }
             catch (Exception ex)
             {
                 Logger.Exception(ex, $"Failed to load Cache!");
-                CacheStats = new CacheService.CacheStats();
+                CacheStats = new CacheStats();
             }
 
             try

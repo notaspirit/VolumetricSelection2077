@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Controls.Documents;
 using Serilog;
+using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
 
@@ -74,9 +75,9 @@ public class TestCache : IDebugTool
         Logger.Info($"Got Sector cached time: {swGetSectorCache.ElapsedMilliseconds} ms");
         Logger.Info($"cached sector is correct: {cachedSector == regularSector}");
         
-        cs.WriteEntry(new WriteRequest("YesSIR", Encoding.UTF8.GetBytes("value"), CacheDatabases.Vanilla));
+        cs.WriteEntry(new WriteCacheRequest("YesSIR", Encoding.UTF8.GetBytes("value"), CacheDatabases.Vanilla));
         Task.Delay(1000).Wait();
-        var result = cs.GetEntry(new ReadRequest("YesSIR", CacheDatabases.Vanilla));
+        var result = cs.GetEntry(new ReadCacheRequest("YesSIR", CacheDatabases.Vanilla));
         if (result == null)
         {
             Logger.Error("Failed to get entry");
@@ -96,9 +97,9 @@ public class TestCache : IDebugTool
     {
         var cs = CacheService.Instance;
         cs.StartListening();
-        cs.WriteEntry(new WriteRequest("YesSIR", Encoding.UTF8.GetBytes("value"), CacheDatabases.Vanilla));
+        cs.WriteEntry(new WriteCacheRequest("YesSIR", Encoding.UTF8.GetBytes("value"), CacheDatabases.Vanilla));
         Task.Delay(1000).Wait();
-        var result = cs.GetEntry(new ReadRequest("YesSIR", CacheDatabases.Vanilla));
+        var result = cs.GetEntry(new ReadCacheRequest("YesSIR", CacheDatabases.Vanilla));
         if (result == null)
         {
             Logger.Error("Failed to get entry");
@@ -110,11 +111,11 @@ public class TestCache : IDebugTool
         cs.StopListening();
 
         var testSector = cs.GetEntry(
-            new ReadRequest("base\\worlds\\03_night_city\\_compiled\\default\\exterior_-4_-8_0_4.streamingsector"));
+            new ReadCacheRequest("base\\worlds\\03_night_city\\_compiled\\default\\exterior_-4_-8_0_4.streamingsector"));
         Logger.Info($"{testSector?.Length ?? null}");
         
         var testMesh = cs.GetEntry(
-            new ReadRequest("base\\environment\\decoration\\medical\\accessories\\medkit\\medkit_d_mobile.mesh"));
+            new ReadCacheRequest("base\\environment\\decoration\\medical\\accessories\\medkit\\medkit_d_mobile.mesh"));
         Logger.Info($"{testMesh?.Length ?? null}");
     }
 }
