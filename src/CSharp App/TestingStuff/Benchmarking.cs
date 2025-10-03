@@ -49,7 +49,7 @@ public class Benchmarking
     {
         Logger.Info("Starting Benchmarks");
         // CacheService.Instance.DropDatabase(CacheDatabases.Vanilla);
-        var processingService = new ProcessService(dialogService);
+        var processingService = new ProcessDispatcher(dialogService);
         string benchFileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "VolumetricSelection2077", "benchmarks");
         string benchOutputDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -71,7 +71,7 @@ public class Benchmarking
             var stopwatch = Stopwatch.StartNew();
             try
             {
-                var (status, error) =  await processingService.MainProcessTask(file, benchOutputDir);
+                var (status, error) =  await processingService.StartProcess(file, benchOutputDir);
                 if (status != true || error != "")
                 {
                     throw new Exception($"Error: {error}");

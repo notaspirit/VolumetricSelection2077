@@ -22,7 +22,7 @@ using VolumetricSelection2077.ViewStructures;
 namespace VolumetricSelection2077;
 public partial class MainWindow : Window
 {
-    private readonly ProcessService _processService;
+    private readonly ProcessDispatcher _processService;
     private MainWindowViewModel _mainWindowViewModel;
     private ProgressBar _progressBar;
     private ProgressBar _progressBarBroder;
@@ -42,7 +42,7 @@ public partial class MainWindow : Window
         }
         DataContext = new MainWindowViewModel();
         _mainWindowViewModel = DataContext as MainWindowViewModel;
-        _processService = new ProcessService(new DialogService(this));
+        _processService = new ProcessDispatcher(new DialogService(this));
         Closed += OnMainWindowClosed;
         
         _progressBar = this.FindControl<ProgressBar>("ProgressBar");
@@ -115,7 +115,7 @@ public partial class MainWindow : Window
             AddQueuedFilters();
             var (success, error) = await Task.Run(() =>
             { 
-                return _processService.MainProcessTask();
+                return _processService.StartProcess();
             });
             if (!success)
             {
