@@ -139,7 +139,7 @@ public static class WorldBuilderMergingService
         WriteSpawnable(element.Spawnable, bw);
     }
 
-        private static void WriteSpawnable(Spawnable spawnable, BinaryWriter bw)
+    private static void WriteSpawnable(Spawnable spawnable, BinaryWriter bw)
     {
         WriteSpawnableBase(spawnable, bw);
         switch (spawnable)
