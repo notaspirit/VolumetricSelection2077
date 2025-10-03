@@ -32,6 +32,43 @@ namespace VolumetricSelection2077.Services
         }
         
         /// <summary>
+        /// Validates Cache status, GameFileService status, output directory, selectionfile and filename
+        /// </summary>
+        /// <param name="gamePath">Path to the root of the game directory</param>
+        /// <param name="outputFilename">Output filename</param>
+        /// <returns></returns>
+        /// <exception cref="Exception">Fails to create directory it tried to validate</exception>
+        public InputValidationResult ValidateInput(string gamePath, string outputFilename)
+        {
+            bool cacheStatus = ValidateCacheStatus();
+            bool gfsStatus = ValidateGameFileService();
+            var outDirVR = ValidateAndCreateDirectory(_settingsService.OutputDirectory);
+            var selFileVR = ValidateSelectionFile(gamePath);
+            var validFileName = string.IsNullOrEmpty(outputFilename) ? PathValidationResult.Empty : ValidatePath(@"E:\" + outputFilename + ".xl");
+            var resourceNameFilterValid = ValidateResourcePathFilter();
+            var debugNameFilterValid = ValidateDebugNameFilter();
+            var vanillaSectorBBsBuild = AreVanillaSectorBBsBuild();
+            var moddedSectorBBsBuild = AreModdedSectorBBsBuild();
+            var subtractionTargetExists = SubtractionTargetExists();
+            
+            return new InputValidationResult()
+            {
+                CacheStatus = cacheStatus,
+                GameFileServiceStatus = gfsStatus,
+                ValidOutputDirectory = outDirVR.Item1,
+                OutputDirectroyPathValidationResult = outDirVR.Item2,
+                SelectionFileExists = selFileVR.Item1,
+                SelectionFilePathValidationResult = selFileVR.Item2,
+                OutputFileName = validFileName,
+                ResourceNameFilterValid = resourceNameFilterValid,
+                DebugNameFilterValid = debugNameFilterValid,
+                VanillaSectorBBsBuild = vanillaSectorBBsBuild,
+                ModdedSectorBBsBuild = moddedSectorBBsBuild,
+                SubtractionTargetExists = subtractionTargetExists
+            };
+        }
+        
+        /// <summary>
         /// Checks if the given directory is a valid game install
         /// </summary>
         /// <param name="gamePath">the directory to check</param>
@@ -74,43 +111,6 @@ namespace VolumetricSelection2077.Services
                 return (false, vpr);
             }
             return (true, vpr);
-        }
-        
-        /// <summary>
-        /// Validates Cache status, GameFileService status, output directory, selectionfile and filename
-        /// </summary>
-        /// <param name="gamePath">Path to the root of the game directory</param>
-        /// <param name="outputFilename">Output filename</param>
-        /// <returns></returns>
-        /// <exception cref="Exception">Fails to create directory it tried to validate</exception>
-        public InputValidationResult ValidateInput(string gamePath, string outputFilename)
-        {
-            bool cacheStatus = ValidateCacheStatus();
-            bool gfsStatus = ValidateGameFileService();
-            var outDirVR = ValidateAndCreateDirectory(_settingsService.OutputDirectory);
-            var selFileVR = ValidateSelectionFile(gamePath);
-            var validFileName = string.IsNullOrEmpty(outputFilename) ? PathValidationResult.Empty : ValidatePath(@"E:\" + outputFilename + ".xl");
-            var resourceNameFilterValid = ValidateResourcePathFilter();
-            var debugNameFilterValid = ValidateDebugNameFilter();
-            var vanillaSectorBBsBuild = AreVanillaSectorBBsBuild();
-            var moddedSectorBBsBuild = AreModdedSectorBBsBuild();
-            var subtractionTargetExists = SubtractionTargetExists();
-            
-            return new InputValidationResult()
-            {
-                CacheStatus = cacheStatus,
-                GameFileServiceStatus = gfsStatus,
-                ValidOutputDirectory = outDirVR.Item1,
-                OutputDirectroyPathValidationResult = outDirVR.Item2,
-                SelectionFileExists = selFileVR.Item1,
-                SelectionFilePathValidationResult = selFileVR.Item2,
-                OutputFileName = validFileName,
-                ResourceNameFilterValid = resourceNameFilterValid,
-                DebugNameFilterValid = debugNameFilterValid,
-                VanillaSectorBBsBuild = vanillaSectorBBsBuild,
-                ModdedSectorBBsBuild = moddedSectorBBsBuild,
-                SubtractionTargetExists = subtractionTargetExists
-            };
         }
         
         /// <summary>
