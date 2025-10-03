@@ -1,6 +1,6 @@
 using MessagePack;
 
-namespace VolumetricSelection2077.Helpers;
+namespace VolumetricSelection2077.MessagePack.Helpers;
 
 public static class MessagePackHelper
 {
