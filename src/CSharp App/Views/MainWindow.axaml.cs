@@ -428,8 +428,8 @@ public partial class MainWindow : Window
         }
         
         var validationResult = ValidationService.ValidateGamePath(_mainWindowViewModel.Settings.GameDirectory).Item1;
-        if (!(validationResult == ValidationService.GamePathResult.Valid ||
-              validationResult == ValidationService.GamePathResult.CetNotFound))
+        if (!(validationResult == GamePathValidationResult.Valid ||
+              validationResult == GamePathValidationResult.CetNotFound))
         {
             Logger.Error("Failed to initialize VS2077! Invalid Game Path, update it in the settings and restart the application.");
             _mainWindowViewModel.AppInitialized = false;
