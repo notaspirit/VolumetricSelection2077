@@ -1,7 +1,7 @@
 using System.Linq;
 using MessagePack;
 using SharpDX;
-using VolumetricSelection2077.Converters;
+using VolumetricSelection2077.Converters.Simple;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
 using WolvenKit.RED4.Types;
@@ -68,7 +68,7 @@ public class CompareNewSectorBoundsWithStreamingBlock : IDebugTool
             }
             
             var customSize = customBoundsBB.Size;
-            var blockSize = new BoundingBox(WolvenkitToSharpDX.Vector3(sector.StreamingBox.Min), WolvenkitToSharpDX.Vector3(sector.StreamingBox.Max)).Size;
+            var blockSize = new BoundingBox(WolvenkitToSharpDXConverter.Vector3(sector.StreamingBox.Min), WolvenkitToSharpDXConverter.Vector3(sector.StreamingBox.Max)).Size;
             var difference = blockSize - customSize;
             var differencePercent = difference / customSize;
             Logger.Info($"Custom bounds for {sector.Data.DepotPath} differ by {difference} with {differencePercent * 100}% of the block size. ({customSize} vs {blockSize})");
@@ -94,7 +94,7 @@ public class CompareNewSectorBoundsWithStreamingBlock : IDebugTool
             }
             
             var customSize = customBoundsBB.Size;
-            var blockSize = new BoundingBox(WolvenkitToSharpDX.Vector3(sector.StreamingBox.Min), WolvenkitToSharpDX.Vector3(sector.StreamingBox.Max)).Size;
+            var blockSize = new BoundingBox(WolvenkitToSharpDXConverter.Vector3(sector.StreamingBox.Min), WolvenkitToSharpDXConverter.Vector3(sector.StreamingBox.Max)).Size;
             var difference =  blockSize - customSize;
             var differencePercent =   difference / customSize;
             Logger.Info($"Custom bounds for {sector.Data.DepotPath} differ by {difference} with {differencePercent * 100}% of the block size. ({customSize} vs {blockSize})");

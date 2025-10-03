@@ -17,15 +17,15 @@ using WolvenKit.RED4.Types;
 using Activator = System.Activator;
 using Vector4 = SharpDX.Vector4;
 
-namespace VolumetricSelection2077.Converters;
+namespace VolumetricSelection2077.Converters.Complex;
 
-public class AxlRemovalToWorldBuilder
+public class AxlRemovalToWorldBuilderConverter
 {
     private GameFileService _gfs;
     private List<string> _warnedTypes;
     private Dictionary<string, List<string>> _embeddedResourcePaths;
     
-    public AxlRemovalToWorldBuilder()
+    public AxlRemovalToWorldBuilderConverter()
     {
         _gfs = GameFileService.Instance;
         _warnedTypes = new List<string>();

@@ -1,10 +1,7 @@
-
-using System;
-using Newtonsoft.Json.Linq;
 using WolvenKit.RED4.Types;
 using Vector3 = SharpDX.Vector3;
 
-namespace VolumetricSelection2077.Converters;
+namespace VolumetricSelection2077.Converters.Simple;
 public class FixedPointVector3Converter
 {
     private const float Fixed_1 = 131072.0f;  // 131072.0f (2^17)

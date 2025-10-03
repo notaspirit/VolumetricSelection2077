@@ -1,8 +1,8 @@
 using SharpDX;
 
-namespace VolumetricSelection2077.Converters;
+namespace VolumetricSelection2077.Converters.Simple;
 
-public class WolvenkitToSharpDX
+public class WolvenkitToSharpDXConverter
 {
     public static Vector3 Vector3(WolvenKit.RED4.Types.Vector3 vector)
     {

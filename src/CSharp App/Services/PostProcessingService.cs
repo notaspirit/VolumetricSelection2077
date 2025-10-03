@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
-using VolumetricSelection2077.Converters;
+using VolumetricSelection2077.Converters.Complex;
 using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Json.Helpers;
 using VolumetricSelection2077.Models;
@@ -18,14 +18,14 @@ public class PostProcessingService
 {
     private readonly Progress _progress;
     private readonly SettingsService _settingsService;
-    private readonly AxlRemovalToWorldBuilder _removalToWorldBuilder;
+    private readonly AxlRemovalToWorldBuilderConverter _removalToWorldBuilderConverter;
     
     
     public PostProcessingService()
     {
         _progress = Progress.Instance;
         _settingsService = SettingsService.Instance;
-        _removalToWorldBuilder = new AxlRemovalToWorldBuilder();
+        _removalToWorldBuilderConverter = new AxlRemovalToWorldBuilderConverter();
     }
     
     /// <summary>
@@ -317,7 +317,7 @@ public class PostProcessingService
             Favorites = new()
         };
 
-        var convertedData = _removalToWorldBuilder.Convert(axlRemovalFile, _settingsService.OutputFilename);
+        var convertedData = _removalToWorldBuilderConverter.Convert(axlRemovalFile, _settingsService.OutputFilename);
         Logger.Success($"Found {convertedData.Children.OfType<PositionableGroup>().Sum(g => g.Children.Count)} WorldBuilder elements");
         if (!File.Exists(favoritesPath))
         {
