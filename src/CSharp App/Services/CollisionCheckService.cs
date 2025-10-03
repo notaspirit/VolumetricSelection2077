@@ -13,137 +13,6 @@ namespace VolumetricSelection2077.Services;
 public static class CollisionCheckService
 {
     /// <summary>
-    /// Returns an OBBs 3 axes
-    /// </summary>
-    /// <param name="obb"></param>
-    /// <returns></returns>
-    private static Vector3[] GetObbAxes(OrientedBoundingBox obb)
-    {
-        var x = new Vector3(obb.Transformation.M11, obb.Transformation.M12, obb.Transformation.M13);
-        var y = new Vector3(obb.Transformation.M21, obb.Transformation.M22, obb.Transformation.M23);
-        var z = new Vector3(obb.Transformation.M31, obb.Transformation.M32, obb.Transformation.M33);
-        
-        return new[]
-        {
-            x, y, z
-        };
-    }
-    /// <summary>
-    /// Checks for overlap (containment and intersection) between a polygon with n edges and an obb
-    /// </summary>
-    /// <param name="polygon"></param>
-    /// <param name="vertices"></param>
-    /// <param name="obb"></param>
-    /// <returns></returns>
-    public static bool CheckOverlapPolygonBox(uint[] polygon, Vector3[] vertices, OrientedBoundingBox obb)
-    {
-        var polyVerts = polygon.Select(index => vertices[index]).ToArray();
-        
-        var obbAxes = GetObbAxes(obb);
-        var obbHalfExtends = obb.Size / 2;
-        List<Vector3> axes = new List<Vector3>();
-        
-        axes.AddRange(obbAxes);
-        var plane = new Plane(polyVerts[0], polyVerts[1], polyVerts[2]);
-        axes.Add(plane.Normal);
-        
-        for (int i = 0; i < polyVerts.Length; i++)
-        {
-            Vector3 edge = polyVerts[(i + 1) % polyVerts.Length] - polyVerts[i];
-            foreach (var obbAxis in obbAxes)
-            {
-                Vector3 crossAxis = Vector3.Cross(edge, obbAxis);
-                if (crossAxis.LengthSquared() > 1e-6f) // Avoid near-zero vectors
-                    axes.Add(Vector3.Normalize(crossAxis));
-            }
-        }
-        
-        foreach (Vector3 axis in axes)
-        {
-            if (axis.LengthSquared() < 1e-6f)
-                continue;
-            float r =
-                Math.Abs(Vector3.Dot(obbAxes[0] * obbHalfExtends.X, axis)) +
-                Math.Abs(Vector3.Dot(obbAxes[1] * obbHalfExtends.Y, axis)) +
-                Math.Abs(Vector3.Dot(obbAxes[2] * obbHalfExtends.Z, axis));
-            
-            ProjectionInterval obbInterval = new ProjectionInterval(-r, r);
-            
-            float minPoly = float.MaxValue;
-            float maxPoly = float.MinValue;
-        
-            foreach (Vector3 vertex in polyVerts)
-            {
-                float projection = Vector3.Dot(vertex - obb.Center, axis);
-                minPoly = Math.Min(minPoly, projection);
-                maxPoly = Math.Max(maxPoly, projection);
-            }
-            
-            ProjectionInterval polyInterval = new ProjectionInterval(minPoly, maxPoly);
-            if (!obbInterval.Overlaps(polyInterval))
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-    
-    /// <summary>
-    /// Checks if a submesh overlaps with the obb
-    /// </summary>
-    /// <param name="submesh"></param>
-    /// <param name="obb"></param>
-    /// <returns></returns>
-    public static bool CheckOverlapSubMeshBox(AbbrSubMesh submesh, OrientedBoundingBox obb)
-    {
-        foreach (var poly in submesh.PolygonIndices)
-        {
-            if (CheckOverlapPolygonBox(poly, submesh.Vertices, obb))
-                return true;
-        }
-        return false;
-    }
-    
-    private struct ProjectionInterval
-    {
-        public float Min { get; }
-        public float Max { get; }
-        
-        public ProjectionInterval(float min, float max)
-        {
-            Min = min;
-            Max = max;
-        }
-        
-        public bool Overlaps(ProjectionInterval other)
-        {
-            return Max >= other.Min && Min <= other.Max;
-        }
-    }
-    /// <summary>
-    /// Converts a sharpdx vector4 to vector3
-    /// </summary>
-    /// <param name="v"></param>
-    /// <returns></returns>
-    private static Vector3 Vec4toVec3(Vector4 v)
-    {
-        Vector3 result;
-        if (Math.Abs(v.X) < float.Epsilon)
-        {
-            result = new Vector3(
-                v.X / v.W,
-                v.Y / v.W,
-                v.Z / v.W
-            );
-        }
-        else
-        {
-            result = new Vector3(v.X, v.Y, v.Z);
-        }
-        return result;
-    }
-    
-    /// <summary>
     /// Checks if a mesh node has overlap with the obb
     /// </summary>
     /// <param name="mesh"></param>
@@ -155,35 +24,6 @@ public static class CollisionCheckService
     /// <returns></returns>
     public static (bool, List<int>) IsMeshInsideBox(AbbrMesh mesh, OrientedBoundingBox selectionBoxOBB, BoundingBox selectionBoxAabb, AbbrSectorTransform[]? transforms, Matrix? matrixTransform = null, bool checkAllTransforms = false)
     {
-        static bool IsInsidePrivate(AbbrSubMesh submesh, OrientedBoundingBox selectionObb, BoundingBox selectionAabb, Matrix transform)
-        {
-            OrientedBoundingBox baseObb = new(submesh.BoundingBox);
-            baseObb.Transform(transform);
-            BoundingBox transformedAabb = baseObb.GetBoundingBox();
-            
-            ContainmentType aabbContainment = selectionAabb.Contains(transformedAabb);
-            if (aabbContainment != ContainmentType.Disjoint)
-            {
-                if (submesh.Vertices == null || submesh.PolygonIndices == null)
-                    return true;
-                
-                var adjustedSubmesh = new AbbrSubMesh()
-                {
-                    BoundingBox = submesh.BoundingBox,
-                    Vertices = new Vector3[submesh.Vertices.Length],
-                    PolygonIndices = submesh.PolygonIndices
-                };
-                for (int i = 0; i < submesh.Vertices.Length; i++)
-                {
-                    Vector4 translatedVertex = Vector4.Transform(new(submesh.Vertices[i], 1f), transform);
-                    adjustedSubmesh.Vertices[i] = Vec4toVec3(translatedVertex);
-                }
-                if (CheckOverlapSubMeshBox(adjustedSubmesh, selectionObb))
-                    return true;
-            }
-            return false;
-        }
-
         var outInstances = new List<int>();
         
         if (transforms == null && matrixTransform == null)
@@ -196,12 +36,11 @@ public static class CollisionCheckService
         {
             foreach (var submesh in mesh.SubMeshes)
             {
-                if (IsInsidePrivate(submesh, selectionBoxOBB, selectionBoxAabb, (Matrix)matrixTransform))
-                {
-                    if (!checkAllTransforms)
-                        return (true, outInstances);
-                    outInstances.Add(0);
-                }
+                if (!IsSubMeshInsideBox(submesh, selectionBoxOBB, selectionBoxAabb, (Matrix)matrixTransform))
+                    continue;
+                if (!checkAllTransforms)
+                    return (true, outInstances);
+                outInstances.Add(0);
             }
         }
 
@@ -215,12 +54,11 @@ public static class CollisionCheckService
                     Matrix localTransformMatrix = Matrix.Scaling(transform.Scale) * 
                                                   Matrix.RotationQuaternion(transform.Rotation) * 
                                                   Matrix.Translation(transform.Position);
-                    if (IsInsidePrivate(submesh, selectionBoxOBB, selectionBoxAabb, localTransformMatrix))
-                    {
-                        if (!checkAllTransforms)
-                            return (true, outInstances);
-                        outInstances.Add(transformIndex);
-                    }
+                    if (!IsSubMeshInsideBox(submesh, selectionBoxOBB, selectionBoxAabb, localTransformMatrix))
+                        continue;
+                    if (!checkAllTransforms)
+                        return (true, outInstances);
+                    outInstances.Add(transformIndex);
                 }
                 transformIndex++;
             }
@@ -361,9 +199,149 @@ public static class CollisionCheckService
         
         Vector4 transformedSpherePosition = Vector4.Transform(Vector3.Transform(new Vector3(0,0,0), transformMatrix), Matrix.Invert(selectionBoxObb.Transformation));
         
-        var collisionSphere = new BoundingSphere(Vec4toVec3(transformedSpherePosition), shape.Transform.Scale.X);
+        var collisionSphere = new BoundingSphere(Vec4ToVec3(transformedSpherePosition), shape.Transform.Scale.X);
         
         var selectionAsAABB = new BoundingBox(-selectionBoxObb.Size / 2, selectionBoxObb.Size / 2);
         return selectionAsAABB.Contains(ref collisionSphere) != ContainmentType.Disjoint;
+    }
+    
+    /// <summary>
+    /// Checks if a submesh overlaps with the obb
+    /// </summary>
+    /// <param name="submesh"></param>
+    /// <param name="obb"></param>
+    /// <returns></returns>
+    private static bool CheckOverlapSubMeshBox(AbbrSubMesh submesh, OrientedBoundingBox obb)
+    {
+        return submesh.PolygonIndices.Any(poly => CheckOverlapPolygonBox(poly, submesh.Vertices, obb));
+    }
+    
+    /// <summary>
+    /// Checks for overlap (containment and intersection) between a polygon with n edges and an obb
+    /// </summary>
+    /// <param name="polygon"></param>
+    /// <param name="vertices"></param>
+    /// <param name="obb"></param>
+    /// <returns></returns>
+    private static bool CheckOverlapPolygonBox(uint[] polygon, Vector3[] vertices, OrientedBoundingBox obb)
+    {
+        var polyVerts = polygon.Select(index => vertices[index]).ToArray();
+        
+        var obbAxes = GetObbAxes(obb);
+        var obbHalfExtends = obb.Size / 2;
+        List<Vector3> axes = new List<Vector3>();
+        
+        axes.AddRange(obbAxes);
+        var plane = new Plane(polyVerts[0], polyVerts[1], polyVerts[2]);
+        axes.Add(plane.Normal);
+        
+        for (int i = 0; i < polyVerts.Length; i++)
+        {
+            Vector3 edge = polyVerts[(i + 1) % polyVerts.Length] - polyVerts[i];
+            foreach (var obbAxis in obbAxes)
+            {
+                Vector3 crossAxis = Vector3.Cross(edge, obbAxis);
+                if (crossAxis.LengthSquared() > 1e-6f) // Avoid near-zero vectors
+                    axes.Add(Vector3.Normalize(crossAxis));
+            }
+        }
+        
+        foreach (Vector3 axis in axes)
+        {
+            if (axis.LengthSquared() < 1e-6f)
+                continue;
+            float r =
+                Math.Abs(Vector3.Dot(obbAxes[0] * obbHalfExtends.X, axis)) +
+                Math.Abs(Vector3.Dot(obbAxes[1] * obbHalfExtends.Y, axis)) +
+                Math.Abs(Vector3.Dot(obbAxes[2] * obbHalfExtends.Z, axis));
+            
+            ProjectionInterval obbInterval = new ProjectionInterval(-r, r);
+            
+            float minPoly = float.MaxValue;
+            float maxPoly = float.MinValue;
+        
+            foreach (Vector3 vertex in polyVerts)
+            {
+                float projection = Vector3.Dot(vertex - obb.Center, axis);
+                minPoly = Math.Min(minPoly, projection);
+                maxPoly = Math.Max(maxPoly, projection);
+            }
+            
+            ProjectionInterval polyInterval = new ProjectionInterval(minPoly, maxPoly);
+            if (!obbInterval.Overlaps(polyInterval))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    /// <summary>
+    /// Returns an OBBs 3 axes
+    /// </summary>
+    /// <param name="obb"></param>
+    /// <returns></returns>
+    private static Vector3[] GetObbAxes(OrientedBoundingBox obb)
+    {
+        var x = new Vector3(obb.Transformation.M11, obb.Transformation.M12, obb.Transformation.M13);
+        var y = new Vector3(obb.Transformation.M21, obb.Transformation.M22, obb.Transformation.M23);
+        var z = new Vector3(obb.Transformation.M31, obb.Transformation.M32, obb.Transformation.M33);
+        
+        return new[]
+        {
+            x, y, z
+        };
+    }
+    
+    /// <summary>
+    /// Converts a sharpdx vector4 to vector3
+    /// </summary>
+    /// <param name="v"></param>
+    /// <returns></returns>
+    private static Vector3 Vec4ToVec3(Vector4 v)
+    {
+        Vector3 result;
+        if (Math.Abs(v.X) < float.Epsilon)
+        {
+            result = new Vector3(
+                v.X / v.W,
+                v.Y / v.W,
+                v.Z / v.W
+            );
+        }
+        else
+        {
+            result = new Vector3(v.X, v.Y, v.Z);
+        }
+        return result;
+    }
+    
+    private static bool IsSubMeshInsideBox(AbbrSubMesh submesh, OrientedBoundingBox selectionObb, BoundingBox selectionAabb, Matrix transform)
+    {
+        OrientedBoundingBox baseObb = new(submesh.BoundingBox);
+        baseObb.Transform(transform);
+        BoundingBox transformedAabb = baseObb.GetBoundingBox();
+            
+        ContainmentType aabbContainment = selectionAabb.Contains(transformedAabb);
+        if (aabbContainment != ContainmentType.Disjoint)
+        {
+            if (submesh.Vertices == null || submesh.PolygonIndices == null)
+                return true;
+                
+            var adjustedSubmesh = new AbbrSubMesh()
+            {
+                BoundingBox = submesh.BoundingBox,
+                Vertices = new Vector3[submesh.Vertices.Length],
+                PolygonIndices = submesh.PolygonIndices
+            };
+            for (int i = 0; i < submesh.Vertices.Length; i++)
+            {
+                Vector4 translatedVertex = Vector4.Transform(new(submesh.Vertices[i], 1f), transform);
+                adjustedSubmesh.Vertices[i] = Vec4ToVec3(translatedVertex);
+            }
+            if (CheckOverlapSubMeshBox(adjustedSubmesh, selectionObb))
+                return true;
+        }
+        return false;
     }
 }
