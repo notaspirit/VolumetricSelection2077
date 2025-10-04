@@ -30,18 +30,6 @@ namespace VolumetricSelection2077
             _cacheService = CacheService.Instance;
             Closing += OnSettingsWindowClosing;
             Closed += OnSettingsWindowClosed;
-            Opened += OnOpened;
-        }
-
-        private void OnOpened(object? sender, EventArgs e)
-        {
-            if (Owner is Window parentWindow)
-            {
-                double x = parentWindow.Position.X + (parentWindow.Bounds.Width - Bounds.Width) / 2;
-                double y = parentWindow.Position.Y + (parentWindow.Bounds.Height - Bounds.Height) / 2;
-            
-                Position = new PixelPoint((int)x, (int)y);
-            }
         }
         
         private void RestartApp()

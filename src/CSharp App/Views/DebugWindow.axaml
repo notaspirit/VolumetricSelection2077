@@ -4,6 +4,7 @@
     MinWidth="355"
     SizeToContent="WidthAndHeight"
     Title="Debug"
+    WindowStartupLocation="CenterOwner"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d"

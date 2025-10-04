@@ -4,6 +4,7 @@
     SizeToContent="Height"
     Title="VolumetricSelection2077"
     Width="750"
+    WindowStartupLocation="CenterOwner"
     x:Class="VolumetricSelection2077.SettingsWindow"
     x:DataType="local:ViewModels.SettingsViewModel"
     xmlns="https://github.com/avaloniaui"
