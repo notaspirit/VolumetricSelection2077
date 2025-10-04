@@ -239,15 +239,13 @@ public class ProcessService
                     {
                         Index = index,
                         Type = nodeEntry.Type.ToString(),
-                        DebugName = nodeEntry.DebugName,
                         ActorDeletions = instances,
                         ExpectedActors = nodeDataEntry.Transforms.Length
                     };
                 return new AxlRemovalNodeDeletion
                 {
                     Index = index,
-                    Type = nodeEntry.Type.ToString(),
-                    DebugName = nodeEntry.DebugName
+                    Type = nodeEntry.Type.ToString()
                 };
             case VEnums.CollisionCheckTypes.Collider:
                 List<int> actorRemoval = new List<int>();
@@ -318,8 +316,7 @@ public class ProcessService
                             Index = index,
                             Type = nodeEntry.Type.ToString(),
                             ActorDeletions = actorRemoval,
-                            ExpectedActors = nodeEntry.Actors.Length,
-                            DebugName = nodeEntry.DebugName
+                            ExpectedActors = nodeEntry.Actors.Length
                         };
                 }
                 return null;
@@ -332,8 +329,7 @@ public class ProcessService
                         return new AxlRemovalNodeDeletion()
                         {
                             Index = index,
-                            Type = nodeEntry.Type.ToString(),
-                            DebugName = nodeEntry.DebugName
+                            Type = nodeEntry.Type.ToString()
                         };
                     }
                 }
