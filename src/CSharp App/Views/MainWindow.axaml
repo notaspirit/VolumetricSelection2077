@@ -307,14 +307,14 @@
                         Text="{x:Static resources:Labels.SaveToArchiveMods}"
                         ToolTip.Tip="{x:Static resources:ToolTips.SaveToArchiveMods}"
                         VerticalAlignment="Center" />
-                    <ToggleSwitch
+                    <ComboBox
                         Grid.Column="1"
                         Grid.Row="1"
-                        IsChecked="{Binding Settings.SaveToArchiveMods}"
+                        HorizontalAlignment="Stretch"
                         IsVisible="{Binding ParameterSelectionVisibility}"
+                        ItemsSource="{Binding SaveFileLocations}"
                         Margin="5"
-                        OffContent="Output Directory"
-                        OnContent="Game Directory" />
+                        SelectedItem="{Binding SelectedSaveFileLocation, Mode=TwoWay}" />
                 </Grid>
                 <Grid Grid.Column="2">
                     <Grid.ColumnDefinitions>

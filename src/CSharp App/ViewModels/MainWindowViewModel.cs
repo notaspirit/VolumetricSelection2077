@@ -171,6 +171,19 @@ namespace VolumetricSelection2077.ViewModels
             }
         }
         
+        public ObservableCollection<SaveFileLocation> SaveFileLocations { get; set; }
+
+        public SaveFileLocation SelectedSaveFileLocation
+        {
+            get => Settings.SaveFileLocation;
+            set
+            {
+                Settings.SaveFileLocation = value;
+                OnPropertyChanged(nameof(SelectedSaveFileLocation));
+                Settings.SaveSettings();
+            }
+        }
+        
         public MainWindowViewModel()
         {
             Settings = SettingsService.Instance;
@@ -190,6 +203,7 @@ namespace VolumetricSelection2077.ViewModels
             
             SaveFileModes = new ObservableCollection<SaveFileMode>(Enum.GetValues(typeof(SaveFileMode)).Cast<SaveFileMode>());
             SaveFileFormats = new ObservableCollection<SaveFileFormat>(Enum.GetValues(typeof(SaveFileFormat)).Cast<SaveFileFormat>());
+            SaveFileLocations = new ObservableCollection<SaveFileLocation>(Enum.GetValues(typeof(SaveFileLocation)).Cast<SaveFileLocation>());
             
             try
             {

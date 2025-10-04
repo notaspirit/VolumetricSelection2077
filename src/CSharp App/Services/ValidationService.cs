@@ -160,35 +160,43 @@ namespace VolumetricSelection2077.Services
             return PathValidationResult.Valid;
         }
 
-        private static bool SubtractionTargetExists()
+        private bool SubtractionTargetExists()
         {
-            switch (SettingsService.Instance.SaveFileFormat)
+            switch (_settingsService.SaveFileFormat)
             {
                 case SaveFileFormat.ArchiveXLYaml:
                 case SaveFileFormat.ArchiveXLJson:
-                    if (SettingsService.Instance.SaveToArchiveMods)
+                    string outputFilePath;
+                    switch (_settingsService.SaveFileLocation)
                     {
-                        return File.Exists(Path.Join(SettingsService.Instance.GameDirectory, "archive", "pc", "mod", SettingsService.Instance.OutputFilename + ".xl"));
+                        case SaveFileLocation.GameDirectory:
+                            outputFilePath = Path.Join(_settingsService.GameDirectory, "archive", "pc", "mod", _settingsService.OutputFilename) + ".xl";
+                            break;
+                        case SaveFileLocation.OutputDirectory:
+                            outputFilePath = Path.Join(_settingsService.OutputDirectory, _settingsService.OutputFilename) + ".xl";
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
                     }
-                    else
-                    {
-                        return File.Exists(Path.Join(SettingsService.Instance.OutputDirectory, SettingsService.Instance.OutputFilename + ".xl"));
-                    }
+                    return File.Exists(outputFilePath);
                 case SaveFileFormat.WorldBuilder:
-                    string pathToCheck;
-                    if (SettingsService.Instance.SaveToArchiveMods)
+                    string favoritesPath;
+                    switch (_settingsService.SaveFileLocation)
                     {
-                        pathToCheck = Path.Join(SettingsService.Instance.GameDirectory, "bin", "x64", "plugins",
-                            "cyber_engine_tweaks", "mods", "entSpawner", "data", "favorite", "GeneratedByVS2077.json");
+                        case SaveFileLocation.GameDirectory:
+                            favoritesPath = Path.Join(_settingsService.GameDirectory, "bin", "x64", "plugins",
+                                "cyber_engine_tweaks", "mods", "entSpawner", "data", "favorite", "GeneratedByVS2077.json");
+                            break;
+                        case SaveFileLocation.OutputDirectory:
+                            favoritesPath = Path.Join(_settingsService.OutputDirectory, "GeneratedByVS2077.json");
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
                     }
-                    else
-                    {
-                        pathToCheck = Path.Join(SettingsService.Instance.OutputDirectory, "GeneratedByVS2077.json");
-                    }
-                    if (!File.Exists(pathToCheck))
+                    if (!File.Exists(favoritesPath))
                         return false;
 
-                    var favRoot = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(pathToCheck),
+                    var favRoot = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(favoritesPath),
                         JsonSerializerPresets.WorldBuilder);
                     return favRoot?.Favorites.Any(x => x.Name == SettingsService.Instance.OutputFilename) ?? false;
                 default:

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
+using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Parsers;
 
@@ -142,7 +143,7 @@ public class ProcessDispatcher
             invalidCount++;
         }
 
-        if (!_settings.SaveToArchiveMods)
+        if (_settings.SaveFileLocation == SaveFileLocation.OutputDirectory)
         {
             if (vr.ValidOutputDirectory)
                 Logger.Success("Output directory         : OK");

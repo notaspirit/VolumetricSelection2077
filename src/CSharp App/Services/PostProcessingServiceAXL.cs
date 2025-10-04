@@ -24,10 +24,17 @@ public partial class PostProcessingService
         Logger.Success($"Found {nodeCount} node deletions and {actorCount} actor deletions across {axlRemovalFile.Streaming.Sectors.Count} sectors");
         
         string outputFilePath;
-        if (_settingsService.SaveToArchiveMods)
-            outputFilePath = Path.Join(_settingsService.GameDirectory, "archive", "pc", "mod", _settingsService.OutputFilename) + ".xl";
-        else
-            outputFilePath = Path.Join(_settingsService.OutputDirectory, _settingsService.OutputFilename) + ".xl";
+        switch (_settingsService.SaveFileLocation)
+        {
+            case SaveFileLocation.GameDirectory:
+                outputFilePath = Path.Join(_settingsService.GameDirectory, "archive", "pc", "mod", _settingsService.OutputFilename) + ".xl";
+                break;
+            case SaveFileLocation.OutputDirectory:
+                outputFilePath = Path.Join(_settingsService.OutputDirectory, _settingsService.OutputFilename) + ".xl";
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
         
         var (outputContent, mergeChanges) = SerializeAxlRemovalFile(axlRemovalFile, outputFilePath);
         
