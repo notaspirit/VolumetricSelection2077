@@ -57,6 +57,20 @@ namespace VolumetricSelection2077.ViewModels
                 OnPropertyChanged(nameof(AutoUpdateEnabled));
             }
         }
+
+        private bool _cacheWorking;
+        public bool CacheWorking
+        {
+            get => _cacheWorking;
+            set
+            {
+                _cacheWorking = value;
+                OnPropertyChanged(nameof(CacheWorking));
+                OnPropertyChanged(nameof(CacheButtonsAvailable));
+            }
+        }
+        
+        public bool CacheButtonsAvailable => !CacheWorking;
         
         public Bitmap SettingsIcon { get; set; }
         
