@@ -196,17 +196,16 @@
                         <Button.Flyout>
                             <Flyout>
                                 <StackPanel>
-                                    <StackPanel
-                                        HorizontalAlignment="Center"
-                                        Margin="0,0,0,5"
-                                        Orientation="Horizontal">
+                                    <Grid HorizontalAlignment="Stretch" Margin="0,0,0,5">
+                                        <Grid.ColumnDefinitions>*,*</Grid.ColumnDefinitions>
                                         <Button
                                             Background="#6b82b2"
                                             Click="SelectAllClick"
                                             Content="{x:Static resources:Labels.SelectAll}"
+                                            Grid.Column="0"
+                                            HorizontalAlignment="Stretch"
                                             HorizontalContentAlignment="Center"
-                                            Margin="5"
-                                            Width="100">
+                                            Margin="0,5,0,5">
                                             <Button.Styles>
                                                 <Style Selector="Button:pointerover /template/ ContentPresenter">
                                                     <Setter Property="Background" Value="#455472" />
@@ -217,16 +216,17 @@
                                             Background="#6b82b2"
                                             Click="DeselectAllClick"
                                             Content="{x:Static resources:Labels.DeselectAll}"
+                                            Grid.Column="1"
+                                            HorizontalAlignment="Stretch"
                                             HorizontalContentAlignment="Center"
-                                            Margin="5"
-                                            Width="100">
+                                            Margin="5,5,0,5">
                                             <Button.Styles>
                                                 <Style Selector="Button:pointerover /template/ ContentPresenter">
                                                     <Setter Property="Background" Value="#455472" />
                                                 </Style>
                                             </Button.Styles>
                                         </Button>
-                                    </StackPanel>
+                                    </Grid>
                                     <TextBox
                                         HorizontalAlignment="Stretch"
                                         Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
