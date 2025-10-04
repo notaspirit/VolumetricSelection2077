@@ -3,6 +3,7 @@
     MinWidth="450"
     SizeToContent="WidthAndHeight"
     Title="{Binding Title}"
+    WindowStartupLocation="CenterOwner"
     mc:Ignorable="d"
     x:Class="VolumetricSelection2077.Views.Dialog"
     x:DataType="viewModels:DialogWindowViewModel"
