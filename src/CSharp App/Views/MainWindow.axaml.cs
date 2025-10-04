@@ -11,6 +11,7 @@ using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Extensions;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Resources;
@@ -21,7 +22,7 @@ using VolumetricSelection2077.ViewStructures;
 namespace VolumetricSelection2077;
 public partial class MainWindow : Window
 {
-    private readonly ProcessService _processService;
+    private readonly ProcessDispatcher _processService;
     private MainWindowViewModel _mainWindowViewModel;
     private ProgressBar _progressBar;
     private ProgressBar _progressBarBroder;
@@ -41,7 +42,7 @@ public partial class MainWindow : Window
         }
         DataContext = new MainWindowViewModel();
         _mainWindowViewModel = DataContext as MainWindowViewModel;
-        _processService = new ProcessService(new DialogService(this));
+        _processService = new ProcessDispatcher(new DialogService(this));
         Closed += OnMainWindowClosed;
         
         _progressBar = this.FindControl<ProgressBar>("ProgressBar");
@@ -114,7 +115,7 @@ public partial class MainWindow : Window
             AddQueuedFilters();
             var (success, error) = await Task.Run(() =>
             { 
-                return _processService.MainProcessTask();
+                return _processService.StartProcess();
             });
             if (!success)
             {
@@ -427,8 +428,8 @@ public partial class MainWindow : Window
         }
         
         var validationResult = ValidationService.ValidateGamePath(_mainWindowViewModel.Settings.GameDirectory).Item1;
-        if (!(validationResult == ValidationService.GamePathResult.Valid ||
-              validationResult == ValidationService.GamePathResult.CetNotFound))
+        if (!(validationResult == GamePathValidationResult.Valid ||
+              validationResult == GamePathValidationResult.CetNotFound))
         {
             Logger.Error("Failed to initialize VS2077! Invalid Game Path, update it in the settings and restart the application.");
             _mainWindowViewModel.AppInitialized = false;
@@ -443,7 +444,7 @@ public partial class MainWindow : Window
                     "The game was running during the update, to apply changes restart the game or reload CET mods.",
                     new[]
                     {
-                        new DialogButton("Ok", DialogButtonStyling.Enum.Primary)
+                        new DialogButton("Ok", DialogButtonStyling.Primary)
                     }, this);
                 var changelog = await UpdateService.GetChangelog();
                 Logger.Success($"Successfully updated to {changelog.Item1}");

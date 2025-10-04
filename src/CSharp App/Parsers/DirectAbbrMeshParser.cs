@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using SharpDX;
-using VolumetricSelection2077.Converters;
+using VolumetricSelection2077.Converters.Simple;
 using VolumetricSelection2077.Models;
 using WolvenKit.Common.PhysX;
 using WolvenKit.RED4.Archive;
@@ -146,8 +146,8 @@ public class DirectAbbrMeshParser
                     {
                         BoundingBox = new BoundingBox
                         {
-                            Minimum = WolvenkitToSharpDX.Vector3(inputMesh.BoundingBox.Min),
-                            Maximum = WolvenkitToSharpDX.Vector3(inputMesh.BoundingBox.Max)
+                            Minimum = WolvenkitToSharpDXConverter.Vector3(inputMesh.BoundingBox.Min),
+                            Maximum = WolvenkitToSharpDXConverter.Vector3(inputMesh.BoundingBox.Max)
                         }
                     }
                 ]

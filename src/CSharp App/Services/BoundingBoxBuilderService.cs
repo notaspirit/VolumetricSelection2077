@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using MessagePack;
 using SharpDX;
 using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Resources;
-using WolvenKit.RED4.Types;
+using VEnums = VolumetricSelection2077.Enums;
+using WEnums = WolvenKit.RED4.Types.Enums;
 using Vector3 = SharpDX.Vector3;
 
 namespace VolumetricSelection2077.Services;
@@ -15,21 +15,75 @@ public class BoundingBoxBuilderService
 {
     private readonly CacheService _cacheService;
     private readonly GameFileService _gameFileService;
-    private readonly SettingsService _settings;
     private readonly Progress _progress;
     public BoundingBoxBuilderService()
     {
         _cacheService = CacheService.Instance;
         _gameFileService = GameFileService.Instance;
-        _settings = SettingsService.Instance;
         _progress = Progress.Instance;
     }
+    
+    /// <summary>
+    /// Builds bounding boxes for all sectors matching the provided mode
+    /// </summary>
+    /// <param name="mode"></param>
+    /// <exception cref="Exception">Game File Service is not initialized or Cache Service is not initialized</exception>
+    public async Task BuildBounds(BuildBoundsMode mode)
+    {
+        if (!_gameFileService.IsInitialized)
+            throw new Exception("Game file service is not initialized!");
+        
+        if (!_cacheService.IsInitialized)
+            throw new Exception("Cache service is not initialized!");
+        
+        _progress.Reset();
+        _progress.SetWeight(0f, 1f, 0f);
+
+        _progress.AddTarget(1, Progress.ProgressSections.Startup);
+        _progress.AddCurrent(1, Progress.ProgressSections.Startup);
+        List<string> vanillaSectors = new();
+        List<string> moddedSectors = new();
+
+        switch (mode)
+        {
+            case BuildBoundsMode.All:
+                vanillaSectors = _gameFileService.ArchiveManager.GetGameArchives().SelectMany(x => x.Files.Values.Where(y => y.Extension == ".streamingsector").Select(y => y.FileName)).ToList();
+                moddedSectors = _gameFileService.ArchiveManager.GetModArchives().SelectMany(x => x.Files.Values.Where(y => y.Extension == ".streamingsector").Select(y => y.FileName)).ToList();
+                break;
+            case BuildBoundsMode.Vanilla:
+                vanillaSectors = _gameFileService.ArchiveManager.GetGameArchives().SelectMany(x => x.Files.Values.Where(y => y.Extension == ".streamingsector").Select(y => y.FileName)).ToList();
+                break;
+            case BuildBoundsMode.RebuildModded:
+                moddedSectors = _gameFileService.ArchiveManager.GetModArchives().SelectMany(x => x.Files.Values.Where(y => y.Extension == ".streamingsector").Select(y => y.FileName)).ToList();
+                break;
+            case BuildBoundsMode.MissingModded:
+                var cachedModdedBounds = _cacheService.GetAllEntries(VEnums.CacheDatabases.ModdedBounds).Select(x => x.Key).ToList();;
+                var archiveModdedSectors = _gameFileService.ArchiveManager.GetModArchives().SelectMany(x => x.Files.Values.Where(y => y.Extension == ".streamingsector").Select(y => y.FileName)).ToList();
+                moddedSectors = archiveModdedSectors.Except(cachedModdedBounds).ToList();
+                break;
+        }
+        _progress.AddTarget(vanillaSectors.Count + moddedSectors.Count, Progress.ProgressSections.Processing);
+        
+        _cacheService.StartListening();
+        
+        List<Task> tasks = vanillaSectors.Distinct().Select(x => Task.Run(() => ProcessStreamingsector(x, VEnums.CacheDatabases.VanillaBounds))).ToList();
+        tasks.AddRange(moddedSectors.Distinct().Select(x =>
+            Task.Run(() => ProcessStreamingsector(x, VEnums.CacheDatabases.ModdedBounds))));
+        Logger.Info($"Building Bounds for {tasks.Count} Sectors...");
+        await Task.WhenAll(tasks);
+        
+        _cacheService.StopListening();
+        if (mode == BuildBoundsMode.Vanilla || mode == BuildBoundsMode.All) 
+            _cacheService.SetMetaDataVanillaBoundsStatus(true);
+        Logger.Info("Finished building bounds!");
+    }
+    
     /// <summary>
     /// Builds an accurate bounding box for the given sector, and writes it to the given database
     /// </summary>
     /// <param name="sectorPath">path to the sector within the archives</param>
     /// <param name="database">database to save the output to</param>
-    public async Task ProcessStreamingsector(string sectorPath, CacheDatabases? database)
+    public async Task ProcessStreamingsector(string sectorPath, VEnums.CacheDatabases? database)
     {
         try
         {
@@ -95,8 +149,8 @@ public class BoundingBoxBuilderService
                             var summedTransformMatrix = shapeTransformMatrix * actorTransformMatrix;
                             switch (shape.ShapeType)
                             {
-                                case Enums.physicsShapeType.TriangleMesh:
-                                case Enums.physicsShapeType.ConvexMesh:
+                                case WEnums.physicsShapeType.TriangleMesh:
+                                case WEnums.physicsShapeType.ConvexMesh:
                                     var collisionMesh = await _gameFileService.GetPhysXMesh((ulong)nodeEntry.SectorHash,
                                         (ulong)shape.Hash);
                                     if (collisionMesh == null)
@@ -120,7 +174,7 @@ public class BoundingBoxBuilderService
                                         }
                                     }
                                     break;
-                                case Enums.physicsShapeType.Box:
+                                case WEnums.physicsShapeType.Box:
                                     OrientedBoundingBox collisionBox = new(-shape.Transform.Scale, shape.Transform.Scale);
                                     collisionBox.Transform(summedTransformMatrix);
                                     foreach (var corner in collisionBox.GetCorners())
@@ -129,7 +183,7 @@ public class BoundingBoxBuilderService
                                         max = Vector3.Max(max, corner);
                                     }
                                     break;
-                                case Enums.physicsShapeType.Capsule:
+                                case WEnums.physicsShapeType.Capsule:
                                     float height = shape.Transform.Scale.Y + 2 * actor.Transform.Scale.X;   
                                     Vector3 shapeSizeAsBox = new Vector3(shape.Transform.Scale.X, shape.Transform.Scale.X, height / 2f);
                                     
@@ -141,7 +195,7 @@ public class BoundingBoxBuilderService
                                         max = Vector3.Max(max, corner);
                                     }
                                     break;
-                                case Enums.physicsShapeType.Sphere:
+                                case WEnums.physicsShapeType.Sphere:
                                     OrientedBoundingBox sphereObb = new(new Vector3(-shape.Transform.Scale.X), new Vector3(shape.Transform.Scale.X));
                                     sphereObb.Transform(summedTransformMatrix);
                                     foreach (var corner in sphereObb.GetCorners())
@@ -169,7 +223,7 @@ public class BoundingBoxBuilderService
             else
                 bb = new BoundingBox(min, max);
             if (database != null)
-                _cacheService.WriteEntry(new WriteRequest(sectorPath, MessagePackSerializer.Serialize(bb), (CacheDatabases)database));
+                _cacheService.WriteEntry(new WriteCacheRequest(sectorPath, MessagePackSerializer.Serialize(bb), (VEnums.CacheDatabases)database));
         }
         catch (Exception e)
         {
@@ -179,67 +233,5 @@ public class BoundingBoxBuilderService
         {
             _progress.AddCurrent(1, Progress.ProgressSections.Processing);
         }
-    }
-
-    public enum BuildBoundsMode
-    {
-        All,
-        Vanilla,
-        RebuildModded,
-        MissingModded
-    }
-    /// <summary>
-    /// Builds bounding boxes for all sectors matching the provided mode
-    /// </summary>
-    /// <param name="mode"></param>
-    /// <exception cref="Exception">Game File Service is not initialized or Cache Service is not initialized</exception>
-    public async Task BuildBounds(BuildBoundsMode mode)
-    {
-        if (!_gameFileService.IsInitialized)
-            throw new Exception("Game file service is not initialized!");
-        
-        if (!_cacheService.IsInitialized)
-            throw new Exception("Cache service is not initialized!");
-        
-        _progress.Reset();
-        _progress.SetWeight(0f, 1f, 0f);
-
-        _progress.AddTarget(1, Progress.ProgressSections.Startup);
-        _progress.AddCurrent(1, Progress.ProgressSections.Startup);
-        List<string> vanillaSectors = new();
-        List<string> moddedSectors = new();
-
-        switch (mode)
-        {
-            case BuildBoundsMode.All:
-                vanillaSectors = _gameFileService.ArchiveManager.GetGameArchives().SelectMany(x => x.Files.Values.Where(y => y.Extension == ".streamingsector").Select(y => y.FileName)).ToList();
-                moddedSectors = _gameFileService.ArchiveManager.GetModArchives().SelectMany(x => x.Files.Values.Where(y => y.Extension == ".streamingsector").Select(y => y.FileName)).ToList();
-                break;
-            case BuildBoundsMode.Vanilla:
-                vanillaSectors = _gameFileService.ArchiveManager.GetGameArchives().SelectMany(x => x.Files.Values.Where(y => y.Extension == ".streamingsector").Select(y => y.FileName)).ToList();
-                break;
-            case BuildBoundsMode.RebuildModded:
-                moddedSectors = _gameFileService.ArchiveManager.GetModArchives().SelectMany(x => x.Files.Values.Where(y => y.Extension == ".streamingsector").Select(y => y.FileName)).ToList();
-                break;
-            case BuildBoundsMode.MissingModded:
-                var cachedModdedBounds = _cacheService.GetAllEntries(CacheDatabases.ModdedBounds).Select(x => x.Key).ToList();;
-                var archiveModdedSectors = _gameFileService.ArchiveManager.GetModArchives().SelectMany(x => x.Files.Values.Where(y => y.Extension == ".streamingsector").Select(y => y.FileName)).ToList();
-                moddedSectors = archiveModdedSectors.Except(cachedModdedBounds).ToList();
-                break;
-        }
-        _progress.AddTarget(vanillaSectors.Count + moddedSectors.Count, Progress.ProgressSections.Processing);
-        
-        _cacheService.StartListening();
-        
-        List<Task> tasks = vanillaSectors.Distinct().Select(x => Task.Run(() => ProcessStreamingsector(x, CacheDatabases.VanillaBounds))).ToList();
-        tasks.AddRange(moddedSectors.Distinct().Select(x =>
-            Task.Run(() => ProcessStreamingsector(x, CacheDatabases.ModdedBounds))));
-        Logger.Info($"Building Bounds for {tasks.Count} Sectors...");
-        await Task.WhenAll(tasks);
-        
-        _cacheService.StopListening();
-        if (mode == BuildBoundsMode.Vanilla || mode == BuildBoundsMode.All) 
-            _cacheService.SetMetaDataVanillaBoundsStatus(true);
-        Logger.Info("Finished building bounds!");
     }
 }

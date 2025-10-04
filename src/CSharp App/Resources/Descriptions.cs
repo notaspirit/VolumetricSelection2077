@@ -5,10 +5,6 @@ namespace VolumetricSelection2077.Resources
             public static string GameDirectory { get; } = "Path to the game directory (contains bin, archive folder etc.)";
             public static string NodeFilter { get; } = "Filter what nodes should be processed or skipped";
             public static string SaveAsYaml{ get; } = "Save as yaml or as json";
-            public static string AllowOverwrite { get; } = "Allow overwriting the output file if one with the same name already exists, extending file contents takes priority";
-            public static string ExtendExistingFile { get; } = "Extends the output file with the new content if it exists";
-            public static string NukeOccluders { get; } = "Only use this option if you are having issues with occluders in your removal, as this setting removes them generously.";
-            public static string NukeOccludersAggressively { get; } = "Removes occluders from all provided sectors, by default (off) only removoes occluders from sectors which intersect.";
             public static string OutputFilename { get; } =
                 "Enter the output filename, without extension, supports sub folders";
 
@@ -47,13 +43,10 @@ namespace VolumetricSelection2077.Resources
             public static string SelectAll { get; } = "Select All";
             public static string DeselectAll { get; } = "Deselect All";
             public static string Settings { get; } = "Settings";
-            public static string VS2077 { get; } = "VolumetricSelection2077";
             public static string FindSelected　{ get; } = "Find Selected";
             public static string Benchmark { get; } = "Benchmark";
             public static string DebugMenu { get; } = "Debug Menu";
             public static string ClearLog { get; } = "Clear Log";
-            public static string ResourceFilter { get; } = " Resource Path Filters";
-            public static string DebugNameFilter { get; } = " Debug Name Filters";
             public static string FilterCollapseButton { get; } = "Filters";
             public static string ParametersCollapseButton { get; } = "Optional Parameters";
             public static string SaveAsYaml { get; } = "Output Format";

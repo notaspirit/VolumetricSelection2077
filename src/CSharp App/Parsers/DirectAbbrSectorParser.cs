@@ -2,9 +2,9 @@ using System;
 using System.Linq;
 using MessagePack;
 using SharpDX;
-using VolumetricSelection2077.Converters;
+using VolumetricSelection2077.Converters.Simple;
+using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.Services;
 using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.Archive.CR2W;
@@ -42,7 +42,7 @@ public class DirectAbbrSectorParser
                     Logger.Warning($"Failed to parse embedded file {efile.FileName}");
                     continue;
                 }
-                CacheService.Instance.WriteSingleEntry(new WriteRequest(efile.FileName, MessagePackSerializer.Serialize(parsedMesh)));
+                CacheService.Instance.WriteSingleEntry(new WriteCacheRequest(efile.FileName, MessagePackSerializer.Serialize(parsedMesh)));
             }
         }
         
@@ -53,7 +53,7 @@ public class DirectAbbrSectorParser
         {
             var debugName = node.Chunk?.DebugName;
             var type = node.Chunk?.GetType().Name ?? "Unknown";
-            var parsedTypeSuccess = NodeTypeProcessingOptions.Enum.TryParse(type, out NodeTypeProcessingOptions.Enum parsedType);
+            var parsedTypeSuccess = Enum.TryParse(type, out NodeTypeProcessingOptions parsedType);
             if (!parsedTypeSuccess)
                 Logger.Error($"Invalid node type: {type}");
             
@@ -110,29 +110,29 @@ public class DirectAbbrSectorParser
                     foreach (var actor in collisionActorBuffer.Actors)
                     {
                         var actorPosition = FixedPointVector3Converter.PosBitsToVec3(actor.Position);
-                        var actorRotation = WolvenkitToSharpDX.Quaternion(actor.Orientation);
-                        var actorScale = WolvenkitToSharpDX.Vector3(actor.Scale);
+                        var actorRotation = WolvenkitToSharpDXConverter.Quaternion(actor.Orientation);
+                        var actorScale = WolvenkitToSharpDXConverter.Vector3(actor.Scale);
                         var shapes = new AbbrActorShapes[actor.Shapes.Count];
                         int shapesIndex = 0;
                         foreach (var shape in actor.Shapes)
                         {
                             var shapeTypeString = shape.ShapeType.ToString();
-                            var shapePosition = WolvenkitToSharpDX.Vector3(shape.Position);
-                            var shapeRotation = WolvenkitToSharpDX.Quaternion(shape.Rotation);
+                            var shapePosition = WolvenkitToSharpDXConverter.Vector3(shape.Position);
+                            var shapeRotation = WolvenkitToSharpDXConverter.Quaternion(shape.Rotation);
                             var shapeScale = new SharpDX.Vector3(1,1,1);
                             ulong? shapeHash = null;
                             
                             switch (shape)
                             {
                                 case CollisionShapeSimple simpleShape:
-                                    shapeScale = WolvenkitToSharpDX.Vector3(simpleShape.Size);
+                                    shapeScale = WolvenkitToSharpDXConverter.Vector3(simpleShape.Size);
                                     break;
                                 case CollisionShapeMesh meshShape:
                                     shapeHash = meshShape.Hash;
                                     break;
                             }
 
-                            var parsedShapeType = Enums.physicsShapeType.TryParse(shapeTypeString, out Enums.physicsShapeType shapeType);
+                            var parsedShapeType = Enum.TryParse(shapeTypeString, out WolvenKit.RED4.Types.Enums.physicsShapeType shapeType);
                             if (!parsedShapeType)
                                 Logger.Error($"Invalid shape type: {shapeTypeString}");
                             
@@ -197,9 +197,9 @@ public class DirectAbbrSectorParser
                     {
                         transforms[transformsInstancedIndex] = new AbbrSectorTransform()
                         {
-                            Position = WolvenkitToSharpDX.Vector3(transform.Translation),
-                            Rotation = WolvenkitToSharpDX.Quaternion(transform.Rotation),
-                            Scale = WolvenkitToSharpDX.Vector3(transform.Scale)
+                            Position = WolvenkitToSharpDXConverter.Vector3(transform.Translation),
+                            Rotation = WolvenkitToSharpDXConverter.Quaternion(transform.Rotation),
+                            Scale = WolvenkitToSharpDXConverter.Vector3(transform.Scale)
                         };
                         transformsInstancedIndex++;
                     }
@@ -219,11 +219,11 @@ public class DirectAbbrSectorParser
                         {
                             transforms[transformsInstancedDestructibleIndex] = new AbbrSectorTransform()
                             {
-                                Position = WolvenkitToSharpDX.Vector3(transform.Position) +
-                                           WolvenkitToSharpDX.Vector3(nodeDataEntry.Position),
-                                Rotation = WolvenkitToSharpDX.Quaternion(transform.Orientation) *
-                                           WolvenkitToSharpDX.Quaternion(nodeDataEntry.Orientation),
-                                Scale = WolvenkitToSharpDX.Vector3(nodeDataEntry.Scale)
+                                Position = WolvenkitToSharpDXConverter.Vector3(transform.Position) +
+                                           WolvenkitToSharpDXConverter.Vector3(nodeDataEntry.Position),
+                                Rotation = WolvenkitToSharpDXConverter.Quaternion(transform.Orientation) *
+                                           WolvenkitToSharpDXConverter.Quaternion(nodeDataEntry.Orientation),
+                                Scale = WolvenkitToSharpDXConverter.Vector3(nodeDataEntry.Scale)
                             };
                             transformsInstancedDestructibleIndex++;
                         }
@@ -290,16 +290,16 @@ public class DirectAbbrSectorParser
                     {
                         transforms[foliageTransformIndex] = new AbbrSectorTransform()
                         {
-                            Position = WolvenkitToSharpDX.Vector3(transform.Position) +
-                                       WolvenkitToSharpDX.Vector3(nodeDataEntry.Position),
+                            Position = WolvenkitToSharpDXConverter.Vector3(transform.Position) +
+                                       WolvenkitToSharpDXConverter.Vector3(nodeDataEntry.Position),
                             Rotation = new Quaternion(transform.Rotation.X, transform.Rotation.Y,
                                 transform.Rotation.Z, transform.Rotation.W),
                             Scale = new Vector3(transform.Scale, transform.Scale, transform.Scale)
                         };
                         foliageTransformIndex++;
                     }
-                    nodeBoundingBox = new BoundingBox(WolvenkitToSharpDX.Vector3(instancedFoliageNode.FoliageLocalBounds.Min) + WolvenkitToSharpDX.Vector3(nodeDataEntry.Position),
-                        WolvenkitToSharpDX.Vector3(instancedFoliageNode.FoliageLocalBounds.Max) + WolvenkitToSharpDX.Vector3(nodeDataEntry.Position));
+                    nodeBoundingBox = new BoundingBox(WolvenkitToSharpDXConverter.Vector3(instancedFoliageNode.FoliageLocalBounds.Min) + WolvenkitToSharpDXConverter.Vector3(nodeDataEntry.Position),
+                        WolvenkitToSharpDXConverter.Vector3(instancedFoliageNode.FoliageLocalBounds.Max) + WolvenkitToSharpDXConverter.Vector3(nodeDataEntry.Position));
                     break;
                 case worldInstancedOccluderNode instancedOccluderNode:
                     transforms = new AbbrSectorTransform[instancedOccluderNode.Buffer.Count];
@@ -343,9 +343,9 @@ public class DirectAbbrSectorParser
                         transforms = new AbbrSectorTransform[1];
                         transforms[0] = new AbbrSectorTransform()
                         {
-                            Position = WolvenkitToSharpDX.Vector3(nodeDataEntry.Position),
-                            Rotation = WolvenkitToSharpDX.Quaternion(nodeDataEntry.Orientation),
-                            Scale = WolvenkitToSharpDX.Vector3(nodeDataEntry.Scale)
+                            Position = WolvenkitToSharpDXConverter.Vector3(nodeDataEntry.Position),
+                            Rotation = WolvenkitToSharpDXConverter.Quaternion(nodeDataEntry.Orientation),
+                            Scale = WolvenkitToSharpDXConverter.Vector3(nodeDataEntry.Scale)
                         };
                     }
                     break;

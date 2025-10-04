@@ -1,30 +1,18 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Text.Json;
 using System.Threading.Tasks;
-using System.Xml.XPath;
-using MessagePack;
-using Microsoft.EntityFrameworkCore;
+using VolumetricSelection2077.Enums;
 using WolvenKit;
 using WolvenKit.Common.Services;
 using WolvenKit.Core.Interfaces;
 using WolvenKit.Core.Services;
 using WolvenKit.RED4.CR2W.Archive;
 using WolvenKit.RED4.CR2W;
-using SharpGLTF.Schema2;
-using VolumetricSelection2077.Helpers;
+using VolumetricSelection2077.MessagePack.Helpers;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Parsers;
 using WolvenKit.Common;
-using WolvenKit.Common.Conversion;
-using WolvenKit.Common.FNV1A;
-using WolvenKit.Common.PhysX;
-using WolvenKit.Modkit.RED4.Tools;
-using WolvenKit.RED4.Archive.CR2W;
-using WolvenKit.RED4.CR2W.JSON;
-using WolvenKit.RED4.Types;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace VolumetricSelection2077.Services;
 
@@ -150,7 +138,7 @@ public class GameFileService
     {
         if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
 
-        var cachedMesh = _cacheService.GetEntry(new ReadRequest(path, _readCacheTarget));
+        var cachedMesh = _cacheService.GetEntry(new ReadCacheRequest(path, _readCacheTarget));
         if (MessagePackHelper.TryDeserialize<AbbrMesh>(cachedMesh, out var mesh)) return mesh;
         
         var rawMesh = ArchiveManager.GetCR2WFile(path);
@@ -189,7 +177,7 @@ public class GameFileService
     public AbbrSector? GetSector(string path)
     {
         if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
-        var cachedSector = _cacheService.GetEntry(new ReadRequest(path, _readCacheTarget));
+        var cachedSector = _cacheService.GetEntry(new ReadCacheRequest(path, _readCacheTarget));
         if (MessagePackHelper.TryDeserialize<AbbrSector>(cachedSector, out var mesh))
         {
             return mesh;

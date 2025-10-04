@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using VolumetricSelection2077.Json.Helpers;
 using VolumetricSelection2077.Services;
 using WolvenKit.RED4.Types;
 
@@ -48,7 +49,7 @@ public class Benchmarking
     {
         Logger.Info("Starting Benchmarks");
         // CacheService.Instance.DropDatabase(CacheDatabases.Vanilla);
-        var processingService = new ProcessService(dialogService);
+        var processingService = new ProcessDispatcher(dialogService);
         string benchFileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "VolumetricSelection2077", "benchmarks");
         string benchOutputDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -70,7 +71,7 @@ public class Benchmarking
             var stopwatch = Stopwatch.StartNew();
             try
             {
-                var (status, error) =  await processingService.MainProcessTask(file, benchOutputDir);
+                var (status, error) =  await processingService.StartProcess(file, benchOutputDir);
                 if (status != true || error != "")
                 {
                     throw new Exception($"Error: {error}");
@@ -130,9 +131,7 @@ public class Benchmarking
             averageTime = UtilService.FormatElapsedTime(avgProcssTime)
         };
 
-        string serializedResults = JsonConvert.SerializeObject(resultsFile,
-            new JsonSerializerSettings()
-                { NullValueHandling = NullValueHandling.Ignore, Formatting = Formatting.Indented });
+        string serializedResults = JsonConvert.SerializeObject(resultsFile, JsonSerializerPresets.Default);
 
         string outPath = Path.Combine(benchOutputDir, "results.json");
         File.WriteAllText(outPath, serializedResults);

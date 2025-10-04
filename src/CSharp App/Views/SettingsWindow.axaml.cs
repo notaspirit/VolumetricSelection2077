@@ -6,6 +6,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Interactivity;
+using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.Services;
@@ -64,36 +65,28 @@ namespace VolumetricSelection2077
         private async void ClearVanillaCache_Click(object sender, RoutedEventArgs e)
         {
             if(!_cacheService.IsInitialized) return;
-            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Vanilla,
-                UtilService.ShouldResize(CacheDatabases.Vanilla, _settingsViewModel.CacheStats,
-                    _settingsViewModel.Settings.CacheDirectory)));
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Vanilla));
             UpdateCacheStats();
         }
         
         private async void ClearModdedCache_Click(object sender, RoutedEventArgs e)
         {
             if(!_cacheService.IsInitialized) return;
-            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Modded,
-                UtilService.ShouldResize(CacheDatabases.Modded, _settingsViewModel.CacheStats,
-                    _settingsViewModel.Settings.CacheDirectory)));
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Modded));
             UpdateCacheStats();
         }
         
         private async void ClearVanillaBoundsCache_Click(object sender, RoutedEventArgs e)
         {
             if(!_cacheService.IsInitialized) return;
-            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.VanillaBounds,
-                UtilService.ShouldResize(CacheDatabases.VanillaBounds, _settingsViewModel.CacheStats,
-                    _settingsViewModel.Settings.CacheDirectory)));
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.VanillaBounds));
             UpdateCacheStats();
         }
         
         private async void ClearModdedBoundsCache_Click(object sender, RoutedEventArgs e)
         {
             if(!_cacheService.IsInitialized) return;
-            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.ModdedBounds,
-                UtilService.ShouldResize(CacheDatabases.ModdedBounds, _settingsViewModel.CacheStats,
-                    _settingsViewModel.Settings.CacheDirectory)));
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.ModdedBounds));
             UpdateCacheStats();
         }
 
@@ -105,7 +98,7 @@ namespace VolumetricSelection2077
                 e.Cancel = true;
                 var result = await DialogService.ShowDialog("Cache Path Changed!",
                     "Move the current cache, or initialize a new cache at the new location (creating one if none exists)?",
-                    new [] { new DialogButton("Move", DialogButtonStyling.Enum.Primary), new DialogButton("Initialize", DialogButtonStyling.Enum.Secondary) },
+                    new [] { new DialogButton("Move", DialogButtonStyling.Primary), new DialogButton("Initialize", DialogButtonStyling.Secondary) },
                     this);
                 moveCache = result == 0;
                 Close();

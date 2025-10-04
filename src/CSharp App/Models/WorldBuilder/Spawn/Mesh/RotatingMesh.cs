@@ -1,5 +1,5 @@
 using Newtonsoft.Json;
-using WolvenKit.RED4.Types;
+using WEnums = WolvenKit.RED4.Types.Enums;
 
 namespace VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
 
@@ -9,7 +9,7 @@ public class RotatingMesh : Mesh
     public float Duration { get; set; }
     
     [JsonProperty("axis")]
-    public Enums.worldRotatingMeshNodeAxis  Axis { get; set; }
+    public WEnums.worldRotatingMeshNodeAxis  Axis { get; set; }
     
     [JsonProperty("reverse")]
     public bool Reverse { get; set; }
@@ -21,7 +21,7 @@ public class RotatingMesh : Mesh
         NodeType = "worldRotatingMeshNode";
 
         Duration = 5;
-        Axis = Enums.worldRotatingMeshNodeAxis.X;
+        Axis = WEnums.worldRotatingMeshNodeAxis.X;
         Reverse = false;
     }
 }

@@ -1,6 +1,5 @@
 using System;
-using VolumetricSelection2077.Converters;
-using VolumetricSelection2077.Json;
+using VolumetricSelection2077.Converters.Simple;
 using WolvenKit.RED4.Types;
 
 namespace VolumetricSelection2077.models.WorldBuilder.Structs;
@@ -18,13 +17,13 @@ public struct EulerAngles
         this.roll  = roll;
     }
     
-    public static implicit operator SharpDX.Quaternion(EulerAngles value) => WorldBuilderToSharpDX.Quaternion(value);
+    public static implicit operator SharpDX.Quaternion(EulerAngles value) => WorldBuilderToSharpDXConverter.Quaternion(value);
     
-    public static implicit operator EulerAngles(SharpDX.Quaternion value) => SharpDXToWorldBuilder.EulerAngles(value);
+    public static implicit operator EulerAngles(SharpDX.Quaternion value) => SharpDXToWorldBuilderConverter.EulerAngles(value);
     
     public static implicit operator WolvenKit.RED4.Types.Quaternion(EulerAngles value)
     {
-        var sharpdx = WorldBuilderToSharpDX.Quaternion(value);
+        var sharpdx = WorldBuilderToSharpDXConverter.Quaternion(value);
         return new Quaternion
         {
             I = sharpdx.X,
@@ -37,7 +36,7 @@ public struct EulerAngles
     public static implicit operator EulerAngles(WolvenKit.RED4.Types.Quaternion value)
     {
         var sharpdx = new SharpDX.Quaternion(value.I, value.J, value.K, value.R);
-        return SharpDXToWorldBuilder.EulerAngles(sharpdx);
+        return SharpDXToWorldBuilderConverter.EulerAngles(sharpdx);
     }
 
     public override bool Equals(object? obj)

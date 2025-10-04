@@ -5,8 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Newtonsoft.Json;
+using VolumetricSelection2077.Enums;
+using VolumetricSelection2077.Json.Helpers;
 using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Resources;
 
 namespace VolumetricSelection2077.Services;
 public class SettingsService
@@ -30,8 +31,8 @@ public class SettingsService
         FilterModeOr = true;
         IsFiltersMWVisible = false;
         IsParametersMWVisible = false;
-        SaveFileFormat = Resources.SaveFileFormat.Enum.ArchiveXLJson;
-        SaveMode = SaveFileMode.Enum.New;
+        SaveFileFormat = SaveFileFormat.ArchiveXLJson;
+        SaveMode = SaveFileMode.New;
         SupportModdedResources = false;
         CacheModdedResources = true;
         AutoUpdate = true;
@@ -89,7 +90,7 @@ public class SettingsService
     public bool FilterModeOr { get; set; }
     public bool IsFiltersMWVisible { get; set; }
     public bool IsParametersMWVisible { get; set; }
-    public SaveFileMode.Enum SaveMode { get; set; }
+    public SaveFileMode SaveMode { get; set; }
     public bool AutoUpdate { get; set; }
     public bool DidUpdate { get; set; }
     public bool GameRunningDuringUpdate { get; set; }
@@ -99,7 +100,7 @@ public class SettingsService
     public WindowRecoveryState WindowRecoveryState { get; set; }
     public string CustomSelectionFilePath { get; set; }
     public string BackupDirectory { get; set; }
-    public SaveFileFormat.Enum SaveFileFormat { get; set; }
+    public SaveFileFormat SaveFileFormat { get; set; }
     public int MaxBackupFiles { get; set; }
     
     /// <summary>
@@ -116,7 +117,7 @@ public class SettingsService
             try
             {
                 var json = File.ReadAllText(SettingsFilePath);
-                var settings = JsonConvert.DeserializeObject<SettingsService>(json);
+                var settings = JsonConvert.DeserializeObject<SettingsService>(json, JsonSerializerPresets.Default);
                 if (settings != null)
                 {
                     GameDirectory = settings.GameDirectory;
@@ -170,7 +171,7 @@ public class SettingsService
     {
         try
         {
-            var json = JsonConvert.SerializeObject(this, Formatting.Indented);
+            var json = JsonConvert.SerializeObject(this, JsonSerializerPresets.Default);
             var directory = Path.GetDirectoryName(SettingsFilePath);
             if (!Directory.Exists(directory) && directory != null)
                 Directory.CreateDirectory(directory);

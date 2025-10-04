@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
+using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Models;
 using WolvenKit.Interfaces.Extensions;
 using YamlDotNet.Serialization;
@@ -12,15 +13,6 @@ namespace VolumetricSelection2077.Services
 {
     public class UtilService
     {
-        public static string BuildORRegex(List<string> patterns)
-        {
-            return string.Join("|", patterns);
-        }
-        public static string EscapeSlashes(string input)
-        {
-            return input.Replace("\\", "\\\\");
-        }
-        
         /// <summary>
         /// Formats TimeSpan to H Hour M minute S.MS Second with the larger ones only being added if it is not 0
         /// </summary>
@@ -105,7 +97,7 @@ namespace VolumetricSelection2077.Services
         /// <exception cref="ArgumentException">given filepath is invalid</exception>
         public static bool IsDirectoryEmpty(string path)
         {
-            if (ValidationService.ValidatePath(path) != ValidationService.PathValidationResult.Valid)
+            if (ValidationService.ValidatePath(path) != PathValidationResult.Valid)
                 throw new ArgumentException($"Path is invalid.");
             if (!Directory.Exists(path))
                 throw new ArgumentException($"Path does not exist or is not Directory.");
@@ -113,91 +105,5 @@ namespace VolumetricSelection2077.Services
                 return false;
             return true;
         }
-        
-                
-        /// <summary>
-        /// Checks if there is enough space on the drive and if the change is significant enough to resize the database
-        /// </summary>
-        /// <param name="db">database to calculate for</param>
-        /// <param name="stats">current cache stats</param>
-        /// <param name="cacheDirectory">current cache directory</param>
-        /// <param name="resizeAfterBytes">threshold for resizing</param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentOutOfRangeException">if CacheDatabases.All is passed</exception>
-        public static bool ShouldResize(CacheDatabases db, CacheService.CacheStats stats, string cacheDirectory, ulong resizeAfterBytes = 1024 * 1024 * 1024)
-        {
-            FileSize sizeToRemove;
-            FileSize totalSize = new FileSize(stats.EstVanillaSize.Bytes + 
-                                              stats.EstModdedSize.Bytes +
-                                              stats.EstVanillaBoundsSize.Bytes +
-                                              stats.EstModdedBoundsSize.Bytes);
-            
-            switch (db)
-            {
-                case CacheDatabases.Vanilla:
-                    sizeToRemove = stats.EstVanillaSize;
-                    break;
-                case CacheDatabases.Modded:
-                    sizeToRemove = stats.EstModdedSize;
-                    break;
-                case CacheDatabases.VanillaBounds:
-                    sizeToRemove = stats.EstVanillaBoundsSize;
-                    break;
-                case CacheDatabases.ModdedBounds:
-                    sizeToRemove = stats.EstModdedBoundsSize;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(db), db, null);
-            }
-            
-            var cacheDriveInfo = new DriveInfo(cacheDirectory);
-            var freeSpace = (ulong)cacheDriveInfo.AvailableFreeSpace;
-            
-            return sizeToRemove.Bytes > resizeAfterBytes && freeSpace > totalSize.Bytes - sizeToRemove.Bytes;
-        }
-
-        /// <summary>
-        /// Creates a child serializer that excludes the given converters
-        /// </summary>
-        /// <param name="parent">serializer to copy settings from</param>
-        /// <param name="exclude">converters to exclude</param>
-        /// <returns></returns>
-        public static JsonSerializer CreateChildSerializer(JsonSerializer parent, params Type[] exclude)
-        {
-            var child = new JsonSerializer
-            {
-                Culture = parent.Culture,
-                ContractResolver = parent.ContractResolver,
-                CheckAdditionalContent = parent.CheckAdditionalContent,
-                ConstructorHandling = parent.ConstructorHandling,
-                Context = parent.Context,
-                DateFormatHandling = parent.DateFormatHandling,
-                DateFormatString = parent.DateFormatString,
-                DateParseHandling = parent.DateParseHandling,
-                DateTimeZoneHandling = parent.DateTimeZoneHandling,
-                DefaultValueHandling = parent.DefaultValueHandling,
-                EqualityComparer = parent.EqualityComparer,
-                FloatFormatHandling = parent.FloatFormatHandling,
-                FloatParseHandling = parent.FloatParseHandling,
-                Formatting = parent.Formatting,
-                MaxDepth = parent.MaxDepth,
-                MetadataPropertyHandling = parent.MetadataPropertyHandling,
-                MissingMemberHandling = parent.MissingMemberHandling,
-                NullValueHandling = parent.NullValueHandling,
-                ObjectCreationHandling = parent.ObjectCreationHandling,
-                PreserveReferencesHandling = parent.PreserveReferencesHandling,
-                ReferenceLoopHandling = parent.ReferenceLoopHandling,
-                StringEscapeHandling = parent.StringEscapeHandling,
-                TypeNameAssemblyFormatHandling = parent.TypeNameAssemblyFormatHandling,
-                TypeNameHandling = parent.TypeNameHandling
-            };
-
-            foreach (var c in parent.Converters)
-                if (!exclude.Contains(c.GetType()))
-                    child.Converters.Add(c);
-
-            return child;
-        }
-
     }
 }
