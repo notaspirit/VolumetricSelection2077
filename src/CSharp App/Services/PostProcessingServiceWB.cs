@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
@@ -17,9 +18,19 @@ public partial class PostProcessingService
     /// <param name="axlRemovalFile"></param>
     private void SaveAsPrefab(AxlRemovalFile axlRemovalFile)
     {
-        var favoritesPath = _settingsService.SaveToArchiveMods ?
-            Path.Join(_settingsService.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "entSpawner", "data", "favorite", "GeneratedByVS2077.json") :
-            Path.Join(_settingsService.OutputDirectory, "GeneratedByVS2077.json");
+        string favoritesPath;
+        switch (_settingsService.SaveFileLocation)
+        {
+            case SaveFileLocation.GameDirectory:
+                favoritesPath = Path.Join(_settingsService.GameDirectory, "bin", "x64", "plugins",
+                    "cyber_engine_tweaks", "mods", "entSpawner", "data", "favorite", "GeneratedByVS2077.json");
+                break;
+            case SaveFileLocation.OutputDirectory:
+                favoritesPath = Path.Join(_settingsService.OutputDirectory, "GeneratedByVS2077.json");
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
         var logMessage = "";
         
         
