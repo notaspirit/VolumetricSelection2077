@@ -34,8 +34,7 @@ public partial class DebugWindow : Window
         
         _dispatcherTimer = new TrackedDispatchTimer() { Interval = TimeSpan.FromSeconds(1) };
         _dispatcherTimer.Tick += (s, e) => mainWindow.ProgressTextBlock.Text = $"{UtilService.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
-
-        Opened += OnOpened;
+        
         Closing += OnClosing;
     }
     
@@ -65,13 +64,6 @@ public partial class DebugWindow : Window
             _mainWindowViewModel.BenchmarkProcessing = false;
             _debugWindowViewModel.IsProcessing = false;
         }
-    }
-    
-    private void OnOpened(object? sender, EventArgs e)
-    {
-        double x = mainWindow.Position.X + (mainWindow.Bounds.Width - Bounds.Width) / 2;
-        double y = mainWindow.Position.Y + (mainWindow.Bounds.Height - Bounds.Height) / 2;
-        Position = new PixelPoint((int)x, (int)y);
     }
     
     private void OnClosing(object? sender, System.ComponentModel.CancelEventArgs e)
