@@ -126,9 +126,9 @@ namespace VolumetricSelection2077.Services
             var gameExePath = Path.Combine(gamePath, "bin", "x64", "Cyberpunk2077.exe");
             if (!File.Exists(gameExePath))
                 throw new ArgumentException("Could not find Game Executable.");
-            
-            var fileVerInfo = FileVersionInfo.GetVersionInfo(gameExePath);
-            if (fileVerInfo.ProductVersion != metadata.GameVersion)
+
+            string? version = UtilService.GetExeVersion(gameExePath);
+            if (version != metadata.GameVersion)
                 return false;
 
             return metadata.VS2077Version == minimumProgramVersion;

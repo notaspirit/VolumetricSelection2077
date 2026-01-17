@@ -487,9 +487,8 @@ public partial class CacheService
         
         if (!File.Exists(gameExePath))
             throw new Exception("Could not find Game Executable.");
-        
-        var fileVerInfo = FileVersionInfo.GetVersionInfo(gameExePath);
-        string? version = fileVerInfo.ProductVersion;
+
+        string? version = UtilService.GetExeVersion(gameExePath);
         if (version == null)
             throw new Exception("Could not find Game Version.");
         
