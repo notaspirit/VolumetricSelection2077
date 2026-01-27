@@ -23,7 +23,8 @@ public class DebugWindowViewModel
         {nameof(TestSectorAABBTime), new TestSectorAABBTime()},
         {nameof(TestShpereCheck), new TestShpereCheck()},
         {nameof(TestWheezeKitSerialization), new TestWheezeKitSerialization()},
-        {nameof(BuildKnownBadSectorVerbose), new BuildKnownBadSectorVerbose()}
+        {nameof(BuildKnownBadSectorVerbose), new BuildKnownBadSectorVerbose()},
+        {nameof(FindTrafficNodes), new FindTrafficNodes()}
     };
     
     public DebugWindowViewModel(Window mainWindow)
