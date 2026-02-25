@@ -108,7 +108,8 @@ public class UpdateService
         string rootTempPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "VolumetricSelection2077", "temp");
         Directory.CreateDirectory(rootTempPath);
-        string downloadPathApp = Path.Combine(rootTempPath, "latest-release-app.zip");
+        string extension = OperatingSystem.IsWindows() ? ".zip" : ".tar.gz";
+        string downloadPathApp = Path.Combine(rootTempPath, $"latest-release-app{extension}");
         string downloadPathCet = Path.Combine(rootTempPath, "latest-release-cet.zip");
         string unzipPath = Path.Combine(rootTempPath, "unzip");
         string unzipPathCetTemp = Path.Combine(rootTempPath, "unzip-cet");
@@ -148,16 +149,16 @@ public class UpdateService
                 unzipPathCet = SettingsService.Instance.CETInstallLocation;
             }
             Directory.CreateDirectory(unzipPath);
-            if (OperatingSystem.IsWindows())
+            if (downloadPathApp.EndsWith(".zip"))
                 ZipFile.ExtractToDirectory(downloadPathApp, unzipPath, true);
-            else if (OperatingSystem.IsLinux())
+            else if (downloadPathApp.EndsWith(".tar.gz"))
             {
                 using var file = File.OpenRead(downloadPathApp);
                 using var gzip = new GZipStream(file, CompressionMode.Decompress);
                 TarFile.ExtractToDirectory(gzip, unzipPath, true);
             }
-            else
-                throw new NotImplementedException("Your operating system is not supported.");
+            else 
+                throw new InvalidOperationException($"Unknown file type: {downloadPathApp}");
                 
             ZipFile.ExtractToDirectory(downloadPathCet, unzipPathCetTemp, true);
             MoveDirectoryWithOverwrite(Path.Join(unzipPathCetTemp, "bin"), Path.Join(unzipPathCet, "bin"));
