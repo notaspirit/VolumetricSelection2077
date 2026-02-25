@@ -12,6 +12,9 @@ namespace VolumetricSelection2077.Services;
 
 public class UpdateService
 {
+    private const string RepoOwner = "notaspirit";
+    private const string RepoName = "VolumetricSelection2077";
+
     /// <summary>
     /// Gets the most recent version and changelog
     /// </summary>
@@ -20,7 +23,7 @@ public class UpdateService
     public static async Task<(string, string)> GetChangelog()
     {
         var client = new GitHubClient(new ProductHeaderValue("VolumetricSelection2077"));
-        var release = await client.Repository.Release.GetLatest("notaspirit", "VolumetricSelection2077");
+        var release = await client.Repository.Release.GetLatest(RepoOwner, RepoName);
         return (release.TagName.Replace("v", ""), release.Body);
     }
     
@@ -34,7 +37,7 @@ public class UpdateService
     public static async Task<(bool, string?)> CheckUpdates()
     {
         var client = new GitHubClient(new ProductHeaderValue("VolumetricSelection2077"));
-        var release = await client.Repository.Release.GetLatest("notaspirit", "VolumetricSelection2077");
+        var release = await client.Repository.Release.GetLatest(RepoOwner, RepoName);
         var remoteVersion = release.TagName;
         var localVersion = SettingsService.Instance.ProgramVersion;
 
@@ -70,7 +73,7 @@ public class UpdateService
         try
         {
             var client = new GitHubClient(new ProductHeaderValue("VolumetricSelection2077"));
-            var release = await client.Repository.Release.GetLatest("notaspirit", "VolumetricSelection2077");
+            var release = await client.Repository.Release.GetLatest(RepoOwner, RepoName);
             foreach (var asset in release.Assets)
             {
                 if (asset.Name.Contains(mainZipName))
