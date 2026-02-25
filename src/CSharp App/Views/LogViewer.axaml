@@ -97,7 +97,8 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <SelectableTextBlock
-                            FontFamily="Cascadia Code, Consolas, Courier New, Monospace"
+                            FontFamily="avares://VolumetricSelection2077/assets/JetBrainsMono-VariableFont_wght.ttf#JetBrains Mono"
+                            FontWeight="Regular"
                             Margin="0"
                             Text="{Binding Text}"
                             TextWrapping="Wrap">

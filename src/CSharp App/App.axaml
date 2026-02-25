@@ -20,5 +20,9 @@
         <Style Selector="ToggleSwitch:checked /template/ Border#SwitchKnobBounds">
             <Setter Property="Background" Value="#5755d9" />
         </Style>
+        <Style Selector=":is(Window)">
+            <Setter Property="FontFamily" Value="avares://VolumetricSelection2077/assets/Inter-VariableFont_opsz,wght.ttf#Inter" />
+            <Setter Property="FontWeight" Value="Regular" />
+        </Style>
     </Application.Styles>
 </Application>
