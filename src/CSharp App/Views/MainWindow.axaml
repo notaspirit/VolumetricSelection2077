@@ -12,7 +12,11 @@
     xmlns:resources="clr-namespace:VolumetricSelection2077.Resources"
     xmlns:viewModels="clr-namespace:VolumetricSelection2077.ViewModels"
     xmlns:views="clr-namespace:VolumetricSelection2077.Views"
+    xmlns:conv="clr-namespace:VolumetricSelection2077.Converters.Simple"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Window.Resources>
+        <conv:ProgressToWidthConverter x:Key="ProgressToWidth" />
+    </Window.Resources>
     <Border Margin="5">
         <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,*">
             <Image
@@ -371,39 +375,46 @@
                     Name="TimerTextBlock"
                     Text="00:00"
                     VerticalAlignment="Center" />
-                <ProgressBar
-                    CornerRadius="2"
-                    Grid.Column="1"
-                    Height="20"
-                    Margin="1,6,6,6"
-                    Maximum="1000"
-                    Minimum="0"
-                    Name="ProgressBar"
-                    VerticalAlignment="Center"
-                    ZIndex="2">
-                    <ProgressBar.Background>
-                        <SolidColorBrush Color="#0e1117" />
-                    </ProgressBar.Background>
-                    <ProgressBar.Foreground>
-                        <SolidColorBrush Color="#4b48d6" />
-                    </ProgressBar.Foreground>
-                </ProgressBar>
-                <ProgressBar
-                    CornerRadius="3"
-                    Grid.Column="1"
-                    Margin="0,5,5,5"
-                    Maximum="1000"
-                    Minimum="0"
-                    Name="ProgressBarBorder"
-                    VerticalAlignment="Center"
-                    ZIndex="1">
-                    <ProgressBar.Background>
-                        <SolidColorBrush Color="#a0a2a5" />
-                    </ProgressBar.Background>
-                    <ProgressBar.Foreground>
-                        <SolidColorBrush Color="#414f6c" />
-                    </ProgressBar.Foreground>
-                </ProgressBar>
+                <Grid Grid.Column="1" Margin="0,5,5,5" Height="20" VerticalAlignment="Center" x:Name="ProgressHost">
+                    <Border
+                        CornerRadius="3"
+                        BorderThickness="1"
+                        BorderBrush="#a0a2a5"
+                        Background="#0e1117" />
+
+                    <Panel ClipToBounds="True">
+                        <Border
+                            CornerRadius="3"
+                            BorderThickness="1"
+                            BorderBrush="#414f6c"
+                            HorizontalAlignment="Left">
+                            <Border.Width>
+                                <MultiBinding Converter="{StaticResource ProgressToWidth}">
+                                    <Binding ElementName="ProgressBar" Path="Value" />
+                                    <Binding ElementName="ProgressBar" Path="Minimum" />
+                                    <Binding ElementName="ProgressBar" Path="Maximum" />
+                                    <Binding ElementName="ProgressHost" Path="Bounds.Width" />
+                                </MultiBinding>
+                            </Border.Width>
+                        </Border>
+                    </Panel>
+
+                    <ProgressBar
+                        Name="ProgressBar"
+                        Margin="1"
+                        Minimum="0"
+                        Maximum="1000"
+                        CornerRadius="2"
+                        VerticalAlignment="Stretch"
+                        HorizontalAlignment="Stretch">
+                        <ProgressBar.Background>
+                            <SolidColorBrush Color="#0e1117" />
+                        </ProgressBar.Background>
+                        <ProgressBar.Foreground>
+                            <SolidColorBrush Color="#4b48d6" />
+                        </ProgressBar.Foreground>
+                    </ProgressBar>
+                </Grid>
                 <Button
                     Background="#6b82b2"
                     Click="SettingsButton_Click"
