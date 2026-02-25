@@ -12,6 +12,7 @@ registerForEvent('onOverlayClose', function()
 end)
 
 registerForEvent('onDraw', function()
+    VSGui.drawVisualizer()
     if isOverlayVisible then
        VSGui.CETGui()
     end
@@ -25,6 +26,8 @@ registerForEvent("onInit", function ()
     GameSession.Listen(function(state)
         if tostring(state.event) == "Start" then
             VSGui.onSaveLoaded()
+        elseif tostring(state.event) == "Resume" then
+                VSGui.onResume()
         end
     end)
 end)

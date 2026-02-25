@@ -31,6 +31,7 @@ You need **both the VS2077 CET mod and the VS2077 App** (portable or installer).
 
 * **CyberEngineTweaks** ([GitHub](https://github.com/maximegmd/CyberEngineTweaks) | [Nexus](https://www.nexusmods.com/cyberpunk2077/mods/107))
 * **ArchiveXL 1.23.0+** ([GitHub](https://github.com/psiberx/cp2077-archive-xl) | [Nexus](https://www.nexusmods.com/cyberpunk2077/mods/4198))
+* **Codeware** ([GitHub](https://github.com/psiberx/cp2077-codeware) | [Nexus](https://www.nexusmods.com/cyberpunk2077/mods/7780))
 * **WorldBuilder** ([GitHub](https://github.com/justarandomguyintheinternet/CP77_entSpawner) | [Nexus](https://www.nexusmods.com/cyberpunk2077/mods/20660))
 * **.NET Runtime 8.0.0+** ([Microsoft](https://dotnet.microsoft.com/en-us/download/dotnet/8.0))
 

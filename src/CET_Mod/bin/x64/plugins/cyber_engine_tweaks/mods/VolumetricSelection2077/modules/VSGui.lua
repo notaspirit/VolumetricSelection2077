@@ -4,6 +4,7 @@ local visualizationBox = require('classes/visualizationBox')
 local StatusMessage = require('modules/StatusMessage')
 local settings = require('modules/settings')
 local jsonUtils = require('modules/jsonUtils')
+local GameSession = require("libs/GameSession")
 
 -- Initialize variables
 -- 3d Objects
@@ -14,7 +15,7 @@ local relativeOffset = vector3:new(0, 0, 0)
 local selectionBox = nil
 
 -- Settings
-local versionString = "1000.0.0-beta12"
+local versionString = "1000.0.0"
 
 local settingsInstance
 local isHighlighted = false
@@ -293,6 +294,9 @@ local function controlsTab()
         scalePoint.z, changedScaleZ = ImGui.DragFloat("##scalez", scalePoint.z, settingsInstance.currentMove)
 
         if changedScaleX or changedScaleY or changedScaleZ then
+            scalePoint.x = math.max(scalePoint.x, 0)
+            scalePoint.y = math.max(scalePoint.y, 0)
+            scalePoint.z = math.max(scalePoint.z, 0)
             selectionBox:setScale(scalePoint)
             selectionBox:updateScale()
             settingsInstance:update("selectionBox", selectionBox)
@@ -523,6 +527,11 @@ function CETGui()
     ImGui.End()
 end
 
+function drawVisualizer()
+    if (selectionBox == nil) or (not isHighlighted) or (GameSession.IsPaused()) then return end
+    selectionBox:drawEdgeVisualizer()
+end
+
 function onShutdown()
     selectionBox:despawn()
 end
@@ -535,8 +544,15 @@ function onSaveLoaded()
 	end
 end
 
+function onResume()
+    if selectionBox == nil then return end
+    selectionBox:onResume()
+end
+
 return {
     CETGui = CETGui,
+    drawVisualizer = drawVisualizer,
     onShutdown = onShutdown,
-    onSaveLoaded = onSaveLoaded
+    onSaveLoaded = onSaveLoaded,
+    onResume = onResume
 }
