@@ -44,8 +44,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <AvaloniaResource Include="assets\**" />
-    <Content Include="assets\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <AvaloniaResource Include="assets/**" />
+
+    <Content Include="assets/**"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest"
+             TargetPath="assets/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
   <PropertyGroup>
