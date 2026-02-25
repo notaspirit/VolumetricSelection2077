@@ -44,7 +44,7 @@ namespace VolumetricSelection2077.Services
             bool gfsStatus = ValidateGameFileService();
             var outDirVR = ValidateAndCreateDirectory(_settingsService.OutputDirectory);
             var selFileVR = ValidateSelectionFile(gamePath);
-            var validFileName = string.IsNullOrEmpty(outputFilename) ? PathValidationResult.Empty : ValidatePath(@"E:\" + outputFilename + ".xl");
+            var validFileName = string.IsNullOrEmpty(outputFilename) ? PathValidationResult.Empty : ValidatePath(outputFilename, true);
             var resourceNameFilterValid = ValidateResourcePathFilter();
             var debugNameFilterValid = ValidateDebugNameFilter();
             var vanillaSectorBBsBuild = AreVanillaSectorBBsBuild();
@@ -138,14 +138,15 @@ namespace VolumetricSelection2077.Services
         ///  Checks if a given path is valid, not if it exists
         /// </summary>
         /// <param name="path">The path to check</param>
+        /// <param name ="ignoreRelative">Whether the path being relative is a fail case or not</param>
         /// <returns>Enum describing validation outcome</returns>
-        public static PathValidationResult ValidatePath(string path)
+        public static PathValidationResult ValidatePath(string path, bool ignoreRelative = false)
         {
             if (string.IsNullOrWhiteSpace(path)) return PathValidationResult.Empty;
             
             if (path.IndexOfAny(InvalidCharacters) != -1) return PathValidationResult.InvalidCharacters;
 
-            if (!Path.IsPathFullyQualified(path)) return PathValidationResult.Relative;
+            if (!Path.IsPathFullyQualified(path) && !ignoreRelative) return PathValidationResult.Relative;
             
             if (Path.GetPathRoot(path)?.Equals(path, StringComparison.OrdinalIgnoreCase) == true) 
                 return PathValidationResult.Drive;
