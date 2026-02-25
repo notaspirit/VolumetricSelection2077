@@ -30,6 +30,10 @@ public class OsUtilsService
         else if (OperatingSystem.IsLinux())
         {
             var execPath = Path.Combine(AppContext.BaseDirectory, "VolumetricSelection2077");
+            var mode = File.GetUnixFileMode(execPath);
+            mode |= UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute;
+            File.SetUnixFileMode(execPath, mode);
+
             Process.Start(new ProcessStartInfo
             {
                 FileName = "/bin/bash",

@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Formats.Tar;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
@@ -147,7 +148,17 @@ public class UpdateService
                 unzipPathCet = SettingsService.Instance.CETInstallLocation;
             }
             Directory.CreateDirectory(unzipPath);
-            ZipFile.ExtractToDirectory(downloadPathApp, unzipPath, true);
+            if (OperatingSystem.IsWindows())
+                ZipFile.ExtractToDirectory(downloadPathApp, unzipPath, true);
+            else if (OperatingSystem.IsLinux())
+            {
+                using var file = File.OpenRead(downloadPathApp);
+                using var gzip = new GZipStream(file, CompressionMode.Decompress);
+                TarFile.ExtractToDirectory(gzip, unzipPath, true);
+            }
+            else
+                throw new NotImplementedException("Your operating system is not supported.");
+                
             ZipFile.ExtractToDirectory(downloadPathCet, unzipPathCetTemp, true);
             MoveDirectoryWithOverwrite(Path.Join(unzipPathCetTemp, "bin"), Path.Join(unzipPathCet, "bin"));
             try
