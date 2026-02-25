@@ -186,7 +186,7 @@ public partial class MainWindow : Window
     {
         if (sender is not Button)
             return;
-        _mainWindowViewModel.FilterSelectionVisibility = !_mainWindowViewModel.FilterSelectionVisibility;
+        _mainWindowViewModel.IsFilterSelectionVisible = !_mainWindowViewModel.IsFilterSelectionVisible;
         AddQueuedFilters();
     }
     
@@ -194,7 +194,7 @@ public partial class MainWindow : Window
     {
         if (sender is Button)
         {
-            _mainWindowViewModel.ParameterSelectionVisibility = !_mainWindowViewModel.ParameterSelectionVisibility;
+            _mainWindowViewModel.IsParameterSelectionVisible = !_mainWindowViewModel.IsParameterSelectionVisible;
         }
     }
     
