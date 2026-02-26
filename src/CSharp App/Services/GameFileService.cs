@@ -138,11 +138,22 @@ public class GameFileService
     {
         if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
 
+        if (_cacheService.IsResourceKnownBad(path))
+        {
+            Logger.Warning($"Skipping known bad mesh {path}");
+            return null;
+        }
+        
         var cachedMesh = _cacheService.GetEntry(new ReadCacheRequest(path, _readCacheTarget));
         if (MessagePackHelper.TryDeserialize<AbbrMesh>(cachedMesh, out var mesh)) return mesh;
         
         var rawMesh = ArchiveManager.GetCR2WFile(path);
-        if (rawMesh == null) return null;
+        if (rawMesh == null)
+        {
+            _cacheService.AddKnownBadResource(path);
+            Logger.Warning($"Failed to get mesh {path}, marking as known bad.");
+            return null;
+        }
         CacheDatabases db = CacheDatabases.Vanilla;
         if (_settingsService.SupportModdedResources)
         {
@@ -157,7 +168,8 @@ public class GameFileService
         }
         catch (Exception ex)
         {
-            Logger.Exception(ex,$"Failed to parse mesh {path}");
+            Logger.Exception(ex,$"Failed to parse mesh {path}, marked as known bad.");
+            _cacheService.AddKnownBadResource(path);
             return null;
         }
         if (parsedMesh == null) return null;
@@ -177,14 +189,26 @@ public class GameFileService
     public AbbrSector? GetSector(string path)
     {
         if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
-        var cachedSector = _cacheService.GetEntry(new ReadCacheRequest(path, _readCacheTarget));
-        if (MessagePackHelper.TryDeserialize<AbbrSector>(cachedSector, out var mesh))
+        
+        if (_cacheService.IsResourceKnownBad(path))
         {
-            return mesh;
+            Logger.Warning($"Skipping known bad sector {path}");
+            return null;
+        }
+        
+        var cachedSector = _cacheService.GetEntry(new ReadCacheRequest(path, _readCacheTarget));
+        if (MessagePackHelper.TryDeserialize<AbbrSector>(cachedSector, out var sector))
+        {
+            return sector;
         }
         
         var rawSector = ArchiveManager.GetCR2WFile(path);
-        if (rawSector == null) return null;
+        if (rawSector == null)
+        {
+            _cacheService.AddKnownBadResource(path);
+            Logger.Warning($"Failed to get sector {path}, marking as known bad. ");
+            return null;
+        }
         CacheDatabases db = CacheDatabases.Vanilla;
         if (_settingsService.SupportModdedResources)
         {
@@ -199,7 +223,8 @@ public class GameFileService
         }
         catch (Exception ex)
         {
-            Logger.Exception(ex,$"Failed to parse sector {path}");
+            Logger.Exception(ex,$"Failed to parse sector {path}, marked as known bad.");
+            _cacheService.AddKnownBadResource(path);
             return null;
         }
 
