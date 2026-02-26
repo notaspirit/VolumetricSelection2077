@@ -99,7 +99,7 @@ public class ProcessService
     
     private async Task<AxlRemovalSector?> SectorProcessThread(string streamingSectorName, SelectionInput CETOutputFile)
     {
-        Logger.Info($"Starting sector process thread for {streamingSectorName}...");
+        Logger.Debug($"Starting sector process thread for {streamingSectorName}...");
         try
         {
             string streamingSectorNameFix = Regex.Replace(streamingSectorName, @"\\{2}", @"\");
@@ -113,7 +113,7 @@ public class ProcessService
             var (successPSS, errorPSS, resultPss) = await ProcessStreamingsector(sector, streamingSectorName, CETOutputFile);
             if (successPSS)
             { 
-                Logger.Info($"Successfully processed streamingsector {streamingSectorName} which found {resultPss?.NodeDeletions.Count ?? 0} nodes out of {sector.NodeData.Length} nodes.");
+                Logger.Debug($"Successfully processed streamingsector {streamingSectorName} which found {resultPss?.NodeDeletions.Count ?? 0} nodes out of {sector.NodeData.Length} nodes.");
                 return resultPss;
             }
             
