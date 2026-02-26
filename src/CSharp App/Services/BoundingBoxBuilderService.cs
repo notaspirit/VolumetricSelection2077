@@ -87,7 +87,7 @@ public class BoundingBoxBuilderService
     {
         try
         {
-            Logger.Info($"Building bounds for {sectorPath}...");
+            Logger.Debug($"Building bounds for {sectorPath}...");
             var sector = _gameFileService.GetSector(sectorPath);
             if (sector == null)
             {
