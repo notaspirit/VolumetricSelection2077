@@ -98,7 +98,9 @@
                     <DataTemplate>
                         <SelectableTextBlock
                             FontFamily="avares://VolumetricSelection2077/assets/JetBrainsMono-VariableFont_wght.ttf#JetBrains Mono"
-                            FontWeight="Regular"
+                            FontWeight="{OnPlatform Default=Regular,
+                                                    Windows=DemiBold,
+                                                    Linux=Regular}"
                             Margin="0"
                             Text="{Binding Text}"
                             TextWrapping="Wrap">
