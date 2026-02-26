@@ -26,6 +26,7 @@ namespace VolumetricSelection2077.Resources
             public static string MaxBackupFiles { get; } = "Maximum number of backup files to keep, older files will be deleted. Does not affect the output directory.";
             public static string BackupDirectory { get; } = "Directory to save backups of the selection and output after every run.";
             public static string DestructibleMeshTreatment { get; } = "Whether to save destructible meshes as dynamic meshes (with physics, but limited filtering) or as static meshes (no physics). Only affects World Builder output.";
+            public static string RememberFailedResources { get; } = "Remembers resources that fail and skips them from then on.";
         }
 
         public static class Watermarks
@@ -61,5 +62,6 @@ namespace VolumetricSelection2077.Resources
             public static string MaxBackupFiles { get; } = "Max Backup Files";
             public static string  DestructibleMeshTreatment { get; } = "Destructible Mesh Treatment";
             public static string AutoScroll { get; } = "Auto Scroll";
+            public static string RememberFailedResources { get; } = "Clear Known Bad Resources";
         }
 }

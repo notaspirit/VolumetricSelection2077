@@ -602,7 +602,13 @@ public partial class CacheService
             File.Delete(knownBadResourcesFile);
         _knownBadResources.Clear();
     }
-
+    
+    /// <summary>
+    /// Gets the count of known bad resources
+    /// </summary>
+    /// <returns></returns>
+    public int GetKnownBadResourceCount() => _knownBadResources.Count;
+    
     private void SaveKnownBadResources()
     {
         if (_knownBadResources.Count == 0) return;

@@ -30,7 +30,7 @@
                     <Grid
                         ColumnDefinitions="200,*"
                         Margin="-10,0"
-                        RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                        RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
                         <!--  First Row: Label  -->
                         <TextBlock
                             Grid.Column="0"
@@ -102,12 +102,20 @@
                             Grid.Row="10"
                             HorizontalAlignment="Left"
                             Margin="5"
+                            Text="Remember Failed Resources"
+                            ToolTip.Tip="{x:Static resources:ToolTips.RememberFailedResources}"
+                            VerticalAlignment="Center" />
+                        <TextBlock
+                            Grid.Column="0"
+                            Grid.Row="11"
+                            HorizontalAlignment="Left"
+                            Margin="5"
                             Text="{x:Static resources:Labels.CustomSelectionFilePath}"
                             ToolTip.Tip="{x:Static resources:ToolTips.CustomSelectionFilePath}"
                             VerticalAlignment="Center" />
                         <TextBlock
                             Grid.Column="0"
-                            Grid.Row="11"
+                            Grid.Row="12"
                             HorizontalAlignment="Left"
                             Margin="5"
                             Text="{x:Static resources:Labels.BackupDirectory}"
@@ -115,7 +123,7 @@
                             VerticalAlignment="Center" />
                         <TextBlock
                             Grid.Column="0"
-                            Grid.Row="12"
+                            Grid.Row="13"
                             HorizontalAlignment="Left"
                             Margin="5"
                             Text="{x:Static resources:Labels.MaxBackupFiles}"
@@ -343,9 +351,34 @@
                             </Grid>
                         </Grid>
                         <Grid
+                            Grid.Column="1"
+                            Grid.ColumnDefinitions="Auto,*"
+                            Grid.Row="10">
+                            <ToggleSwitch
+                                Grid.Column="0"
+                                IsChecked="{Binding RememberFailedResources}"
+                                Margin="5"
+                                OffContent=""
+                                OnContent="" />
+                            <Button
+                                Background="#ad0002"
+                                Click="ClearKnownBadResources_Click"
+                                Content="{Binding ClearKnownBadResourcesLabel}"
+                                Grid.Column="1"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                Margin="5,0,5,0">
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="DarkRed" />
+                                    </Style>
+                                </Button.Styles>
+                            </Button>
+                        </Grid>
+                        <Grid
                             ColumnDefinitions="*, Auto"
                             Grid.Column="1"
-                            Grid.Row="10"
+                            Grid.Row="11"
                             RowDefinitions="Auto">
                             <TextBox
                                 Grid.Column="0"
@@ -371,7 +404,7 @@
                         <Grid
                             ColumnDefinitions="*, Auto"
                             Grid.Column="1"
-                            Grid.Row="11"
+                            Grid.Row="12"
                             RowDefinitions="Auto">
                             <TextBox
                                 Grid.Column="0"
@@ -396,7 +429,7 @@
                         </Grid>
                         <controls:Int32TextBox
                             Grid.Column="1"
-                            Grid.Row="12"
+                            Grid.Row="13"
                             Margin="5"
                             Text="{Binding Settings.MaxBackupFiles, UpdateSourceTrigger=LostFocus}"
                             Watermark="{x:Static resources:Labels.MaxBackupFiles}" />
