@@ -32,7 +32,7 @@ public class TestCache : IDebugTool
         AbbrMesh? regularCMesh = null;
         try
         { 
-            regularCMesh = gfs.GetCMesh(testMeshPath);
+            regularCMesh = gfs.GetCMesh(testMeshPath).Resource as AbbrMesh;
         }
         catch (Exception e)
         {
@@ -48,7 +48,7 @@ public class TestCache : IDebugTool
         var swGetMeshCache = new Stopwatch();
         swGetMeshCache.Start();
         
-        var cachedCMesh = gfs.GetCMesh(testMeshPath);
+        var cachedCMesh = gfs.GetCMesh(testMeshPath).Resource as AbbrMesh;
 
         swGetMeshCache.Stop();
         Logger.Info($"Got CMesh cached time: {swGetMeshCache.ElapsedMilliseconds} ms");
@@ -58,7 +58,7 @@ public class TestCache : IDebugTool
         var swGetSectorReg = new Stopwatch();
         swGetSectorReg.Start();
         
-        var regularSector = gfs.GetSector(testSectorPath);
+        var regularSector = gfs.GetSector(testSectorPath).Resource as AbbrSector;
 
         swGetSectorReg.Stop();
         Logger.Info($"Got Sector regular time: {swGetSectorReg.ElapsedMilliseconds} ms");
@@ -69,7 +69,7 @@ public class TestCache : IDebugTool
         var swGetSectorCache = new Stopwatch();
         swGetSectorCache.Start();
         
-        var cachedSector = gfs.GetSector(testSectorPath);
+        var cachedSector = gfs.GetSector(testSectorPath).Resource as AbbrSector;
 
         swGetSectorCache.Stop();
         Logger.Info($"Got Sector cached time: {swGetSectorCache.ElapsedMilliseconds} ms");

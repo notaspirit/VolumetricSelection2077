@@ -114,18 +114,28 @@ public class GameFileService
     /// <param name="sectorHash"></param>
     /// <param name="actorHash"></param>
     /// <returns></returns>
-    /// <exception cref="Exception">Game file service is not initialized</exception>
     /// <remarks>Collision meshes are not cached</remarks>
-    public async Task<AbbrMesh?> GetPhysXMesh(ulong sectorHash, ulong actorHash)
+    public async Task<ResourceToken> GetPhysXMesh(ulong sectorHash, ulong actorHash)
     {
-        if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetPhysXMesh.");
+        var token = new ResourceToken();
+        
+        if (!_initialized)
+        {
+            token.Result = ResourceTokenResult.NotInitialized;
+            return token;
+        }
+        
         var rawMesh = await _geometryCacheService.GetEntryAsync(sectorHash, actorHash);
         if (rawMesh == null)
         {
-            return null;
+            token.Result = ResourceTokenResult.Failure;
+            return token;
         }
         
-        return DirectAbbrMeshParser.ParseFromPhysX(rawMesh);
+        token.Result = ResourceTokenResult.Success;
+        token.Resource = DirectAbbrMeshParser.ParseFromPhysX(rawMesh);
+
+        return token;
     }
     
     /// <summary>
@@ -133,26 +143,36 @@ public class GameFileService
     /// </summary>
     /// <param name="path"></param>
     /// <returns></returns>
-    /// <exception cref="Exception">Game file service is not initialized</exception>
-    public AbbrMesh? GetCMesh(string path)
+    public ResourceToken GetCMesh(string path)
     {
-        if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
+        var token = new ResourceToken();
+
+        if (!_initialized)
+        {
+            token.Result = ResourceTokenResult.NotInitialized;
+            return token;
+        }
 
         if (_cacheService.IsResourceKnownBad(path))
         {
-            Logger.Warning($"Skipping known bad mesh {path}");
-            return null;
+            token.Result = ResourceTokenResult.KnownBad;
+            return token;
         }
         
         var cachedMesh = _cacheService.GetEntry(new ReadCacheRequest(path, _readCacheTarget));
-        if (MessagePackHelper.TryDeserialize<AbbrMesh>(cachedMesh, out var mesh)) return mesh;
+        if (MessagePackHelper.TryDeserialize<AbbrMesh>(cachedMesh, out var mesh))
+        {
+            token.Result = ResourceTokenResult.Success;
+            token.Resource = mesh;
+            return token;
+        }
         
         var rawMesh = ArchiveManager.GetCR2WFile(path);
         if (rawMesh == null)
         {
             _cacheService.AddKnownBadResource(path);
-            Logger.Warning($"Failed to get mesh {path}, marking as known bad.");
-            return null;
+            token.Result = ResourceTokenResult.Failure;
+            return token;
         }
         CacheDatabases db = CacheDatabases.Vanilla;
         if (_settingsService.SupportModdedResources)
@@ -168,16 +188,25 @@ public class GameFileService
         }
         catch (Exception ex)
         {
-            Logger.Exception(ex,$"Failed to parse mesh {path}, marked as known bad.");
+            Logger.Exception(ex,$"Failed to parse mesh {path}");
             _cacheService.AddKnownBadResource(path);
-            return null;
+            token.Result = ResourceTokenResult.Failure;
+            return token;
         }
-        if (parsedMesh == null) return null;
 
-        if (!_settingsService.CacheModdedResources && db == CacheDatabases.Modded) return parsedMesh;
-        _cacheService.WriteEntry(path, parsedMesh, db); 
+        if (parsedMesh == null)
+        {
+            token.Result = ResourceTokenResult.Failure;
+            return token;
+        }
         
-        return parsedMesh;
+        token.Result = ResourceTokenResult.Success;
+        token.Resource = parsedMesh;
+
+        if (db != CacheDatabases.Modded || _settingsService.CacheModdedResources)
+            _cacheService.WriteEntry(path, parsedMesh, db); 
+        
+        return token;
     }
     
     /// <summary>
@@ -185,29 +214,36 @@ public class GameFileService
     /// </summary>
     /// <param name="path"></param>
     /// <returns></returns>
-    /// <exception cref="Exception">Game file service is not initialized</exception>
-    public AbbrSector? GetSector(string path)
+    public ResourceToken GetSector(string path)
     {
-        if (!_initialized) throw new Exception("GameFileService must be initialized before calling GetCMesh.");
+        var token = new ResourceToken();
+
+        if (!_initialized)
+        {
+            token.Result = ResourceTokenResult.NotInitialized;
+            return token;
+        }
         
         if (_cacheService.IsResourceKnownBad(path))
         {
-            Logger.Warning($"Skipping known bad sector {path}");
-            return null;
+            token.Result = ResourceTokenResult.KnownBad;
+            return token;
         }
         
         var cachedSector = _cacheService.GetEntry(new ReadCacheRequest(path, _readCacheTarget));
         if (MessagePackHelper.TryDeserialize<AbbrSector>(cachedSector, out var sector))
         {
-            return sector;
+            token.Result = ResourceTokenResult.Success;
+            token.Resource = sector;
+            return token;
         }
         
         var rawSector = ArchiveManager.GetCR2WFile(path);
         if (rawSector == null)
         {
             _cacheService.AddKnownBadResource(path);
-            Logger.Warning($"Failed to get sector {path}, marking as known bad. ");
-            return null;
+            token.Result = ResourceTokenResult.Failure;
+            return token;
         }
         CacheDatabases db = CacheDatabases.Vanilla;
         if (_settingsService.SupportModdedResources)
@@ -223,13 +259,18 @@ public class GameFileService
         }
         catch (Exception ex)
         {
-            Logger.Exception(ex,$"Failed to parse sector {path}, marked as known bad.");
+            Logger.Exception(ex,$"Failed to parse sector {path}");
             _cacheService.AddKnownBadResource(path);
-            return null;
+            token.Result = ResourceTokenResult.Failure;
+            return token;
         }
-
-        if (!_settingsService.CacheModdedResources && db == CacheDatabases.Modded) return parsedSector;
-        _cacheService.WriteEntry(path, parsedSector, db);
-        return parsedSector;
+        
+        token.Result = ResourceTokenResult.Success;
+        token.Resource = parsedSector;
+        
+        if (db != CacheDatabases.Modded || _settingsService.CacheModdedResources)
+            _cacheService.WriteEntry(path, parsedSector, db);
+        
+        return token;
     }
 }

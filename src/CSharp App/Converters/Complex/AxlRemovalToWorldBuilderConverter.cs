@@ -208,7 +208,7 @@ public class AxlRemovalToWorldBuilderConverter
 
                 HandleEmbeddedResourceWarning(foliageNode.Mesh.DepotPath, sectorPath, ref sectorCR2W);
                 
-                worldSectorAbbr ??= _gfs.GetSector(sectorPath);
+                worldSectorAbbr ??= _gfs.GetSector(sectorPath).Resource as AbbrSector;
                 if (worldSectorAbbr == null)
                     return spawnableElements;
                 var abbrFoliageNodeNodeDataEntry = worldSectorAbbr.NodeData[remNode.Index];
@@ -245,7 +245,7 @@ public class AxlRemovalToWorldBuilderConverter
 
                 HandleEmbeddedResourceWarning(instancedDestructibleMeshNode.Mesh.DepotPath, sectorPath, ref sectorCR2W);
                 
-                worldSectorAbbr ??= _gfs.GetSector(sectorPath);
+                worldSectorAbbr ??= _gfs.GetSector(sectorPath).Resource as AbbrSector;
                 if (worldSectorAbbr == null)
                     return spawnableElements;
                 var abbrInstancedDestructibleMeshNodeDataEntry = worldSectorAbbr.NodeData[remNode.Index];
@@ -542,7 +542,7 @@ public class AxlRemovalToWorldBuilderConverter
 
                 HandleEmbeddedResourceWarning(instancedMeshNode.Mesh.DepotPath, sectorPath, ref sectorCR2W);
                 
-                worldSectorAbbr ??= _gfs.GetSector(sectorPath);
+                worldSectorAbbr ??= _gfs.GetSector(sectorPath).Resource as AbbrSector;
                 if (worldSectorAbbr == null)
                     return spawnableElements;
                 var abbrInstancedMeshNodeDataEntry = worldSectorAbbr.NodeData[remNode.Index];

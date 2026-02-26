@@ -9,6 +9,7 @@ using MessagePack;
 using VEnums = VolumetricSelection2077.Enums;
 using WEnums = WolvenKit.RED4.Types.Enums;
 using SharpDX;
+using WolvenKit.Common.PhysX;
 
 namespace VolumetricSelection2077.Services;
 
@@ -103,10 +104,17 @@ public class ProcessService
         try
         {
             string streamingSectorNameFix = Regex.Replace(streamingSectorName, @"\\{2}", @"\");
-            var sector = _gameFileService.GetSector(streamingSectorNameFix);
-            if (sector == null)
+            var sectorToken = _gameFileService.GetSector(streamingSectorNameFix);
+            if (sectorToken.Resource is not AbbrSector sector)
             {
-                Logger.Warning($"Failed to find sector {streamingSectorNameFix}");
+                switch (sectorToken.Result)
+                {
+                    case VEnums.ResourceTokenResult.KnownBad: Logger.Warning($"Sector {streamingSectorName} is a known bad resource, skipping..."); break;
+                    case VEnums.ResourceTokenResult.Success: Logger.Error($"Received an unexpected resource type {sectorToken.Resource?.GetType()} for sector {streamingSectorName}"); break;
+                    case VEnums.ResourceTokenResult.Failure: Logger.Error($"Failed to get sector {streamingSectorName}"); break;
+                    case VEnums.ResourceTokenResult.NotInitialized: Logger.Error($"GameFileService not initialized, cannot get sector {streamingSectorName}"); break;
+                    default: Logger.Error($"Unknown resource token result {sectorToken.Result} for sector {streamingSectorName}"); break;
+                }
                 return null;
             }
                 
@@ -219,10 +227,17 @@ public class ProcessService
                 if (!isInstanced && _settings.SaveFileFormat == VEnums.SaveFileFormat.WorldBuilder)
                     isInstanced = nodeEntry.Type is VEnums.NodeTypeProcessingOptions.worldFoliageNode;
                 
-                var mesh = _gameFileService.GetCMesh(nodeEntry.ResourcePath);
-                if (mesh == null)
+                var meshToken = _gameFileService.GetCMesh(nodeEntry.ResourcePath);
+                if (meshToken.Resource is not AbbrMesh mesh)
                 {
-                    Logger.Warning($"Failed to get CMesh from {nodeEntry.ResourcePath}");
+                    switch (meshToken.Result)
+                    {
+                        case VEnums.ResourceTokenResult.KnownBad: Logger.Warning($"Mesh {nodeEntry.ResourcePath} is a known bad resource, skipping..."); break;
+                        case VEnums.ResourceTokenResult.Success: Logger.Warning($"Received an unexpected resource type {meshToken.Resource?.GetType()} for mesh {nodeEntry.ResourcePath}"); break;
+                        case VEnums.ResourceTokenResult.Failure: Logger.Warning($"Failed to get mesh {nodeEntry.ResourcePath}"); break;
+                        case VEnums.ResourceTokenResult.NotInitialized: Logger.Error($"GameFileService not initialized, cannot get mesh {nodeEntry.ResourcePath}"); break;
+                        default: Logger.Warning($"Unknown resource token result {meshToken.Result} for mesh {nodeEntry.ResourcePath}"); break;
+                    }
                     return null;
                 }
                 var (isInside, instances) = CollisionCheckService.IsMeshInsideBox(mesh,
@@ -262,10 +277,17 @@ public class ProcessService
                         {
                             case WEnums.physicsShapeType.TriangleMesh:
                             case WEnums.physicsShapeType.ConvexMesh:
-                                var collisionMesh = await _gameFileService.GetPhysXMesh((ulong)sectorHash, (ulong)shape.Hash);
-                                if (collisionMesh == null)
+                                var collisionMeshToken = await _gameFileService.GetPhysXMesh((ulong)sectorHash, (ulong)shape.Hash);
+                                if (collisionMeshToken.Resource is not AbbrMesh collisionMesh)
                                 {
-                                    Logger.Warning($"Failed to get PhysX Mesh from {sectorHash} : {shape.Hash}");
+                                    switch (collisionMeshToken.Result)
+                                    {
+                                        case VEnums.ResourceTokenResult.KnownBad: Logger.Warning($"Collision mesh at sector hash {sectorHash} : shape hash {shape.Hash} is a known bad resource, skipping..."); break;
+                                        case VEnums.ResourceTokenResult.Success: Logger.Warning($"Received an unexpected resource type {collisionMeshToken.Resource?.GetType()} for sector hash {sectorHash} : shape hash {shape.Hash}"); break;
+                                        case VEnums.ResourceTokenResult.Failure: Logger.Warning($"Failed to get collision mesh at sector hash {sectorHash} : shape hash {shape.Hash}"); break;
+                                        case VEnums.ResourceTokenResult.NotInitialized: Logger.Error($"GameFileService not initialized, cannot get collision mesh at sector hash {sectorHash} : shape hash {shape.Hash}"); break;
+                                        default: Logger.Warning($"Unknown resource token result {collisionMeshToken.Result} for collision mesh at sector hash {sectorHash} : shape hash {shape.Hash}"); break;
+                                    }
                                     continue;
                                 }
                                 bool isCollisionMeshInsideBox = CollisionCheckService.IsCollisonMeshInsideSelectionBox(collisionMesh, selectionBox.Obb, selectionBox.Aabb, transformActor, shape.Transform);
