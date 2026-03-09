@@ -111,9 +111,9 @@ jobs:
         run: |
           Compress-Archive -Path "temp_publish_win\*" -DestinationPath "${{ github.event.inputs.new_version }}/VS2077-portable-win-${{ github.event.inputs.new_version }}.zip"
           
-      - name: Create Portable ZIP for Linux
+      - name: Create Portable TAR.GZ for Linux
         run: |
-          Compress-Archive -Path "temp_publish_linux\*" -DestinationPath "${{ github.event.inputs.new_version }}/VS2077-portable-linux-${{ github.event.inputs.new_version }}.zip"
+          tar -czf "${{ github.event.inputs.new_version }}/VS2077-portable-linux-${{ github.event.inputs.new_version }}.tar.gz" -C "temp_publish_linux" .
 
       - name: Create CET Mod ZIP
         run: |
