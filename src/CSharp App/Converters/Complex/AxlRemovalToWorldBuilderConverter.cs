@@ -668,7 +668,7 @@ public class AxlRemovalToWorldBuilderConverter
                                 if (css.Materials.Count != 0)
                                     cssMatIndex = _collisionGenerics.Materials.IndexOf(css.Materials[0].GetResolvedText());
 
-                                var cssShape = 0;
+                                int cssShape;
                                 var cssScale = new WorldBuilder.Structs.Vector3();
                                 switch (css.ShapeType.GetEnumValue())
                                 {
@@ -681,9 +681,9 @@ public class AxlRemovalToWorldBuilderConverter
                                         break;
                                     case WEnums.physicsShapeType.Capsule:
                                         cssShape = 1;
-                                        cssScale.x = css.Size.Y * actor.Scale.Y;
-                                        cssScale.y = css.Size.Y * actor.Scale.Y;
-                                        cssScale.z = css.Size.Z * actor.Scale.Z;
+                                        cssScale.x = css.Size.X * actor.Scale.X;
+                                        cssScale.y = css.Size.X * actor.Scale.X;
+                                        cssScale.z = css.Size.Y * actor.Scale.Y;
                                         break;
                                     case WEnums.physicsShapeType.Sphere:
                                         cssShape = 2;
@@ -810,9 +810,10 @@ public class AxlRemovalToWorldBuilderConverter
         PopulateSpawnable(ref se, nde);
         
         // only working way to apply actor and shape transform
-        Matrix shapeTransformMatrix = Matrix.Scaling(new SharpDX.Vector3(1, 1, 1)) * 
-                                      Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(cs.Rotation)) * 
-                                      Matrix.Translation(WolvenkitToSharpDXConverter.Vector3(cs.Position));
+        Matrix shapeTransformMatrix = Matrix.Scaling(new SharpDX.Vector3(1, 1, 1)) *
+                                      Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(cs.Rotation)) *
+                                      Matrix.Translation(WolvenkitToSharpDXConverter.Vector3(cs.Position) *
+                                                         WolvenkitToSharpDXConverter.Vector3(ca.Scale));
 
         Matrix actorTransformMatrix = Matrix.Scaling(new SharpDX.Vector3(1, 1, 1)) * 
                                       Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(ca.Orientation)) * 
