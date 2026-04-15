@@ -19,6 +19,7 @@ namespace VolumetricSelection2077.ViewModels
         private bool _cacheWorking;
         
         public List<Enums.ExperimentalSettingsEnum.ProxyMeshTreatment> ProxyMeshTreatmentOptions { get; set; }
+        public List<Enums.ExperimentalSettingsEnum.CollisionWorldBuilderTreatment> CollisionWorldBuilderTreatmentOptions { get; set; }
 
         [ObservableProperty] 
         private SettingsService _settings;
@@ -102,6 +103,8 @@ namespace VolumetricSelection2077.ViewModels
 
             ProxyMeshTreatmentOptions = new(Enum.GetValues(typeof(Enums.ExperimentalSettingsEnum.ProxyMeshTreatment))
                 .Cast<Enums.ExperimentalSettingsEnum.ProxyMeshTreatment>());
+            CollisionWorldBuilderTreatmentOptions = new(Enum.GetValues(typeof(Enums.ExperimentalSettingsEnum.CollisionWorldBuilderTreatment))
+                .Cast<Enums.ExperimentalSettingsEnum.CollisionWorldBuilderTreatment>());
         }
    }
 }

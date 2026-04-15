@@ -4,10 +4,13 @@ using System.Linq;
 using DynamicData;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using SharpDX;
+using VolumetricSelection2077.Converters.Simple;
 using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Enums.ExperimentalSettingsEnum;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Models.WorldBuilder.Editor;
+using VolumetricSelection2077.Models.WorldBuilder.Spawn.Collision;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Entity;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Light;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
@@ -18,7 +21,12 @@ using WolvenKit.RED4.Archive.CR2W;
 using WolvenKit.RED4.CR2W.JSON;
 using WolvenKit.RED4.Types;
 using Activator = System.Activator;
+using Collision = VolumetricSelection2077.Models.WorldBuilder.Spawn.Collision.Collision;
+using Quaternion = WolvenKit.RED4.Types.Quaternion;
+using Vector3 = WolvenKit.RED4.Types.Vector3;
 using Vector4 = SharpDX.Vector4;
+using WEnums = WolvenKit.RED4.Types.Enums;
+using WorldBuilder = VolumetricSelection2077.models.WorldBuilder;
 
 namespace VolumetricSelection2077.Converters.Complex;
 
@@ -28,6 +36,7 @@ public class AxlRemovalToWorldBuilderConverter
     private List<string> _warnedTypes;
     private Dictionary<string, List<string>> _embeddedResourcePaths;
     private SettingsService _settings;
+    private CollisionGenerics? _collisionGenerics;
     
     public AxlRemovalToWorldBuilderConverter()
     {
@@ -609,7 +618,113 @@ public class AxlRemovalToWorldBuilderConverter
                 
                 spawnableElements.Add(spawnableMeshNode);
                 break;
+            case worldCollisionNode collisionNode:
+                if (_settings.WorldBuilderCollisionSupport == CollisionWorldBuilderTreatment.Ignore)
+                    goto NotSupported;
+
+                if (collisionNode.CompiledData.Data is not CollisionBuffer cb)
+                {
+                    Logger.Warning("Collision node buffer is not CollisionBuffer. Skipping...");
+                    break;
+                }
+                
+                _collisionGenerics ??= new();
+
+                var ai = 0;
+                foreach (var actor in cb.Actors)
+                {
+                    if (!remNode?.ActorDeletions?.Contains(ai++) ?? true)
+                        continue;
+                    
+                    foreach (var shape in actor.Shapes)
+                    {
+                        switch (shape)
+                        {
+                            case CollisionShapeMesh csm:
+                                var csmMatIndex = 1;
+                                if (csm.Materials.Count != 0)
+                                    csmMatIndex = _collisionGenerics.Materials.IndexOf(csm.Materials[0].GetResolvedText());
+                                
+                                var csmSpawnable = new SpawnableElement()
+                                {
+                                    Name =
+                                        $"{collisionNode.DebugName} {cb.Actors.IndexOf(actor)} {actor.Shapes.IndexOf(shape)} {GetShapeTypeID(csm.ShapeType)}",
+                                    Spawnable = new MeshCollision()
+                                    {
+                                        SectorHash = collisionNode.SectorHash.ToString(),
+                                        ShapeHash = csm.Hash.ToString(),
+                                        MeshType = GetShapeTypeID(csm.ShapeType),
+                                        
+                                        // Material = csmMatIndex,
+                                        // Preset = _collisionGenerics.Presets.IndexOf(csm.Preset.GetResolvedText())
+                                    }
+                                };
+                                
+                                PopulateSpawnable(ref csmSpawnable, nodeDataEntry, actor, shape);
+                                spawnableElements.Add(csmSpawnable);
+                                break;
+                            case CollisionShapeSimple css:
+                                var cssMatIndex = 1;
+                                if (css.Materials.Count != 0)
+                                    cssMatIndex = _collisionGenerics.Materials.IndexOf(css.Materials[0].GetResolvedText());
+
+                                var cssShape = 0;
+                                var cssScale = new WorldBuilder.Structs.Vector3();
+                                switch (css.ShapeType.GetEnumValue())
+                                {
+                                    case WEnums.physicsShapeType.Box:
+                                        BoxShape:
+                                        cssShape = 0;
+                                        cssScale.x = css.Size.X * actor.Scale.X;
+                                        cssScale.y = css.Size.Y * actor.Scale.Y;
+                                        cssScale.z = css.Size.Z * actor.Scale.Z;
+                                        break;
+                                    case WEnums.physicsShapeType.Capsule:
+                                        cssShape = 1;
+                                        cssScale.x = css.Size.Y * actor.Scale.Y;
+                                        cssScale.y = css.Size.Y * actor.Scale.Y;
+                                        cssScale.z = css.Size.Z * actor.Scale.Z;
+                                        break;
+                                    case WEnums.physicsShapeType.Sphere:
+                                        cssShape = 2;
+                                        cssScale.x = css.Size.X * actor.Scale.X;
+                                        cssScale.y = css.Size.X * actor.Scale.X;
+                                        cssScale.z = css.Size.X * actor.Scale.X;
+                                        break;
+                                    case WEnums.physicsShapeType.ConvexMesh:
+                                    case WEnums.physicsShapeType.TriangleMesh:
+                                    case WEnums.physicsShapeType.Invalid:
+                                    default:
+                                        Logger.Warning($"Unexpected shape type {css.ShapeType.GetEnumValue()} for simple collision shape. Using Box.");
+                                        goto BoxShape;
+                                }
+                                
+                                
+                                var cssSpawnable = new SpawnableElement()
+                                {
+                                    Name =
+                                        $"{collisionNode.DebugName} {cb.Actors.IndexOf(actor)} {actor.Shapes.IndexOf(shape)} {shape.ShapeType.ToEnumString()}",
+                                    Spawnable = new Collision()
+                                    {
+                                        Shape = cssShape,
+                                        Scale = cssScale
+                                        // Material = cssMatIndex,
+                                        // Preset = _collisionGenerics.Presets.IndexOf(css.Preset.GetResolvedText()),
+                                    }
+                                };
+                                
+                                PopulateSpawnable(ref cssSpawnable, nodeDataEntry, actor, shape);
+                                spawnableElements.Add(cssSpawnable);
+                                break;
+                            default:
+                                Logger.Warning($"Collision shape {shape.GetType()} is not supported. Skipping...");
+                                break;
+                        }
+                    }
+                }
+                break;
             default:
+                NotSupported:
                 var nodeTypeString = node?.GetType().ToString() ?? "";
                 if (!_warnedTypes.Contains(nodeTypeString))
                 {
@@ -621,6 +736,13 @@ public class AxlRemovalToWorldBuilderConverter
         return spawnableElements;
     }
 
+    private static string GetShapeTypeID(WEnums.physicsShapeType shapeType) => shapeType switch
+    {
+        WEnums.physicsShapeType.TriangleMesh => "BV4TriangleMesh",
+        WEnums.physicsShapeType.ConvexMesh => "ConvexMesh",
+        _ => ""
+    };
+    
     private static Dictionary<string, JObject> GetInstanceDataChanges(worldEntityNode entityNode)
     {
         var outDict = new Dictionary<string, JObject>();
@@ -654,7 +776,6 @@ public class AxlRemovalToWorldBuilderConverter
         return outSerialized;
     }
     
-    
     private static void PopulateBaseMesh(ref SpawnableElement se, worldMeshNode meshNode, worldNodeData nodeDataEntry)
     {
         var mesh = (Mesh)se.Spawnable;
@@ -682,6 +803,29 @@ public class AxlRemovalToWorldBuilderConverter
         se.Spawnable.SecondaryRange = nodeDataEntry.UkFloat1;
         se.Spawnable.Uk10 = nodeDataEntry.Uk10;
         se.Spawnable.Uk11 = nodeDataEntry.Uk11;
+    }
+
+    private static void PopulateSpawnable(ref SpawnableElement se, worldNodeData nde, CollisionActor ca, CollisionShape cs)
+    {
+        PopulateSpawnable(ref se, nde);
+        
+        // only working way to apply actor and shape transform
+        Matrix shapeTransformMatrix = Matrix.Scaling(new SharpDX.Vector3(1, 1, 1)) * 
+                                      Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(cs.Rotation)) * 
+                                      Matrix.Translation(WolvenkitToSharpDXConverter.Vector3(cs.Position));
+
+        Matrix actorTransformMatrix = Matrix.Scaling(new SharpDX.Vector3(1, 1, 1)) * 
+                                      Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(ca.Orientation)) * 
+                                      Matrix.Translation(new SharpDX.Vector3(ca.Position.X, ca.Position.Y, ca.Position.Z));
+
+        Matrix transformMatrix = shapeTransformMatrix * actorTransformMatrix;
+        
+        se.Spawnable.Position = new Vector4(
+            transformMatrix.TranslationVector.X, 
+            transformMatrix.TranslationVector.Y,
+            transformMatrix.TranslationVector.Z,
+            0);
+        se.Spawnable.EulerRotation = SharpDX.Quaternion.RotationMatrix(transformMatrix);
     }
 
     private static string GetSpawnableName(worldNode node)

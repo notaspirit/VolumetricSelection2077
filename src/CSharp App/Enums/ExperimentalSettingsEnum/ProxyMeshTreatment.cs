@@ -5,3 +5,9 @@ public enum ProxyMeshTreatment
     RegularMesh,
     ProxyMesh
 }
+
+public enum CollisionWorldBuilderTreatment
+{
+    Ignore,
+    Use
+}
