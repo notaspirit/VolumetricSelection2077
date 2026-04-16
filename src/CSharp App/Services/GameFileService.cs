@@ -11,8 +11,10 @@ using WolvenKit.RED4.CR2W.Archive;
 using WolvenKit.RED4.CR2W;
 using VolumetricSelection2077.MessagePack.Helpers;
 using VolumetricSelection2077.Models;
+using VolumetricSelection2077.Models.WorldBuilder.Spawn.Collision;
 using VolumetricSelection2077.Parsers;
 using WolvenKit.Common;
+using WolvenKit.RED4.Types.Pools;
 
 namespace VolumetricSelection2077.Services;
 
@@ -80,6 +82,8 @@ public class GameFileService
             ArchiveManager.Initialize(gameExePath, _settingsService.SupportModdedResources);
             _cacheService = CacheService.Instance;
             _readCacheTarget = _settingsService.SupportModdedResources ? CacheDatabases.All : CacheDatabases.Vanilla;
+            InitializeCNames();
+            
             _initialized = true;
             sw.Stop();
             Logger.Success($"Initialized Game File Service in {UtilService.FormatElapsedTime(sw.Elapsed)}");
@@ -105,6 +109,23 @@ public class GameFileService
                 }
                 return _instance;
             }
+        }
+    }
+
+    /// <summary>
+    /// Initializes the CNamePool with CNames expected to be encountered.
+    /// </summary>
+    private static void InitializeCNames()
+    {
+        var collisionGenerics = new CollisionGenerics();
+        foreach (var entry in collisionGenerics.OriginalMaterials)
+        {
+            CNamePool.AddOrGetHash(entry);
+        }
+
+        foreach (var entry in collisionGenerics.Presets)
+        {
+            CNamePool.AddOrGetHash(entry);
         }
     }
     

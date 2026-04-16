@@ -36,7 +36,7 @@ public class AxlRemovalToWorldBuilderConverter
     private List<string> _warnedTypes;
     private Dictionary<string, List<string>> _embeddedResourcePaths;
     private SettingsService _settings;
-    private CollisionGenerics? _collisionGenerics;
+    private CollisionGenerics _collisionGenerics;
     
     public AxlRemovalToWorldBuilderConverter()
     {
@@ -44,6 +44,7 @@ public class AxlRemovalToWorldBuilderConverter
         _warnedTypes = new List<string>();
         _embeddedResourcePaths = new Dictionary<string, List<string>>();
         _settings = SettingsService.Instance;
+        _collisionGenerics = new CollisionGenerics();
     }
 
     public Element Convert(AxlRemovalFile axlFile, string rootName)
@@ -627,8 +628,6 @@ public class AxlRemovalToWorldBuilderConverter
                     Logger.Warning("Collision node buffer is not CollisionBuffer. Skipping...");
                     break;
                 }
-                
-                _collisionGenerics ??= new();
 
                 var ai = 0;
                 foreach (var actor in cb.Actors)
@@ -641,9 +640,6 @@ public class AxlRemovalToWorldBuilderConverter
                         switch (shape)
                         {
                             case CollisionShapeMesh csm:
-                                var csmMatIndex = 1;
-                                if (csm.Materials.Count != 0)
-                                    csmMatIndex = _collisionGenerics.Materials.IndexOf(csm.Materials[0].GetResolvedText());
                                 
                                 var csmSpawnable = new SpawnableElement()
                                 {
@@ -655,8 +651,8 @@ public class AxlRemovalToWorldBuilderConverter
                                         ShapeHash = csm.Hash.ToString(),
                                         MeshType = GetShapeTypeID(csm.ShapeType),
                                         
-                                        // Material = csmMatIndex,
-                                        // Preset = _collisionGenerics.Presets.IndexOf(csm.Preset.GetResolvedText())
+                                        Material = GetMaterialIndex(shape),
+                                        Preset = GetPresetIndex(shape)
                                     }
                                 };
                                 
@@ -664,10 +660,6 @@ public class AxlRemovalToWorldBuilderConverter
                                 spawnableElements.Add(csmSpawnable);
                                 break;
                             case CollisionShapeSimple css:
-                                var cssMatIndex = 1;
-                                if (css.Materials.Count != 0)
-                                    cssMatIndex = _collisionGenerics.Materials.IndexOf(css.Materials[0].GetResolvedText());
-
                                 int cssShape;
                                 var cssScale = new WorldBuilder.Structs.Vector3();
                                 switch (css.ShapeType.GetEnumValue())
@@ -703,13 +695,13 @@ public class AxlRemovalToWorldBuilderConverter
                                 var cssSpawnable = new SpawnableElement()
                                 {
                                     Name =
-                                        $"{collisionNode.DebugName} {cb.Actors.IndexOf(actor)} {actor.Shapes.IndexOf(shape)} {shape.ShapeType.ToEnumString()}",
+                                        $"{collisionNode.DebugName} {cb.Actors.IndexOf(actor)} {actor.Shapes.IndexOf(shape)} {GetShapeTypeID(css.ShapeType)}",
                                     Spawnable = new Collision()
                                     {
                                         Shape = cssShape,
-                                        Scale = cssScale
-                                        // Material = cssMatIndex,
-                                        // Preset = _collisionGenerics.Presets.IndexOf(css.Preset.GetResolvedText()),
+                                        Scale = cssScale,
+                                        Material = GetMaterialIndex(shape),
+                                        Preset = GetPresetIndex(shape)
                                     }
                                 };
                                 
@@ -736,11 +728,34 @@ public class AxlRemovalToWorldBuilderConverter
         return spawnableElements;
     }
 
-    private static string GetShapeTypeID(WEnums.physicsShapeType shapeType) => shapeType switch
+    private int GetMaterialIndex(CollisionShape shape)
+    {
+        var matIndex = -1;
+        if (shape.Materials.Count != 0)
+            matIndex = _collisionGenerics.Materials.IndexOf(shape.Materials[0].GetResolvedText());
+
+        if (matIndex != -1) return matIndex;
+        matIndex = 1;
+        Logger.Warning($"Failed to resolve material {(shape.Materials.Count != 0 ? shape.Materials[0].GetResolvedText() : "")} (Hash: {shape.Materials[0].GetRedHash()}) for collision shape {shape.GetType()}. Using default.");
+
+        return matIndex;
+    }
+
+    private int GetPresetIndex(CollisionShape shape)
+    {
+        var presIndex = _collisionGenerics.Presets.IndexOf(shape.Preset.GetResolvedText());
+
+        if (presIndex != -1) return presIndex;
+        presIndex = 33;
+        Logger.Warning($"Failed to resolve preset {shape.Preset.GetResolvedText()} (Hash: {shape.Preset.GetRedHash()}) for collision shape {shape.GetType()}. Using default.");
+
+        return presIndex;
+    }
+    
+    private static string GetShapeTypeID(CEnum<WEnums.physicsShapeType> shapeType) => shapeType.GetEnumValue() switch
     {
         WEnums.physicsShapeType.TriangleMesh => "BV4TriangleMesh",
-        WEnums.physicsShapeType.ConvexMesh => "ConvexMesh",
-        _ => ""
+        _ => shapeType.ToEnumString()
     };
     
     private static Dictionary<string, JObject> GetInstanceDataChanges(worldEntityNode entityNode)
@@ -809,7 +824,6 @@ public class AxlRemovalToWorldBuilderConverter
     {
         PopulateSpawnable(ref se, nde);
         
-        // only working way to apply actor and shape transform
         Matrix shapeTransformMatrix = Matrix.Scaling(new SharpDX.Vector3(1, 1, 1)) *
                                       Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(cs.Rotation)) *
                                       Matrix.Translation(WolvenkitToSharpDXConverter.Vector3(cs.Position) *
