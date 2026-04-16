@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using VolumetricSelection2077.models.WorldBuilder.Structs;
 
 namespace VolumetricSelection2077.Models.WorldBuilder.Spawn.Collision;
 
@@ -19,6 +20,9 @@ public class MeshCollision : Spawnable
     [JsonProperty("preset")]
     public int Preset { get; set; }
     
+    [JsonProperty("scale")]
+    public Vector3 Scale { get; set; }   
+    
     public MeshCollision()
     {
         DataType = "Collision Mesh";
@@ -31,5 +35,7 @@ public class MeshCollision : Spawnable
         
         Material = 1;
         Preset = 33;
+        
+        Scale = new Vector3(1,1,1);
     }
 }

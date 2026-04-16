@@ -1,10 +1,11 @@
 using System;
+using System.Globalization;
 using VolumetricSelection2077.Converters.Simple;
 using WolvenKit.RED4.Types;
 
 namespace VolumetricSelection2077.models.WorldBuilder.Structs;
 
-public struct EulerAngles
+public class EulerAngles
 {
     public float yaw  { get; set; }
     public float pitch { get; set; }
@@ -16,6 +17,8 @@ public struct EulerAngles
         this.pitch = pitch;
         this.roll  = roll;
     }
+    
+    public EulerAngles() : this(0, 0, 0) { }
     
     public static implicit operator SharpDX.Quaternion(EulerAngles value) => WorldBuilderToSharpDXConverter.Quaternion(value);
     
@@ -52,4 +55,11 @@ public struct EulerAngles
     {
         return HashCode.Combine(yaw, pitch, roll);
     }
+    
+    public override string ToString() =>
+        string.Format(CultureInfo.CurrentCulture, "Yaw:{0} Pitch:{1} Roll:{2}", [
+            yaw,
+            pitch,
+            roll
+        ]);
 }

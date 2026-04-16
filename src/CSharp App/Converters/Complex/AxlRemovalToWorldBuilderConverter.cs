@@ -22,11 +22,8 @@ using WolvenKit.RED4.CR2W.JSON;
 using WolvenKit.RED4.Types;
 using Activator = System.Activator;
 using Collision = VolumetricSelection2077.Models.WorldBuilder.Spawn.Collision.Collision;
-using Quaternion = WolvenKit.RED4.Types.Quaternion;
-using Vector3 = WolvenKit.RED4.Types.Vector3;
 using Vector4 = SharpDX.Vector4;
 using WEnums = WolvenKit.RED4.Types.Enums;
-using WorldBuilder = VolumetricSelection2077.models.WorldBuilder;
 
 namespace VolumetricSelection2077.Converters.Complex;
 
@@ -656,56 +653,42 @@ public class AxlRemovalToWorldBuilderConverter
                                     }
                                 };
                                 
-                                PopulateSpawnable(ref csmSpawnable, nodeDataEntry, actor, shape);
+                                PopulateSpawnable(ref csmSpawnable, nodeDataEntry, actor, csm);
                                 spawnableElements.Add(csmSpawnable);
                                 break;
                             case CollisionShapeSimple css:
-                                int cssShape;
-                                var cssScale = new WorldBuilder.Structs.Vector3();
-                                switch (css.ShapeType.GetEnumValue())
-                                {
-                                    case WEnums.physicsShapeType.Box:
-                                        BoxShape:
-                                        cssShape = 0;
-                                        cssScale.x = css.Size.X * actor.Scale.X;
-                                        cssScale.y = css.Size.Y * actor.Scale.Y;
-                                        cssScale.z = css.Size.Z * actor.Scale.Z;
-                                        break;
-                                    case WEnums.physicsShapeType.Capsule:
-                                        cssShape = 1;
-                                        cssScale.x = css.Size.X * actor.Scale.X;
-                                        cssScale.y = css.Size.X * actor.Scale.X;
-                                        cssScale.z = css.Size.Y * actor.Scale.Y;
-                                        break;
-                                    case WEnums.physicsShapeType.Sphere:
-                                        cssShape = 2;
-                                        cssScale.x = css.Size.X * actor.Scale.X;
-                                        cssScale.y = css.Size.X * actor.Scale.X;
-                                        cssScale.z = css.Size.X * actor.Scale.X;
-                                        break;
-                                    case WEnums.physicsShapeType.ConvexMesh:
-                                    case WEnums.physicsShapeType.TriangleMesh:
-                                    case WEnums.physicsShapeType.Invalid:
-                                    default:
-                                        Logger.Warning($"Unexpected shape type {css.ShapeType.GetEnumValue()} for simple collision shape. Using Box.");
-                                        goto BoxShape;
-                                }
-                                
-                                
                                 var cssSpawnable = new SpawnableElement()
                                 {
                                     Name =
                                         $"{collisionNode.DebugName} {cb.Actors.IndexOf(actor)} {actor.Shapes.IndexOf(shape)} {GetShapeTypeID(css.ShapeType)}",
                                     Spawnable = new Collision()
                                     {
-                                        Shape = cssShape,
-                                        Scale = cssScale,
                                         Material = GetMaterialIndex(shape),
                                         Preset = GetPresetIndex(shape)
                                     }
                                 };
                                 
-                                PopulateSpawnable(ref cssSpawnable, nodeDataEntry, actor, shape);
+                                PopulateSpawnable(ref cssSpawnable, nodeDataEntry, actor, css);
+                                
+                                var col = (cssSpawnable.Spawnable as Collision)!;
+                                
+                                switch (css.ShapeType.GetEnumValue())
+                                {
+                                    case WEnums.physicsShapeType.Box:
+                                        col.Shape = 0;
+                                        break;
+                                    case WEnums.physicsShapeType.Capsule:
+                                        col.Shape = 1;
+                                        col.Scale.z = col.Scale.y;
+                                        col.Scale.y = col.Scale.x;
+                                        break;
+                                    case WEnums.physicsShapeType.Sphere:
+                                        col.Shape = 2;
+                                        col.Scale.y = col.Scale.x;
+                                        col.Scale.z = col.Scale.x;
+                                        break;
+                                }
+                                
                                 spawnableElements.Add(cssSpawnable);
                                 break;
                             default:
@@ -819,28 +802,71 @@ public class AxlRemovalToWorldBuilderConverter
         se.Spawnable.Uk10 = nodeDataEntry.Uk10;
         se.Spawnable.Uk11 = nodeDataEntry.Uk11;
     }
-
-    private static void PopulateSpawnable(ref SpawnableElement se, worldNodeData nde, CollisionActor ca, CollisionShape cs)
+    
+    private static void PopulateSpawnable(ref SpawnableElement se, worldNodeData nde, CollisionActor ca, CollisionShapeSimple cs)
     {
         PopulateSpawnable(ref se, nde);
         
-        Matrix shapeTransformMatrix = Matrix.Scaling(new SharpDX.Vector3(1, 1, 1)) *
-                                      Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(cs.Rotation)) *
-                                      Matrix.Translation(WolvenkitToSharpDXConverter.Vector3(cs.Position) *
-                                                         WolvenkitToSharpDXConverter.Vector3(ca.Scale));
-
-        Matrix actorTransformMatrix = Matrix.Scaling(new SharpDX.Vector3(1, 1, 1)) * 
-                                      Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(ca.Orientation)) * 
-                                      Matrix.Translation(new SharpDX.Vector3(ca.Position.X, ca.Position.Y, ca.Position.Z));
-
-        Matrix transformMatrix = shapeTransformMatrix * actorTransformMatrix;
+        if (se.Spawnable is not Collision col)
+            return;
         
-        se.Spawnable.Position = new Vector4(
-            transformMatrix.TranslationVector.X, 
-            transformMatrix.TranslationVector.Y,
-            transformMatrix.TranslationVector.Z,
-            0);
-        se.Spawnable.EulerRotation = SharpDX.Quaternion.RotationMatrix(transformMatrix);
+        var shapeTransformMatrix = Matrix.Scaling(new SharpDX.Vector3(1, 1, 1)) *
+                                   Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(cs.Rotation)) *
+                                   Matrix.Translation(WolvenkitToSharpDXConverter.Vector3(cs.Position));
+
+        var actorTransformMatrixWScale = Matrix.Scaling(WolvenkitToSharpDXConverter.Vector3(ca.Scale)) * 
+                                         Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(ca.Orientation)) * 
+                                         Matrix.Translation(new SharpDX.Vector3(ca.Position.X, ca.Position.Y, ca.Position.Z));
+
+        var transformMatrixCombined = shapeTransformMatrix * actorTransformMatrixWScale;
+        
+        var result1 = new SharpDX.Vector3(cs.Size.X * 2f, 0.0f, 0.0f);
+        var result2 = new SharpDX.Vector3(0.0f, cs.Size.Y * 2f, 0.0f);
+        var result3 = new SharpDX.Vector3(0.0f, 0.0f, cs.Size.Z * 2f);
+        SharpDX.Vector3.TransformNormal(ref result1, ref transformMatrixCombined, out result1);
+        SharpDX.Vector3.TransformNormal(ref result2, ref transformMatrixCombined, out result2);
+        SharpDX.Vector3.TransformNormal(ref result3, ref transformMatrixCombined, out result3);
+        var scaledHalfExtends = new SharpDX.Vector3(result1.Length(), result2.Length(), result3.Length()) / 2;
+        
+        // rotation breaks when matrix is calculated with scaling
+        var actorTransformMatrixNoScale = Matrix.Scaling(new SharpDX.Vector3(1, 1, 1)) * 
+                                          Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(ca.Orientation)) * 
+                                          Matrix.Translation(new SharpDX.Vector3(ca.Position.X, ca.Position.Y, ca.Position.Z));
+
+        var transformMatrixNoScale = shapeTransformMatrix * actorTransformMatrixNoScale;
+        
+        col.Position = transformMatrixCombined.TranslationVector;
+        col.EulerRotation = SharpDX.Quaternion.RotationMatrix(transformMatrixNoScale);
+        col.Scale = scaledHalfExtends;
+    }
+    
+    private static void PopulateSpawnable(ref SpawnableElement se, worldNodeData nde, CollisionActor ca, CollisionShapeMesh cs)
+    {
+        PopulateSpawnable(ref se, nde);
+        
+        if (se.Spawnable is not MeshCollision col)
+            return;
+        
+        var shapeTransformMatrix = Matrix.Scaling(new SharpDX.Vector3(1, 1, 1)) *
+                                   Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(cs.Rotation)) *
+                                   Matrix.Translation(WolvenkitToSharpDXConverter.Vector3(cs.Position));
+
+        var actorTransformMatrixWScale = Matrix.Scaling(WolvenkitToSharpDXConverter.Vector3(ca.Scale)) * 
+                                         Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(ca.Orientation)) * 
+                                         Matrix.Translation(new SharpDX.Vector3(ca.Position.X, ca.Position.Y, ca.Position.Z));
+
+        var transformMatrixCombined = shapeTransformMatrix * actorTransformMatrixWScale;
+        
+        // rotation breaks when matrix is calculated with scaling
+        var actorTransformMatrixNoScale = Matrix.Scaling(new SharpDX.Vector3(1, 1, 1)) * 
+                                          Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(ca.Orientation)) * 
+                                          Matrix.Translation(new SharpDX.Vector3(ca.Position.X, ca.Position.Y, ca.Position.Z));
+
+        var transformMatrixNoScale = shapeTransformMatrix * actorTransformMatrixNoScale;
+        
+        col.Position = transformMatrixCombined.TranslationVector;
+        col.EulerRotation = SharpDX.Quaternion.RotationMatrix(transformMatrixNoScale);
+        col.Scale = ca.Scale;
     }
 
     private static string GetSpawnableName(worldNode node)
