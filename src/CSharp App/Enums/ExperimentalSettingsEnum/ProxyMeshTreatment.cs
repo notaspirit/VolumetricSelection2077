@@ -9,5 +9,5 @@ public enum ProxyMeshTreatment
 public enum CollisionWorldBuilderTreatment
 {
     Ignore,
-    Use
+    GenerateSimpleAndMesh
 }
