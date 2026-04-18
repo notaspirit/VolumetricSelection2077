@@ -153,7 +153,7 @@ public class GameFileService
             return token;
         }
 
-        if (_cacheService.IsResourceKnownBad(path) && _settingsService.RememberFailedResources)
+        if (_settingsService.RememberFailedResources && _cacheService.IsResourceKnownBad(path))
         {
             token.Result = ResourceTokenResult.KnownBad;
             return token;
@@ -224,7 +224,7 @@ public class GameFileService
             return token;
         }
         
-        if (_cacheService.IsResourceKnownBad(path) && _settingsService.RememberFailedResources)
+        if (_settingsService.RememberFailedResources && _cacheService.IsResourceKnownBad(path))
         {
             token.Result = ResourceTokenResult.KnownBad;
             return token;
