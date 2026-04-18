@@ -12,7 +12,13 @@
     xmlns:resources="clr-namespace:VolumetricSelection2077.Resources"
     xmlns:viewModels="clr-namespace:VolumetricSelection2077.ViewModels"
     xmlns:views="clr-namespace:VolumetricSelection2077.Views"
+    xmlns:conv="clr-namespace:VolumetricSelection2077.Converters.Simple"
+    xmlns:fui="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Window.Resources>
+        <conv:ProgressToWidthConverter x:Key="ProgressToWidth" />
+        <conv:InvertBooleanConverter x:Key="InvertBooleanConverter"/>
+    </Window.Resources>
     <Border Margin="5">
         <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,*">
             <Image
@@ -36,13 +42,17 @@
                 <Button
                     Background="#6b82b2"
                     Click="ToggleFilterVisibility_Click"
-                    Content="{Binding FilterSectionButtonLabel}"
                     Grid.Column="0"
                     Height="30"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
                     Margin="5"
                     VerticalContentAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text = "{Binding FilterSectionButtonLabel}"/>
+                        <fui:SymbolIcon Symbol="ChevronDown" IsVisible="{Binding IsFilterSelectionVisible}"/>
+                        <fui:SymbolIcon Symbol="ChevronUp" IsVisible="{Binding IsFilterSelectionVisible, Converter={StaticResource InvertBooleanConverter}}"/>
+                    </StackPanel>
                     <Button.Styles>
                         <Style Selector="Button:pointerover /template/ ContentPresenter">
                             <Setter Property="Background" Value="#455472" />
@@ -61,7 +71,7 @@
                     GotFocus="ResourceFilterTextBox_GotFocus"
                     Grid.Column="0"
                     Height="30"
-                    IsVisible="{Binding FilterSelectionVisibility}"
+                    IsVisible="{Binding IsFilterSelectionVisible}"
                     KeyDown="ResourceFilterTextBox_KeyDown"
                     Margin="5"
                     Name="ResourceFilterTextBox"
@@ -106,7 +116,7 @@
                     Grid.Column="1"
                     HorizontalAlignment="Center"
                     HorizontalContentAlignment="Center"
-                    IsVisible="{Binding FilterSelectionVisibility}"
+                    IsVisible="{Binding IsFilterSelectionVisible}"
                     Name="SwitchModeButton"
                     VerticalAlignment="Center"
                     VerticalContentAlignment="Center"
@@ -121,7 +131,7 @@
                     GotFocus="DebugNameFilterTextBox_GotFocus"
                     Grid.Column="2"
                     Height="30"
-                    IsVisible="{Binding FilterSelectionVisibility}"
+                    IsVisible="{Binding IsFilterSelectionVisible}"
                     KeyDown="DebugNameFilterTextBox_KeyDown"
                     Margin="5,5,5,5"
                     Name="DebugNameFilterTextBox"
@@ -166,7 +176,7 @@
                         Grid.Column="0"
                         Grid.Row="0"
                         HorizontalAlignment="Left"
-                        IsVisible="{Binding FilterSelectionVisibility}"
+                        IsVisible="{Binding IsFilterSelectionVisible}"
                         Margin="5"
                         Text="Node Filter"
                         ToolTip.Tip="{x:Static resources:ToolTips.NodeFilter}"
@@ -177,7 +187,7 @@
                         Grid.Row="0"
                         HorizontalAlignment="Stretch"
                         HorizontalContentAlignment="Center"
-                        IsVisible="{Binding FilterSelectionVisibility}"
+                        IsVisible="{Binding IsFilterSelectionVisible}"
                         Margin="5"
                         VerticalContentAlignment="Center"
                         x:Name="NodeTypeFilter">
@@ -254,13 +264,17 @@
                 <Button
                     Background="#6b82b2"
                     Click="ToggleParameterVisibility_Click"
-                    Content="{Binding ParametersSectionButtonLabel}"
                     Grid.Column="0"
                     Height="30"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
                     Margin="5"
                     VerticalContentAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text = "{x:Static resources:Labels.ParametersCollapseButton}"/>
+                        <fui:SymbolIcon Symbol="ChevronDown" IsVisible="{Binding IsParameterSelectionVisible}"/>
+                        <fui:SymbolIcon Symbol="ChevronUp" IsVisible="{Binding IsParameterSelectionVisible, Converter={StaticResource InvertBooleanConverter}}"/>
+                    </StackPanel>
                     <Button.Styles>
                         <Style Selector="Button:pointerover /template/ ContentPresenter">
                             <Setter Property="Background" Value="#455472" />
@@ -284,7 +298,7 @@
                         Grid.Column="0"
                         Grid.Row="0"
                         HorizontalAlignment="Left"
-                        IsVisible="{Binding ParameterSelectionVisibility}"
+                        IsVisible="{Binding IsParameterSelectionVisible}"
                         Margin="5"
                         Text="{x:Static resources:Labels.SaveAsYaml}"
                         ToolTip.Tip="{x:Static resources:ToolTips.SaveAsYaml}"
@@ -293,7 +307,7 @@
                         Grid.Column="1"
                         Grid.Row="0"
                         HorizontalAlignment="Stretch"
-                        IsVisible="{Binding ParameterSelectionVisibility}"
+                        IsVisible="{Binding IsParameterSelectionVisible}"
                         ItemsSource="{Binding SaveFileFormats}"
                         Margin="5"
                         SelectedItem="{Binding SelectedSaveFileFormat, Mode=TwoWay}" />
@@ -301,7 +315,7 @@
                         Grid.Column="0"
                         Grid.Row="1"
                         HorizontalAlignment="Left"
-                        IsVisible="{Binding ParameterSelectionVisibility}"
+                        IsVisible="{Binding IsParameterSelectionVisible}"
                         Margin="5"
                         Text="{x:Static resources:Labels.SaveToArchiveMods}"
                         ToolTip.Tip="{x:Static resources:ToolTips.SaveToArchiveMods}"
@@ -310,7 +324,7 @@
                         Grid.Column="1"
                         Grid.Row="1"
                         HorizontalAlignment="Stretch"
-                        IsVisible="{Binding ParameterSelectionVisibility}"
+                        IsVisible="{Binding IsParameterSelectionVisible}"
                         ItemsSource="{Binding SaveFileLocations}"
                         Margin="5"
                         SelectedItem="{Binding SelectedSaveFileLocation, Mode=TwoWay}" />
@@ -325,7 +339,7 @@
                         Grid.Column="0"
                         Grid.Row="0"
                         HorizontalAlignment="Left"
-                        IsVisible="{Binding ParameterSelectionVisibility}"
+                        IsVisible="{Binding IsParameterSelectionVisible}"
                         Margin="5"
                         Text="{x:Static resources:Labels.FileSaveMode}"
                         ToolTip.Tip="{x:Static resources:ToolTips.FileSaveMode}"
@@ -334,7 +348,7 @@
                         Grid.Column="1"
                         Grid.Row="0"
                         HorizontalAlignment="Stretch"
-                        IsVisible="{Binding ParameterSelectionVisibility}"
+                        IsVisible="{Binding IsParameterSelectionVisible}"
                         ItemsSource="{Binding SaveFileModes}"
                         Margin="5"
                         SelectedItem="{Binding SelectedSaveFileMode, Mode=TwoWay}" />
@@ -342,7 +356,7 @@
                         Grid.Column="0"
                         Grid.Row="1"
                         HorizontalAlignment="Left"
-                        IsVisible="{Binding ParameterSelectionVisibility}"
+                        IsVisible="{Binding IsParameterSelectionVisible}"
                         Margin="5"
                         Text="{x:Static resources:Labels.DestructibleMeshTreatment}"
                         ToolTip.Tip="{x:Static resources:ToolTips.DestructibleMeshTreatment}"
@@ -351,7 +365,7 @@
                         Grid.Column="1"
                         Grid.Row="1"
                         HorizontalAlignment="Stretch"
-                        IsVisible="{Binding ParameterSelectionVisibility}"
+                        IsVisible="{Binding IsParameterSelectionVisible}"
                         ItemsSource="{Binding DestructibleMeshTreatments}"
                         Margin="5"
                         SelectedItem="{Binding SelectedDestructibleMeshTreatment, Mode=TwoWay}" />
@@ -371,39 +385,46 @@
                     Name="TimerTextBlock"
                     Text="00:00"
                     VerticalAlignment="Center" />
-                <ProgressBar
-                    CornerRadius="2"
-                    Grid.Column="1"
-                    Height="20"
-                    Margin="1,6,6,6"
-                    Maximum="1000"
-                    Minimum="0"
-                    Name="ProgressBar"
-                    VerticalAlignment="Center"
-                    ZIndex="2">
-                    <ProgressBar.Background>
-                        <SolidColorBrush Color="#0e1117" />
-                    </ProgressBar.Background>
-                    <ProgressBar.Foreground>
-                        <SolidColorBrush Color="#4b48d6" />
-                    </ProgressBar.Foreground>
-                </ProgressBar>
-                <ProgressBar
-                    CornerRadius="3"
-                    Grid.Column="1"
-                    Margin="0,5,5,5"
-                    Maximum="1000"
-                    Minimum="0"
-                    Name="ProgressBarBorder"
-                    VerticalAlignment="Center"
-                    ZIndex="1">
-                    <ProgressBar.Background>
-                        <SolidColorBrush Color="#a0a2a5" />
-                    </ProgressBar.Background>
-                    <ProgressBar.Foreground>
-                        <SolidColorBrush Color="#414f6c" />
-                    </ProgressBar.Foreground>
-                </ProgressBar>
+                <Grid Grid.Column="1" Margin="0,5,5,5" Height="20" VerticalAlignment="Center" x:Name="ProgressHost">
+                    <Border
+                        CornerRadius="3"
+                        BorderThickness="1"
+                        BorderBrush="#a0a2a5"
+                        Background="#0e1117" />
+
+                    <Panel ClipToBounds="True">
+                        <Border
+                            CornerRadius="3"
+                            BorderThickness="1"
+                            BorderBrush="#414f6c"
+                            HorizontalAlignment="Left">
+                            <Border.Width>
+                                <MultiBinding Converter="{StaticResource ProgressToWidth}">
+                                    <Binding ElementName="ProgressBar" Path="Value" />
+                                    <Binding ElementName="ProgressBar" Path="Minimum" />
+                                    <Binding ElementName="ProgressBar" Path="Maximum" />
+                                    <Binding ElementName="ProgressHost" Path="Bounds.Width" />
+                                </MultiBinding>
+                            </Border.Width>
+                        </Border>
+                    </Panel>
+
+                    <ProgressBar
+                        Name="ProgressBar"
+                        Margin="1"
+                        Minimum="0"
+                        Maximum="1000"
+                        CornerRadius="2"
+                        VerticalAlignment="Stretch"
+                        HorizontalAlignment="Stretch">
+                        <ProgressBar.Background>
+                            <SolidColorBrush Color="#0e1117" />
+                        </ProgressBar.Background>
+                        <ProgressBar.Foreground>
+                            <SolidColorBrush Color="#4b48d6" />
+                        </ProgressBar.Foreground>
+                    </ProgressBar>
+                </Grid>
                 <Button
                     Background="#6b82b2"
                     Click="SettingsButton_Click"

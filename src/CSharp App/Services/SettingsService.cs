@@ -207,6 +207,11 @@ public partial class SettingsService : ObservableObject
                 Logger.Exception(ex, "Failed to load settings.");
             }
         }
+        
+        Directory.CreateDirectory(CacheDirectory);
+        Directory.CreateDirectory(BackupDirectory);
+        Directory.CreateDirectory(OutputDirectory);
+        Directory.CreateDirectory(LogDirectory);
     }
 
     /// <summary>

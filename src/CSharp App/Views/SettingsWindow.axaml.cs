@@ -28,13 +28,6 @@ namespace VolumetricSelection2077.Views
             Closing += OnSettingsWindowClosing;
             Closed += OnSettingsWindowClosed;
         }
-        
-        private void RestartApp()
-        {
-            var exePath = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "VolumetricSelection2077.exe");
-            Process.Start(exePath);
-            Environment.Exit(0);
-        }
 
         private void UpdateCacheStats()
         {
@@ -157,7 +150,7 @@ namespace VolumetricSelection2077.Views
             }
             
             if (_settingsViewModel.PersistentCache.RequiresRestart)
-                RestartApp();
+                OsUtilsService.RestartApp();
             CacheService.Instance.Initialize();
         }
 

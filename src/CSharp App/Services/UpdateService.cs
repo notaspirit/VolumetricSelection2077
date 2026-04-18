@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Formats.Tar;
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
@@ -12,6 +13,9 @@ namespace VolumetricSelection2077.Services;
 
 public class UpdateService
 {
+    private const string RepoOwner = "notaspirit";
+    private const string RepoName = "VolumetricSelection2077";
+
     /// <summary>
     /// Gets the most recent version and changelog
     /// </summary>
@@ -20,7 +24,7 @@ public class UpdateService
     public static async Task<(string, string)> GetChangelog()
     {
         var client = new GitHubClient(new ProductHeaderValue("VolumetricSelection2077"));
-        var release = await client.Repository.Release.GetLatest("notaspirit", "VolumetricSelection2077");
+        var release = await client.Repository.Release.GetLatest(RepoOwner, RepoName);
         return (release.TagName.Replace("v", ""), release.Body);
     }
     
@@ -34,7 +38,7 @@ public class UpdateService
     public static async Task<(bool, string?)> CheckUpdates()
     {
         var client = new GitHubClient(new ProductHeaderValue("VolumetricSelection2077"));
-        var release = await client.Repository.Release.GetLatest("notaspirit", "VolumetricSelection2077");
+        var release = await client.Repository.Release.GetLatest(RepoOwner, RepoName);
         var remoteVersion = release.TagName;
         var localVersion = SettingsService.Instance.ProgramVersion;
 
@@ -64,14 +68,16 @@ public class UpdateService
         
         string? downloadUrlApp = null;
         string? downloadUrlCet = null;
+
+        var mainZipName = OperatingSystem.IsWindows() ? "portable-win" : "portable-linux";
         
         try
         {
             var client = new GitHubClient(new ProductHeaderValue("VolumetricSelection2077"));
-            var release = await client.Repository.Release.GetLatest("notaspirit", "VolumetricSelection2077");
+            var release = await client.Repository.Release.GetLatest(RepoOwner, RepoName);
             foreach (var asset in release.Assets)
             {
-                if (asset.Name.Contains("portable"))
+                if (asset.Name.Contains(mainZipName))
                 {
                     downloadUrlApp = asset.BrowserDownloadUrl;
                 }
@@ -102,7 +108,8 @@ public class UpdateService
         string rootTempPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "VolumetricSelection2077", "temp");
         Directory.CreateDirectory(rootTempPath);
-        string downloadPathApp = Path.Combine(rootTempPath, "latest-release-app.zip");
+        string extension = OperatingSystem.IsWindows() ? ".zip" : ".tar.gz";
+        string downloadPathApp = Path.Combine(rootTempPath, $"latest-release-app{extension}");
         string downloadPathCet = Path.Combine(rootTempPath, "latest-release-cet.zip");
         string unzipPath = Path.Combine(rootTempPath, "unzip");
         string unzipPathCetTemp = Path.Combine(rootTempPath, "unzip-cet");
@@ -142,7 +149,17 @@ public class UpdateService
                 unzipPathCet = SettingsService.Instance.CETInstallLocation;
             }
             Directory.CreateDirectory(unzipPath);
-            ZipFile.ExtractToDirectory(downloadPathApp, unzipPath, true);
+            if (downloadPathApp.EndsWith(".zip"))
+                ZipFile.ExtractToDirectory(downloadPathApp, unzipPath, true);
+            else if (downloadPathApp.EndsWith(".tar.gz"))
+            {
+                using var file = File.OpenRead(downloadPathApp);
+                using var gzip = new GZipStream(file, CompressionMode.Decompress);
+                TarFile.ExtractToDirectory(gzip, unzipPath, true);
+            }
+            else 
+                throw new InvalidOperationException($"Unknown file type: {downloadPathApp}");
+                
             ZipFile.ExtractToDirectory(downloadPathCet, unzipPathCetTemp, true);
             MoveDirectoryWithOverwrite(Path.Join(unzipPathCetTemp, "bin"), Path.Join(unzipPathCet, "bin"));
             try
@@ -161,11 +178,13 @@ public class UpdateService
         {
             throw new Exception($"Failed to unzip latest release", ex);
         }
-        
-        var exePath = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "VolumetricSelection2077.exe");
-        var scriptPath = Path.Combine(rootTempPath, "update.ps1");
-        var vbsScriptPath = Path.Combine(rootTempPath, "update.vbs");
-        File.WriteAllText(scriptPath, $@"
+
+        if (OperatingSystem.IsWindows())
+        {
+            var exePath = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "VolumetricSelection2077.exe");
+            var scriptPath = Path.Combine(rootTempPath, "update.ps1");
+            var vbsScriptPath = Path.Combine(rootTempPath, "update.vbs");
+            File.WriteAllText(scriptPath, $@"
 $exePath = ""{exePath}""
 $unzipPath = ""{unzipPath}""
 $appBaseDir = ""{AppContext.BaseDirectory}""
@@ -184,19 +203,28 @@ Remove-Item -Path $rootTempPath -Recurse -Force -ErrorAction SilentlyContinue
 
 ");
         
-        File.WriteAllText(vbsScriptPath, $@"Set objShell = CreateObject(""WScript.Shell"")
+            File.WriteAllText(vbsScriptPath, $@"Set objShell = CreateObject(""WScript.Shell"")
 objShell.Run ""powershell.exe -ExecutionPolicy Bypass -File """"{scriptPath}"""""", 0, False
 ");
-        Process.Start(new ProcessStartInfo
-        {
-            FileName = "wscript.exe",
-            Arguments = $"\"{vbsScriptPath}\"",
-            UseShellExecute = true
-        });
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "wscript.exe",
+                Arguments = $"\"{vbsScriptPath}\"",
+                UseShellExecute = true
+            });
         
-        SettingsService.Instance.DidUpdate = true;
-        SettingsService.Instance.SaveSettings();
-        Environment.Exit(0);
+            SettingsService.Instance.DidUpdate = true;
+            SettingsService.Instance.SaveSettings();
+            Environment.Exit(0);   
+        }
+        else
+        {
+            MoveDirectoryWithOverwrite(rootTempPath, AppContext.BaseDirectory);
+            
+            SettingsService.Instance.DidUpdate = true;
+            SettingsService.Instance.SaveSettings();
+            OsUtilsService.RestartApp();
+        }
     }
     
     private static void MoveDirectoryWithOverwrite(string source, string destination)

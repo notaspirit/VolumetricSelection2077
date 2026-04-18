@@ -22,7 +22,7 @@ namespace VolumetricSelection2077.Services
         private readonly SettingsService _settingsService;
         private readonly CacheService _cacheService;
         private readonly GameFileService _gameFileService;
-        private static readonly char[] InvalidCharacters = Path.GetInvalidPathChars().Concat(new[] { '?', '*', '"', '<', '>', '|', '/' }).Distinct().ToArray();
+        private static readonly char[] InvalidCharacters = Path.GetInvalidPathChars().Concat(new[] { '?', '*', '"', '<', '>', '|' }).Distinct().ToArray();
 
         public ValidationService()
         {
@@ -44,7 +44,7 @@ namespace VolumetricSelection2077.Services
             bool gfsStatus = ValidateGameFileService();
             var outDirVR = ValidateAndCreateDirectory(_settingsService.OutputDirectory);
             var selFileVR = ValidateSelectionFile(gamePath);
-            var validFileName = string.IsNullOrEmpty(outputFilename) ? PathValidationResult.Empty : ValidatePath(@"E:\" + outputFilename + ".xl");
+            var validFileName = string.IsNullOrEmpty(outputFilename) ? PathValidationResult.Empty : ValidatePath(outputFilename, true);
             var resourceNameFilterValid = ValidateResourcePathFilter();
             var debugNameFilterValid = ValidateDebugNameFilter();
             var vanillaSectorBBsBuild = AreVanillaSectorBBsBuild();
@@ -126,9 +126,9 @@ namespace VolumetricSelection2077.Services
             var gameExePath = Path.Combine(gamePath, "bin", "x64", "Cyberpunk2077.exe");
             if (!File.Exists(gameExePath))
                 throw new ArgumentException("Could not find Game Executable.");
-            
-            var fileVerInfo = FileVersionInfo.GetVersionInfo(gameExePath);
-            if (fileVerInfo.ProductVersion != metadata.GameVersion)
+
+            string? version = UtilService.GetExeVersion(gameExePath);
+            if (version != metadata.GameVersion)
                 return false;
 
             return metadata.VS2077Version == minimumProgramVersion;
@@ -138,14 +138,15 @@ namespace VolumetricSelection2077.Services
         ///  Checks if a given path is valid, not if it exists
         /// </summary>
         /// <param name="path">The path to check</param>
+        /// <param name ="ignoreRelative">Whether the path being relative is a fail case or not</param>
         /// <returns>Enum describing validation outcome</returns>
-        public static PathValidationResult ValidatePath(string path)
+        public static PathValidationResult ValidatePath(string path, bool ignoreRelative = false)
         {
             if (string.IsNullOrWhiteSpace(path)) return PathValidationResult.Empty;
             
             if (path.IndexOfAny(InvalidCharacters) != -1) return PathValidationResult.InvalidCharacters;
 
-            if (!Path.IsPathFullyQualified(path)) return PathValidationResult.Relative;
+            if (!Path.IsPathFullyQualified(path) && !ignoreRelative) return PathValidationResult.Relative;
             
             if (Path.GetPathRoot(path)?.Equals(path, StringComparison.OrdinalIgnoreCase) == true) 
                 return PathValidationResult.Drive;

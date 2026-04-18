@@ -76,7 +76,7 @@ public class GameFileService
                 ArchiveManager,
                 _red4ParserService
             );
-            var gameExePath = new FileInfo(_settingsService.GameDirectory + @"\bin\x64\Cyberpunk2077.exe");
+            var gameExePath = new FileInfo(Path.Join(_settingsService.GameDirectory, "bin", "x64", "Cyberpunk2077.exe"));
             ArchiveManager.Initialize(gameExePath, _settingsService.SupportModdedResources);
             _cacheService = CacheService.Instance;
             _readCacheTarget = _settingsService.SupportModdedResources ? CacheDatabases.All : CacheDatabases.Vanilla;

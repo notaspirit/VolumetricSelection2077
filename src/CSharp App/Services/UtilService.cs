@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
+using PeNet.Header.Resource;
 using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Models;
 using WolvenKit.Interfaces.Extensions;
@@ -89,6 +90,7 @@ namespace VolumetricSelection2077.Services
             }
             return string.Join(Path.DirectorySeparatorChar, cleanOutput);
         }
+        
         /// <summary>
         /// Checks if the given directory contains any files
         /// </summary>
@@ -104,6 +106,27 @@ namespace VolumetricSelection2077.Services
             if (Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories).Any())
                 return false;
             return true;
+        }
+        
+        
+        /// <summary>
+        /// Gets the Product Version in an OS independent manner
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public static string? GetExeVersion(string path)
+        {
+            StringTable[]? stringFileInfo = new PeNet.PeFile(path).Resources?.VsVersionInfo?.StringFileInfo.StringTable;
+            if (stringFileInfo == null)
+                return null;
+            
+            foreach (var version in stringFileInfo)
+            {
+                if (version.ProductVersion != null)
+                    return version.ProductVersion;
+            }
+
+            return null;
         }
     }
 }

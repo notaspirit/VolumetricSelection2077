@@ -122,16 +122,14 @@ namespace VolumetricSelection2077.ViewModels
         public string FilterSectionButtonLabel => Labels.FilterCollapseButton +
                                                   $" [ {(Settings.DebugNameFilter.Count == 0 ? 0 : 1) 
                                                         + (Settings.ResourceNameFilter.Count == 0 ? 0 : 1) 
-                                                        + (Settings.NodeTypeFilter.Cast<bool>().Count( b => b) == 122 ? 0 : 1)} / 3 ]"
-                                                        + (FilterSelectionVisibility ? " \u02c5" : " \u02c4");
-        public bool FilterSelectionVisibility
+                                                        + (Settings.NodeTypeFilter.Cast<bool>().Count( b => b) == 122 ? 0 : 1)} / 3 ]";
+        public bool IsFilterSelectionVisible
         {
             get => Settings.IsFiltersMWVisible;
             set
             {
                 Settings.IsFiltersMWVisible = value;
-                OnPropertyChanged(nameof(FilterSelectionVisibility));
-                OnPropertyChanged(nameof(FilterSectionButtonLabel));
+                OnPropertyChanged(nameof(IsFilterSelectionVisible));
                 Settings.SaveSettings();
             }
         }
@@ -225,16 +223,13 @@ namespace VolumetricSelection2077.ViewModels
                 OnPropertyChanged(nameof(FilterSectionButtonLabel));
             }
         }
-        
-        public string ParametersSectionButtonLabel => Labels.ParametersCollapseButton + (ParameterSelectionVisibility ? " \u02c5" : " \u02c4");
-        public bool ParameterSelectionVisibility
+        public bool IsParameterSelectionVisible
         {
             get => Settings.IsParametersMWVisible;
             set
             {
                 Settings.IsParametersMWVisible = value;
-                OnPropertyChanged(nameof(ParameterSelectionVisibility));
-                OnPropertyChanged(nameof(ParametersSectionButtonLabel));
+                OnPropertyChanged(nameof(IsParameterSelectionVisible));
                 Settings.SaveSettings();
             }
         }
