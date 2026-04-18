@@ -628,12 +628,17 @@ public class AxlRemovalToWorldBuilderConverter
             return outDict;
 
         foreach (var kvp in instanceData.ChunkDictionary)
-            outDict.Add(kvp.Value.ToString(), CleanInstanceDataChanges(kvp.Key));
+        {
+            var instanceDataChanges = CleanInstanceDataChanges(kvp.Key);
+            if (instanceDataChanges == null)
+                continue;
+            outDict.Add(kvp.Value.ToString(), instanceDataChanges);
+        }
         
         return outDict;
     }
 
-    private static JObject CleanInstanceDataChanges(IRedType sparseValue)
+    private static JObject? CleanInstanceDataChanges(IRedType sparseValue)
     {
         var type = sparseValue.GetType();
         var defaultInstance = Activator.CreateInstance(type);
@@ -651,7 +656,7 @@ public class AxlRemovalToWorldBuilderConverter
             if (!JToken.DeepEquals(prop.Value, matchingProp.Value))
                 outSerialized.Add(prop.Name, matchingProp.Value);
         }
-        return outSerialized;
+        return outSerialized.Properties().Any() ? outSerialized : null;
     }
     
     
