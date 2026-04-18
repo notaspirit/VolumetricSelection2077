@@ -160,5 +160,11 @@ namespace VolumetricSelection2077.Views
                 RestartApp();
             CacheService.Instance.Initialize();
         }
+
+        private void ClearKnownBadResources_Click(object? sender, RoutedEventArgs e)
+        {
+            CacheService.Instance.ClearKnownBadResources();
+            _settingsViewModel.RaiseOnPropertyChanged("ClearKnownBadResourcesLabel");
+        }
     };
 }

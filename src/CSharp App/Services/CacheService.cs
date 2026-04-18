@@ -37,6 +37,7 @@ public partial class CacheService
     private LightningDatabase _moddedDatabase;
     private LightningDatabase _vanillaBoundsDatabase;
     private LightningDatabase _moddedBoundsDatabase;
+    private readonly HashSet<string> _knownBadResources = new();
     private bool _isInitialized;
 
     public bool IsInitialized
@@ -49,6 +50,7 @@ public partial class CacheService
     {
         Initialize();
     }
+    
     public static CacheService Instance
     {
         get
@@ -89,11 +91,14 @@ public partial class CacheService
             _vanillaBoundsDatabase = tx.OpenDatabase(CacheDatabases.VanillaBounds.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
             tx.Commit();
             
+            LoadKnownBadResources();
+            
             var metaData = GetMetadata();
             if (!ValidationService.ValidateCache(metaData, _settings.GameDirectory, _settings.MinimumCacheVersion))
             {
                 Logger.Warning("Cache is stale, resetting database");
                 ClearMetaData();
+                ClearKnownBadResources();
                 ClearDatabase(CacheDatabases.All, true);
             }
             _isInitialized = true;
@@ -585,6 +590,39 @@ public partial class CacheService
         var metaDataFilePath = Path.Combine(_settings.CacheDirectory, "metadata.json");
         if (File.Exists(metaDataFilePath))
             File.Delete(metaDataFilePath);
+    }
+    
+    /// <summary>
+    /// Deletes the cache metadata file if it exists
+    /// </summary>
+    public void ClearKnownBadResources()
+    {
+        var knownBadResourcesFile = Path.Combine(_settings.CacheDirectory, "knownBadResources.txt");
+        if (File.Exists(knownBadResourcesFile))
+            File.Delete(knownBadResourcesFile);
+        _knownBadResources.Clear();
+    }
+    
+    /// <summary>
+    /// Gets the count of known bad resources
+    /// </summary>
+    /// <returns></returns>
+    public int GetKnownBadResourceCount() => _knownBadResources.Count;
+    
+    private void SaveKnownBadResources()
+    {
+        if (_knownBadResources.Count == 0) return;
+        var knownBadResourcesFile = Path.Combine(_settings.CacheDirectory, "knownBadResources.txt");
+        File.WriteAllLines(knownBadResourcesFile, _knownBadResources);
+    }
+
+    private void LoadKnownBadResources()
+    {
+        var knownBadResourcesFile = Path.Combine(_settings.CacheDirectory, "knownBadResources.txt");
+        if (!File.Exists(knownBadResourcesFile))
+            return;
+        foreach (var line in File.ReadAllLines(knownBadResourcesFile))
+            _knownBadResources.Add(line);
     }
     
     /// <summary>

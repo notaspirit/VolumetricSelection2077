@@ -88,10 +88,17 @@ public class BoundingBoxBuilderService
         try
         {
             Logger.Debug($"Building bounds for {sectorPath}...");
-            var sector = _gameFileService.GetSector(sectorPath);
-            if (sector == null)
+            var sectorToken = _gameFileService.GetSector(sectorPath);
+            if (sectorToken.Resource is not AbbrSector sector)
             {
-                Logger.Warning($"Failed to get sector {sectorPath}");
+                switch (sectorToken.Result)
+                {
+                    case VEnums.ResourceTokenResult.KnownBad: Logger.Warning($"Sector {sectorPath} is a known bad resource, skipping..."); break;
+                    case VEnums.ResourceTokenResult.Success: Logger.Error($"Received an unexpected resource type {sectorToken.Resource?.GetType()} for sector {sectorPath}"); break;
+                    case VEnums.ResourceTokenResult.Failure: Logger.Error($"Failed to get sector {sectorPath}"); break;
+                    case VEnums.ResourceTokenResult.NotInitialized: Logger.Error($"GameFileService not initialized, cannot get sector {sectorPath}"); break;
+                    default: Logger.Error($"Unknown resource token result {sectorToken.Result} for sector {sectorPath}"); break;
+                }
                 return;
             }
 
@@ -104,10 +111,17 @@ public class BoundingBoxBuilderService
                 
                 if ((nodeEntry?.ResourcePath?.EndsWith(".mesh") ?? false) || (nodeEntry?.ResourcePath?.EndsWith(".w2mesh") ?? false))
                 {
-                    var mesh = _gameFileService.GetCMesh(nodeEntry.ResourcePath);
-                    if (mesh == null)
+                    var meshToken = _gameFileService.GetCMesh(nodeEntry.ResourcePath);
+                    if (meshToken.Resource is not AbbrMesh mesh)
                     {
-                        Logger.Warning($"Failed to get CMesh from {nodeEntry.ResourcePath}, using only position data");
+                        switch (meshToken.Result)
+                        {
+                            case VEnums.ResourceTokenResult.KnownBad: Logger.Warning($"Mesh {nodeEntry.ResourcePath} is a known bad resource, using only position data"); break;
+                            case VEnums.ResourceTokenResult.Success: Logger.Warning($"Received an unexpected resource type {meshToken.Resource?.GetType()} for mesh {nodeEntry.ResourcePath}, using only position data"); break;
+                            case VEnums.ResourceTokenResult.Failure: Logger.Warning($"Failed to get mesh {nodeEntry.ResourcePath}, using only position data"); break;
+                            case VEnums.ResourceTokenResult.NotInitialized: Logger.Error($"GameFileService not initialized, cannot get mesh {nodeEntry.ResourcePath}, using only position data"); break;
+                            default: Logger.Warning($"Unknown resource token result {meshToken.Result} for mesh {nodeEntry.ResourcePath}, using only position data"); break;
+                        }
                         foreach (var transform in nodeDataEntry.Transforms)
                         {
                             min = Vector3.Min(min, transform.Position);
@@ -151,12 +165,28 @@ public class BoundingBoxBuilderService
                             {
                                 case WEnums.physicsShapeType.TriangleMesh:
                                 case WEnums.physicsShapeType.ConvexMesh:
-                                    var collisionMesh = await _gameFileService.GetPhysXMesh((ulong)nodeEntry.SectorHash,
-                                        (ulong)shape.Hash);
-                                    if (collisionMesh == null)
+                                    if (nodeEntry.SectorHash is not ulong sectorHash ||
+                                        shape.Hash is not ulong shapeHash)
                                     {
-                                        Logger.Warning(
-                                            $"Failed to get PhysX Mesh from {(ulong)nodeEntry.SectorHash} : {shape.Hash}, using only position data");
+                                        Logger.Warning($"Node Data entry contains invalid sector hash {nodeEntry.SectorHash} or shape hash {shape.Hash}, using only position data");
+                                        var combinedPosition = shape.Transform.Position + actor.Transform.Position;
+                                        min = Vector3.Min(min, combinedPosition);
+                                        max = Vector3.Max(max, combinedPosition);
+                                        continue;
+                                    }
+                                    
+                                    var collisionMeshToken = await _gameFileService.GetPhysXMesh(sectorHash,
+                                        shapeHash);
+                                    if (collisionMeshToken.Resource is not AbbrMesh collisionMesh)
+                                    {
+                                        switch (collisionMeshToken.Result)
+                                        {
+                                            case VEnums.ResourceTokenResult.KnownBad: Logger.Warning($"Collision mesh at sector hash {sectorHash} : shape hash {shapeHash} is a known bad resource, using only position data"); break;
+                                            case VEnums.ResourceTokenResult.Success: Logger.Warning($"Received an unexpected resource type {collisionMeshToken.Resource?.GetType()} for sector hash {sectorHash} : shape hash {shapeHash}, using only position data"); break;
+                                            case VEnums.ResourceTokenResult.Failure: Logger.Warning($"Failed to get collision mesh at sector hash {sectorHash} : shape hash {shapeHash}, using only position data"); break;
+                                            case VEnums.ResourceTokenResult.NotInitialized: Logger.Error($"GameFileService not initialized, cannot get collision mesh at sector hash {sectorHash} : shape hash {shapeHash}"); break;
+                                            default: Logger.Warning($"Unknown resource token result {collisionMeshToken.Result} for collision mesh at sector hash {sectorHash} : shape hash {shapeHash}, using only position data"); break;
+                                        }
                                         var combinedPosition = shape.Transform.Position + actor.Transform.Position;
                                         min = Vector3.Min(min, combinedPosition);
                                         max = Vector3.Max(max, combinedPosition);

@@ -51,6 +51,7 @@ public partial class SettingsService : ObservableObject
         BackupDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "OutputBackup");
         MaxBackupFiles = 10;
         AutoScrollLogViewer = true;
+        RememberFailedResources = true;
     }
     
     public static SettingsService Instance
@@ -111,6 +112,8 @@ public partial class SettingsService : ObservableObject
     public int MaxBackupFiles { get; set; }
     public bool AutoScrollLogViewer { get; set; }
     public string LogDirectory { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "Logs");
+    
+    public bool RememberFailedResources { get; set; }
 
     #region ExperimentalSettings
 
@@ -195,6 +198,8 @@ public partial class SettingsService : ObservableObject
                 
                 DebugMode = j.Value<bool?>(nameof(DebugMode)) ?? DebugMode;
                 ProxyMeshTreatment = (Enums.ExperimentalSettingsEnum.ProxyMeshTreatment?)j.Value<long?>(nameof(ProxyMeshTreatment)) ?? ProxyMeshTreatment;
+                
+                RememberFailedResources = j.Value<bool?>(nameof(RememberFailedResources)) ?? RememberFailedResources;
                 
             }
             catch (Exception ex)
