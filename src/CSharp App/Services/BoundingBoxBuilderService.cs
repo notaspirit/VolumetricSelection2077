@@ -87,7 +87,7 @@ public class BoundingBoxBuilderService
     {
         try
         {
-            Logger.Info($"Building bounds for {sectorPath}...");
+            Logger.Debug($"Building bounds for {sectorPath}...");
             var sectorToken = _gameFileService.GetSector(sectorPath);
             if (sectorToken.Resource is not AbbrSector sector)
             {
