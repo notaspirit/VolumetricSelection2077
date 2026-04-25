@@ -268,4 +268,21 @@ public partial class CacheService
             Logger.Success("Finished writing all queued entries to cache");
         }
     }
+    
+    /// <summary>
+    /// Checks if the resource path has failed before (thus being "bad")
+    /// </summary>
+    /// <param name="resourcePath">Resource path to check</param>
+    /// <returns></returns>
+    public bool IsResourceKnownBad(string resourcePath) => _knownBadResources.Contains(resourcePath);
+
+    /// <summary>
+    /// Adds the resource path to the known bad list
+    /// </summary>
+    /// <param name="resourcePath">Resource path to add</param>
+    public void AddKnownBadResource(string resourcePath)
+    {
+        if (_knownBadResources.Add(resourcePath))
+            SaveKnownBadResources();
+    }
 }

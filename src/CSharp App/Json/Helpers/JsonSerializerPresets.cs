@@ -12,7 +12,9 @@ public class JsonSerializerPresets
             new WorldBuilderSpawnableJsonConverter(),
             new WorldBuilderElementListConverter(),
             new ColorToColorArrayConverter(),
-            new NormalizeZeroConverter()
+            new NormalizeZeroConverter(),
+            new DictStringJObjectConverter(),
+            new JObjectArrConverter()
         },
         NullValueHandling = NullValueHandling.Ignore,
         Formatting = Formatting.Indented

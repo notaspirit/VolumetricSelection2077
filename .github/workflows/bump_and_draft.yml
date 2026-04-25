@@ -78,10 +78,16 @@ jobs:
           $issContent = $issContent -replace "REPLACE_WITH_VERSION_NUMBER", $version
           $issContent | Set-Content "build-app.iss"
 
-      - name: Clean and Publish C# App
+      - name: Clean and Publish C# App for Windows
         run: |
           dotnet clean
-          dotnet publish -c Release -r win-x64 --self-contained false -o ../../temp_publish
+          dotnet publish -c Release -r win-x64 --self-contained false -o ../../temp_publish_win
+        working-directory: "src/CSharp App"
+        
+      - name: Clean and Publish C# App for Linux
+        run: |
+          dotnet clean
+          dotnet publish -c Release -r linux-x64 --self-contained false -o ../../temp_publish_linux
         working-directory: "src/CSharp App"
 
       - name: Download Inno Setup
@@ -101,9 +107,13 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path "${{ github.event.inputs.new_version }}" -Force
 
-      - name: Create Portable ZIP
+      - name: Create Portable ZIP for Windows
         run: |
-          Compress-Archive -Path "temp_publish\*" -DestinationPath "${{ github.event.inputs.new_version }}/VS2077-portable-${{ github.event.inputs.new_version }}.zip"
+          Compress-Archive -Path "temp_publish_win\*" -DestinationPath "${{ github.event.inputs.new_version }}/VS2077-portable-win-${{ github.event.inputs.new_version }}.zip"
+          
+      - name: Create Portable TAR.GZ for Linux
+        run: |
+          tar -czf "${{ github.event.inputs.new_version }}/VS2077-portable-linux-${{ github.event.inputs.new_version }}.tar.gz" -C "temp_publish_linux" .
 
       - name: Create CET Mod ZIP
         run: |

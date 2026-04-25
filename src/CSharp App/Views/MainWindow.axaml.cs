@@ -42,32 +42,21 @@ public partial class MainWindow : Window
         Closed += OnMainWindowClosed;
         
         var progressBar = this.FindControl<ProgressBar>("ProgressBar");
-        var progressBarBroder = this.FindControl<ProgressBar>("ProgressBarBorder");
         var progressTextBlock = this.FindControl<TextBlock>("TimerTextBlock");
-        if (progressTextBlock == null || progressBar == null || progressBarBroder == null)
+        if (progressTextBlock == null || progressBar == null)
         {
             var error =
-                $"Could not find one or more ui components: ProgressBar: {_progressBar}, TimerTextBlock: {ProgressTextBlock}, ProgressBarBorder: {progressBarBroder}";
+                $"Could not find one or more ui components: ProgressBar: {_progressBar}, TimerTextBlock: {ProgressTextBlock}";
             Logger.Error(error);
             throw new InvalidOperationException(error);
         }
         ProgressTextBlock = progressTextBlock;
         _progressBar = progressBar;
         
-        _progressBar.SizeChanged += (_, _) =>
-        {
-            progressBarBroder.Width = ((_progressBar.Width / DesktopScaling) + 2) * DesktopScaling;
-            progressBarBroder.Height = ((_progressBar.Height / DesktopScaling) + 2) * DesktopScaling;
-        };
-        
         _dispatcherTimer = new TrackedDispatchTimer() { Interval = TimeSpan.FromSeconds(1) };
         _dispatcherTimer.Tick += (_, _) => ProgressTextBlock.Text = $"{UtilService.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
         _progress = Progress.Instance;
-        _progress.ProgressChanged += (_, i) =>
-        {
-            _progressBar.Value = i;
-            progressBarBroder.Value = i;
-        };
+        _progress.ProgressChanged += (_, i) => _progressBar.Value = i;
     }
     
     /// <summary>
@@ -197,7 +186,7 @@ public partial class MainWindow : Window
     {
         if (sender is not Button)
             return;
-        _mainWindowViewModel.FilterSelectionVisibility = !_mainWindowViewModel.FilterSelectionVisibility;
+        _mainWindowViewModel.IsFilterSelectionVisible = !_mainWindowViewModel.IsFilterSelectionVisible;
         AddQueuedFilters();
     }
     
@@ -205,7 +194,7 @@ public partial class MainWindow : Window
     {
         if (sender is Button)
         {
-            _mainWindowViewModel.ParameterSelectionVisibility = !_mainWindowViewModel.ParameterSelectionVisibility;
+            _mainWindowViewModel.IsParameterSelectionVisible = !_mainWindowViewModel.IsParameterSelectionVisible;
         }
     }
     

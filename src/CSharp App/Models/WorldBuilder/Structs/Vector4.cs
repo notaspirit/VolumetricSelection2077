@@ -1,8 +1,9 @@
 using System;
+using System.Globalization;
 
 namespace VolumetricSelection2077.models.WorldBuilder.Structs;
 
-public struct Vector4
+public class Vector4
 {
     public float x;
     public float y;
@@ -16,6 +17,8 @@ public struct Vector4
         this.z = z;
         this.w = w;
     }
+
+    public Vector4() : this(0, 0, 0, 1) { }
     
     public static implicit operator SharpDX.Vector4(Vector4 value) => new (value.x, value.y, value.z, value.w);
     
@@ -31,6 +34,19 @@ public struct Vector4
     
     public static implicit operator Vector4(WolvenKit.RED4.Types.Vector4 value) => new (value.X, value.Y, value.Z, value.W);
     
+    public static implicit operator SharpDX.Vector3(Vector4 value) => new (value.x, value.y, value.z);
+    
+    public static implicit operator Vector4(SharpDX.Vector3 value) => new (value.X, value.Y, value.Z, 1);
+    
+    public static implicit operator WolvenKit.RED4.Types.Vector3(Vector4 value) => new ()
+    {
+        X = value.x,
+        Y = value.y,
+        Z = value.z
+    };
+    
+    public static implicit operator Vector4(WolvenKit.RED4.Types.Vector3 value) => new (value.X, value.Y, value.Z, 1);
+    
     public override bool Equals(object? obj)
     {
         if (obj is Vector4 other)
@@ -44,4 +60,12 @@ public struct Vector4
     {
         return HashCode.Combine(x, y, z, w);
     }
+    
+    public override string ToString() =>
+        string.Format(CultureInfo.CurrentCulture, "X:{0} Y:{1} Z:{2} W:{3}", [
+            x,
+            y,
+            z,
+            w
+        ]);
 }
