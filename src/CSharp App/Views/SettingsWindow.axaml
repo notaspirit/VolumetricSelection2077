@@ -467,29 +467,6 @@
                             Text="Enables a hidden menu with some debug and testing functionality. No guarantee is provided for the functionality of debug methods."
                             TextWrapping="Wrap"
                             VerticalAlignment="Center" />
-
-                        <TextBlock
-                            Grid.Column="0"
-                            Grid.Row="2"
-                            HorizontalAlignment="Left"
-                            Margin="5"
-                            Text="Proxy Mesh Treatment"
-                            VerticalAlignment="Center" />
-                        <ComboBox
-                            Grid.Column="1"
-                            Grid.Row="2"
-                            HorizontalAlignment="Stretch"
-                            ItemsSource="{Binding ProxyMeshTreatmentOptions}"
-                            Margin="5"
-                            SelectedItem="{Binding Settings.ProxyMeshTreatment, Mode=TwoWay}" />
-                        <TextBlock
-                            Grid.Column="1"
-                            Grid.Row="3"
-                            HorizontalAlignment="Left"
-                            Margin="5"
-                            Text="Enables export to World Builder as ProxyMesh. Requires WorldBuilder from the main branch at commit f02ad58 (Nov 15th) or later."
-                            TextWrapping="Wrap"
-                            VerticalAlignment="Center" />
                     </Grid>
                 </TabItem>
             </TabControl>
