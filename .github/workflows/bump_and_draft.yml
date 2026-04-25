@@ -143,5 +143,6 @@ jobs:
           prerelease: false
           files: |
             ${{ steps.find_installer.outputs.installer_path }}
-            ${{ github.event.inputs.new_version }}/VS2077-portable-${{ github.event.inputs.new_version }}.zip
+            ${{ github.event.inputs.new_version }}/VS2077-portable-win-${{ github.event.inputs.new_version }}.zip
             ${{ github.event.inputs.new_version }}/VS2077-cet-${{ github.event.inputs.new_version }}.zip
+            ${{ github.event.inputs.new_version }}/VS2077-portable-linux-${{ github.event.inputs.new_version }}.tar.gz
