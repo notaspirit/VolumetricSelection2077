@@ -457,29 +457,6 @@
                             Text="Enables export to World Builder as ProxyMesh. Requires WorldBuilder from the main branch at commit f02ad58 (Nov 15th) or later."
                             TextWrapping="Wrap"
                             VerticalAlignment="Center" />
-
-                        <TextBlock
-                            Grid.Column="0"
-                            Grid.Row="4"
-                            HorizontalAlignment="Left"
-                            Margin="5"
-                            Text="Collision Export Treatment"
-                            VerticalAlignment="Center" />
-                        <ComboBox
-                            Grid.Column="1"
-                            Grid.Row="4"
-                            HorizontalAlignment="Stretch"
-                            ItemsSource="{Binding CollisionWorldBuilderTreatmentOptions}"
-                            Margin="5"
-                            SelectedItem="{Binding Settings.WorldBuilderCollisionSupport, Mode=TwoWay}" />
-                        <TextBlock
-                            Grid.Column="1"
-                            Grid.Row="5"
-                            HorizontalAlignment="Left"
-                            Margin="5"
-                            Text="Enables export of collision to World Builder. Requires WorldBuilder from the main branch at commit TBA (currently an open PR) or later."
-                            TextWrapping="Wrap"
-                            VerticalAlignment="Center" />
                     </Grid>
                 </TabItem>
             </TabControl>

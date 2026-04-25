@@ -117,8 +117,6 @@ public partial class SettingsService : ObservableObject
     [ObservableProperty]
     private bool _debugMode;
     public Enums.ExperimentalSettingsEnum.ProxyMeshTreatment ProxyMeshTreatment { get; set; } = Enums.ExperimentalSettingsEnum.ProxyMeshTreatment.RegularMesh;
-    
-    public Enums.ExperimentalSettingsEnum.CollisionWorldBuilderTreatment WorldBuilderCollisionSupport { get; set; } = Enums.ExperimentalSettingsEnum.CollisionWorldBuilderTreatment.Ignore;
 
     #endregion
     
@@ -197,7 +195,6 @@ public partial class SettingsService : ObservableObject
                 
                 DebugMode = j.Value<bool?>(nameof(DebugMode)) ?? DebugMode;
                 ProxyMeshTreatment = (Enums.ExperimentalSettingsEnum.ProxyMeshTreatment?)j.Value<long?>(nameof(ProxyMeshTreatment)) ?? ProxyMeshTreatment;
-                WorldBuilderCollisionSupport = (Enums.ExperimentalSettingsEnum.CollisionWorldBuilderTreatment?)j.Value<long?>(nameof(WorldBuilderCollisionSupport)) ?? WorldBuilderCollisionSupport;
                 
             }
             catch (Exception ex)

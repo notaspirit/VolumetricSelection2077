@@ -617,9 +617,6 @@ public class AxlRemovalToWorldBuilderConverter
                 spawnableElements.Add(spawnableMeshNode);
                 break;
             case worldCollisionNode collisionNode:
-                if (_settings.WorldBuilderCollisionSupport == CollisionWorldBuilderTreatment.Ignore)
-                    goto NotSupported;
-
                 if (collisionNode.CompiledData.Data is not CollisionBuffer cb)
                 {
                     Logger.Warning("Collision node buffer is not CollisionBuffer. Skipping...");
@@ -699,7 +696,6 @@ public class AxlRemovalToWorldBuilderConverter
                 }
                 break;
             default:
-                NotSupported:
                 var nodeTypeString = node?.GetType().ToString() ?? "";
                 if (!_warnedTypes.Contains(nodeTypeString))
                 {
