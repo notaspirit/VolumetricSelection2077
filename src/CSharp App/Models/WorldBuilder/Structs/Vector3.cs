@@ -1,8 +1,9 @@
 using System;
+using System.Globalization;
 
 namespace VolumetricSelection2077.models.WorldBuilder.Structs;
 
-public struct Vector3
+public class Vector3
 {
     public float x;
     public float y;
@@ -14,6 +15,8 @@ public struct Vector3
         this.y = y;
         this.z = z;
     }
+    
+    public Vector3() : this(0, 0, 0) { }
     
     public static implicit operator SharpDX.Vector3(Vector3 value) => new (value.x, value.y, value.z);
     
@@ -41,4 +44,11 @@ public struct Vector3
     {
         return HashCode.Combine(x, y, z);
     }
+
+    public override string ToString() =>
+        string.Format(CultureInfo.CurrentCulture, "X:{0} Y:{1} Z:{2}", [
+            x,
+            y,
+            z
+        ]);
 }

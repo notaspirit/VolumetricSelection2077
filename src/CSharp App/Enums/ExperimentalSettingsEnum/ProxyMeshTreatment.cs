@@ -4,4 +4,4 @@ public enum ProxyMeshTreatment
 {
     RegularMesh,
     ProxyMesh
-}
+} 
