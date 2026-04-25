@@ -119,7 +119,6 @@ public partial class SettingsService : ObservableObject
 
     [ObservableProperty]
     private bool _debugMode;
-    public Enums.ExperimentalSettingsEnum.ProxyMeshTreatment ProxyMeshTreatment { get; set; } = Enums.ExperimentalSettingsEnum.ProxyMeshTreatment.RegularMesh;
 
     #endregion
     
@@ -197,7 +196,6 @@ public partial class SettingsService : ObservableObject
                 AutoScrollLogViewer = j.Value<bool?>(nameof(AutoScrollLogViewer)) ?? AutoScrollLogViewer;
                 
                 DebugMode = j.Value<bool?>(nameof(DebugMode)) ?? DebugMode;
-                ProxyMeshTreatment = (Enums.ExperimentalSettingsEnum.ProxyMeshTreatment?)j.Value<long?>(nameof(ProxyMeshTreatment)) ?? ProxyMeshTreatment;
                 
                 RememberFailedResources = j.Value<bool?>(nameof(RememberFailedResources)) ?? RememberFailedResources;
                 

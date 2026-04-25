@@ -7,7 +7,6 @@ using Newtonsoft.Json.Linq;
 using SharpDX;
 using VolumetricSelection2077.Converters.Simple;
 using VolumetricSelection2077.Enums;
-using VolumetricSelection2077.Enums.ExperimentalSettingsEnum;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Models.WorldBuilder.Editor;
 using VolumetricSelection2077.Models.WorldBuilder.Spawn.Collision;
@@ -586,16 +585,11 @@ public class AxlRemovalToWorldBuilderConverter
                 var spawnablePrefabProxyMeshNode = new SpawnableElement
                 {
                     Name = GetSpawnableName(prefabProxyMeshNode),
-                    Spawnable = new Mesh()
-                };
-
-                if (_settings.ProxyMeshTreatment == ProxyMeshTreatment.ProxyMesh)
-                {
-                    spawnablePrefabProxyMeshNode.Spawnable = new ProxyMesh()
+                    Spawnable = new ProxyMesh()
                     {
                         NearAutoHideDistance = prefabProxyMeshNode.NearAutoHideDistance
-                    };
-                }
+                    }
+                };
                 
                 PopulateBaseMesh(ref spawnablePrefabProxyMeshNode, prefabProxyMeshNode, nodeDataEntry);
                 spawnableElements.Add(spawnablePrefabProxyMeshNode);
