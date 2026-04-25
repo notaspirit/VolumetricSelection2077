@@ -3,7 +3,7 @@ using VolumetricSelection2077.models.WorldBuilder.Structs;
 
 namespace VolumetricSelection2077.Models.WorldBuilder.Spawn.Collision;
 
-public class Collision : Spawnable
+public class Collision : ColliderBase
 {
     [JsonProperty("shape")]
     public int Shape { get; set; }
@@ -24,9 +24,6 @@ public class Collision : Spawnable
         Scale = new Vector3(1, 1, 1);
         
         Shape = 0;
-        
-        Material = 1;
-        Preset = 33;
         
         Uk10 = 1040;
     }

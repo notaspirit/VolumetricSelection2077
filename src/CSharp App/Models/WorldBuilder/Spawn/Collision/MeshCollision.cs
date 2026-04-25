@@ -3,7 +3,7 @@ using VolumetricSelection2077.models.WorldBuilder.Structs;
 
 namespace VolumetricSelection2077.Models.WorldBuilder.Spawn.Collision;
 
-public class MeshCollision : Spawnable
+public class MeshCollision : ColliderBase
 {
     [JsonProperty("sectorHash")]
     public string? SectorHash { get; set; }
@@ -13,12 +13,6 @@ public class MeshCollision : Spawnable
     
     [JsonProperty("meshType")]
     public string? MeshType { get; set; }
-    
-    [JsonProperty("material")]
-    public int Material { get; set; }
-    
-    [JsonProperty("preset")]
-    public int Preset { get; set; }
     
     [JsonProperty("scale")]
     public Vector3 Scale { get; set; }   
@@ -32,9 +26,6 @@ public class MeshCollision : Spawnable
         SectorHash = null;
         ShapeHash = null;
         MeshType = null;
-        
-        Material = 1;
-        Preset = 33;
         
         Scale = new Vector3(1,1,1);
     }
