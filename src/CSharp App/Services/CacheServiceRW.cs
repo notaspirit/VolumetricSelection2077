@@ -274,15 +274,11 @@ public partial class CacheService
     /// </summary>
     /// <param name="resourcePath">Resource path to check</param>
     /// <returns></returns>
-    public bool IsResourceKnownBad(string resourcePath) => _knownBadResources.Contains(resourcePath);
+    public bool IsResourceKnownBad(string resourcePath) => _knownBadResources.ContainsKey(resourcePath);
 
     /// <summary>
     /// Adds the resource path to the known bad list
     /// </summary>
     /// <param name="resourcePath">Resource path to add</param>
-    public void AddKnownBadResource(string resourcePath)
-    {
-        if (_knownBadResources.Add(resourcePath))
-            SaveKnownBadResources();
-    }
+    public void AddKnownBadResource(string resourcePath) => _knownBadResources.TryAdd(resourcePath, 0);
 }
