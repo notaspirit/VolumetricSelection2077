@@ -33,11 +33,12 @@ public partial class CacheService
     private static readonly ulong EstimatedBoundsEntrySizeInBytes = 116;
     static ConcurrentQueue<WriteCacheRequest> _requestWriteQueue = new();
     private readonly object _lock = new object();
+    private readonly object _saveKnownBadResourcesLock = new();
     private LightningDatabase _vanillaDatabase;
     private LightningDatabase _moddedDatabase;
     private LightningDatabase _vanillaBoundsDatabase;
     private LightningDatabase _moddedBoundsDatabase;
-    private readonly HashSet<string> _knownBadResources = new();
+    private readonly ConcurrentDictionary<string, byte> _knownBadResources = new();
     private bool _isInitialized;
 
     public bool IsInitialized
@@ -146,6 +147,7 @@ public partial class CacheService
     public void StopListening()
     {
         IsProcessing = false;
+        SaveKnownBadResources();
     }
     
     /// <summary>
@@ -610,9 +612,12 @@ public partial class CacheService
     
     private void SaveKnownBadResources()
     {
-        if (_knownBadResources.Count == 0) return;
-        var knownBadResourcesFile = Path.Combine(_settings.CacheDirectory, "knownBadResources.txt");
-        File.WriteAllLines(knownBadResourcesFile, _knownBadResources);
+        lock (_saveKnownBadResourcesLock)
+        {
+            if (_knownBadResources.IsEmpty) return;
+            var knownBadResourcesFile = Path.Combine(_settings.CacheDirectory, "knownBadResources.txt");
+            File.WriteAllLines(knownBadResourcesFile, _knownBadResources.Keys);
+        }
     }
 
     private void LoadKnownBadResources()
@@ -621,7 +626,7 @@ public partial class CacheService
         if (!File.Exists(knownBadResourcesFile))
             return;
         foreach (var line in File.ReadAllLines(knownBadResourcesFile))
-            _knownBadResources.Add(line);
+            _knownBadResources.TryAdd(line, 0);
     }
     
     /// <summary>
