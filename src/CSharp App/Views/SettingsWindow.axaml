@@ -139,7 +139,7 @@
                                 Grid.Column="0"
                                 Grid.Row="0"
                                 Margin="5"
-                                Text="{Binding Settings.GameDirectory}"
+                                Text="{Binding Settings.Data.GameDirectory}"
                                 Watermark="{x:Static resources:Watermarks.GameDirectory}" />
                             <Button
                                 Background="#6b82b2"
@@ -159,7 +159,7 @@
                         <ToggleSwitch
                             Grid.Column="1"
                             Grid.Row="1"
-                            IsChecked="{Binding Settings.SupportModdedResources}"
+                            IsChecked="{Binding Settings.Data.SupportModdedResources}"
                             Margin="5"
                             OffContent=""
                             OnContent="" />
@@ -180,7 +180,7 @@
                                 Grid.Column="0"
                                 Grid.Row="0"
                                 Margin="5"
-                                Text="{Binding Settings.CETInstallLocation}"
+                                Text="{Binding Settings.Data.CETInstallLocation}"
                                 Watermark="{x:Static resources:Watermarks.CETInstallLocation}" />
                             <Button
                                 Background="#6b82b2"
@@ -206,7 +206,7 @@
                                 Grid.Column="0"
                                 Grid.Row="0"
                                 Margin="5"
-                                Text="{Binding Settings.OutputDirectory}"
+                                Text="{Binding Settings.Data.OutputDirectory}"
                                 Watermark="{x:Static resources:Watermarks.CustomOutputDirectory}" />
                             <Button
                                 Background="#6b82b2"
@@ -239,7 +239,7 @@
                                 Grid.Column="0"
                                 Grid.Row="0"
                                 Margin="5"
-                                Text="{Binding Settings.CacheDirectory}"
+                                Text="{Binding Settings.Data.CacheDirectory}"
                                 Watermark="{x:Static resources:Watermarks.CacheDirectory}" />
                             <Button
                                 Background="#6b82b2"
@@ -384,7 +384,7 @@
                                 Grid.Column="0"
                                 Grid.Row="0"
                                 Margin="5"
-                                Text="{Binding Settings.CustomSelectionFilePath}"
+                                Text="{Binding Settings.Data.CustomSelectionFilePath}"
                                 Watermark="{x:Static resources:Labels.CustomSelectionFilePath}" />
                             <Button
                                 Background="#6b82b2"
@@ -410,7 +410,7 @@
                                 Grid.Column="0"
                                 Grid.Row="0"
                                 Margin="5"
-                                Text="{Binding Settings.BackupDirectory}"
+                                Text="{Binding Settings.Data.BackupDirectory}"
                                 Watermark="{x:Static resources:Labels.BackupDirectory}" />
                             <Button
                                 Background="#6b82b2"
@@ -431,7 +431,7 @@
                             Grid.Column="1"
                             Grid.Row="13"
                             Margin="5"
-                            Text="{Binding Settings.MaxBackupFiles, UpdateSourceTrigger=LostFocus}"
+                            Text="{Binding Settings.Data.MaxBackupFiles, UpdateSourceTrigger=LostFocus}"
                             Watermark="{x:Static resources:Labels.MaxBackupFiles}" />
                     </Grid>
                 </TabItem>
@@ -455,7 +455,7 @@
                         <ToggleSwitch
                             Grid.Column="1"
                             Grid.Row="0"
-                            IsChecked="{Binding Settings.DebugMode}"
+                            IsChecked="{Binding Settings.Data.ExperimentalSettings.DebugMode}"
                             Margin="5"
                             OffContent=""
                             OnContent="" />

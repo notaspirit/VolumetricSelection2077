@@ -45,7 +45,7 @@ public class ProcessService
             .Where(x => inputFile.Aabb.Contains(MessagePackSerializer.Deserialize<BoundingBox>(x.Value)) != ContainmentType.Disjoint)
             .Select(x => x.Key));
 
-        if (_settings.SupportModdedResources)
+        if (_settings.Data.SupportModdedResources)
         {
             var moddedBoundingBoxes = _cacheService.GetAllEntries(VEnums.CacheDatabases.ModdedBounds);
             inputFile.Sectors.Add(moddedBoundingBoxes
@@ -142,10 +142,10 @@ public class ProcessService
         bool? matchesDebugFilter = null;
         bool? matchesResourceFilter = null;
         
-        if (_settings.DebugNameFilter.Count > 0)
+        if (_settings.Data.DebugNameFilter.Count > 0)
         {
             matchesDebugFilter = false;
-            foreach (var filter in _settings.DebugNameFilter)
+            foreach (var filter in _settings.Data.DebugNameFilter)
             {
                 if (Regex.IsMatch(nodeEntry.DebugName ?? "", filter, RegexOptions.IgnoreCase))
                 {
@@ -156,10 +156,10 @@ public class ProcessService
             
         }
         
-        if (_settings.ResourceNameFilter.Count > 0)
+        if (_settings.Data.ResourceNameFilter.Count > 0)
         {
             matchesResourceFilter = false;
-            foreach (var filter in _settings.ResourceNameFilter)
+            foreach (var filter in _settings.Data.ResourceNameFilter)
             {
                 if (Regex.IsMatch(nodeEntry.ResourcePath ?? "", filter, RegexOptions.IgnoreCase))
                 {
@@ -171,7 +171,7 @@ public class ProcessService
 
         if (matchesDebugFilter != null && matchesResourceFilter != null)
         {
-            if (_settings.FilterModeOr)
+            if (_settings.Data.FilterModeOr)
             {
                 if (!((bool)matchesDebugFilter || (bool)matchesResourceFilter))
                 {
@@ -195,7 +195,7 @@ public class ProcessService
             return null;
         }
         
-        if (_settings.NodeTypeFilter[(int)nodeEntry.Type] != true)
+        if (_settings.Data.NodeTypeFilter[(int)nodeEntry.Type] != true)
         {
             return null;
         }
@@ -224,7 +224,7 @@ public class ProcessService
                 bool isInstanced = nodeEntry.Type is VEnums.NodeTypeProcessingOptions.worldInstancedDestructibleMeshNode 
                                                     or VEnums.NodeTypeProcessingOptions.worldInstancedMeshNode;
                 
-                if (!isInstanced && _settings.SaveFileFormat == VEnums.SaveFileFormat.WorldBuilder)
+                if (!isInstanced && _settings.Data.SaveFileFormat == VEnums.SaveFileFormat.WorldBuilder)
                     isInstanced = nodeEntry.Type is VEnums.NodeTypeProcessingOptions.worldFoliageNode;
                 
                 var meshToken = _gameFileService.GetCMesh(nodeEntry.ResourcePath);

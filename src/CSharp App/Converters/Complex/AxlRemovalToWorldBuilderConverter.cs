@@ -262,7 +262,7 @@ public class AxlRemovalToWorldBuilderConverter
                             continue;
 
                     SpawnableElement instDestMeshNode;
-                    switch (_settings.DestructibleMeshTreatment)
+                    switch (_settings.Data.DestructibleMeshTreatment)
                     {
                         case DestructibleMeshTreatment.DynamicMesh:
                             instDestMeshNode = new SpawnableElement
@@ -311,7 +311,7 @@ public class AxlRemovalToWorldBuilderConverter
                             };
                             break;
                         default:
-                            throw new NotImplementedException($"Destructible Mesh Treatment {_settings.DestructibleMeshTreatment} is not implemented.");
+                            throw new NotImplementedException($"Destructible Mesh Treatment {_settings.Data.DestructibleMeshTreatment} is not implemented.");
                     }
                     spawnableElements.Add(instDestMeshNode);
                 }
@@ -323,7 +323,7 @@ public class AxlRemovalToWorldBuilderConverter
                 HandleEmbeddedResourceWarning(destructionNode.Mesh.DepotPath, sectorPath, ref sectorCR2W);
                 
                 SpawnableElement spawnabledestructionMesh; 
-                switch (_settings.DestructibleMeshTreatment)
+                switch (_settings.Data.DestructibleMeshTreatment)
                 {
                     case DestructibleMeshTreatment.DynamicMesh:
                         spawnabledestructionMesh = new SpawnableElement
@@ -350,7 +350,7 @@ public class AxlRemovalToWorldBuilderConverter
                         };
                         break;
                     default:
-                        throw new NotImplementedException($"Destructible Mesh Treatment {_settings.DestructibleMeshTreatment} is not implemented.");
+                        throw new NotImplementedException($"Destructible Mesh Treatment {_settings.Data.DestructibleMeshTreatment} is not implemented.");
                 }
                 PopulateSpawnable(ref spawnabledestructionMesh, nodeDataEntry);
                 spawnableElements.Add(spawnabledestructionMesh);
@@ -362,7 +362,7 @@ public class AxlRemovalToWorldBuilderConverter
                 HandleEmbeddedResourceWarning(dynamicMeshNode.Mesh.DepotPath, sectorPath, ref sectorCR2W);
 
                 SpawnableElement spawnabledynamicMesh;
-                switch (_settings.DestructibleMeshTreatment)
+                switch (_settings.Data.DestructibleMeshTreatment)
                 {
                     case DestructibleMeshTreatment.DynamicMesh:
                         spawnabledynamicMesh = new SpawnableElement
@@ -382,7 +382,7 @@ public class AxlRemovalToWorldBuilderConverter
                         };
                         break;
                     default:
-                        throw new NotImplementedException($"Destructible Mesh Treatment {_settings.DestructibleMeshTreatment} is not implemented.");
+                        throw new NotImplementedException($"Destructible Mesh Treatment {_settings.Data.DestructibleMeshTreatment} is not implemented.");
                 }
                 
                 PopulateBaseMesh(ref spawnabledynamicMesh, dynamicMeshNode, nodeDataEntry);

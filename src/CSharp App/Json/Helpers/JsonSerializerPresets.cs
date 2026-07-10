@@ -3,7 +3,7 @@ using VolumetricSelection2077.Json.Converters;
 
 namespace VolumetricSelection2077.Json.Helpers;
 
-public class JsonSerializerPresets
+public static class JsonSerializerPresets
 {
     public static JsonSerializerSettings WorldBuilder { get; } = new JsonSerializerSettings
     {

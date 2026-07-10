@@ -72,12 +72,12 @@ public partial class CacheService
         try
         {
             _settings = SettingsService.Instance;
-            if (!ValidationService.ValidateAndCreateDirectory(_settings.CacheDirectory).Item1)
+            if (!ValidationService.ValidateAndCreateDirectory(_settings.Data.CacheDirectory).Item1)
                 throw new Exception("Invalid cache directory");
             
             if (_isInitialized) return;
             
-            _env = new LightningEnvironment(_settings.CacheDirectory)
+            _env = new LightningEnvironment(_settings.Data.CacheDirectory)
             {
                 MaxDatabases = 4,
                 MapSize = MapSize,
@@ -95,7 +95,7 @@ public partial class CacheService
             LoadKnownBadResources();
             
             var metaData = GetMetadata();
-            if (!ValidationService.ValidateCache(metaData, _settings.GameDirectory, _settings.MinimumCacheVersion))
+            if (!ValidationService.ValidateCache(metaData, _settings.Data.GameDirectory, SettingsService.MinimumCacheVersion))
             {
                 Logger.Warning("Cache is stale, resetting database");
                 ClearMetaData();
@@ -160,10 +160,10 @@ public partial class CacheService
         if (!_isInitialized && !bypass) throw new Exception("Cache service must be initialized before calling ResizeEnvironment");
         _isInitialized = false;
         
-        string tempCacheDir = Path.Combine(Directory.GetParent(_settings.CacheDirectory)?.FullName, $"temp_cache_{Guid.NewGuid().ToString()}");
+        string tempCacheDir = Path.Combine(Directory.GetParent(_settings.Data.CacheDirectory)?.FullName, $"temp_cache_{Guid.NewGuid().ToString()}");
         Directory.CreateDirectory(tempCacheDir);
         
-        var metaDataFilePath = Path.Combine(_settings.CacheDirectory, "metadata.json");
+        var metaDataFilePath = Path.Combine(_settings.Data.CacheDirectory, "metadata.json");
 
         if (File.Exists(metaDataFilePath))
         {
@@ -214,8 +214,8 @@ public partial class CacheService
         GC.Collect();
         GC.WaitForPendingFinalizers();
         
-        Directory.Delete(_settings.CacheDirectory, true);
-        Directory.Move(tempCacheDir, _settings.CacheDirectory);
+        Directory.Delete(_settings.Data.CacheDirectory, true);
+        Directory.Move(tempCacheDir, _settings.Data.CacheDirectory);
         Initialize();
     }
     
@@ -228,7 +228,7 @@ public partial class CacheService
     public void ClearDatabase(CacheDatabases database, bool bypass = false)
     {
         if (!_isInitialized && !bypass) throw new Exception("Cache service must be initialized before calling ClearDatabase");
-        var resize = ShouldResize(database, GetStats(), _settings.CacheDirectory);
+        var resize = ShouldResize(database, GetStats(), _settings.Data.CacheDirectory);
         
         try
         {
@@ -352,7 +352,7 @@ public partial class CacheService
         
         if (!fromExists)
         {
-            _settings.CacheDirectory = toPath;
+            _settings.Data.CacheDirectory = toPath;
             _settings.SaveSettings();
             return true;
         }
@@ -380,7 +380,7 @@ public partial class CacheService
     public CacheStats GetStats()
     {
         if (!_isInitialized) return new CacheStats();
-        DirectoryInfo dirInfo = new DirectoryInfo(_settings.CacheDirectory);
+        DirectoryInfo dirInfo = new DirectoryInfo(_settings.Data.CacheDirectory);
         ulong totalSize;
         try
         {
@@ -477,7 +477,7 @@ public partial class CacheService
     /// <exception cref="Exception">any used filepath is invalid (cache, game) or no game exe file found</exception>
     public CacheDatabaseMetadata GetMetadata()
     {
-        string filePath = Path.Combine(_settings.CacheDirectory, "metadata.json");
+        string filePath = Path.Combine(_settings.Data.CacheDirectory, "metadata.json");
         if (ValidationService.ValidatePath(filePath) != PathValidationResult.Valid)
             throw new Exception("Cache directory is invalid!");
         
@@ -488,7 +488,7 @@ public partial class CacheService
             if (metadata != null) return metadata;
         }
         
-        var gameExePath = Path.Combine(_settings.GameDirectory, "bin", "x64", "Cyberpunk2077.exe");
+        var gameExePath = Path.Combine(_settings.Data.GameDirectory, "bin", "x64", "Cyberpunk2077.exe");
         if (ValidationService.ValidatePath(filePath) != PathValidationResult.Valid)
             throw new Exception("Game directory is invalid!");
         
@@ -499,8 +499,8 @@ public partial class CacheService
         if (version == null)
             throw new Exception("Could not find Game Version.");
         
-        var newMetadata = new CacheDatabaseMetadata(_settings.MinimumCacheVersion, version);
-        Directory.CreateDirectory(_settings.CacheDirectory);
+        var newMetadata = new CacheDatabaseMetadata(SettingsService.MinimumCacheVersion, version);
+        Directory.CreateDirectory(_settings.Data.CacheDirectory);
         File.WriteAllText(filePath, JsonSerializer.Serialize(newMetadata));
         return newMetadata;
     }
@@ -514,7 +514,7 @@ public partial class CacheService
     {
         var metadata = GetMetadata();
         metadata.AreVanillaSectorBBsBuild = newValue;
-        File.WriteAllText(Path.Combine(_settings.CacheDirectory, "metadata.json"), JsonSerializer.Serialize(metadata));
+        File.WriteAllText(Path.Combine(_settings.Data.CacheDirectory, "metadata.json"), JsonSerializer.Serialize(metadata));
         return true;
     }
 
@@ -588,7 +588,7 @@ public partial class CacheService
     /// </summary>
     private void ClearMetaData()
     {
-        var metaDataFilePath = Path.Combine(_settings.CacheDirectory, "metadata.json");
+        var metaDataFilePath = Path.Combine(_settings.Data.CacheDirectory, "metadata.json");
         if (File.Exists(metaDataFilePath))
             File.Delete(metaDataFilePath);
     }
@@ -598,7 +598,7 @@ public partial class CacheService
     /// </summary>
     public void ClearKnownBadResources()
     {
-        var knownBadResourcesFile = Path.Combine(_settings.CacheDirectory, "knownBadResources.txt");
+        var knownBadResourcesFile = Path.Combine(_settings.Data.CacheDirectory, "knownBadResources.txt");
         if (File.Exists(knownBadResourcesFile))
             File.Delete(knownBadResourcesFile);
         _knownBadResources.Clear();
@@ -615,14 +615,14 @@ public partial class CacheService
         lock (_saveKnownBadResourcesLock)
         {
             if (_knownBadResources.IsEmpty) return;
-            var knownBadResourcesFile = Path.Combine(_settings.CacheDirectory, "knownBadResources.txt");
+            var knownBadResourcesFile = Path.Combine(_settings.Data.CacheDirectory, "knownBadResources.txt");
             File.WriteAllLines(knownBadResourcesFile, _knownBadResources.Keys);
         }
     }
 
     private void LoadKnownBadResources()
     {
-        var knownBadResourcesFile = Path.Combine(_settings.CacheDirectory, "knownBadResources.txt");
+        var knownBadResourcesFile = Path.Combine(_settings.Data.CacheDirectory, "knownBadResources.txt");
         if (!File.Exists(knownBadResourcesFile))
             return;
         foreach (var line in File.ReadAllLines(knownBadResourcesFile))

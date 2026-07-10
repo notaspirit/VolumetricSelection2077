@@ -42,7 +42,7 @@ namespace VolumetricSelection2077.Services
         {
             bool cacheStatus = ValidateCacheStatus();
             bool gfsStatus = ValidateGameFileService();
-            var outDirVR = ValidateAndCreateDirectory(_settingsService.OutputDirectory);
+            var outDirVR = ValidateAndCreateDirectory(_settingsService.Data.OutputDirectory);
             var selFileVR = ValidateSelectionFile(gamePath);
             var validFileName = string.IsNullOrEmpty(outputFilename) ? PathValidationResult.Empty : ValidatePath(outputFilename, true);
             var resourceNameFilterValid = ValidateResourcePathFilter();
@@ -163,18 +163,18 @@ namespace VolumetricSelection2077.Services
 
         private bool SubtractionTargetExists()
         {
-            switch (_settingsService.SaveFileFormat)
+            switch (_settingsService.Data.SaveFileFormat)
             {
                 case SaveFileFormat.ArchiveXLYaml:
                 case SaveFileFormat.ArchiveXLJson:
                     string outputFilePath;
-                    switch (_settingsService.SaveFileLocation)
+                    switch (_settingsService.Data.SaveFileLocation)
                     {
                         case SaveFileLocation.GameDirectory:
-                            outputFilePath = Path.Join(_settingsService.GameDirectory, "archive", "pc", "mod", _settingsService.OutputFilename) + ".xl";
+                            outputFilePath = Path.Join(_settingsService.Data.GameDirectory, "archive", "pc", "mod", _settingsService.Data.OutputFilename) + ".xl";
                             break;
                         case SaveFileLocation.OutputDirectory:
-                            outputFilePath = Path.Join(_settingsService.OutputDirectory, _settingsService.OutputFilename) + ".xl";
+                            outputFilePath = Path.Join(_settingsService.Data.OutputDirectory, _settingsService.Data.OutputFilename) + ".xl";
                             break;
                         default:
                             throw new ArgumentOutOfRangeException();
@@ -182,14 +182,14 @@ namespace VolumetricSelection2077.Services
                     return File.Exists(outputFilePath);
                 case SaveFileFormat.WorldBuilder:
                     string favoritesPath;
-                    switch (_settingsService.SaveFileLocation)
+                    switch (_settingsService.Data.SaveFileLocation)
                     {
                         case SaveFileLocation.GameDirectory:
-                            favoritesPath = Path.Join(_settingsService.GameDirectory, "bin", "x64", "plugins",
+                            favoritesPath = Path.Join(_settingsService.Data.GameDirectory, "bin", "x64", "plugins",
                                 "cyber_engine_tweaks", "mods", "entSpawner", "data", "favorite", "GeneratedByVS2077.json");
                             break;
                         case SaveFileLocation.OutputDirectory:
-                            favoritesPath = Path.Join(_settingsService.OutputDirectory, "GeneratedByVS2077.json");
+                            favoritesPath = Path.Join(_settingsService.Data.OutputDirectory, "GeneratedByVS2077.json");
                             break;
                         default:
                             throw new ArgumentOutOfRangeException();
@@ -199,7 +199,7 @@ namespace VolumetricSelection2077.Services
 
                     var favRoot = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(favoritesPath),
                         JsonSerializerPresets.WorldBuilder);
-                    return favRoot?.Favorites.Any(x => x.Name == SettingsService.Instance.OutputFilename) ?? false;
+                    return favRoot?.Favorites.Any(x => x.Name == SettingsService.Instance.Data.OutputFilename) ?? false;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -216,7 +216,7 @@ namespace VolumetricSelection2077.Services
         /// <returns>true if all modded sectors have bounding boxes or modded resources are disabled</returns>
         private bool AreModdedSectorBBsBuild()
         {
-            if (!_settingsService.SupportModdedResources)
+            if (!_settingsService.Data.SupportModdedResources)
                 return true;
             
             var inArchiveSectors = _gameFileService.ArchiveManager.GetModArchives()
@@ -241,11 +241,11 @@ namespace VolumetricSelection2077.Services
             if (vpr != PathValidationResult.Valid)
                 return (false, vpr);
             string selectionFilePath;
-            if (string.IsNullOrWhiteSpace(_settingsService.CustomSelectionFilePath))
-                selectionFilePath = Path.Combine(_settingsService.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks",
+            if (string.IsNullOrWhiteSpace(_settingsService.Data.CustomSelectionFilePath))
+                selectionFilePath = Path.Combine(_settingsService.Data.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks",
                     "mods", "VolumetricSelection2077", "data", "selection.json");
             else
-                selectionFilePath = Path.Combine(_settingsService.CustomSelectionFilePath, "bin", "x64", "plugins", "cyber_engine_tweaks",
+                selectionFilePath = Path.Combine(_settingsService.Data.CustomSelectionFilePath, "bin", "x64", "plugins", "cyber_engine_tweaks",
                     "mods", "VolumetricSelection2077", "data", "selection.json");
             return (File.Exists(selectionFilePath), vpr);
         }
@@ -294,7 +294,7 @@ namespace VolumetricSelection2077.Services
         /// <returns></returns>
         private bool ValidateResourcePathFilter()
         {
-            return _settingsService.ResourceNameFilter.Count > 0 ? _settingsService.ResourceNameFilter.All(x => ValidateRegex(x)) : true;
+            return _settingsService.Data.ResourceNameFilter.Count > 0 ? _settingsService.Data.ResourceNameFilter.All(x => ValidateRegex(x)) : true;
         }
         
         /// <summary>
@@ -303,7 +303,7 @@ namespace VolumetricSelection2077.Services
         /// <returns></returns>
         private bool ValidateDebugNameFilter()
         {
-            return _settingsService.DebugNameFilter.Count > 0 ? _settingsService.DebugNameFilter.All(x => ValidateRegex(x)) : true;
+            return _settingsService.Data.DebugNameFilter.Count > 0 ? _settingsService.Data.DebugNameFilter.All(x => ValidateRegex(x)) : true;
         }
     }
 }

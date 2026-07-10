@@ -78,32 +78,32 @@ namespace VolumetricSelection2077.Views
 
         private void OpenBackupDir_Click(object sender, RoutedEventArgs e)
         {
-            OsUtilsService.OpenFolder(_settingsViewModel.Settings.BackupDirectory);
+            OsUtilsService.OpenFolder(_settingsViewModel.Settings.Data.BackupDirectory);
         }
         
         private void OpenCustomSelectionDir_Click(object sender, RoutedEventArgs e)
         {
-            OsUtilsService.OpenFolder(_settingsViewModel.Settings.CustomSelectionFilePath);
+            OsUtilsService.OpenFolder(_settingsViewModel.Settings.Data.CustomSelectionFilePath);
         }
         
         private void OpenCacheDir_Click(object sender, RoutedEventArgs e)
         {
-            OsUtilsService.OpenFolder(_settingsViewModel.Settings.CacheDirectory);
+            OsUtilsService.OpenFolder(_settingsViewModel.Settings.Data.CacheDirectory);
         }
         
         private void OpenOutputDir_Click(object sender, RoutedEventArgs e)
         {
-            OsUtilsService.OpenFolder(_settingsViewModel.Settings.OutputDirectory);
+            OsUtilsService.OpenFolder(_settingsViewModel.Settings.Data.OutputDirectory);
         }
 
         private void OpenCETDir_Click(object sender, RoutedEventArgs e)
         {
-            OsUtilsService.OpenFolder(_settingsViewModel.Settings.CETInstallLocation);
+            OsUtilsService.OpenFolder(_settingsViewModel.Settings.Data.CETInstallLocation);
         }
         
         private void OpenGameDir_Click(object sender, RoutedEventArgs e)
         {
-            OsUtilsService.OpenFolder(_settingsViewModel.Settings.GameDirectory);
+            OsUtilsService.OpenFolder(_settingsViewModel.Settings.Data.GameDirectory);
         }
 
         private async void OnSettingsWindowClosing(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -129,7 +129,7 @@ namespace VolumetricSelection2077.Views
                 try
                 {
                     successMove = !_moveCache || CacheService.Instance.Move(_settingsViewModel.PersistentCache.InitialCachePath,
-                        _settingsViewModel.Settings.CacheDirectory);
+                        _settingsViewModel.Settings.Data.CacheDirectory);
                 }
                 catch (Exception ex)
                 {
@@ -138,11 +138,11 @@ namespace VolumetricSelection2077.Views
 
                 if (successMove)
                 {
-                    _settingsViewModel.PersistentCache.InitialCachePath = _settingsViewModel.Settings.CacheDirectory;
+                    _settingsViewModel.PersistentCache.InitialCachePath = _settingsViewModel.Settings.Data.CacheDirectory;
                 }
                 else
                 {
-                    _settingsViewModel.Settings.CacheDirectory = _settingsViewModel.PersistentCache.InitialCachePath;
+                    _settingsViewModel.Settings.Data.CacheDirectory = _settingsViewModel.PersistentCache.InitialCachePath;
                     _settingsViewModel.Settings.SaveSettings();
                 }
                 

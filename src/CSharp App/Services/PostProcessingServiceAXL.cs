@@ -24,13 +24,13 @@ public partial class PostProcessingService
         Logger.Success($"Found {nodeCount} node deletions and {actorCount} actor deletions across {axlRemovalFile.Streaming.Sectors.Count} sectors");
         
         string outputFilePath;
-        switch (_settingsService.SaveFileLocation)
+        switch (_settingsService.Data.SaveFileLocation)
         {
             case SaveFileLocation.GameDirectory:
-                outputFilePath = Path.Join(_settingsService.GameDirectory, "archive", "pc", "mod", _settingsService.OutputFilename) + ".xl";
+                outputFilePath = Path.Join(_settingsService.Data.GameDirectory, "archive", "pc", "mod", _settingsService.Data.OutputFilename) + ".xl";
                 break;
             case SaveFileLocation.OutputDirectory:
-                outputFilePath = Path.Join(_settingsService.OutputDirectory, _settingsService.OutputFilename) + ".xl";
+                outputFilePath = Path.Join(_settingsService.Data.OutputDirectory, _settingsService.Data.OutputFilename) + ".xl";
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
@@ -42,7 +42,7 @@ public partial class PostProcessingService
         
         if (!File.Exists(outputFilePath))
         {
-            if (_settingsService.SaveMode == SaveFileMode.Subtract)
+            if (_settingsService.Data.SaveMode == SaveFileMode.Subtract)
             {
                 Logger.Error($"No Existing File to remove from found at {outputFilePath}");
                 return;
@@ -54,7 +54,7 @@ public partial class PostProcessingService
             return;
         }
 
-        switch (_settingsService.SaveMode)
+        switch (_settingsService.Data.SaveMode)
         {
             case SaveFileMode.Extend:
             {
@@ -98,7 +98,7 @@ public partial class PostProcessingService
         {
             AxlRemovalFile? existingRemovals = null;
 
-            if (_settingsService.SaveMode is SaveFileMode.Extend or SaveFileMode.Subtract)
+            if (_settingsService.Data.SaveMode is SaveFileMode.Extend or SaveFileMode.Subtract)
             {
                 var fileContent = File.ReadAllText(outputFilePath);
                 existingRemovals = UtilService.TryParseAxlRemovalFile(fileContent);
@@ -106,7 +106,7 @@ public partial class PostProcessingService
                     throw new FileLoadException($"Failed to find or parse existing Removal File at {outputFilePath}!"); 
             }
 
-            (axlRemovalFile, mergeChanges) = _settingsService.SaveMode switch
+            (axlRemovalFile, mergeChanges) = _settingsService.Data.SaveMode switch
             {
                 SaveFileMode.Extend => MergeSectors(existingRemovals!, axlRemovalFile),
                 SaveFileMode.Subtract => SubtractRemovals(existingRemovals!, axlRemovalFile),
@@ -116,7 +116,7 @@ public partial class PostProcessingService
         
         string outputContent;
 
-        switch (_settingsService.SaveFileFormat)
+        switch (_settingsService.Data.SaveFileFormat)
         {
             case  SaveFileFormat.ArchiveXLJson:
                 outputContent = JsonConvert.SerializeObject(axlRemovalFile, JsonSerializerPresets.WorldBuilder);

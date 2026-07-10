@@ -28,19 +28,19 @@ public class SettingsViewPersistentCache
 
     public bool CachePathChanged
     {
-        get => InitialCachePath != _settings.CacheDirectory;
+        get => InitialCachePath != _settings.Data.CacheDirectory;
     }
     
     public bool RequiresRestart
     {
-        get => (InitialModdedResourceValue != _settings.SupportModdedResources) || (InitialGamePath != _settings.GameDirectory);
+        get => (InitialModdedResourceValue != _settings.Data.SupportModdedResources) || (InitialGamePath != _settings.Data.GameDirectory);
     }
     
     private SettingsViewPersistentCache()
     {
        _settings = SettingsService.Instance;
-       InitialModdedResourceValue = _settings.SupportModdedResources;
-       InitialGamePath = _settings.GameDirectory;
-       InitialCachePath = _settings.CacheDirectory;
+       InitialModdedResourceValue = _settings.Data.SupportModdedResources;
+       InitialGamePath = _settings.Data.GameDirectory;
+       InitialCachePath = _settings.Data.CacheDirectory;
     }
 }

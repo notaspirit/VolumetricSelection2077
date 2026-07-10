@@ -24,10 +24,10 @@ public partial class LogViewer : UserControl
     public ObservableCollection<LogMessage> LogMessages { get; } = new();
     public bool AutoScroll
     {
-        get => _settings.AutoScrollLogViewer;
+        get => _settings.Data.AutoScrollLogViewer;
         set
         {
-            _settings.AutoScrollLogViewer = value;
+            _settings.Data.AutoScrollLogViewer = value;
             _settings.SaveSettings();
         }
     }
