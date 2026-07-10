@@ -92,15 +92,15 @@ namespace VolumetricSelection2077.ViewModels
             }
         }
         
-        public int ResourcePathFilterCount => Settings.ResourceNameFilter.Count;
-        public int DebugNameFilterCount => Settings.DebugNameFilter.Count;
+        public int ResourcePathFilterCount => Settings.Data.ResourceNameFilter.Count;
+        public int DebugNameFilterCount => Settings.Data.DebugNameFilter.Count;
 
         public bool FilterModeOr
         {
-            get => Settings.FilterModeOr;
+            get => Settings.Data.FilterModeOr;
             set
             {
-                Settings.FilterModeOr = value;
+                Settings.Data.FilterModeOr = value;
                 OnPropertyChanged(nameof(FilterModeText));
                 OnPropertyChanged(nameof(FilterModeOr));
             }
@@ -110,25 +110,25 @@ namespace VolumetricSelection2077.ViewModels
 
         public string OutputFilename
         {
-            get => Settings.OutputFilename;
+            get => Settings.Data.OutputFilename;
             set
             {
-                Settings.OutputFilename = value;
+                Settings.Data.OutputFilename = value;
                 OnPropertyChanged(nameof(OutputFilename));
                 Settings.SaveSettings();
             }
         }
 
         public string FilterSectionButtonLabel => Labels.FilterCollapseButton +
-                                                  $" [ {(Settings.DebugNameFilter.Count == 0 ? 0 : 1) 
-                                                        + (Settings.ResourceNameFilter.Count == 0 ? 0 : 1) 
-                                                        + (Settings.NodeTypeFilter.Cast<bool>().Count( b => b) == 122 ? 0 : 1)} / 3 ]";
+                                                  $" [ {(Settings.Data.DebugNameFilter.Count == 0 ? 0 : 1) 
+                                                        + (Settings.Data.ResourceNameFilter.Count == 0 ? 0 : 1) 
+                                                        + (Settings.Data.NodeTypeFilter.Cast<bool>().Count( b => b) == 122 ? 0 : 1)} / 3 ]";
         public bool IsFilterSelectionVisible
         {
-            get => Settings.IsFiltersMWVisible;
+            get => Settings.Data.IsFiltersMWVisible;
             set
             {
-                Settings.IsFiltersMWVisible = value;
+                Settings.Data.IsFiltersMWVisible = value;
                 OnPropertyChanged(nameof(IsFilterSelectionVisible));
                 Settings.SaveSettings();
             }
@@ -138,10 +138,10 @@ namespace VolumetricSelection2077.ViewModels
 
         public SaveFileMode SelectedSaveFileMode
         {
-            get => Settings.SaveMode;
+            get => Settings.Data.SaveMode;
             set
             {
-                Settings.SaveMode = value;
+                Settings.Data.SaveMode = value;
                 OnPropertyChanged(nameof(SelectedSaveFileMode));
                 Settings.SaveSettings();
             }
@@ -151,10 +151,10 @@ namespace VolumetricSelection2077.ViewModels
 
         public SaveFileFormat SelectedSaveFileFormat
         {
-            get => Settings.SaveFileFormat;
+            get => Settings.Data.SaveFileFormat;
             set
             {
-                Settings.SaveFileFormat = value;
+                Settings.Data.SaveFileFormat = value;
                 OnPropertyChanged(nameof(SelectedSaveFileFormat));
                 Settings.SaveSettings();
             }
@@ -164,10 +164,10 @@ namespace VolumetricSelection2077.ViewModels
 
         public SaveFileLocation SelectedSaveFileLocation
         {
-            get => Settings.SaveFileLocation;
+            get => Settings.Data.SaveFileLocation;
             set
             {
-                Settings.SaveFileLocation = value;
+                Settings.Data.SaveFileLocation = value;
                 OnPropertyChanged(nameof(SelectedSaveFileLocation));
                 Settings.SaveSettings();
             }
@@ -177,10 +177,10 @@ namespace VolumetricSelection2077.ViewModels
 
         public DestructibleMeshTreatment SelectedDestructibleMeshTreatment
         {
-            get => Settings.DestructibleMeshTreatment;
+            get => Settings.Data.DestructibleMeshTreatment;
             set
             {
-                Settings.DestructibleMeshTreatment = value;
+                Settings.Data.DestructibleMeshTreatment = value;
                 OnPropertyChanged(nameof(SelectedDestructibleMeshTreatment));
                 Settings.SaveSettings();
             }
@@ -225,10 +225,10 @@ namespace VolumetricSelection2077.ViewModels
         }
         public bool IsParameterSelectionVisible
         {
-            get => Settings.IsParametersMWVisible;
+            get => Settings.Data.IsParametersMWVisible;
             set
             {
-                Settings.IsParametersMWVisible = value;
+                Settings.Data.IsParametersMWVisible = value;
                 OnPropertyChanged(nameof(IsParameterSelectionVisible));
                 Settings.SaveSettings();
             }
@@ -252,14 +252,14 @@ namespace VolumetricSelection2077.ViewModels
         public MainWindowViewModel()
         {
             Settings = SettingsService.Instance;
-            _resourceNameFilter = Settings.ResourceNameFilter;
+            _resourceNameFilter = Settings.Data.ResourceNameFilter;
             _resourceNameFilter.CollectionChanged += ResourceNameFilter_CollectionChanged;
-            Settings.DebugNameFilter.CollectionChanged += DebugNameFilter_CollectionChanged;
+            Settings.Data.DebugNameFilter.CollectionChanged += DebugNameFilter_CollectionChanged;
             _nodeTypeFilterItems = new();
             var enumValues = Enum.GetValues(typeof(NodeTypeProcessingOptions));
             for (int i = 0; i < enumValues.Length; i++)
             {
-                var item = new NodeTypeFilterItem(enumValues.GetValue(i)?.ToString() ?? " ", i, Settings.NodeTypeFilter);
+                var item = new NodeTypeFilterItem(enumValues.GetValue(i)?.ToString() ?? " ", i, Settings.Data.NodeTypeFilter);
                 item.PropertyChanged += OnNodeTypeFilterItemChanged;
                 NodeTypeFilterItems.Add(item);
             }
@@ -325,7 +325,7 @@ namespace VolumetricSelection2077.ViewModels
             if (sender is not NodeTypeFilterItem item1)
                 return;
             var globalIndex = NodeTypeFilterItems.IndexOf(item1);
-            Settings.NodeTypeFilter[globalIndex] = item1.IsChecked;
+            Settings.Data.NodeTypeFilter[globalIndex] = item1.IsChecked;
         }
     }
 }

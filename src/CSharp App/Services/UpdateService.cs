@@ -136,17 +136,17 @@ public class UpdateService
         try
         {
             string unzipPathCet;
-            if (string.IsNullOrEmpty(SettingsService.Instance.CETInstallLocation))
+            if (string.IsNullOrEmpty(SettingsService.Instance.Data.CETInstallLocation))
             {
-                if (ValidationService.ValidateGamePath(SettingsService.Instance.GameDirectory).Item1 != GamePathValidationResult.Valid)
+                if (ValidationService.ValidateGamePath(SettingsService.Instance.Data.GameDirectory).Item1 != GamePathValidationResult.Valid)
                 {
                     throw new Exception("Could not find valid target location to install VS2077 CET. Please set the game path or custom directory in the settings and restart the application to try again.");
                 }
-                unzipPathCet = SettingsService.Instance.GameDirectory;
+                unzipPathCet = SettingsService.Instance.Data.GameDirectory;
             }
             else
             {
-                unzipPathCet = SettingsService.Instance.CETInstallLocation;
+                unzipPathCet = SettingsService.Instance.Data.CETInstallLocation;
             }
             Directory.CreateDirectory(unzipPath);
             if (downloadPathApp.EndsWith(".zip"))
@@ -171,7 +171,7 @@ public class UpdateService
             {
                 MoveDirectoryWithOverwrite(Path.Join(unzipPathCetTemp, "archive", "pc", "mod"),
                     Path.Join(unzipPathCet, "archive", "pc", "hot"));
-                SettingsService.Instance.GameRunningDuringUpdate = true;
+                SettingsService.Instance.Data.GameRunningDuringUpdate = true;
             }
         }
         catch (Exception ex)
@@ -213,7 +213,7 @@ objShell.Run ""powershell.exe -ExecutionPolicy Bypass -File """"{scriptPath}""""
                 UseShellExecute = true
             });
         
-            SettingsService.Instance.DidUpdate = true;
+            SettingsService.Instance.Data.DidUpdate = true;
             SettingsService.Instance.SaveSettings();
             Environment.Exit(0);   
         }
@@ -221,7 +221,7 @@ objShell.Run ""powershell.exe -ExecutionPolicy Bypass -File """"{scriptPath}""""
         {
             MoveDirectoryWithOverwrite(rootTempPath, AppContext.BaseDirectory);
             
-            SettingsService.Instance.DidUpdate = true;
+            SettingsService.Instance.Data.DidUpdate = true;
             SettingsService.Instance.SaveSettings();
             OsUtilsService.RestartApp();
         }

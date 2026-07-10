@@ -118,7 +118,7 @@ namespace VolumetricSelection2077.Services
         /// <param name="fileOnly">Only log to the file, but not the Ui</param>
         public static void Debug(string message, bool fileOnly = false)
         {
-            if (_settingsService.DebugMode)
+            if (_settingsService.Data.ExperimentalSettings.DebugMode)
             {
                 if (!fileOnly)
                     _uiLogger?.Debug(FormatMessage(message, "Debug  "));

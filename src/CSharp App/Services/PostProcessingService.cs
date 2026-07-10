@@ -52,7 +52,7 @@ public partial class PostProcessingService
             }
         };
         
-        switch (_settingsService.SaveFileFormat)
+        switch (_settingsService.Data.SaveFileFormat)
         {
             case SaveFileFormat.ArchiveXLJson:
             case SaveFileFormat.ArchiveXLYaml:
@@ -90,32 +90,32 @@ public partial class PostProcessingService
 
     private void WriteBackupFile(string originalOutputFilePath, string content)
     {
-        var dirName = $"{Path.GetFileNameWithoutExtension(originalOutputFilePath)}-{_settingsService.SaveMode}-{_settingsService.SaveFileFormat}-{DateTime.Now:yyyy-MM-dd-HH-mm-ss}";
-        var dirPath = Path.Join(_settingsService.BackupDirectory, dirName);
+        var dirName = $"{Path.GetFileNameWithoutExtension(originalOutputFilePath)}-{_settingsService.Data.SaveMode}-{_settingsService.Data.SaveFileFormat}-{DateTime.Now:yyyy-MM-dd-HH-mm-ss}";
+        var dirPath = Path.Join(_settingsService.Data.BackupDirectory, dirName);
         Directory.CreateDirectory(dirPath);
         File.WriteAllText(Path.Join(dirPath, Path.GetFileName(originalOutputFilePath)), content);
 
         string selectionFilePath;
         var relativePath = Path.Join("bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "VolumetricSelection2077",
             "data", "selection.json");
-        if (!string.IsNullOrEmpty(_settingsService.CustomSelectionFilePath))
-            selectionFilePath = Path.Join(_settingsService.CustomSelectionFilePath, relativePath);
+        if (!string.IsNullOrEmpty(_settingsService.Data.CustomSelectionFilePath))
+            selectionFilePath = Path.Join(_settingsService.Data.CustomSelectionFilePath, relativePath);
         else 
-            selectionFilePath = Path.Join(_settingsService.GameDirectory, relativePath);
+            selectionFilePath = Path.Join(_settingsService.Data.GameDirectory, relativePath);
 
         File.Copy(selectionFilePath, Path.Join(dirPath, Path.GetFileName(selectionFilePath)));
-        File.WriteAllText(Path.Join(dirPath, "settings.json"), JsonConvert.SerializeObject(_settingsService, Formatting.Indented));
+        File.WriteAllText(Path.Join(dirPath, "settings.json"), JsonConvert.SerializeObject(_settingsService.Data, Formatting.Indented));
         var latestLogFile = new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "Logs")).GetFiles("*.txt").OrderByDescending(f => f.LastWriteTime).FirstOrDefault();
         if (latestLogFile != null)
         {
             File.Copy(latestLogFile.FullName, Path.Join(dirPath, Path.GetFileName(latestLogFile.FullName)));
         }
             
-        var dirInfo = new DirectoryInfo(_settingsService.BackupDirectory);
-        if (dirInfo.GetDirectories().Length <= _settingsService.MaxBackupFiles)
+        var dirInfo = new DirectoryInfo(_settingsService.Data.BackupDirectory);
+        if (dirInfo.GetDirectories().Length <= _settingsService.Data.MaxBackupFiles)
             return;
         
-        var dirsToDelete = dirInfo.GetDirectories().OrderByDescending(d => d.LastWriteTime).Skip(_settingsService.MaxBackupFiles);
+        var dirsToDelete = dirInfo.GetDirectories().OrderByDescending(d => d.LastWriteTime).Skip(_settingsService.Data.MaxBackupFiles);
         foreach (var dir in dirsToDelete)
             dir.Delete(true);
     }

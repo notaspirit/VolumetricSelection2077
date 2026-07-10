@@ -80,7 +80,7 @@
                     <FlyoutBase.AttachedFlyout>
                         <Flyout Placement="BottomEdgeAlignedLeft" ShowMode="Transient">
                             <ScrollViewer MaxHeight="300">
-                                <ItemsControl ItemsSource="{Binding Settings.ResourceNameFilter}">
+                                <ItemsControl ItemsSource="{Binding Settings.Data.ResourceNameFilter}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <Grid ColumnDefinitions="Auto,*, 21" Margin="0,2">
@@ -140,7 +140,7 @@
                     <FlyoutBase.AttachedFlyout>
                         <Flyout Placement="BottomEdgeAlignedLeft" ShowMode="Transient">
                             <ScrollViewer MaxHeight="300">
-                                <ItemsControl ItemsSource="{Binding Settings.DebugNameFilter}">
+                                <ItemsControl ItemsSource="{Binding Settings.Data.DebugNameFilter}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <Grid ColumnDefinitions="Auto,*, 21" Margin="0,2">
@@ -450,7 +450,7 @@
                     Content="{x:Static resources:Labels.DebugMenu}"
                     Grid.Column="3"
                     IsEnabled="{Binding DebugWindowButtonEnabled}"
-                    IsVisible="{Binding Settings.DebugMode}"
+                    IsVisible="{Binding Settings.Data.ExperimentalSettings.DebugMode}"
                     Margin="5,0,0,0">
                     <Button.Styles>
                         <Style Selector="Button:pointerover /template/ ContentPresenter">

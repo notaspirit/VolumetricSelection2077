@@ -50,7 +50,7 @@ public class GameFileService
     public bool Initialize()
     {
         if (_initialized) return true;
-        if (_settingsService.SupportModdedResources)
+        if (_settingsService.Data.SupportModdedResources)
         {
             Logger.Info($"Initializing Game File Service with modded resources, this may take a while...");
         }
@@ -78,10 +78,10 @@ public class GameFileService
                 ArchiveManager,
                 _red4ParserService
             );
-            var gameExePath = new FileInfo(Path.Join(_settingsService.GameDirectory, "bin", "x64", "Cyberpunk2077.exe"));
-            ArchiveManager.Initialize(gameExePath, _settingsService.SupportModdedResources);
+            var gameExePath = new FileInfo(Path.Join(_settingsService.Data.GameDirectory, "bin", "x64", "Cyberpunk2077.exe"));
+            ArchiveManager.Initialize(gameExePath, _settingsService.Data.SupportModdedResources);
             _cacheService = CacheService.Instance;
-            _readCacheTarget = _settingsService.SupportModdedResources ? CacheDatabases.All : CacheDatabases.Vanilla;
+            _readCacheTarget = _settingsService.Data.SupportModdedResources ? CacheDatabases.All : CacheDatabases.Vanilla;
             InitializeCNames();
             
             _initialized = true;
@@ -174,7 +174,7 @@ public class GameFileService
             return token;
         }
 
-        if (_settingsService.RememberFailedResources && _cacheService.IsResourceKnownBad(path))
+        if (_settingsService.Data.RememberFailedResources && _cacheService.IsResourceKnownBad(path))
         {
             token.Result = ResourceTokenResult.KnownBad;
             return token;
@@ -196,7 +196,7 @@ public class GameFileService
             return token;
         }
         CacheDatabases db = CacheDatabases.Vanilla;
-        if (_settingsService.SupportModdedResources)
+        if (_settingsService.Data.SupportModdedResources)
         {
             var fileLookup = ArchiveManager.Lookup(path, ArchiveManagerScope.Mods);
             if (fileLookup != null) db = CacheDatabases.Modded;
@@ -224,7 +224,7 @@ public class GameFileService
         token.Result = ResourceTokenResult.Success;
         token.Resource = parsedMesh;
 
-        if (db != CacheDatabases.Modded || _settingsService.CacheModdedResources)
+        if (db != CacheDatabases.Modded || _settingsService.Data.CacheModdedResources)
             _cacheService.WriteEntry(path, parsedMesh, db); 
         
         return token;
@@ -245,7 +245,7 @@ public class GameFileService
             return token;
         }
         
-        if (_settingsService.RememberFailedResources && _cacheService.IsResourceKnownBad(path))
+        if (_settingsService.Data.RememberFailedResources && _cacheService.IsResourceKnownBad(path))
         {
             token.Result = ResourceTokenResult.KnownBad;
             return token;
@@ -267,7 +267,7 @@ public class GameFileService
             return token;
         }
         CacheDatabases db = CacheDatabases.Vanilla;
-        if (_settingsService.SupportModdedResources)
+        if (_settingsService.Data.SupportModdedResources)
         {
             var fileLookup = ArchiveManager.Lookup(path, ArchiveManagerScope.Mods);
             if (fileLookup != null) db = CacheDatabases.Modded;
@@ -289,7 +289,7 @@ public class GameFileService
         token.Result = ResourceTokenResult.Success;
         token.Resource = parsedSector;
         
-        if (db != CacheDatabases.Modded || _settingsService.CacheModdedResources)
+        if (db != CacheDatabases.Modded || _settingsService.Data.CacheModdedResources)
             _cacheService.WriteEntry(path, parsedSector, db);
         
         return token;

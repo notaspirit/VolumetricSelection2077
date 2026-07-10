@@ -36,7 +36,7 @@ public class ProcessDispatcher
 
         try
         {
-            var validationResult = _validationService.ValidateInput(_settings.GameDirectory, _settings.OutputFilename);
+            var validationResult = _validationService.ValidateInput(_settings.Data.GameDirectory, _settings.Data.OutputFilename);
             if (!await EvaluateInputValidation(validationResult))
                 return (false, "Invalid Input");
         }
@@ -70,11 +70,11 @@ public class ProcessDispatcher
         if (customRemovalDirectory == null)
         {
             string CETOuputFilepath;
-            if (string.IsNullOrWhiteSpace(_settings.CustomSelectionFilePath))
-                CETOuputFilepath= Path.Combine(_settings.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks",
+            if (string.IsNullOrWhiteSpace(_settings.Data.CustomSelectionFilePath))
+                CETOuputFilepath= Path.Combine(_settings.Data.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks",
                 "mods", "VolumetricSelection2077", "data", "selection.json");
             else
-                CETOuputFilepath= Path.Combine(_settings.CustomSelectionFilePath, "bin", "x64", "plugins", "cyber_engine_tweaks",
+                CETOuputFilepath= Path.Combine(_settings.Data.CustomSelectionFilePath, "bin", "x64", "plugins", "cyber_engine_tweaks",
                     "mods", "VolumetricSelection2077", "data", "selection.json");
             
             string CETOutputFileString = File.ReadAllText(CETOuputFilepath);
@@ -143,7 +143,7 @@ public class ProcessDispatcher
             invalidCount++;
         }
 
-        if (_settings.SaveFileLocation == SaveFileLocation.OutputDirectory)
+        if (_settings.Data.SaveFileLocation == SaveFileLocation.OutputDirectory)
         {
             if (vr.ValidOutputDirectory)
                 Logger.Success("Output directory         : OK");
@@ -181,7 +181,7 @@ public class ProcessDispatcher
             invalidRegex = true;
         }
 
-        if (_settings.SaveMode == Enums.SaveFileMode.Subtract)
+        if (_settings.Data.SaveMode == Enums.SaveFileMode.Subtract)
         {
             if (vr.SubtractionTargetExists)
             {

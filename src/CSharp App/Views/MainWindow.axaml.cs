@@ -123,7 +123,7 @@ public partial class MainWindow : Window
         if (string.IsNullOrEmpty(text))
             return;
         textBox.Text = string.Empty;
-        _mainWindowViewModel.Settings.ResourceNameFilter.Add(text.ToLower());
+        _mainWindowViewModel.Settings.Data.ResourceNameFilter.Add(text.ToLower());
         _mainWindowViewModel.Settings.SaveSettings();
     }
     
@@ -133,7 +133,7 @@ public partial class MainWindow : Window
         {
             Dispatcher.UIThread.Post(() =>
             {
-                _mainWindowViewModel.Settings.ResourceNameFilter.Remove(item.ToLower());
+                _mainWindowViewModel.Settings.Data.ResourceNameFilter.Remove(item.ToLower());
                 _mainWindowViewModel.Settings.SaveSettings();
             });
         }
@@ -154,7 +154,7 @@ public partial class MainWindow : Window
         if (string.IsNullOrEmpty(text))
             return;
         textBox.Text = string.Empty;
-        _mainWindowViewModel.Settings.DebugNameFilter.Add(text.ToLower());
+        _mainWindowViewModel.Settings.Data.DebugNameFilter.Add(text.ToLower());
         _mainWindowViewModel.Settings.SaveSettings();
     }
     
@@ -162,7 +162,7 @@ public partial class MainWindow : Window
     {
         if (sender is not Button { DataContext: string item })
             return;
-        _mainWindowViewModel.Settings.DebugNameFilter.Remove(item.ToLower());
+        _mainWindowViewModel.Settings.Data.DebugNameFilter.Remove(item.ToLower());
         _mainWindowViewModel.Settings.SaveSettings();
     }
     private void DebugNameFilterTextBox_GotFocus(object? sender, GotFocusEventArgs e)
@@ -177,9 +177,9 @@ public partial class MainWindow : Window
     {
         if (sender is not Button)
             return;
-        _mainWindowViewModel.Settings.FilterModeOr = !_mainWindowViewModel.Settings.FilterModeOr;
+        _mainWindowViewModel.Settings.Data.FilterModeOr = !_mainWindowViewModel.Settings.Data.FilterModeOr;
         _mainWindowViewModel.Settings.SaveSettings();
-        _mainWindowViewModel.FilterModeOr = _mainWindowViewModel.Settings.FilterModeOr;
+        _mainWindowViewModel.FilterModeOr = _mainWindowViewModel.Settings.Data.FilterModeOr;
     }
 
     private void ToggleFilterVisibility_Click(object? sender, RoutedEventArgs e)
@@ -203,7 +203,7 @@ public partial class MainWindow : Window
         foreach (var item in _mainWindowViewModel.FilteredNodeTypeFilterItems)
         {
             var globalIndex = _mainWindowViewModel.NodeTypeFilterItems.IndexOf(item);
-            _mainWindowViewModel.Settings.NodeTypeFilter[globalIndex] = true;
+            _mainWindowViewModel.Settings.Data.NodeTypeFilter[globalIndex] = true;
             item.IsChecked = true;
         }
 
@@ -215,7 +215,7 @@ public partial class MainWindow : Window
         foreach (var item in _mainWindowViewModel.FilteredNodeTypeFilterItems)
         {
             var globalIndex = _mainWindowViewModel.NodeTypeFilterItems.IndexOf(item);
-            _mainWindowViewModel.Settings.NodeTypeFilter[globalIndex] = false;
+            _mainWindowViewModel.Settings.Data.NodeTypeFilter[globalIndex] = false;
             item.IsChecked = false;
         }
 
@@ -226,12 +226,12 @@ public partial class MainWindow : Window
     {
         foreach (var item in _mainWindowViewModel.FilteredNodeTypeFilterItems)
         {
-            item.NotifyChange(_mainWindowViewModel.Settings.NodeTypeFilter);
+            item.NotifyChange(_mainWindowViewModel.Settings.Data.NodeTypeFilter);
         }
         
         foreach (var item in _mainWindowViewModel.NodeTypeFilterItems)
         {
-            item.NotifyChange(_mainWindowViewModel.Settings.NodeTypeFilter);
+            item.NotifyChange(_mainWindowViewModel.Settings.Data.NodeTypeFilter);
         }
     }
     
@@ -270,12 +270,12 @@ public partial class MainWindow : Window
     {
         if (!string.IsNullOrEmpty(ResourceFilterTextBox.Text?.Trim()))
         {
-            _mainWindowViewModel.Settings.ResourceNameFilter.Add(ResourceFilterTextBox.Text.ToLower());
+            _mainWindowViewModel.Settings.Data.ResourceNameFilter.Add(ResourceFilterTextBox.Text.ToLower());
             ResourceFilterTextBox.Text = string.Empty;
         }
         if (!string.IsNullOrEmpty(DebugNameFilterTextBox.Text?.Trim()))
         {
-            _mainWindowViewModel.Settings.DebugNameFilter.Add(DebugNameFilterTextBox.Text.ToLower());
+            _mainWindowViewModel.Settings.Data.DebugNameFilter.Add(DebugNameFilterTextBox.Text.ToLower());
             DebugNameFilterTextBox.Text = string.Empty;
         }
         _mainWindowViewModel.Settings.SaveSettings();
@@ -293,8 +293,8 @@ public partial class MainWindow : Window
             var newPos = e.Point;
             if (WindowState != WindowState.Normal)
                 return;
-            _mainWindowViewModel.Settings.WindowRecoveryState.PosX = newPos.X;
-            _mainWindowViewModel.Settings.WindowRecoveryState.PosY = newPos.Y;
+            _mainWindowViewModel.Settings.Data.WindowRecoveryState.PosX = newPos.X;
+            _mainWindowViewModel.Settings.Data.WindowRecoveryState.PosY = newPos.Y;
         });
     }
 
@@ -317,8 +317,8 @@ public partial class MainWindow : Window
                 {
                     try
                     {
-                        Width = _mainWindowViewModel.Settings.WindowRecoveryState.PosWidth / DesktopScaling;
-                        Height = _mainWindowViewModel.Settings.WindowRecoveryState.PosHeight / DesktopScaling;
+                        Width = _mainWindowViewModel.Settings.Data.WindowRecoveryState.PosWidth / DesktopScaling;
+                        Height = _mainWindowViewModel.Settings.Data.WindowRecoveryState.PosHeight / DesktopScaling;
                     }
                     catch (Exception ex)
                     {
@@ -328,8 +328,8 @@ public partial class MainWindow : Window
                 }
                 else
                 {
-                    _mainWindowViewModel.Settings.WindowRecoveryState.PosWidth = (int)(newSize.Width * DesktopScaling);
-                    _mainWindowViewModel.Settings.WindowRecoveryState.PosHeight = (int)(newSize.Height * DesktopScaling);
+                    _mainWindowViewModel.Settings.Data.WindowRecoveryState.PosWidth = (int)(newSize.Width * DesktopScaling);
+                    _mainWindowViewModel.Settings.Data.WindowRecoveryState.PosHeight = (int)(newSize.Height * DesktopScaling);
                 }
 
             }
@@ -378,16 +378,16 @@ public partial class MainWindow : Window
         PositionChanged += MainWindow_PositionChanged;
         SizeChanged += MainWindow_SizeChanged;
 
-        if (!SetWindowState(_mainWindowViewModel.Settings.WindowRecoveryState))
+        if (!SetWindowState(_mainWindowViewModel.Settings.Data.WindowRecoveryState))
         {
-            _mainWindowViewModel.Settings.WindowRecoveryState = new();
+            _mainWindowViewModel.Settings.Data.WindowRecoveryState = new();
             _mainWindowViewModel.Settings.SaveSettings();
-            SetWindowState(_mainWindowViewModel.Settings.WindowRecoveryState);
+            SetWindowState(_mainWindowViewModel.Settings.Data.WindowRecoveryState);
         }
         
         Logger.Info($"VS2077 Version: {_mainWindowViewModel.Settings.ProgramVersion}");
         _mainWindowViewModel.IsProcessing = true;
-        var validationResult = ValidationService.ValidateGamePath(_mainWindowViewModel.Settings.GameDirectory).Item1;
+        var validationResult = ValidationService.ValidateGamePath(_mainWindowViewModel.Settings.Data.GameDirectory).Item1;
         if (!(validationResult == GamePathValidationResult.Valid ||
               validationResult == GamePathValidationResult.CetNotFound))
         {
@@ -398,7 +398,7 @@ public partial class MainWindow : Window
         }
         try
         {
-            if (_mainWindowViewModel.Settings.DidUpdate)
+            if (_mainWindowViewModel.Settings.Data.DidUpdate)
             {
                 await DialogService.ShowDialog("Game Is Running",
                     "The game was running during the update, to apply changes restart the game or reload CET mods.",
@@ -410,8 +410,8 @@ public partial class MainWindow : Window
                 Logger.Success($"Successfully updated to {changelog.Item1}");
                 Logger.Info($"Changelog:" +
                             $"\n{changelog.Item2}");
-                _mainWindowViewModel.Settings.GameRunningDuringUpdate = false;
-                _mainWindowViewModel.Settings.DidUpdate = false;
+                _mainWindowViewModel.Settings.Data.GameRunningDuringUpdate = false;
+                _mainWindowViewModel.Settings.Data.DidUpdate = false;
                 _mainWindowViewModel.Settings.SaveSettings();
             }
             else
@@ -427,7 +427,7 @@ public partial class MainWindow : Window
                     Logger.Info("No updates found");
                 }
 
-                if (updateExists.Item1 && _mainWindowViewModel.Settings.AutoUpdate)
+                if (updateExists.Item1 && _mainWindowViewModel.Settings.Data.AutoUpdate)
                 {
                     await UpdateService.Update();
                 }
@@ -446,7 +446,7 @@ public partial class MainWindow : Window
 
     private void OnMainWindowClosed(object? sender, EventArgs e)
     {
-        _mainWindowViewModel.Settings.WindowRecoveryState.WindowState = WindowState == WindowState.Maximized ? 2 : 0;
+        _mainWindowViewModel.Settings.Data.WindowRecoveryState.WindowState = WindowState == WindowState.Maximized ? 2 : 0;
         AddQueuedFilters();
         _mainWindowViewModel.Settings.SaveSettings();
         _mainWindowViewModel.DebugWindowInstance?.Close();

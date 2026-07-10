@@ -46,9 +46,9 @@ public partial class DebugWindow : Window
         {
             _mainWindowViewModel.BenchmarkProcessing = true;
             _dispatcherTimer.Start();
-            _mainWindowViewModel.Settings.OutputFilename =
-                UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.OutputFilename);
-            mainWindow.OutputFilenameTextBox.Text = _mainWindowViewModel.Settings.OutputFilename;
+            _mainWindowViewModel.Settings.Data.OutputFilename =
+                UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.Data.OutputFilename);
+            mainWindow.OutputFilenameTextBox.Text = _mainWindowViewModel.Settings.Data.OutputFilename;
             mainWindow.AddQueuedFilters();
             await Task.Run(() => Benchmarking.Instance.RunBenchmarks(_dialogService));
         }

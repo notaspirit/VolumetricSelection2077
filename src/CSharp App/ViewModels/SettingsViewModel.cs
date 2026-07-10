@@ -43,20 +43,20 @@ namespace VolumetricSelection2077.ViewModels
         
         public bool CacheEnabled 
         {
-            get => Settings.CacheEnabled;
+            get => Settings.Data.CacheEnabled;
             set
             {
-                Settings.CacheEnabled = value;
+                Settings.Data.CacheEnabled = value;
                 OnPropertyChanged(nameof(CacheEnabled));
             }
         }
         
         public bool AutoUpdateEnabled 
         {
-            get => Settings.AutoUpdate;
+            get => Settings.Data.AutoUpdate;
             set
             {
-                Settings.AutoUpdate = value;
+                Settings.Data.AutoUpdate = value;
                 OnPropertyChanged(nameof(AutoUpdateEnabled));
             }
         }
@@ -77,10 +77,10 @@ namespace VolumetricSelection2077.ViewModels
 
         public bool RememberFailedResources
         {
-            get => Settings.RememberFailedResources;
+            get => Settings.Data.RememberFailedResources;
             set
             {
-                Settings.RememberFailedResources = value;
+                Settings.Data.RememberFailedResources = value;
                 OnPropertyChanged(nameof(RememberFailedResources));
             }
         }
