@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Avalonia.Controls;
+using Microsoft.Extensions.DependencyInjection;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.TestingStuff;
 
@@ -10,24 +11,27 @@ public class DebugWindowViewModel
     public MainWindowViewModel? ParentViewModel { get; }
     public bool IsProcessing { get; set; }
     
-    public Dictionary<string, IDebugTool> DebugServices { get; } = new()
-    {
-        {nameof(CompareNewSectorBoundsWithStreamingBlock), new CompareNewSectorBoundsWithStreamingBlock()},
-        {nameof(ManualTaskPlayground), new ManualTaskPlayground()},
-        {nameof(TestCache), new TestCache()},
-        {nameof(TestCacheResizing), new TestCacheResizing()},
-        {nameof(TestEulerQuatConversion), new TestEulerQuatConversion()},
-        {nameof(TestGettingEmbeddedSectorFiles), new TestGettingEmbeddedSectorFiles()},
-        {nameof(TestLoggerRefactor), new TestLoggerRefactor()},
-        {nameof(TestPathValidator), new TestPathValidator()},
-        {nameof(TestSectorAABBTime), new TestSectorAABBTime()},
-        {nameof(TestShpereCheck), new TestShpereCheck()},
-        {nameof(TestWheezeKitSerialization), new TestWheezeKitSerialization()},
-        {nameof(BuildKnownBadSectorVerbose), new BuildKnownBadSectorVerbose()}
-    };
+    public Dictionary<string, IDebugTool> DebugServices { get; }
     
     public DebugWindowViewModel(Window mainWindow)
     {
         ParentViewModel = (MainWindowViewModel?)mainWindow.DataContext;
+        var sp = App.AppHost!.Services;
+        DebugServices = new()
+        {
+            {nameof(CompareNewSectorBoundsWithStreamingBlock), sp.GetRequiredService<CompareNewSectorBoundsWithStreamingBlock>()},
+            {nameof(ManualTaskPlayground), sp.GetRequiredService<ManualTaskPlayground>()},
+            {nameof(TestCache), sp.GetRequiredService<TestCache>()},
+            {nameof(TestCacheResizing), sp.GetRequiredService<TestCacheResizing>()},
+            {nameof(TestEulerQuatConversion), sp.GetRequiredService<TestEulerQuatConversion>()},
+            {nameof(TestGettingEmbeddedSectorFiles), sp.GetRequiredService<TestGettingEmbeddedSectorFiles>()},
+            {nameof(TestLoggerRefactor), sp.GetRequiredService<TestLoggerRefactor>()},
+            {nameof(TestPathValidator), sp.GetRequiredService<TestPathValidator>()},
+            {nameof(TestSectorAABBTime), sp.GetRequiredService<TestSectorAABBTime>()},
+            {nameof(TestShpereCheck), sp.GetRequiredService<TestShpereCheck>()},
+            {nameof(TestWheezeKitSerialization), sp.GetRequiredService<TestWheezeKitSerialization>()},
+            {nameof(BuildKnownBadSectorVerbose), sp.GetRequiredService<BuildKnownBadSectorVerbose>()},
+            {nameof(AbbrMeshToBlender), sp.GetRequiredService<AbbrMeshToBlender>()}
+        };
     }
 }

@@ -9,13 +9,24 @@ using VolumetricSelection2077.Services;
 
 namespace VolumetricSelection2077.TestingStuff;
 
-public class AbbrMeshToBlender
+public class AbbrMeshToBlender : IDebugTool
 {
+    private readonly GameFileService _gameFileService;
+    public AbbrMeshToBlender(GameFileService gameFileService)
+    {
+        _gameFileService = gameFileService;
+    }
+    
+    public void Run()
+    {
+        // ... (commented out code anyway)
+    }
+    
     /* NOT YET UPDATED FOR OPTIMIZED ABBRMESH STRUCTURE
      
-    public static async void Run()
+    public async void Run()
     {
-        var gfs = GameFileService.Instance;
+        var gfs = _gameFileService;
         
         var testMeshPath = @"ep1\worlds\03_night_city\sectors\_external\proxy\1930979112\hill_park_totem.mesh";
         var mesh = gfs.GetCMesh(testMeshPath);

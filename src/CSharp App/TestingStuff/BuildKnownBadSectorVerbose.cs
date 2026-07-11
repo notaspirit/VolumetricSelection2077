@@ -12,13 +12,18 @@ namespace VolumetricSelection2077.TestingStuff;
 
 public class BuildKnownBadSectorVerbose : IDebugTool
 {
+    private readonly GameFileService _gameFileService;
+
+    public BuildKnownBadSectorVerbose(GameFileService gameFileService)
+    {
+        _gameFileService = gameFileService;
+    }
+
     public void Run()
     {
        Logger.Info("Building bounding box for sector \"-15_-16_0_1\'");
-       ProcessStreamingsector(@"base\worlds\03_night_city\_compiled\default\exterior_-15_-16_0_1.streamingsector", null);
+       _ = ProcessStreamingsector(@"base\worlds\03_night_city\_compiled\default\exterior_-15_-16_0_1.streamingsector", null);
     }
-    
-    private GameFileService _gameFileService = GameFileService.Instance;
     
     
     private async Task ProcessStreamingsector(string sectorPath, CacheDatabases? database)
@@ -34,7 +39,6 @@ public class BuildKnownBadSectorVerbose : IDebugTool
                     case ResourceTokenResult.KnownBad: Logger.Warning($"Sector {sectorPath} is a known bad resource, skipping..."); break;
                     case ResourceTokenResult.Success: Logger.Error($"Received an unexpected resource type {sectorToken.Resource?.GetType()} for sector {sectorPath}"); break;
                     case ResourceTokenResult.Failure: Logger.Error($"Failed to get sector {sectorPath}"); break;
-                    case ResourceTokenResult.NotInitialized: Logger.Error($"GameFileService not initialized, cannot get sector {sectorPath}"); break;
                     default: Logger.Error($"Unknown resource token result {sectorToken.Result} for sector {sectorPath}"); break;
                 }
                 return;
@@ -57,7 +61,6 @@ public class BuildKnownBadSectorVerbose : IDebugTool
                             case ResourceTokenResult.KnownBad: Logger.Warning($"Mesh {nodeEntry.ResourcePath} is a known bad resource, using only position data"); break;
                             case ResourceTokenResult.Success: Logger.Warning($"Received an unexpected resource type {meshToken.Resource?.GetType()} for mesh {nodeEntry.ResourcePath}, using only position data"); break;
                             case ResourceTokenResult.Failure: Logger.Warning($"Failed to get mesh {nodeEntry.ResourcePath}, using only position data"); break;
-                            case ResourceTokenResult.NotInitialized: Logger.Error($"GameFileService not initialized, cannot get mesh {nodeEntry.ResourcePath}, using only position data"); break;
                             default: Logger.Warning($"Unknown resource token result {meshToken.Result} for mesh {nodeEntry.ResourcePath}, using only position data"); break;
                         }
                         foreach (var transform in nodeDataEntry.Transforms)
@@ -122,7 +125,6 @@ public class BuildKnownBadSectorVerbose : IDebugTool
                                             case ResourceTokenResult.KnownBad: Logger.Warning($"Collision mesh at sector hash {sectorHash} : shape hash {shapeHash} is a known bad resource, using only position data"); break;
                                             case ResourceTokenResult.Success: Logger.Warning($"Received an unexpected resource type {collisionMeshToken.Resource?.GetType()} for sector hash {sectorHash} : shape hash {shapeHash}, using only position data"); break;
                                             case ResourceTokenResult.Failure: Logger.Warning($"Failed to get collision mesh at sector hash {sectorHash} : shape hash {shapeHash}, using only position data"); break;
-                                            case ResourceTokenResult.NotInitialized: Logger.Error($"GameFileService not initialized, cannot get collision mesh at sector hash {sectorHash} : shape hash {shapeHash}"); break;
                                             default: Logger.Warning($"Unknown resource token result {collisionMeshToken.Result} for collision mesh at sector hash {sectorHash} : shape hash {shapeHash}, using only position data"); break;
                                         }
                                         var combinedPosition = shape.Transform.Position + actor.Transform.Position;

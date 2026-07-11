@@ -11,7 +11,7 @@ namespace VolumetricSelection2077.Services;
 
 public class DialogService
 {
-    private Window _owner;
+    private readonly Window _owner;
     
     public DialogService(Window owner)
     {

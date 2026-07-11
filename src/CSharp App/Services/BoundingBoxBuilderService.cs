@@ -15,12 +15,12 @@ public class BoundingBoxBuilderService
 {
     private readonly CacheService _cacheService;
     private readonly GameFileService _gameFileService;
-    private readonly Progress _progress;
-    public BoundingBoxBuilderService()
+    private readonly VolumetricSelection2077.Models.Progress _progress;
+    public BoundingBoxBuilderService(CacheService cacheService, GameFileService gameFileService, VolumetricSelection2077.Models.Progress progress)
     {
-        _cacheService = CacheService.Instance;
-        _gameFileService = GameFileService.Instance;
-        _progress = Progress.Instance;
+        _cacheService = cacheService;
+        _gameFileService = gameFileService;
+        _progress = progress;
     }
     
     /// <summary>
@@ -96,7 +96,6 @@ public class BoundingBoxBuilderService
                     case VEnums.ResourceTokenResult.KnownBad: Logger.Warning($"Sector {sectorPath} is a known bad resource, skipping..."); break;
                     case VEnums.ResourceTokenResult.Success: Logger.Error($"Received an unexpected resource type {sectorToken.Resource?.GetType()} for sector {sectorPath}"); break;
                     case VEnums.ResourceTokenResult.Failure: Logger.Error($"Failed to get sector {sectorPath}"); break;
-                    case VEnums.ResourceTokenResult.NotInitialized: Logger.Error($"GameFileService not initialized, cannot get sector {sectorPath}"); break;
                     default: Logger.Error($"Unknown resource token result {sectorToken.Result} for sector {sectorPath}"); break;
                 }
                 return;
@@ -119,7 +118,6 @@ public class BoundingBoxBuilderService
                             case VEnums.ResourceTokenResult.KnownBad: Logger.Warning($"Mesh {nodeEntry.ResourcePath} is a known bad resource, using only position data"); break;
                             case VEnums.ResourceTokenResult.Success: Logger.Warning($"Received an unexpected resource type {meshToken.Resource?.GetType()} for mesh {nodeEntry.ResourcePath}, using only position data"); break;
                             case VEnums.ResourceTokenResult.Failure: Logger.Warning($"Failed to get mesh {nodeEntry.ResourcePath}, using only position data"); break;
-                            case VEnums.ResourceTokenResult.NotInitialized: Logger.Error($"GameFileService not initialized, cannot get mesh {nodeEntry.ResourcePath}, using only position data"); break;
                             default: Logger.Warning($"Unknown resource token result {meshToken.Result} for mesh {nodeEntry.ResourcePath}, using only position data"); break;
                         }
                         foreach (var transform in nodeDataEntry.Transforms)
@@ -184,7 +182,6 @@ public class BoundingBoxBuilderService
                                             case VEnums.ResourceTokenResult.KnownBad: Logger.Warning($"Collision mesh at sector hash {sectorHash} : shape hash {shapeHash} is a known bad resource, using only position data"); break;
                                             case VEnums.ResourceTokenResult.Success: Logger.Warning($"Received an unexpected resource type {collisionMeshToken.Resource?.GetType()} for sector hash {sectorHash} : shape hash {shapeHash}, using only position data"); break;
                                             case VEnums.ResourceTokenResult.Failure: Logger.Warning($"Failed to get collision mesh at sector hash {sectorHash} : shape hash {shapeHash}, using only position data"); break;
-                                            case VEnums.ResourceTokenResult.NotInitialized: Logger.Error($"GameFileService not initialized, cannot get collision mesh at sector hash {sectorHash} : shape hash {shapeHash}"); break;
                                             default: Logger.Warning($"Unknown resource token result {collisionMeshToken.Result} for collision mesh at sector hash {sectorHash} : shape hash {shapeHash}, using only position data"); break;
                                         }
                                         var combinedPosition = shape.Transform.Position + actor.Transform.Position;

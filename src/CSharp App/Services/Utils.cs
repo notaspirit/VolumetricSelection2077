@@ -6,13 +6,12 @@ using Newtonsoft.Json;
 using PeNet.Header.Resource;
 using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Models;
-using WolvenKit.Interfaces.Extensions;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
 namespace VolumetricSelection2077.Services
 {
-    public class UtilService
+    public static class Utils
     {
         /// <summary>
         /// Formats TimeSpan to H Hour M minute S.MS Second with the larger ones only being added if it is not 0

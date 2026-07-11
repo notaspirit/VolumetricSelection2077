@@ -8,6 +8,7 @@ using Avalonia.Threading;
 using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Microsoft.Extensions.DependencyInjection;
 using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Extensions;
 using VolumetricSelection2077.Models;
@@ -28,8 +29,15 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        
+        var sp = App.AppHost!.Services;
+        
+        _processService = sp.GetRequiredService<ProcessDispatcher>();
+        _progress = sp.GetRequiredService<Progress>();
+        
         DataContext = new MainWindowViewModel();
         _mainWindowViewModel = (DataContext as MainWindowViewModel)!;
+        
         try
         {
             InitializeLogger();
@@ -38,7 +46,7 @@ public partial class MainWindow : Window
         {
             Console.WriteLine(ex);
         }
-        _processService = new ProcessDispatcher(new DialogService(this));
+        
         Closed += OnMainWindowClosed;
         
         var progressBar = this.FindControl<ProgressBar>("ProgressBar");
@@ -54,8 +62,7 @@ public partial class MainWindow : Window
         _progressBar = progressBar;
         
         _dispatcherTimer = new TrackedDispatchTimer() { Interval = TimeSpan.FromSeconds(1) };
-        _dispatcherTimer.Tick += (_, _) => ProgressTextBlock.Text = $"{UtilService.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
-        _progress = Progress.Instance;
+        _dispatcherTimer.Tick += (_, _) => ProgressTextBlock.Text = $"{Utils.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
         _progress.ProgressChanged += (_, i) => _progressBar.Value = i;
     }
     
@@ -109,7 +116,7 @@ public partial class MainWindow : Window
         finally
         {
             _dispatcherTimer.Stop();
-            var formattedTime = UtilService.FormatElapsedTime(_dispatcherTimer.Elapsed);
+            var formattedTime = Utils.FormatElapsedTime(_dispatcherTimer.Elapsed);
             Logger.Info($"Process finished after: {formattedTime}");
             _mainWindowViewModel.MainTaskProcessing = false;
         }
@@ -398,6 +405,7 @@ public partial class MainWindow : Window
         }
         try
         {
+            var updateService = App.AppHost!.Services.GetRequiredService<UpdateService>();
             if (_mainWindowViewModel.Settings.Data.DidUpdate)
             {
                 await DialogService.ShowDialog("Game Is Running",
@@ -406,7 +414,7 @@ public partial class MainWindow : Window
                     {
                         new DialogButton("Ok", DialogButtonStyling.Primary)
                     }, this);
-                var changelog = await UpdateService.GetChangelog();
+                var changelog = await updateService.GetChangelog();
                 Logger.Success($"Successfully updated to {changelog.Item1}");
                 Logger.Info($"Changelog:" +
                             $"\n{changelog.Item2}");
@@ -417,7 +425,7 @@ public partial class MainWindow : Window
             else
             {
                 Logger.Info("Checking for Updates...");
-                var updateExists = await UpdateService.CheckUpdates();
+                var updateExists = await updateService.CheckUpdates();
                 if (updateExists.Item1)
                 {
                     Logger.Warning($"Update to {updateExists.Item2} is available");
@@ -429,7 +437,7 @@ public partial class MainWindow : Window
 
                 if (updateExists.Item1 && _mainWindowViewModel.Settings.Data.AutoUpdate)
                 {
-                    await UpdateService.Update();
+                    await updateService.Update();
                 }
             }
         }
@@ -437,9 +445,11 @@ public partial class MainWindow : Window
         {
             Logger.Exception(ex, "Failed to Check for Updates.");
         }
-        var success = await Task.Run(() => GameFileService.Instance.Initialize());
+
+        var gameFileService = App.AppHost!.Services.GetRequiredService<GameFileService>();
+        await Task.Run(() => gameFileService.Initialize());
         
-        if (success)
+        if (gameFileService.IsInitialized)
             _mainWindowViewModel.AppInitialized = true;
         _mainWindowViewModel.IsProcessing = false;
     }

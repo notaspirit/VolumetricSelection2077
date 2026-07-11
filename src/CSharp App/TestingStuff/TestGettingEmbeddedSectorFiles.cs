@@ -7,12 +7,16 @@ namespace VolumetricSelection2077.TestingStuff;
 
 public class TestGettingEmbeddedSectorFiles : IDebugTool
 {
+    private readonly GameFileService _gameFileService;
+    public TestGettingEmbeddedSectorFiles(GameFileService gameFileService)
+    {
+        _gameFileService = gameFileService;
+    }
     public void Run()
     {
-        var gfs = GameFileService.Instance;
         string testSector = @"base\worlds\03_night_city\_compiled\default\exterior_4_-7_0_0.streamingsector";
 
-        var sectorCr2w = gfs.ArchiveManager.GetCR2WFile(testSector);
+        var sectorCr2w = _gameFileService.ArchiveManager.GetCR2WFile(testSector);
         if (sectorCr2w == null)
         {
             Logger.Error("Failed to load test sector " + testSector); 

@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using VolumetricSelection2077.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -22,9 +23,12 @@ namespace VolumetricSelection2077.Views
         public SettingsWindow()
         {
             InitializeComponent();
+            var sp = App.AppHost!.Services;
+            _cacheService = sp.GetRequiredService<CacheService>();
+            
             DataContext = new SettingsViewModel();
             _settingsViewModel = (DataContext as SettingsViewModel)!;
-            _cacheService = CacheService.Instance;
+            
             Closing += OnSettingsWindowClosing;
             Closed += OnSettingsWindowClosed;
         }
@@ -128,7 +132,7 @@ namespace VolumetricSelection2077.Views
                 bool successMove = false;
                 try
                 {
-                    successMove = !_moveCache || CacheService.Instance.Move(_settingsViewModel.PersistentCache.InitialCachePath,
+                    successMove = !_moveCache || _cacheService.Move(_settingsViewModel.PersistentCache.InitialCachePath,
                         _settingsViewModel.Settings.Data.CacheDirectory);
                 }
                 catch (Exception ex)
@@ -146,17 +150,17 @@ namespace VolumetricSelection2077.Views
                     _settingsViewModel.Settings.SaveSettings();
                 }
                 
-                CacheService.Instance.Dispose().Wait();
+                _cacheService.Dispose().Wait();
             }
             
             if (_settingsViewModel.PersistentCache.RequiresRestart)
                 OsUtilsService.RestartApp();
-            CacheService.Instance.Initialize();
+            _cacheService.Initialize();
         }
 
         private void ClearKnownBadResources_Click(object? sender, RoutedEventArgs e)
         {
-            CacheService.Instance.ClearKnownBadResources();
+            _cacheService.ClearKnownBadResources();
             _settingsViewModel.RaiseOnPropertyChanged("ClearKnownBadResourcesLabel");
         }
     };

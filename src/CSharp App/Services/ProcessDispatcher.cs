@@ -18,15 +18,15 @@ public class ProcessDispatcher
     private readonly CacheService _cacheService;
     private readonly Progress _progress;
     
-    public ProcessDispatcher(DialogService dialogService)
+    public ProcessDispatcher(DialogService dialogService, ProcessService processService, ValidationService validationService, BoundingBoxBuilderService boundingBoxBuilderService, SettingsService settings, CacheService cacheService, Models.Progress progress)
     {
-        _processService = new ProcessService();
-        _validationService = new ValidationService();
+        _processService = processService;
+        _validationService = validationService;
         _dialogService = dialogService;
-        _boundingBoxBuilderService = new BoundingBoxBuilderService();
-        _settings = SettingsService.Instance;
-        _cacheService = CacheService.Instance;
-        _progress = Progress.Instance;
+        _boundingBoxBuilderService = boundingBoxBuilderService;
+        _settings = settings;
+        _cacheService = cacheService;
+        _progress = progress;
     }
 
     public async Task<(bool success, string error)> StartProcess(string? customRemovalFile = null,
@@ -135,14 +135,6 @@ public class ProcessDispatcher
             invalidCount++;
         }
         
-        if (vr.GameFileServiceStatus)
-            Logger.Success("Game file service status : OK");
-        else
-        {
-            Logger.Error("Game file service status : Not initialized");
-            invalidCount++;
-        }
-
         if (_settings.Data.SaveFileLocation == SaveFileLocation.OutputDirectory)
         {
             if (vr.ValidOutputDirectory)

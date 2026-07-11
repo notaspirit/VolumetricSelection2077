@@ -13,18 +13,28 @@ namespace VolumetricSelection2077.Services;
 
 public class UpdateService
 {
-    private const string RepoOwner = "notaspirit";
-    private const string RepoName = "VolumetricSelection2077";
+    private readonly SettingsService _settingsService;
+
+    private readonly string _repoOwner;
+    private readonly string _repoName;
+    
+    public UpdateService(SettingsService settingsService, string repoOwner, string repoName)
+    {
+        _settingsService = settingsService;
+        
+        _repoOwner = repoOwner;
+        _repoName = repoName;
+    }
 
     /// <summary>
     /// Gets the most recent version and changelog
     /// </summary>
     /// <returns></returns>
     /// <exception cref="ApiException">Fails to get remove info</exception>
-    public static async Task<(string, string)> GetChangelog()
+    public async Task<(string, string)> GetChangelog()
     {
         var client = new GitHubClient(new ProductHeaderValue("VolumetricSelection2077"));
-        var release = await client.Repository.Release.GetLatest(RepoOwner, RepoName);
+        var release = await client.Repository.Release.GetLatest(_repoOwner, _repoName);
         return (release.TagName.Replace("v", ""), release.Body);
     }
     
@@ -35,12 +45,12 @@ public class UpdateService
     /// <exception cref="ApiException">Fails to get remote repositiory</exception>
     /// <exception cref="ArgumentException">local or remote version is empty</exception>
     /// <exception cref="Exception">failure to parse version strings</exception>
-    public static async Task<(bool, string?)> CheckUpdates()
+    public async Task<(bool, string?)> CheckUpdates()
     {
         var client = new GitHubClient(new ProductHeaderValue("VolumetricSelection2077"));
-        var release = await client.Repository.Release.GetLatest(RepoOwner, RepoName);
+        var release = await client.Repository.Release.GetLatest(_repoOwner, _repoName);
         var remoteVersion = release.TagName;
-        var localVersion = SettingsService.Instance.ProgramVersion;
+        var localVersion = _settingsService.ProgramVersion;
 
         var remoteVersionArray = ParseVersion(remoteVersion);
         var localVersionArray = ParseVersion(localVersion);
@@ -63,7 +73,7 @@ public class UpdateService
     /// Downloads and installs most recent version for app and cet, restarts client and sets flag to show changelog on next startup 
     /// </summary>
     /// <exception cref="Exception">See exception message for more info</exception>
-    public static async Task Update()
+    public async Task Update()
     {
         
         string? downloadUrlApp = null;
@@ -74,7 +84,7 @@ public class UpdateService
         try
         {
             var client = new GitHubClient(new ProductHeaderValue("VolumetricSelection2077"));
-            var release = await client.Repository.Release.GetLatest(RepoOwner, RepoName);
+            var release = await client.Repository.Release.GetLatest(_repoOwner, _repoName);
             foreach (var asset in release.Assets)
             {
                 if (asset.Name.Contains(mainZipName))
@@ -136,17 +146,17 @@ public class UpdateService
         try
         {
             string unzipPathCet;
-            if (string.IsNullOrEmpty(SettingsService.Instance.Data.CETInstallLocation))
+            if (string.IsNullOrEmpty(_settingsService.Data.CETInstallLocation))
             {
-                if (ValidationService.ValidateGamePath(SettingsService.Instance.Data.GameDirectory).Item1 != GamePathValidationResult.Valid)
+                if (ValidationService.ValidateGamePath(_settingsService.Data.GameDirectory).Item1 != GamePathValidationResult.Valid)
                 {
                     throw new Exception("Could not find valid target location to install VS2077 CET. Please set the game path or custom directory in the settings and restart the application to try again.");
                 }
-                unzipPathCet = SettingsService.Instance.Data.GameDirectory;
+                unzipPathCet = _settingsService.Data.GameDirectory;
             }
             else
             {
-                unzipPathCet = SettingsService.Instance.Data.CETInstallLocation;
+                unzipPathCet = _settingsService.Data.CETInstallLocation;
             }
             Directory.CreateDirectory(unzipPath);
             if (downloadPathApp.EndsWith(".zip"))
@@ -171,7 +181,7 @@ public class UpdateService
             {
                 MoveDirectoryWithOverwrite(Path.Join(unzipPathCetTemp, "archive", "pc", "mod"),
                     Path.Join(unzipPathCet, "archive", "pc", "hot"));
-                SettingsService.Instance.Data.GameRunningDuringUpdate = true;
+                _settingsService.Data.GameRunningDuringUpdate = true;
             }
         }
         catch (Exception ex)
@@ -213,16 +223,16 @@ objShell.Run ""powershell.exe -ExecutionPolicy Bypass -File """"{scriptPath}""""
                 UseShellExecute = true
             });
         
-            SettingsService.Instance.Data.DidUpdate = true;
-            SettingsService.Instance.SaveSettings();
+            _settingsService.Data.DidUpdate = true;
+            _settingsService.SaveSettings();
             Environment.Exit(0);   
         }
         else
         {
             MoveDirectoryWithOverwrite(rootTempPath, AppContext.BaseDirectory);
             
-            SettingsService.Instance.Data.DidUpdate = true;
-            SettingsService.Instance.SaveSettings();
+            _settingsService.Data.DidUpdate = true;
+            _settingsService.SaveSettings();
             OsUtilsService.RestartApp();
         }
     }

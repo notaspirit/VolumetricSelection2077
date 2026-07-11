@@ -101,7 +101,7 @@ public partial class PostProcessingService
             if (_settingsService.Data.SaveMode is SaveFileMode.Extend or SaveFileMode.Subtract)
             {
                 var fileContent = File.ReadAllText(outputFilePath);
-                existingRemovals = UtilService.TryParseAxlRemovalFile(fileContent);
+                existingRemovals = Utils.TryParseAxlRemovalFile(fileContent);
                 if (existingRemovals == null)
                     throw new FileLoadException($"Failed to find or parse existing Removal File at {outputFilePath}!"); 
             }

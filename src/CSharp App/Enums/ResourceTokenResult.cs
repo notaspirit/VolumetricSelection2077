@@ -4,6 +4,5 @@ public enum ResourceTokenResult
 {
     Success, 
     Failure,
-    KnownBad,
-    NotInitialized
+    KnownBad
 }

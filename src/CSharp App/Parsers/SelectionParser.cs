@@ -19,7 +19,7 @@ public class SelectionParser
 
         if (!rotX.HasValue || !rotY.HasValue || !rotZ.HasValue)
         {
-            return (false, "No rotation values found!", null);
+            rotX = 0; rotY = 0; rotZ = 0;
         }
         
         float? quatRotX = jsonInput?["box"]?["rotationQuat"]?["i"]?.GetValue<float>();

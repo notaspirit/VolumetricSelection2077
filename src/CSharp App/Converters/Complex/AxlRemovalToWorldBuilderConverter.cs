@@ -32,15 +32,13 @@ public class AxlRemovalToWorldBuilderConverter
     private List<string> _warnedTypes;
     private Dictionary<string, List<string>> _embeddedResourcePaths;
     private SettingsService _settings;
-    private CollisionGenerics _collisionGenerics;
     
-    public AxlRemovalToWorldBuilderConverter()
+    public AxlRemovalToWorldBuilderConverter(GameFileService gfs, SettingsService settings)
     {
-        _gfs = GameFileService.Instance;
+        _gfs = gfs;
         _warnedTypes = new List<string>();
         _embeddedResourcePaths = new Dictionary<string, List<string>>();
-        _settings = SettingsService.Instance;
-        _collisionGenerics = new CollisionGenerics();
+        _settings = settings;
     }
 
     public Element Convert(AxlRemovalFile axlFile, string rootName)
@@ -705,7 +703,7 @@ public class AxlRemovalToWorldBuilderConverter
     {
         var matIndex = -1;
         if (shape.Materials.Count != 0)
-            matIndex = _collisionGenerics.Materials.IndexOf(shape.Materials[0].GetResolvedText());
+            matIndex = CollisionGenerics.Materials.IndexOf(shape.Materials[0].GetResolvedText());
 
         if (matIndex != -1) return matIndex;
         matIndex = 1;
@@ -716,7 +714,7 @@ public class AxlRemovalToWorldBuilderConverter
 
     private int GetPresetIndex(CollisionShape shape)
     {
-        var presIndex = _collisionGenerics.Presets.IndexOf(shape.Preset.GetResolvedText());
+        var presIndex = CollisionGenerics.Presets.IndexOf(shape.Preset.GetResolvedText());
 
         if (presIndex != -1) return presIndex;
         presIndex = 33;

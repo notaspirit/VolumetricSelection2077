@@ -7,6 +7,7 @@ using Avalonia;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.DependencyInjection;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.Services;
@@ -85,15 +86,17 @@ namespace VolumetricSelection2077.ViewModels
             }
         }
         
-        public string ClearKnownBadResourcesLabel => $"{Labels.RememberFailedResources} [ {CacheService.Instance.GetKnownBadResourceCount()} resource paths ]";
+        public string ClearKnownBadResourcesLabel => $"{Labels.RememberFailedResources} [ {App.AppHost!.Services.GetRequiredService<CacheService>().GetKnownBadResourceCount()} resource paths ]";
         
         public SettingsViewModel() 
         { 
-            Settings = SettingsService.Instance;
-            PersistentCache = SettingsViewPersistentCache.Instance;
+            var sp = App.AppHost!.Services;
+            Settings = sp.GetRequiredService<SettingsService>();
+            var cacheService = sp.GetRequiredService<CacheService>();
+            PersistentCache = sp.GetRequiredService<SettingsViewPersistentCache>();
             try
             {
-                _cacheStats = CacheService.Instance.IsInitialized ? CacheService.Instance.GetStats() : new CacheStats();
+                _cacheStats = cacheService.IsInitialized ? cacheService.GetStats() : new CacheStats();
             }
             catch (Exception ex)
             {

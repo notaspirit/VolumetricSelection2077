@@ -1,51 +1,24 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Text.Json.Nodes;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using VolumetricSelection2077.Enums;
-using VolumetricSelection2077.Json.Helpers;
-using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Models.SettingsDTO;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace VolumetricSelection2077.Services;
 public partial class SettingsService : ObservableObject
 {
-    private static SettingsService? _instance;
-    private static readonly object Lock = new object();
     private readonly string _settingsFilePath;
 
-    private SettingsService()
+    public SettingsService(string settingsFilePath)
     {
         ProgramVersion = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion?.Split("+")[0] ?? "Version not found.";
         LogDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "Logs");
-        _settingsFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "settings.json");
+        _settingsFilePath = settingsFilePath;
         Data = new SettingsDTOV0();
+        
+        LoadSettings();
     }
-
-    public static SettingsService Instance
-    {
-        get
-        {
-            lock (Lock)
-            {
-                if (_instance != null) 
-                    return _instance;
-                _instance = new SettingsService();
-                _instance.LoadSettings();
-                return _instance;
-            }
-        }
-    }
-
+    
     [ObservableProperty] private SettingsDTOV0 _data;
     public static string MinimumCacheVersion => "1000.0.0-beta11";
     public readonly string LogDirectory;
