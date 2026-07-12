@@ -66,6 +66,7 @@ public class ProcessService
         finally
         {
             _cacheService.StopListening();
+            _gameFileService.ResetAssetStore();
         }
         
         _postProcessingService.Run(sectorsOutputRaw);

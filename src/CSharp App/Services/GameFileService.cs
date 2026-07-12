@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
@@ -33,6 +34,7 @@ public class GameFileService
     private readonly GeometryCacheService _geometryCacheService;
     
     private CacheDatabases _readCacheTarget;
+    private ConcurrentDictionary<string, WeakReference<object>> _assetStore = new();
     
     public GameFileService(SettingsService settingsService, CacheService cacheService)
     {
@@ -94,6 +96,8 @@ public class GameFileService
             CNamePool.AddOrGetHash(entry);
         }
     }
+
+    public void ResetAssetStore() => _assetStore.Clear();
     
     /// <summary>
     /// Gets a PhysX Mesh entry
@@ -105,6 +109,13 @@ public class GameFileService
     public async Task<ResourceToken> GetPhysXMesh(ulong sectorHash, ulong actorHash)
     {
         var token = new ResourceToken();
+
+        if (_assetStore.TryGetValue(actorHash.ToString(), out var weakRef) && weakRef.TryGetTarget(out var physxMesh))
+        {
+            token.Result = ResourceTokenResult.Success;
+            token.Resource = physxMesh;
+            return token;
+        }
         
         var rawMesh = await _geometryCacheService.GetEntryAsync(sectorHash, actorHash);
         if (rawMesh == null)
@@ -115,6 +126,8 @@ public class GameFileService
         
         token.Result = ResourceTokenResult.Success;
         token.Resource = DirectAbbrMeshParser.ParseFromPhysX(rawMesh);
+        
+        _assetStore.TryAdd(actorHash.ToString(), new WeakReference<object>(token.Resource));
 
         return token;
     }
@@ -131,6 +144,13 @@ public class GameFileService
         if (_settingsService.Data.RememberFailedResources && _cacheService.IsResourceKnownBad(path))
         {
             token.Result = ResourceTokenResult.KnownBad;
+            return token;
+        }
+        
+        if (_assetStore.TryGetValue(path, out var weakRef) && weakRef.TryGetTarget(out var cmesh))
+        {
+            token.Result = ResourceTokenResult.Success;
+            token.Resource = cmesh;
             return token;
         }
         
@@ -177,6 +197,8 @@ public class GameFileService
         
         token.Result = ResourceTokenResult.Success;
         token.Resource = parsedMesh;
+        
+        _assetStore.TryAdd(path, new WeakReference<object>(token.Resource));
 
         if (db != CacheDatabases.Modded || _settingsService.Data.CacheModdedResources)
             _cacheService.WriteEntry(path, parsedMesh, db); 
@@ -196,6 +218,13 @@ public class GameFileService
         if (_settingsService.Data.RememberFailedResources && _cacheService.IsResourceKnownBad(path))
         {
             token.Result = ResourceTokenResult.KnownBad;
+            return token;
+        }
+        
+        if (_assetStore.TryGetValue(path, out var weakRef) && weakRef.TryGetTarget(out var ssector))
+        {
+            token.Result = ResourceTokenResult.Success;
+            token.Resource = ssector;
             return token;
         }
         
@@ -236,6 +265,8 @@ public class GameFileService
         
         token.Result = ResourceTokenResult.Success;
         token.Resource = parsedSector;
+        
+        _assetStore.TryAdd(path, new WeakReference<object>(token.Resource));
         
         if (db != CacheDatabases.Modded || _settingsService.Data.CacheModdedResources)
             _cacheService.WriteEntry(path, parsedSector, db);
