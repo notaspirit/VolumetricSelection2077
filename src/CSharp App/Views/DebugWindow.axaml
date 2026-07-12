@@ -27,9 +27,8 @@
             Click="Benchmark_Click"
             Content="{x:Static resources:Labels.Benchmark}"
             Grid.Column="0"
-            Grid.Row="0"
+            Grid.Row="1"
             IsEnabled="{Binding ParentViewModel.MainTaskAvailable}"
-            IsVisible="{Binding ParentViewModel.Settings.Data.ExperimentalSettings.DebugMode}"
             Margin="5,0,0,0">
             <Button.Styles>
                 <Style Selector="Button:pointerover /template/ ContentPresenter">
@@ -39,7 +38,7 @@
         </Button>
         <Grid
             Grid.Column="0"
-            Grid.Row="0"
+            Grid.Row="1"
             IsVisible="{Binding ParentViewModel.BenchmarkProcessing}">
             <avalonia:LoadingIndicator
                 Foreground="White"
@@ -92,7 +91,7 @@
             Content="Run Test Command"
             Grid.Column="0"
             Grid.ColumnSpan="3"
-            Grid.Row="1"
+            Grid.Row="2"
             Margin="5,5,0,5">
             <Button.Styles>
                 <Style Selector="Button:pointerover /template/ ContentPresenter">
