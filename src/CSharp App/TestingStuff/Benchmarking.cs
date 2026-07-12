@@ -58,6 +58,12 @@ public class Benchmarking
         {
             var dir = benchmarkDirs[i];
             Logger.Info($"Running benchmark {i + 1} of {benchmarkDirs.Length}...");
+
+            if (dir.Name.EndsWith("skip"))
+            {
+                Logger.Warning($"Skipping {dir.Name} because it's marked as 'skip'.");
+                continue;
+            }
             
             var files = dir.GetFiles("*.json");
             if (files.All(f => !f.FullName.EndsWith("settings.json")))
