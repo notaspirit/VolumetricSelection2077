@@ -48,6 +48,30 @@
         </Grid>
         <Button
             Background="#6b82b2"
+            Click="CompareResults_Click"
+            Content="{x:Static resources:Labels.CompareResults}"
+            Grid.Column="1"
+            Grid.Row="1"
+            Margin="5,0,0,0">
+            <Button.Styles>
+                <Style Selector="Button:pointerover /template/ ContentPresenter">
+                    <Setter Property="Background" Value="#455472" />
+                </Style>
+            </Button.Styles>
+        </Button>
+        
+        <Grid
+            Grid.Column="0"
+            Grid.Row="1"
+            IsVisible="{Binding ParentViewModel.BenchmarkProcessing}">
+            <avalonia:LoadingIndicator
+                Foreground="White"
+                Height="30"
+                IsActive="True"
+                Width="30" />
+        </Grid>
+        <Button
+            Background="#6b82b2"
             Click="DialogTest_Click"
             Content="Dialog Test"
             Grid.Column="0"
