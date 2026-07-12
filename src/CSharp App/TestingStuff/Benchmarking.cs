@@ -1,124 +1,135 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Json.Helpers;
+using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
-using WolvenKit.RED4.Types;
+using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 namespace VolumetricSelection2077.TestingStuff;
 
 public class Benchmarking
 {
-    private readonly ProcessDispatcher _processDispatcher;
-    public Benchmarking(ProcessDispatcher processDispatcher)
+    private readonly ValidationService _validationService;
+    private readonly DialogService _dialogService;
+    private readonly BoundingBoxBuilderService _boundingBoxBuilderService;
+    private readonly SettingsService _settings;
+    private readonly CacheService _cacheService;
+    private readonly Progress _progress;
+    private readonly GameFileService _gfs;
+    
+    private const int BenchmarkCount = 3;
+    
+    public Benchmarking(DialogService dialogService,
+        ValidationService validationService,
+        BoundingBoxBuilderService boundingBoxBuilderService,
+        SettingsService settings, CacheService cacheService,
+        Progress progress,
+        GameFileService gameFileService)
     {
-        _processDispatcher = processDispatcher;
-    }
-
-    private class statsJsonFormat
-    {
-        public List<KeyValuePair<string, TimeSpan>> individualTimes { get; set; }
-        public string totalTime { get; set; }
-        public string averageTime { get; set; }
+        _validationService = validationService;
+        _dialogService = dialogService;
+        _boundingBoxBuilderService = boundingBoxBuilderService;
+        _settings = settings;
+        _cacheService = cacheService;
+        _progress = progress;
+        _gfs = gameFileService;
     }
     
-    public ConcurrentBag<double> GetFileMs = new();
-    public ConcurrentBag<double> CheckIntersectionMs = new();
-    
-    public async Task RunBenchmarks(DialogService dialogService)
+    public async Task Run()
     {
-        Logger.Info("Starting Benchmarks");
-        string benchFileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "VolumetricSelection2077", "benchmarks");
-        string benchOutputDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "VolumetricSelection2077", "benchmarks", "results", DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss"));
+        var benchmarkSourceDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "VolumetricSelection2077", "BenchmarkDefinitions");
+        var benchmarkResultsDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "BenchmarkResults", FormatDateTime(DateTime.Now));
+        Directory.CreateDirectory(benchmarkSourceDir);
+        Directory.CreateDirectory(benchmarkResultsDir);
         
-        Directory.CreateDirectory(benchOutputDir);
-        Directory.CreateDirectory(benchFileDir);
+        var benchmarkResult = new Dictionary<string, List<TimeSpan>>();
         
-        var files = Directory.GetFiles(benchFileDir);
-        if (files.Length == 0)
+        var benchmarkDirs = new DirectoryInfo(benchmarkSourceDir).GetDirectories();
+        
+        for (var i = 0; i < benchmarkDirs.Length; i++)
         {
-            Logger.Error("No files found in benchmark directory!");
-        }
-
-        List<KeyValuePair<string, TimeSpan>> results = new();
-        
-        foreach (var file in files)
-        {
-            var stopwatch = Stopwatch.StartNew();
-            try
+            var dir = benchmarkDirs[i];
+            Logger.Info($"Running benchmark {i + 1} of {benchmarkDirs.Length}...");
+            
+            var files = dir.GetFiles("*.json");
+            if (files.All(f => !f.FullName.EndsWith("settings.json")))
             {
-                var (status, error) =  await _processDispatcher.StartProcess(file, benchOutputDir);
-                if (status != true || error != "")
-                {
-                    throw new Exception($"Error: {error}");
-                }
+                Logger.Warning($"Skipping {dir.Name} because it doesn't contain a settings.json file.");
+                continue;
             }
-            catch (Exception ex)
+            
+            if (files.All(f => !f.FullName.EndsWith("selection.json")))
             {
-                Logger.Error($"Failed to processes: {file} with exception: {ex}");
+                Logger.Warning($"Skipping {dir.Name} because it doesn't contain a selection.json file.");
+                continue;
             }
-            stopwatch.Stop();
-            string fileName = Path.GetFileNameWithoutExtension(file);
-            Logger.Info($"Processed {fileName} in {Utils.FormatElapsedTime(stopwatch.Elapsed)}.");
-            results.Add(new(fileName, stopwatch.Elapsed));
-        }
 
-        TimeSpan totalProcssTime = TimeSpan.Zero;
-        foreach (var result in results)
-        {
-            totalProcssTime += result.Value;
-        }
-        Logger.Info($"Total procss: {Utils.FormatElapsedTime(totalProcssTime)}");
-        TimeSpan avgProcssTime = totalProcssTime / results.Count;
-        Logger.Info($"Average process time: {Utils.FormatElapsedTime(avgProcssTime)}");
-
-        double CalcPercent(double timeSpend, double totalTime)
-        {
-            return timeSpend / totalTime * 100;
-        }
-
-        double CalcAvg(double time, int occurrence)
-        {
-            return time / occurrence;
+            for (var j = 0; j < BenchmarkCount; j++)
+            {
+                var result = await RunBenchmark(dir, benchmarkResultsDir);
+                TryGetOrCreateValue(benchmarkResult, dir.Name, out var prevResults);
+                prevResults.Add(result);
+            }
         }
         
-        double totalTimeMs = totalProcssTime.TotalMilliseconds;
+        File.WriteAllText(Path.Combine(benchmarkResultsDir, "results.json"), JsonConvert.SerializeObject(benchmarkResult, JsonSerializerPresets.Default));
+        Logger.Info($"Benchmarking complete, results saved to {benchmarkResultsDir}.");
+    }
 
-        double getFilesTotal = GetFileMs.Sum();
+    private async Task<TimeSpan> RunBenchmark(DirectoryInfo definitionDir, string resultsDir)
+    {
+        var sw = new Stopwatch();
+        
+        var settingsService = BuildAndConfigureSettingsService(definitionDir, resultsDir);
+        var outputFilePath = Path.Combine(resultsDir, settingsService.Data.OutputFilename + ".json");
+        var processDispatcher = BuildDispatcher(settingsService, outputFilePath);
+        
+        sw.Start();
+        
+        await processDispatcher.StartProcess(Path.Combine(definitionDir.FullName, "selection.json"));
+        
+        sw.Stop();
+        return sw.Elapsed;
+    }
 
-        double checkTotal = CheckIntersectionMs.Sum();
-        
-        Logger.Info($"\n" +
-                    $"Getting Files:" +
-                    $"Total time spend: {getFilesTotal}ms\n" +
-                    $"Average time spend: {CalcAvg(getFilesTotal, GetFileMs.Count)}ms\n" +
-                    $"Percentage time spend: {CalcPercent(getFilesTotal, totalTimeMs)}%");
-        
-        Logger.Info($"\n" +
-                    $"Getting Files:" +
-                    $"Total time spend: {checkTotal}ms\n" +
-                    $"Average time spend: {CalcAvg(checkTotal, CheckIntersectionMs.Count)}ms\n" +
-                    $"Percentage time spend: {CalcPercent(checkTotal, totalTimeMs)}%");
-        
-        var resultsFile = new statsJsonFormat()
+    private SettingsService BuildAndConfigureSettingsService(DirectoryInfo definitionDir, string resultsDir)
+    {
+        var settingsService = new SettingsService(Path.Combine(definitionDir.FullName, "settings.json"));
+        settingsService.LoadSettings();
+
+        settingsService.Data.SaveFileLocation = SaveFileLocation.OutputDirectory;
+        if (settingsService.Data.SaveFileFormat == SaveFileFormat.ArchiveXLYaml)
+            settingsService.Data.SaveFileFormat = SaveFileFormat.ArchiveXLJson;
+        settingsService.Data.OutputDirectory = resultsDir;
+        settingsService.Data.OutputFilename = $"{FormatDateTime(DateTime.Now)}_{definitionDir.Name}";
+        return settingsService;
+    }
+
+    private ProcessDispatcher BuildDispatcher(SettingsService settingsService, string outputFilePath)
+    {
+        var postProcessingService = new PostProcessingService(settingsService, _progress, _gfs, outputFilePath);
+        var processService = new ProcessService(settingsService, _gfs, _cacheService, postProcessingService, _progress);
+        return new ProcessDispatcher(_dialogService, processService, _validationService, _boundingBoxBuilderService,
+            settingsService, _cacheService, _progress);
+    }
+    private string FormatDateTime(DateTime dateTime) => dateTime.ToString("yyyy-MM-dd HH-mm-ss");
+
+    private void TryGetOrCreateValue(Dictionary<string, List<TimeSpan>> dict, string key, out List<TimeSpan> value)
+    {
+        if (dict.TryGetValue(key, out var ev))
+            value = ev;
+        else
         {
-            individualTimes = results,
-            totalTime = Utils.FormatElapsedTime(totalProcssTime),
-            averageTime = Utils.FormatElapsedTime(avgProcssTime)
-        };
-
-        string serializedResults = JsonConvert.SerializeObject(resultsFile, JsonSerializerPresets.Default);
-
-        string outPath = Path.Combine(benchOutputDir, "results.json");
-        File.WriteAllText(outPath, serializedResults);
-        Logger.Info($"Wrote results to {outPath}");
-        Logger.Info("Finished Benchmarking");
+            dict[key] = [];
+            value = dict[key];
+        }
     }
 }

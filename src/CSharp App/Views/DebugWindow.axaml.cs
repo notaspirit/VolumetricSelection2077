@@ -41,18 +41,18 @@ public partial class DebugWindow : Window
     
     private async void Benchmark_Click(object? sender, RoutedEventArgs e)
     {
-        if (_mainWindowViewModel.IsProcessing) return;
+        if (_mainWindowViewModel.IsProcessing) 
+            return;
         _debugWindowViewModel.IsProcessing = true;
+        
         try
         {
+            Logger.Info("Starting benchmarking...");
             _mainWindowViewModel.BenchmarkProcessing = true;
             _dispatcherTimer.Start();
-            _mainWindowViewModel.Settings.Data.OutputFilename =
-                Utils.SanitizeFilePath(_mainWindowViewModel.Settings.Data.OutputFilename);
-            mainWindow.OutputFilenameTextBox.Text = _mainWindowViewModel.Settings.Data.OutputFilename;
-            mainWindow.AddQueuedFilters();
+            
             var benchmarking = App.AppHost!.Services.GetRequiredService<Benchmarking>();
-            await Task.Run(() => benchmarking.RunBenchmarks(_dialogService));
+            await benchmarking.Run();
         }
         catch (Exception ex)
         {
