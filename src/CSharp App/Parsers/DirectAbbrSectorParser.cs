@@ -17,16 +17,23 @@ namespace VolumetricSelection2077.Parsers;
 
 public class DirectAbbrSectorParser
 {
+    private readonly GameFileService _gameFileService;
+    private readonly CacheService _cacheService;
+    
+    public DirectAbbrSectorParser(GameFileService gameFileService, CacheService cacheService)
+    {
+        _gameFileService = gameFileService;
+        _cacheService = cacheService;
+    }
+    
     /// <summary>
     /// Parses a CR2W file into an AbbrSector
     /// </summary>
     /// <param name="input"></param>
     /// <returns></returns>
     /// <exception cref="Exception">cr2w file is not a streamingsector</exception>
-    public static AbbrSector ParseFromCR2W(CR2WFile input)
+    public AbbrSector ParseFromCR2W(CR2WFile input)
     {
-        var gfs = GameFileService.Instance;
-        
         if (input.RootChunk is not worldStreamingSector sector)
         {
             throw new Exception("Input file is not a world streaming sector");
@@ -42,7 +49,7 @@ public class DirectAbbrSectorParser
                     Logger.Warning($"Failed to parse embedded file {efile.FileName}");
                     continue;
                 }
-                CacheService.Instance.WriteSingleEntry(new WriteCacheRequest(efile.FileName, MessagePackSerializer.Serialize(parsedMesh)));
+                _cacheService.WriteSingleEntry(new WriteCacheRequest(efile.FileName, MessagePackSerializer.Serialize(parsedMesh)));
             }
         }
         
@@ -261,13 +268,13 @@ public class DirectAbbrSectorParser
                     }
                     else
                     {
-                        if (!gfs?.IsInitialized ?? false)
+                        if (!_gameFileService.IsInitialized)
                         {
                             Logger.Warning($"Resource {instancedFoliageNode.FoliageResource.DepotPath} is not embedded and game file service is not initialized! Using fallback method, cache should be manually cleared once issue is resolved.");
                             goto DefaultLabel;
                         }
                         
-                        var foliageCR2W = gfs?.ArchiveManager?.GetCR2WFile(instancedFoliageNode.FoliageResource.DepotPath);
+                        var foliageCR2W = _gameFileService.ArchiveManager.GetCR2WFile(instancedFoliageNode.FoliageResource.DepotPath);
                         if (foliageCR2W is null)
                         {
                             Logger.Warning($"Failed to get {instancedFoliageNode.FoliageResource.DepotPath} from archive files!");

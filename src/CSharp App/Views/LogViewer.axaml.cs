@@ -7,6 +7,7 @@ using Avalonia.Threading;
 using Avalonia.Interactivity;
 using DynamicData;
 using Serilog.Events;
+using Microsoft.Extensions.DependencyInjection;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
 
@@ -36,7 +37,8 @@ public partial class LogViewer : UserControl
     {
         DataContext = this;
         
-        _settings = SettingsService.Instance;
+        var sp = App.AppHost!.Services;
+        _settings = sp.GetRequiredService<SettingsService>();
 
         _batchTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
         _batchTimer.Tick += (_, _) => ProcessPendingMessages();

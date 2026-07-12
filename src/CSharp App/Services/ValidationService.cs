@@ -24,11 +24,11 @@ namespace VolumetricSelection2077.Services
         private readonly GameFileService _gameFileService;
         private static readonly char[] InvalidCharacters = Path.GetInvalidPathChars().Concat(new[] { '?', '*', '"', '<', '>', '|' }).Distinct().ToArray();
 
-        public ValidationService()
+        public ValidationService(SettingsService settingsService, CacheService cacheService, GameFileService gameFileService)
         {
-            _settingsService = SettingsService.Instance;
-            _cacheService = CacheService.Instance;
-            _gameFileService = GameFileService.Instance;
+            _settingsService = settingsService;
+            _cacheService = cacheService;
+            _gameFileService = gameFileService;
         }
         
         /// <summary>
@@ -41,7 +41,6 @@ namespace VolumetricSelection2077.Services
         public InputValidationResult ValidateInput(string gamePath, string outputFilename)
         {
             bool cacheStatus = ValidateCacheStatus();
-            bool gfsStatus = ValidateGameFileService();
             var outDirVR = ValidateAndCreateDirectory(_settingsService.Data.OutputDirectory);
             var selFileVR = ValidateSelectionFile(gamePath);
             var validFileName = string.IsNullOrEmpty(outputFilename) ? PathValidationResult.Empty : ValidatePath(outputFilename, true);
@@ -54,7 +53,6 @@ namespace VolumetricSelection2077.Services
             return new InputValidationResult()
             {
                 CacheStatus = cacheStatus,
-                GameFileServiceStatus = gfsStatus,
                 ValidOutputDirectory = outDirVR.Item1,
                 OutputDirectroyPathValidationResult = outDirVR.Item2,
                 SelectionFileExists = selFileVR.Item1,
@@ -127,7 +125,7 @@ namespace VolumetricSelection2077.Services
             if (!File.Exists(gameExePath))
                 throw new ArgumentException("Could not find Game Executable.");
 
-            string? version = UtilService.GetExeVersion(gameExePath);
+            string? version = Utils.GetExeVersion(gameExePath);
             if (version != metadata.GameVersion)
                 return false;
 
@@ -199,7 +197,7 @@ namespace VolumetricSelection2077.Services
 
                     var favRoot = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(favoritesPath),
                         JsonSerializerPresets.WorldBuilder);
-                    return favRoot?.Favorites.Any(x => x.Name == SettingsService.Instance.Data.OutputFilename) ?? false;
+                    return favRoot?.Favorites.Any(x => x.Name == _settingsService.Data.OutputFilename) ?? false;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -257,15 +255,6 @@ namespace VolumetricSelection2077.Services
         private bool ValidateCacheStatus()
         {
             return _cacheService.IsInitialized;
-        }
-
-        /// <summary>
-        /// Checks if the GameFileService is initialized
-        /// </summary>
-        /// <returns></returns>
-        private bool ValidateGameFileService()
-        {
-            return _gameFileService.IsInitialized;
         }
         
         /// <summary>

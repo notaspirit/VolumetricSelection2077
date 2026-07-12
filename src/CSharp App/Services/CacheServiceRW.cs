@@ -256,7 +256,7 @@ public partial class CacheService
                 Logger.Error($"Failed to commit {requests.Length} entries to cache with status {commitStatus}");
         }
 
-        if (!_settings.Data.CacheEnabled)
+        if (!_settingsService.Data.CacheEnabled)
         {
             ClearDatabase(CacheDatabases.Vanilla, true);
             ClearDatabase(CacheDatabases.Modded, true);

@@ -7,7 +7,7 @@ using VolumetricSelection2077.Services;
 
 namespace VolumetricSelection2077.Parsers;
 
-public class SelectionParser
+public static class SelectionParser
 {
     public static (bool, string, SelectionInput?) ParseSelection(string input)
     {

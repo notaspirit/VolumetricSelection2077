@@ -5,16 +5,20 @@ namespace VolumetricSelection2077.TestingStuff;
 
 public class TestCacheResizing : IDebugTool
 {
+    private readonly CacheService _cacheService;
+    public TestCacheResizing(CacheService cacheService)
+    {
+        _cacheService = cacheService;
+    }
     public void Run()
     {
         Logger.Info("Starting Cache Resize Test...");
         int sampleSize = 100;
-        var cs = CacheService.Instance;
-        var originalSample = cs.GetSample(sampleSize);
+        var originalSample = _cacheService.GetSample(sampleSize);
 
-        cs.ResizeEnvironment();
+        _cacheService.ResizeEnvironment();
         
-        var newSample = cs.GetSample(sampleSize);
+        var newSample = _cacheService.GetSample(sampleSize);
         
         Logger.Info("Checking Sample...");
         Logger.Info($"Original Count: {originalSample.vanillaEntriesCount}, new Count: {newSample.vanillaEntriesCount}");

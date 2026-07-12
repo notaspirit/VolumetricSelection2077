@@ -12,6 +12,7 @@ using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Services;
 using VolumetricSelection2077.TestingStuff;
 using VolumetricSelection2077.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using Path = System.IO.Path;
 
 namespace VolumetricSelection2077.Views;
@@ -33,7 +34,7 @@ public partial class DebugWindow : Window
         mainWindow = parent as MainWindow;
         
         _dispatcherTimer = new TrackedDispatchTimer() { Interval = TimeSpan.FromSeconds(1) };
-        _dispatcherTimer.Tick += (s, e) => mainWindow.ProgressTextBlock.Text = $"{UtilService.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
+        _dispatcherTimer.Tick += (s, e) => mainWindow.ProgressTextBlock.Text = $"{Utils.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
         
         Closing += OnClosing;
     }
@@ -47,10 +48,11 @@ public partial class DebugWindow : Window
             _mainWindowViewModel.BenchmarkProcessing = true;
             _dispatcherTimer.Start();
             _mainWindowViewModel.Settings.Data.OutputFilename =
-                UtilService.SanitizeFilePath(_mainWindowViewModel.Settings.Data.OutputFilename);
+                Utils.SanitizeFilePath(_mainWindowViewModel.Settings.Data.OutputFilename);
             mainWindow.OutputFilenameTextBox.Text = _mainWindowViewModel.Settings.Data.OutputFilename;
             mainWindow.AddQueuedFilters();
-            await Task.Run(() => Benchmarking.Instance.RunBenchmarks(_dialogService));
+            var benchmarking = App.AppHost!.Services.GetRequiredService<Benchmarking>();
+            await Task.Run(() => benchmarking.RunBenchmarks(_dialogService));
         }
         catch (Exception ex)
         {
@@ -59,7 +61,7 @@ public partial class DebugWindow : Window
         finally
         {
             _dispatcherTimer.Stop();
-            string formattedTime = UtilService.FormatElapsedTime(_dispatcherTimer.Elapsed);
+            string formattedTime = Utils.FormatElapsedTime(_dispatcherTimer.Elapsed);
             Logger.Info($"Benchmarking finished after: {formattedTime}");
             _mainWindowViewModel.BenchmarkProcessing = false;
             _debugWindowViewModel.IsProcessing = false;
@@ -81,15 +83,16 @@ public partial class DebugWindow : Window
     private void DumpSectorBounds_Click(object? sender, RoutedEventArgs e)
     {
         _debugWindowViewModel.IsProcessing = true;
-        CacheService.Instance.DumpSectorBBToFile();
+        App.AppHost!.Services.GetRequiredService<CacheService>().DumpSectorBBToFile();
         _debugWindowViewModel.IsProcessing = false;
     }
 
     private void LoadSectorBounds_Click(object? sender, RoutedEventArgs e)
     {
         _debugWindowViewModel.IsProcessing = true;
-        var cacheMetadata = CacheService.Instance.GetMetadata();
-        CacheService.Instance.LoadSectorBBFromFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "debug",
+        var cacheService = App.AppHost!.Services.GetRequiredService<CacheService>();
+        var cacheMetadata = cacheService.GetMetadata();
+        cacheService.LoadSectorBBFromFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "debug",
             $"{cacheMetadata.GameVersion}-{cacheMetadata.VS2077Version}.bin"));
         _debugWindowViewModel.IsProcessing = false;
     }

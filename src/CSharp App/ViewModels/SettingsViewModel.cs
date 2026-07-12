@@ -7,6 +7,7 @@ using Avalonia;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.DependencyInjection;
 using VolumetricSelection2077.Models;
 using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.Services;
@@ -15,7 +16,9 @@ using VolumetricSelection2077.Views;
 namespace VolumetricSelection2077.ViewModels
 {
     public partial class SettingsViewModel : ObservableObject
-    { 
+    {
+        private readonly CacheService _cacheService;
+        
         private CacheStats _cacheStats;
         private bool _cacheWorking;
 
@@ -85,15 +88,17 @@ namespace VolumetricSelection2077.ViewModels
             }
         }
         
-        public string ClearKnownBadResourcesLabel => $"{Labels.RememberFailedResources} [ {CacheService.Instance.GetKnownBadResourceCount()} resource paths ]";
+        public string ClearKnownBadResourcesLabel => $"{Labels.RememberFailedResources} [ {_cacheService.GetKnownBadResourceCount()} resource paths ]";
         
         public SettingsViewModel() 
         { 
-            Settings = SettingsService.Instance;
-            PersistentCache = SettingsViewPersistentCache.Instance;
+            var sp = App.AppHost!.Services;
+            Settings = sp.GetRequiredService<SettingsService>();
+            _cacheService = sp.GetRequiredService<CacheService>();
+            PersistentCache = sp.GetRequiredService<SettingsViewPersistentCache>();
             try
             {
-                _cacheStats = CacheService.Instance.IsInitialized ? CacheService.Instance.GetStats() : new CacheStats();
+                _cacheStats = _cacheService.IsInitialized ? _cacheService.GetStats() : new CacheStats();
             }
             catch (Exception ex)
             {

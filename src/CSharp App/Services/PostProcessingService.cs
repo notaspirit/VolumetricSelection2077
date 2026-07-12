@@ -20,12 +20,11 @@ public partial class PostProcessingService
     private readonly SettingsService _settingsService;
     private readonly AxlRemovalToWorldBuilderConverter _removalToWorldBuilderConverter;
     
-    
-    public PostProcessingService()
+    public PostProcessingService(SettingsService settingsService, Progress progress, GameFileService gfs)
     {
-        _progress = Progress.Instance;
-        _settingsService = SettingsService.Instance;
-        _removalToWorldBuilderConverter = new AxlRemovalToWorldBuilderConverter();
+        _progress = progress;
+        _settingsService = settingsService;
+        _removalToWorldBuilderConverter = new AxlRemovalToWorldBuilderConverter(gfs, settingsService);
     }
     
     /// <summary>

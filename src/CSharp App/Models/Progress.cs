@@ -99,31 +99,12 @@ public class Progress
     /// </summary>
     public event EventHandler<int>? ProgressChanged;
 
-    private Progress()
+    public Progress()
     {
         _sections[ProgressSections.Startup].FulfilledChanged += (_, result) =>
         {
             isProcessSuppressed = !result;
         };
-    }
-    
-    /// <summary>
-    /// Get Singleton instance
-    /// </summary>
-    public static Progress Instance
-    {
-        get
-        {
-            lock (_lock)
-            {
-                if (_instance == null)
-                {
-                    _instance = new Progress();
-                }
-
-                return _instance;
-            }
-        }
     }
     
     /// <summary>

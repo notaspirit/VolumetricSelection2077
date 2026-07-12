@@ -13,10 +13,19 @@ namespace VolumetricSelection2077.TestingStuff;
 
 public class CompareNewSectorBoundsWithStreamingBlock : IDebugTool
 {
+    private readonly GameFileService _gameFileService;
+    private readonly CacheService _cacheService;
+
+    public CompareNewSectorBoundsWithStreamingBlock(GameFileService gameFileService, CacheService cacheService)
+    {
+        _gameFileService = gameFileService;
+        _cacheService = cacheService;
+    }
+
     public void Run()
     {
-        var gfs = GameFileService.Instance;
-        var cs = CacheService.Instance;
+        var gfs = _gameFileService;
+        var cs = _cacheService;
         Logger.Info("Getting basegame streamingblock...");
         if (cs.IsInitialized == false)
         {

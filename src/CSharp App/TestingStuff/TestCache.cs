@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Controls.Documents;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Models;
@@ -12,12 +13,21 @@ namespace VolumetricSelection2077.TestingStuff;
 
 public class TestCache : IDebugTool
 {
+    private readonly GameFileService _gameFileService;
+    private readonly CacheService _cacheService;
+
+    public TestCache(GameFileService gameFileService, CacheService cacheService)
+    {
+        _gameFileService = gameFileService;
+        _cacheService = cacheService;
+    }
+
     public void Run()
     {
         Logger.Info("Starting cache testing...");
 
-        var gfs = GameFileService.Instance;
-        var cs = CacheService.Instance;
+        var gfs = _gameFileService;
+        var cs = _cacheService;
         string testMeshPath = @"base\environment\decoration\medical\accessories\medkit\medkit_d_mobile.mesh";
         string testSectorPath = @"base\worlds\03_night_city\_compiled\default\exterior_-4_-8_0_4.streamingsector";
 
@@ -95,7 +105,7 @@ public class TestCache : IDebugTool
 
     public static void Run2()
     {
-        var cs = CacheService.Instance;
+        var cs = App.AppHost!.Services.GetRequiredService<CacheService>();
         cs.StartListening();
         cs.WriteEntry(new WriteCacheRequest("YesSIR", Encoding.UTF8.GetBytes("value"), CacheDatabases.Vanilla));
         Task.Delay(1000).Wait();
@@ -112,10 +122,10 @@ public class TestCache : IDebugTool
 
         var testSector = cs.GetEntry(
             new ReadCacheRequest("base\\worlds\\03_night_city\\_compiled\\default\\exterior_-4_-8_0_4.streamingsector"));
-        Logger.Info($"{testSector?.Length ?? null}");
+        Logger.Info($"{testSector?.Length}");
         
         var testMesh = cs.GetEntry(
             new ReadCacheRequest("base\\environment\\decoration\\medical\\accessories\\medkit\\medkit_d_mobile.mesh"));
-        Logger.Info($"{testMesh?.Length ?? null}");
+        Logger.Info($"{testMesh?.Length}");
     }
 }

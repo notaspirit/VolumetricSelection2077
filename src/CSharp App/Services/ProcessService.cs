@@ -9,7 +9,6 @@ using MessagePack;
 using VEnums = VolumetricSelection2077.Enums;
 using WEnums = WolvenKit.RED4.Types.Enums;
 using SharpDX;
-using WolvenKit.Common.PhysX;
 
 namespace VolumetricSelection2077.Services;
 
@@ -20,13 +19,14 @@ public class ProcessService
     private readonly CacheService _cacheService;
     private readonly PostProcessingService _postProcessingService;
     private readonly Progress _progress;
-    public ProcessService()
+    
+    public ProcessService(SettingsService settings, GameFileService gameFileService, CacheService cacheService, PostProcessingService postProcessingService, Progress progress)
     {
-        _settings = SettingsService.Instance;
-        _gameFileService = GameFileService.Instance;
-        _progress = Progress.Instance;
-        _cacheService = CacheService.Instance;
-        _postProcessingService = new PostProcessingService();
+        _settings = settings;
+        _gameFileService = gameFileService;
+        _progress = progress;
+        _cacheService = cacheService;
+        _postProcessingService = postProcessingService;
     }
     
     /// <summary>
@@ -112,7 +112,6 @@ public class ProcessService
                     case VEnums.ResourceTokenResult.KnownBad: Logger.Warning($"Sector {streamingSectorName} is a known bad resource, skipping..."); break;
                     case VEnums.ResourceTokenResult.Success: Logger.Error($"Received an unexpected resource type {sectorToken.Resource?.GetType()} for sector {streamingSectorName}"); break;
                     case VEnums.ResourceTokenResult.Failure: Logger.Error($"Failed to get sector {streamingSectorName}"); break;
-                    case VEnums.ResourceTokenResult.NotInitialized: Logger.Error($"GameFileService not initialized, cannot get sector {streamingSectorName}"); break;
                     default: Logger.Error($"Unknown resource token result {sectorToken.Result} for sector {streamingSectorName}"); break;
                 }
                 return null;
@@ -235,7 +234,6 @@ public class ProcessService
                         case VEnums.ResourceTokenResult.KnownBad: Logger.Warning($"Mesh {nodeEntry.ResourcePath} is a known bad resource, skipping..."); break;
                         case VEnums.ResourceTokenResult.Success: Logger.Warning($"Received an unexpected resource type {meshToken.Resource?.GetType()} for mesh {nodeEntry.ResourcePath}"); break;
                         case VEnums.ResourceTokenResult.Failure: Logger.Warning($"Failed to get mesh {nodeEntry.ResourcePath}"); break;
-                        case VEnums.ResourceTokenResult.NotInitialized: Logger.Error($"GameFileService not initialized, cannot get mesh {nodeEntry.ResourcePath}"); break;
                         default: Logger.Warning($"Unknown resource token result {meshToken.Result} for mesh {nodeEntry.ResourcePath}"); break;
                     }
                     return null;
@@ -285,7 +283,6 @@ public class ProcessService
                                         case VEnums.ResourceTokenResult.KnownBad: Logger.Warning($"Collision mesh at sector hash {sectorHash} : shape hash {shape.Hash} is a known bad resource, skipping..."); break;
                                         case VEnums.ResourceTokenResult.Success: Logger.Warning($"Received an unexpected resource type {collisionMeshToken.Resource?.GetType()} for sector hash {sectorHash} : shape hash {shape.Hash}"); break;
                                         case VEnums.ResourceTokenResult.Failure: Logger.Warning($"Failed to get collision mesh at sector hash {sectorHash} : shape hash {shape.Hash}"); break;
-                                        case VEnums.ResourceTokenResult.NotInitialized: Logger.Error($"GameFileService not initialized, cannot get collision mesh at sector hash {sectorHash} : shape hash {shape.Hash}"); break;
                                         default: Logger.Warning($"Unknown resource token result {collisionMeshToken.Result} for collision mesh at sector hash {sectorHash} : shape hash {shape.Hash}"); break;
                                     }
                                     continue;

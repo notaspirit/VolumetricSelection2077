@@ -3,7 +3,6 @@ namespace VolumetricSelection2077.Enums;
 public struct InputValidationResult
 {
     public bool CacheStatus { get; set; }
-    public bool GameFileServiceStatus { get; set; }
     public bool ValidOutputDirectory { get; set; }
     public PathValidationResult OutputDirectroyPathValidationResult { get; set; }
     public bool SelectionFileExists { get; set; }

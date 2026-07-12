@@ -14,6 +14,12 @@ namespace VolumetricSelection2077.TestingStuff;
 
 public class Benchmarking
 {
+    private readonly ProcessDispatcher _processDispatcher;
+    public Benchmarking(ProcessDispatcher processDispatcher)
+    {
+        _processDispatcher = processDispatcher;
+    }
+
     private class statsJsonFormat
     {
         public List<KeyValuePair<string, TimeSpan>> individualTimes { get; set; }
@@ -21,35 +27,12 @@ public class Benchmarking
         public string averageTime { get; set; }
     }
     
-    private static Benchmarking? _instance;
-    private static readonly object _lock = new object();
-    
-    public static Benchmarking Instance
-    {
-        get
-        {
-            lock (_lock)
-            {
-                if (_instance == null)
-                {
-                    _instance = new Benchmarking();
-                }
-                return _instance;
-            }
-        }
-    }
-    
     public ConcurrentBag<double> GetFileMs = new();
     public ConcurrentBag<double> CheckIntersectionMs = new();
-    
-    
-    
     
     public async Task RunBenchmarks(DialogService dialogService)
     {
         Logger.Info("Starting Benchmarks");
-        // CacheService.Instance.DropDatabase(CacheDatabases.Vanilla);
-        var processingService = new ProcessDispatcher(dialogService);
         string benchFileDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "VolumetricSelection2077", "benchmarks");
         string benchOutputDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -71,7 +54,7 @@ public class Benchmarking
             var stopwatch = Stopwatch.StartNew();
             try
             {
-                var (status, error) =  await processingService.StartProcess(file, benchOutputDir);
+                var (status, error) =  await _processDispatcher.StartProcess(file, benchOutputDir);
                 if (status != true || error != "")
                 {
                     throw new Exception($"Error: {error}");
@@ -83,7 +66,7 @@ public class Benchmarking
             }
             stopwatch.Stop();
             string fileName = Path.GetFileNameWithoutExtension(file);
-            Logger.Info($"Processed {fileName} in {UtilService.FormatElapsedTime(stopwatch.Elapsed)}.");
+            Logger.Info($"Processed {fileName} in {Utils.FormatElapsedTime(stopwatch.Elapsed)}.");
             results.Add(new(fileName, stopwatch.Elapsed));
         }
 
@@ -92,9 +75,9 @@ public class Benchmarking
         {
             totalProcssTime += result.Value;
         }
-        Logger.Info($"Total procss: {UtilService.FormatElapsedTime(totalProcssTime)}");
+        Logger.Info($"Total procss: {Utils.FormatElapsedTime(totalProcssTime)}");
         TimeSpan avgProcssTime = totalProcssTime / results.Count;
-        Logger.Info($"Average process time: {UtilService.FormatElapsedTime(avgProcssTime)}");
+        Logger.Info($"Average process time: {Utils.FormatElapsedTime(avgProcssTime)}");
 
         double CalcPercent(double timeSpend, double totalTime)
         {
@@ -127,8 +110,8 @@ public class Benchmarking
         var resultsFile = new statsJsonFormat()
         {
             individualTimes = results,
-            totalTime = UtilService.FormatElapsedTime(totalProcssTime),
-            averageTime = UtilService.FormatElapsedTime(avgProcssTime)
+            totalTime = Utils.FormatElapsedTime(totalProcssTime),
+            averageTime = Utils.FormatElapsedTime(avgProcssTime)
         };
 
         string serializedResults = JsonConvert.SerializeObject(resultsFile, JsonSerializerPresets.Default);

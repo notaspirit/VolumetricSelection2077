@@ -7,6 +7,7 @@ using Avalonia;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.DependencyInjection;
 using VolumetricSelection2077.Resources;
 using VolumetricSelection2077.Services;
 using VolumetricSelection2077.Views;
@@ -251,7 +252,10 @@ namespace VolumetricSelection2077.ViewModels
         
         public MainWindowViewModel()
         {
-            Settings = SettingsService.Instance;
+            var sp = App.AppHost!.Services;
+            Settings = sp.GetRequiredService<SettingsService>();
+            var progress = sp.GetRequiredService<VolumetricSelection2077.Models.Progress>();
+            
             _resourceNameFilter = Settings.Data.ResourceNameFilter;
             _resourceNameFilter.CollectionChanged += ResourceNameFilter_CollectionChanged;
             Settings.Data.DebugNameFilter.CollectionChanged += DebugNameFilter_CollectionChanged;
