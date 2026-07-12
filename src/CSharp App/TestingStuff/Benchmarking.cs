@@ -121,7 +121,7 @@ public class Benchmarking
 
     private ProcessDispatcher BuildDispatcher(SettingsService settingsService, string outputFilePath)
     {
-        var postProcessingService = new PostProcessingService(settingsService, _progress, _gfs, outputFilePath);
+        var postProcessingService = new PostProcessingService(settingsService, _progress, _gfs, outputFilePath, false);
         var processService = new ProcessService(settingsService, _gfs, _cacheService, postProcessingService, _progress);
         return new ProcessDispatcher(_dialogService, processService, _validationService, _boundingBoxBuilderService,
             settingsService, _cacheService, _progress);
