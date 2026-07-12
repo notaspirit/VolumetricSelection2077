@@ -17,23 +17,30 @@ public partial class PostProcessingService
     /// Saves the AxlRemovalFile as an xl file in either JSON or YAML depending on the state of the SettingsService
     /// </summary>
     /// <param name="axlRemovalFile"></param>
-    private void SaveAsRemoval(AxlRemovalFile axlRemovalFile)
+    private void SaveAsRemoval(AxlRemovalFile axlRemovalFile, string? outputFilePathOverride = null)
     {
         var nodeCount = axlRemovalFile.Streaming.Sectors.Select(s => s?.NodeDeletions.Count).Sum();
         var actorCount = axlRemovalFile.Streaming.Sectors.SelectMany(s => s?.NodeDeletions ?? new()).Sum(n => n.ActorDeletions?.Count);
         Logger.Success($"Found {nodeCount} node deletions and {actorCount} actor deletions across {axlRemovalFile.Streaming.Sectors.Count} sectors");
         
         string outputFilePath;
-        switch (_settingsService.Data.SaveFileLocation)
+        if (outputFilePathOverride != null)
         {
-            case SaveFileLocation.GameDirectory:
-                outputFilePath = Path.Join(_settingsService.Data.GameDirectory, "archive", "pc", "mod", _settingsService.Data.OutputFilename) + ".xl";
-                break;
-            case SaveFileLocation.OutputDirectory:
-                outputFilePath = Path.Join(_settingsService.Data.OutputDirectory, _settingsService.Data.OutputFilename) + ".xl";
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
+            outputFilePath = outputFilePathOverride;
+        }
+        else
+        {
+            switch (_settingsService.Data.SaveFileLocation)
+            {
+                case SaveFileLocation.GameDirectory:
+                    outputFilePath = Path.Join(_settingsService.Data.GameDirectory, "archive", "pc", "mod", _settingsService.Data.OutputFilename) + ".xl";
+                    break;
+                case SaveFileLocation.OutputDirectory:
+                    outputFilePath = Path.Join(_settingsService.Data.OutputDirectory, _settingsService.Data.OutputFilename) + ".xl";
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
         
         var (outputContent, mergeChanges) = SerializeAxlRemovalFile(axlRemovalFile, outputFilePath);

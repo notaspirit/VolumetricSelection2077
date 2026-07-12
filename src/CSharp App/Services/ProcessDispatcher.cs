@@ -29,8 +29,7 @@ public class ProcessDispatcher
         _progress = progress;
     }
 
-    public async Task<(bool success, string error)> StartProcess(string? customRemovalFile = null,
-        string? customRemovalDirectory = null)
+    public async Task<(bool success, string error)> StartProcess(string? customRemovalFile = null)
     {
         Logger.Info("Validating inputs...");
 
@@ -53,21 +52,14 @@ public class ProcessDispatcher
         
         _progress.AddTarget(2, Progress.ProgressSections.Startup);
         
-        bool customRemovalFileProvided = customRemovalFile != null;
-        bool customRemovalDirectoryProvided = customRemovalDirectory != null;
-        if (customRemovalFileProvided != customRemovalDirectoryProvided)
-        {
-            throw new ArgumentException("Both file path and output directory must be provided for a custom process!");
-        }
-
-        if (!File.Exists(customRemovalFile) && (customRemovalDirectoryProvided || customRemovalDirectory != null))
+        if (customRemovalFile != null && !File.Exists(customRemovalFile))
         {
             throw new ArgumentException($"Provided file ({customRemovalFile}) doesn't exist!");
         }
 
         SelectionInput? CETOutputFile;
         
-        if (customRemovalDirectory == null)
+        if (customRemovalFile == null)
         {
             string CETOuputFilepath;
             if (string.IsNullOrWhiteSpace(_settings.Data.CustomSelectionFilePath))

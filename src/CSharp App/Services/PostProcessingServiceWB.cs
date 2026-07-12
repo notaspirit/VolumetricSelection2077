@@ -16,21 +16,30 @@ public partial class PostProcessingService
     /// Saves the AxlRemovalFile as a world builder prefab
     /// </summary>
     /// <param name="axlRemovalFile"></param>
-    private void SaveAsPrefab(AxlRemovalFile axlRemovalFile)
+    private void SaveAsPrefab(AxlRemovalFile axlRemovalFile, string? outputFileNameOverride = null)
     {
         string favoritesPath;
-        switch (_settingsService.Data.SaveFileLocation)
+
+        if (outputFileNameOverride != null)
         {
-            case SaveFileLocation.GameDirectory:
-                favoritesPath = Path.Join(_settingsService.Data.GameDirectory, "bin", "x64", "plugins",
-                    "cyber_engine_tweaks", "mods", "entSpawner", "data", "favorite", "GeneratedByVS2077.json");
-                break;
-            case SaveFileLocation.OutputDirectory:
-                favoritesPath = Path.Join(_settingsService.Data.OutputDirectory, "GeneratedByVS2077.json");
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
+            favoritesPath = outputFileNameOverride;
         }
+        else
+        {
+            switch (_settingsService.Data.SaveFileLocation)
+            {
+                case SaveFileLocation.GameDirectory:
+                    favoritesPath = Path.Join(_settingsService.Data.GameDirectory, "bin", "x64", "plugins",
+                        "cyber_engine_tweaks", "mods", "entSpawner", "data", "favorite", "GeneratedByVS2077.json");
+                    break;
+                case SaveFileLocation.OutputDirectory:
+                    favoritesPath = Path.Join(_settingsService.Data.OutputDirectory, "GeneratedByVS2077.json");
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+        
         var logMessage = "";
         
         

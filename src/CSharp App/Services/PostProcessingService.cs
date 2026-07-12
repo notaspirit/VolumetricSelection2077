@@ -19,12 +19,18 @@ public partial class PostProcessingService
     private readonly Progress _progress;
     private readonly SettingsService _settingsService;
     private readonly AxlRemovalToWorldBuilderConverter _removalToWorldBuilderConverter;
+
+    private readonly string? _outputFileNameOverride;
+    private readonly bool _createBackup;
     
-    public PostProcessingService(SettingsService settingsService, Progress progress, GameFileService gfs)
+    public PostProcessingService(SettingsService settingsService, Progress progress, GameFileService gfs, string? outputFileNameOverride = null, bool createBackup = true)
     {
         _progress = progress;
         _settingsService = settingsService;
         _removalToWorldBuilderConverter = new AxlRemovalToWorldBuilderConverter(gfs, settingsService);
+        
+        _outputFileNameOverride = outputFileNameOverride;
+        _createBackup = createBackup;
     }
     
     /// <summary>
@@ -55,10 +61,10 @@ public partial class PostProcessingService
         {
             case SaveFileFormat.ArchiveXLJson:
             case SaveFileFormat.ArchiveXLYaml:
-                SaveAsRemoval(removalFile);
+                SaveAsRemoval(removalFile, _outputFileNameOverride);
                 break;
             case SaveFileFormat.WorldBuilder:
-                SaveAsPrefab(removalFile);
+                SaveAsPrefab(removalFile, _outputFileNameOverride);
                 break;
         }
         
@@ -89,6 +95,9 @@ public partial class PostProcessingService
 
     private void WriteBackupFile(string originalOutputFilePath, string content)
     {
+        if (!_createBackup)
+            return;
+        
         var dirName = $"{Path.GetFileNameWithoutExtension(originalOutputFilePath)}-{_settingsService.Data.SaveMode}-{_settingsService.Data.SaveFileFormat}-{DateTime.Now:yyyy-MM-dd-HH-mm-ss}";
         var dirPath = Path.Join(_settingsService.Data.BackupDirectory, dirName);
         Directory.CreateDirectory(dirPath);

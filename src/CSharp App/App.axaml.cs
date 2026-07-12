@@ -47,7 +47,6 @@ public partial class App : Application
         hostBuilder.Services.AddTransient<PostProcessingService>();
         hostBuilder.Services.AddTransient<ProcessService>();
         hostBuilder.Services.AddTransient<ProcessDispatcher>();
-        hostBuilder.Services.AddTransient<Benchmarking>();
         
         #endregion
         
@@ -66,6 +65,7 @@ public partial class App : Application
         hostBuilder.Services.AddTransient<TestWheezeKitSerialization>();
         hostBuilder.Services.AddTransient<BuildKnownBadSectorVerbose>();
         hostBuilder.Services.AddTransient<AbbrMeshToBlender>();
+        hostBuilder.Services.AddTransient<Benchmarking>();
         
         #endregion
 
