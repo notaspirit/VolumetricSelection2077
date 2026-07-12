@@ -16,7 +16,9 @@ using VolumetricSelection2077.Views;
 namespace VolumetricSelection2077.ViewModels
 {
     public partial class SettingsViewModel : ObservableObject
-    { 
+    {
+        private readonly CacheService _cacheService;
+        
         private CacheStats _cacheStats;
         private bool _cacheWorking;
 
@@ -86,17 +88,17 @@ namespace VolumetricSelection2077.ViewModels
             }
         }
         
-        public string ClearKnownBadResourcesLabel => $"{Labels.RememberFailedResources} [ {App.AppHost!.Services.GetRequiredService<CacheService>().GetKnownBadResourceCount()} resource paths ]";
+        public string ClearKnownBadResourcesLabel => $"{Labels.RememberFailedResources} [ {_cacheService.GetKnownBadResourceCount()} resource paths ]";
         
         public SettingsViewModel() 
         { 
             var sp = App.AppHost!.Services;
             Settings = sp.GetRequiredService<SettingsService>();
-            var cacheService = sp.GetRequiredService<CacheService>();
+            _cacheService = sp.GetRequiredService<CacheService>();
             PersistentCache = sp.GetRequiredService<SettingsViewPersistentCache>();
             try
             {
-                _cacheStats = cacheService.IsInitialized ? cacheService.GetStats() : new CacheStats();
+                _cacheStats = _cacheService.IsInitialized ? _cacheService.GetStats() : new CacheStats();
             }
             catch (Exception ex)
             {
