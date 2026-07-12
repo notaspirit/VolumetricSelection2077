@@ -13,7 +13,7 @@ namespace VolumetricSelection2077.Services
         private static ILogger? _uiLogger;
         private static ILogger? _fileLogger;
         private static readonly List<ILogEventSink> _sinks = new();
-        private static SettingsService? _settingsService;
+        private static SettingsService _settingsService;
         
         /// <summary>
         /// Initializes the logger service
@@ -47,7 +47,7 @@ namespace VolumetricSelection2077.Services
 
             _uiLogger = uiLoggerConfig.CreateLogger();
             _fileLogger = fileLoggerConfig.CreateLogger();
-            _settingsService = App.AppHost?.Services.GetRequiredService<SettingsService>();
+            _settingsService = App.AppHost?.Services.GetRequiredService<SettingsService>()!;
         }
 
         /// <summary>
@@ -119,7 +119,7 @@ namespace VolumetricSelection2077.Services
         /// <param name="fileOnly">Only log to the file, but not the Ui</param>
         public static void Debug(string message, bool fileOnly = false)
         {
-            if (_settingsService?.Data.ExperimentalSettings.DebugMode ?? true)
+            if (_settingsService.Data.DebugMode)
             {
                 if (!fileOnly)
                     _uiLogger?.Debug(FormatMessage(message, "Debug  "));

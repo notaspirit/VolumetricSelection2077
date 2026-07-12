@@ -455,7 +455,7 @@
                         <ToggleSwitch
                             Grid.Column="1"
                             Grid.Row="0"
-                            IsChecked="{Binding Settings.Data.ExperimentalSettings.DebugMode}"
+                            IsChecked="{Binding Settings.Data.DebugMode}"
                             Margin="5"
                             OffContent=""
                             OnContent="" />
