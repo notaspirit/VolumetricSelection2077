@@ -12,29 +12,67 @@
         x:Class="VolumetricSelection2077.Views.BenchmarkResultComparer"
         x:DataType="viewModels:BenchmarkResultComparerViewModel"
         Title="BenchmarkResultComparer">
+    <Window.Styles>
+        <Style Selector="TextBlock.ComparisonText">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="TextBlock.ComparisonText[Tag=Faster]">
+            <Setter Property="Foreground" Value="Green"/>
+        </Style>
+        <Style Selector="TextBlock.ComparisonText[Tag=Slower]">
+            <Setter Property="Foreground" Value="Red"/>
+        </Style>
+    </Window.Styles>
+
     <Grid Margin="5">
         <Grid.ColumnDefinitions>*,*,*</Grid.ColumnDefinitions>
         
         <Grid Grid.Column="0" Margin="5">
             <Grid.RowDefinitions>30,*</Grid.RowDefinitions>
             <ComboBox Grid.Row="0" ItemsSource="{Binding ResultNames}"
-                      SelectionChanged="ResultComboBoxLeft_Changed"/>
+                      SelectionChanged="ResultComboBoxLeft_Changed"
+                      HorizontalAlignment="Stretch"/>
             
-            <TextBlock Grid.Row="1" Name="NameLeft" Text="{Binding SelectedResultLeft.Formatted}"/>
+            <ScrollViewer Grid.Row="1" Margin="0,10,0,0">
+                <ItemsControl ItemsSource="{Binding RowsLeft}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Text}" Classes="ComparisonText" Tag="{Binding Status}"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
         </Grid>
         
         <Grid Grid.Column="1" Margin="5">
             <Grid.RowDefinitions>30,*</Grid.RowDefinitions>
             
-            <TextBlock Grid.Row="1" Name="NameDiff" Text="{Binding Diff.Formatted}"/>
+            <ScrollViewer Grid.Row="1" Margin="0,10,0,0">
+                <ItemsControl ItemsSource="{Binding RowsDiff}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Text}" Classes="ComparisonText" Tag="{Binding Status}"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
         </Grid>
         
         <Grid Grid.Column="2" Margin="5">
             <Grid.RowDefinitions>30,*</Grid.RowDefinitions>
             <ComboBox Grid.Row="0" ItemsSource="{Binding ResultNames}"
-                      SelectionChanged="ResultComboBoxRight_Changed"/>
+                      SelectionChanged="ResultComboBoxRight_Changed"
+                      HorizontalAlignment="Stretch"/>
             
-            <TextBlock Grid.Row="1" Name="NameRight" Text="{Binding SelectedResultRight.Formatted}"/>
+            <ScrollViewer Grid.Row="1" Margin="0,10,0,0">
+                <ItemsControl ItemsSource="{Binding RowsRight}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Text}" Classes="ComparisonText" Tag="{Binding Status}"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
         </Grid>
     </Grid>
 </Window>

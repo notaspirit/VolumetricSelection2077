@@ -9,63 +9,35 @@ namespace VolumetricSelection2077.ViewModels;
 
 public enum BenchmarkResultSide { Left, Right }
 
+public enum ComparisonStatus
+{
+    Neutral,
+    Faster,
+    Slower
+}
+
+public class ComparisonItem
+{
+    public string Text { get; set; }
+    public ComparisonStatus Status { get; set; }
+
+    public ComparisonItem(string text, ComparisonStatus status = ComparisonStatus.Neutral)
+    {
+        Text = text;
+        Status = status;
+    }
+}
+
 public class BenchmarkResult
 {
     public string Name { get; set; }
     public Dictionary<string, List<TimeSpan>> Times { get; set; }
     public TimeSpan TotalTime => Times.Values.SelectMany(x => x).Aggregate(TimeSpan.Zero, (current, time) => current + time);
 
-    private BenchmarkResult? _other;
-    public string Formatted
-    {
-        get
-        {
-            if (_other == null)
-                return FormatSelf();
-            return FormatDiff();
-        }
-    }
-
-    public BenchmarkResult(string name, Dictionary<string, List<TimeSpan>> times, BenchmarkResult? other = null)
+    public BenchmarkResult(string name, Dictionary<string, List<TimeSpan>> times)
     {
         Name = name;
         Times = times;
-        _other = other;
-    }
-
-    private string FormatSelf()
-    {
-        var s = $"Sum\n{TotalTime.TotalMilliseconds}\n";
-            
-        foreach (var br in Times)
-        {
-            s += $"\n{br.Key}\n";
-            foreach (var time in br.Value)
-            {
-                s += $"{time.TotalMilliseconds}\n";
-            }
-        }
-        return s;
-    }
-
-    private string FormatDiff()
-    {
-        if (_other == null)
-            return "";
-        
-        var s = $"Sum\n{TotalTime.TotalMilliseconds} ({(TotalTime.TotalMilliseconds / _other.TotalTime.TotalMilliseconds * 100):F}%)\n";
-            
-        foreach (var (key, value) in Times)
-        {
-            s += $"\n{key}\n";
-            for (var i = 0; i < value.Count; i++)
-            {
-                var time = value[i];
-                var otherTime = _other.Times[key][i];
-                s += $"{time.TotalMilliseconds} ({(time.TotalMilliseconds / otherTime.TotalMilliseconds * 100):F}%)\n";
-            }
-        }
-        return s;
     }
 }
 
@@ -78,13 +50,15 @@ public partial class BenchmarkResultComparerViewModel : ObservableObject
 
     [ObservableProperty] private BenchmarkResult _selectedResultLeft;
     [ObservableProperty] private BenchmarkResult _selectedResultRight;
-    [ObservableProperty] private BenchmarkResult _diff;
+
+    [ObservableProperty] private List<ComparisonItem> _rowsLeft = new();
+    [ObservableProperty] private List<ComparisonItem> _rowsRight = new();
+    [ObservableProperty] private List<ComparisonItem> _rowsDiff = new();
 
     public BenchmarkResultComparerViewModel()
     {
         SelectedResultLeft = new BenchmarkResult("Left", new Dictionary<string, List<TimeSpan>>());
         SelectedResultRight = new BenchmarkResult("Right", new Dictionary<string, List<TimeSpan>>());
-        Diff = new BenchmarkResult("Diff", new Dictionary<string, List<TimeSpan>>());
     }
 
     public void SetBenchmarkResult(BenchmarkResultSide side, string name)
@@ -111,47 +85,78 @@ public partial class BenchmarkResultComparerViewModel : ObservableObject
                 throw new ArgumentOutOfRangeException(nameof(side), side, null);
         }
 
-        Diff = CalcDiff(SelectedResultLeft, SelectedResultRight);
+        UpdateComparison();
     }
-    
-    private BenchmarkResult CalcDiff(BenchmarkResult left, BenchmarkResult right)
-    {
-        var dict = new Dictionary<string, List<TimeSpan>>();
-        foreach (var (key, value) in right.Times)
-            dict.Add(key, value);
 
-        foreach (var (key, value) in left.Times)
+    private void UpdateComparison()
+    {
+        var left = SelectedResultLeft;
+        var right = SelectedResultRight;
+
+        var newLeft = new List<ComparisonItem>();
+        var newRight = new List<ComparisonItem>();
+        var newDiff = new List<ComparisonItem>();
+
+        // Total Time
+        newLeft.Add(new ComparisonItem("Sum"));
+        newLeft.Add(new ComparisonItem($"{left.TotalTime.TotalMilliseconds:F2}"));
+
+        newRight.Add(new ComparisonItem("Sum"));
+        newRight.Add(new ComparisonItem($"{right.TotalTime.TotalMilliseconds:F2}"));
+
+        newDiff.Add(new ComparisonItem("Sum"));
+        if (left.TotalTime == TimeSpan.Zero || right.TotalTime == TimeSpan.Zero)
         {
-            var list = TryGetOrCreateValue(dict, key);
-            FillList(list, Math.Max(list.Count, value.Count));
-            for (var i = 0; i < list.Count; i++)
-                list[i] -= value[i];
+            newDiff.Add(new ComparisonItem("-"));
         }
-        
-        foreach (var (key, value) in right.Times)
+        else
         {
-            var list = TryGetOrCreateValue(dict, key);
-            FillList(list, Math.Max(list.Count, value.Count));
+            var ratio = left.TotalTime.TotalMilliseconds / right.TotalTime.TotalMilliseconds;
+            var status = ratio < 0.999 ? ComparisonStatus.Faster : (ratio > 1.001 ? ComparisonStatus.Slower : ComparisonStatus.Neutral);
+            // Swapped subtraction to: Left - Right. If Left is smaller (faster), result is negative.
+            newDiff.Add(new ComparisonItem($"{left.TotalTime.TotalMilliseconds - right.TotalTime.TotalMilliseconds:F2} ({(ratio - 1.0) * 100:F1}%)", status));
         }
-        
-        return new BenchmarkResult("diff", dict, SelectedResultLeft);
-    }
 
-    private List<TimeSpan> TryGetOrCreateValue(Dictionary<string, List<TimeSpan>> dict, string key)
-    {
-        if (dict.TryGetValue(key, out var list))
-            return list;
-        
-        dict.Add(key, []);
-        return dict[key];
-    }
+        var allKeys = left.Times.Keys.Union(right.Times.Keys).OrderBy(x => x).ToList();
 
-    private void FillList(List<TimeSpan> list, int targetLength)
-    {
-        if (list.Count >= targetLength)
-            return;
-        
-        while (list.Count < targetLength)
-            list.Add(TimeSpan.Zero);
+        foreach (var key in allKeys)
+        {
+            newLeft.Add(new ComparisonItem("")); // Spacer
+            newRight.Add(new ComparisonItem(""));
+            newDiff.Add(new ComparisonItem(""));
+
+            newLeft.Add(new ComparisonItem($"--- {key} ---"));
+            newRight.Add(new ComparisonItem($"--- {key} ---"));
+            newDiff.Add(new ComparisonItem($"--- {key} ---"));
+
+            var leftTimes = left.Times.TryGetValue(key, out var lt) ? lt : new List<TimeSpan>();
+            var rightTimes = right.Times.TryGetValue(key, out var rt) ? rt : new List<TimeSpan>();
+
+            var maxCount = Math.Max(leftTimes.Count, rightTimes.Count);
+
+            for (int i = 0; i < maxCount; i++)
+            {
+                var lVal = i < leftTimes.Count ? leftTimes[i] : (TimeSpan?)null;
+                var rVal = i < rightTimes.Count ? rightTimes[i] : (TimeSpan?)null;
+
+                newLeft.Add(new ComparisonItem(lVal.HasValue ? $"{lVal.Value.TotalMilliseconds:F2}" : "-"));
+                newRight.Add(new ComparisonItem(rVal.HasValue ? $"{rVal.Value.TotalMilliseconds:F2}" : "-"));
+
+                if (lVal.HasValue && rVal.HasValue)
+                {
+                    var ratio = lVal.Value.TotalMilliseconds / rVal.Value.TotalMilliseconds;
+                    var status = ratio < 0.999 ? ComparisonStatus.Faster : (ratio > 1.001 ? ComparisonStatus.Slower : ComparisonStatus.Neutral);
+                    newDiff.Add(new ComparisonItem($"{lVal.Value.TotalMilliseconds - rVal.Value.TotalMilliseconds:F2} ({(ratio - 1.0) * 100:F1}%)", status));
+                }
+                else
+                {
+                    newDiff.Add(new ComparisonItem("-"));
+                }
+            }
+        }
+
+        RowsLeft = newLeft;
+        RowsRight = newRight;
+        RowsDiff = newDiff;
     }
 }
