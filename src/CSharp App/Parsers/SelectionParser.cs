@@ -7,7 +7,7 @@ using VolumetricSelection2077.Services;
 
 namespace VolumetricSelection2077.Parsers;
 
-public class SelectionParser
+public static class SelectionParser
 {
     public static (bool, string, SelectionInput?) ParseSelection(string input)
     {
@@ -19,7 +19,7 @@ public class SelectionParser
 
         if (!rotX.HasValue || !rotY.HasValue || !rotZ.HasValue)
         {
-            rotX = 0; rotY = 0; rotZ = 0;
+            return (false, "No rotation values found!", null);
         }
         
         float? quatRotX = jsonInput?["box"]?["rotationQuat"]?["i"]?.GetValue<float>();
