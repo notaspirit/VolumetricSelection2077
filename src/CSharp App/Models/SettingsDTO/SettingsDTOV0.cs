@@ -11,16 +11,6 @@ using VolumetricSelection2077.Enums;
 
 namespace VolumetricSelection2077.Models.SettingsDTO;
 
-public partial class ExperimentalSettingsDTOV0 : ObservableObject
-{
-    [ObservableProperty] private bool _debugMode;
-
-    public ExperimentalSettingsDTOV0()
-    {
-        DebugMode = false;
-    }
-}
-
 public partial class SettingsDTOV0 : SettingsDTO
 {
     [ObservableProperty] private string _gameDirectory;
@@ -62,7 +52,7 @@ public partial class SettingsDTOV0 : SettingsDTO
     [ObservableProperty] private bool _autoScrollLogViewer;
     [ObservableProperty] private bool _rememberFailedResources;
     
-    [ObservableProperty] private ExperimentalSettingsDTOV0 _experimentalSettings;
+    [ObservableProperty] private bool _debugMode;
     
     
     public SettingsDTOV0()
@@ -96,8 +86,8 @@ public partial class SettingsDTOV0 : SettingsDTO
         MaxBackupFiles = 10;
         AutoScrollLogViewer = true;
         RememberFailedResources = true;
-        
-        ExperimentalSettings = new ExperimentalSettingsDTOV0();
+
+        DebugMode = false;
     }
     
     public override void Deserialize(string json) 
@@ -161,8 +151,8 @@ public partial class SettingsDTOV0 : SettingsDTO
         AutoScrollLogViewer = j.Value<bool?>(nameof(AutoScrollLogViewer)) ?? AutoScrollLogViewer;
         
         RememberFailedResources = j.Value<bool?>(nameof(RememberFailedResources)) ?? RememberFailedResources;
-        
-        ExperimentalSettings.DebugMode = j.Value<bool?>("DebugMode") ?? ExperimentalSettings.DebugMode;
+
+        DebugMode = j.Value<bool?>(nameof(DebugMode)) ?? DebugMode;
     }
     
     public override string Serialize() => JsonConvert.SerializeObject(this, JsonSerializerPresets.Default);

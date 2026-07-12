@@ -450,7 +450,7 @@
                     Content="{x:Static resources:Labels.DebugMenu}"
                     Grid.Column="3"
                     IsEnabled="{Binding DebugWindowButtonEnabled}"
-                    IsVisible="{Binding Settings.Data.ExperimentalSettings.DebugMode}"
+                    IsVisible="{Binding Settings.Data.DebugMode}"
                     Margin="5,0,0,0">
                     <Button.Styles>
                         <Style Selector="Button:pointerover /template/ ContentPresenter">
