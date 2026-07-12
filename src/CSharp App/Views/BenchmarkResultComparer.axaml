@@ -1,0 +1,40 @@
+<Window xmlns="https://github.com/avaloniaui"
+        Background="#171c26"
+        MinHeight="50"
+        MinWidth="355"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="CenterOwner"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viewModels="clr-namespace:VolumetricSelection2077.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="VolumetricSelection2077.Views.BenchmarkResultComparer"
+        x:DataType="viewModels:BenchmarkResultComparerViewModel"
+        Title="BenchmarkResultComparer">
+    <Grid Margin="5">
+        <Grid.ColumnDefinitions>*,*,*</Grid.ColumnDefinitions>
+        
+        <Grid Grid.Column="0" Margin="5">
+            <Grid.RowDefinitions>30,*</Grid.RowDefinitions>
+            <ComboBox Grid.Row="0" ItemsSource="{Binding ResultNames}"
+                      SelectionChanged="ResultComboBoxLeft_Changed"/>
+            
+            <TextBlock Grid.Row="1" Name="NameLeft" Text="{Binding SelectedResultLeft.Formatted}"/>
+        </Grid>
+        
+        <Grid Grid.Column="1" Margin="5">
+            <Grid.RowDefinitions>30,*</Grid.RowDefinitions>
+            
+            <TextBlock Grid.Row="1" Name="NameDiff" Text="{Binding Diff.Formatted}"/>
+        </Grid>
+        
+        <Grid Grid.Column="2" Margin="5">
+            <Grid.RowDefinitions>30,*</Grid.RowDefinitions>
+            <ComboBox Grid.Row="0" ItemsSource="{Binding ResultNames}"
+                      SelectionChanged="ResultComboBoxRight_Changed"/>
+            
+            <TextBlock Grid.Row="1" Name="NameRight" Text="{Binding SelectedResultRight.Formatted}"/>
+        </Grid>
+    </Grid>
+</Window>

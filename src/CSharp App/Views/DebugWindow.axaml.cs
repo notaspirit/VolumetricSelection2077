@@ -109,4 +109,9 @@ public partial class DebugWindow : Window
     {
         FlyoutBase.ShowAttachedFlyout(sender as Button);
     }
+    
+    private void CompareResults_Click(object? sender, RoutedEventArgs e)
+    {
+        new BenchmarkResultComparer().ShowDialog(this);
+    }
 }

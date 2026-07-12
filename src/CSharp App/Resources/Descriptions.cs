@@ -63,5 +63,6 @@ namespace VolumetricSelection2077.Resources
             public static string  DestructibleMeshTreatment { get; } = "Destructible Mesh Treatment";
             public static string AutoScroll { get; } = "Auto Scroll";
             public static string RememberFailedResources { get; } = "Clear Known Bad Resources";
+            public static string CompareResults { get; } = "Compare Results";
         }
 }
