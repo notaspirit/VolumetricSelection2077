@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using HelixToolkit.SharpDX.Core;
 using MessagePack;
 using SharpDX;
 using VolumetricSelection2077.Converters.Simple;
@@ -41,16 +42,18 @@ public class DirectAbbrSectorParser
     
         foreach (var efile in input.EmbeddedFiles)
         {
-            if ((efile?.FileName.ToString()?.EndsWith(".mesh") ?? false) || (efile?.FileName.ToString()?.EndsWith(".w2mesh") ?? false))
+            var fileName = efile.FileName.ToString() ?? "";
+
+            if (!fileName.EndsWith(".mesh") && !fileName.EndsWith(".w2mesh"))
+                continue;
+            
+            var parsedMesh = DirectAbbrMeshParser.ParseFromEmbedded(efile);
+            if (parsedMesh is null)
             {
-                var parsedMesh = DirectAbbrMeshParser.ParseFromEmbedded(efile);
-                if (parsedMesh is null)
-                {
-                    Logger.Warning($"Failed to parse embedded file {efile.FileName}");
-                    continue;
-                }
-                _cacheService.WriteSingleEntry(new WriteCacheRequest(efile.FileName, MessagePackSerializer.Serialize(parsedMesh)));
+                Logger.Warning($"Failed to parse embedded file {efile.FileName}");
+                continue;
             }
+            _cacheService.WriteSingleEntry(new WriteCacheRequest(fileName, MessagePackSerializer.Serialize(parsedMesh)));
         }
         
         var nodes = new AbbrStreamingSectorNodesEntry[sector.Nodes.Count];
@@ -200,6 +203,13 @@ public class DirectAbbrSectorParser
                     transforms = new AbbrSectorTransform[instancedNode.WorldTransformsBuffer.NumElements];
                     var transformsInstancedBuffer = instancedNode.WorldTransformsBuffer.SharedDataBuffer.Chunk.Buffer.Data as WorldTransformsBuffer;
                     int transformsInstancedIndex = 0;
+                    
+                    var instancedMeshNodeBoundsMin = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+                    var instancedMeshNodeBoundsMax = new Vector3(float.MinValue, float.MinValue, float.MinValue);
+                    var token = _gameFileService.GetCMesh(instancedNode.Mesh.DepotPath);
+                    if (token.Resource is not AbbrMesh instancedMesh)
+                        goto DefaultLabel;
+                    
                     foreach (var transform in transformsInstancedBuffer.Transforms.ToArray().AsSpan((int)(uint)instancedNode.WorldTransformsBuffer.StartIndex, (int)(uint)instancedNode.WorldTransformsBuffer.NumElements))
                     {
                         transforms[transformsInstancedIndex] = new AbbrSectorTransform()
@@ -208,12 +218,32 @@ public class DirectAbbrSectorParser
                             Rotation = WolvenkitToSharpDXConverter.Quaternion(transform.Rotation),
                             Scale = WolvenkitToSharpDXConverter.Vector3(transform.Scale)
                         };
+
+                        foreach (var submesh in instancedMesh.SubMeshes)
+                        {
+                            foreach (var corner in submesh.BoundingBox.GetCorners())
+                            {
+                                var transformedCorner = ApplyTransform(corner, transform.Translation,
+                                    transform.Rotation, transform.Scale);
+                                
+                                instancedMeshNodeBoundsMin = Vector3.Min(instancedMeshNodeBoundsMin, transformedCorner);
+                                instancedMeshNodeBoundsMax = Vector3.Max(instancedMeshNodeBoundsMax, transformedCorner);
+                            }
+                        }
                         transformsInstancedIndex++;
                     }
+                    
+                    nodeBoundingBox = new BoundingBox(instancedMeshNodeBoundsMin, instancedMeshNodeBoundsMax);
                     break;
                 case worldInstancedDestructibleMeshNode instancedDestructibleNode:
                     try
                     {
+                        var instancedDestMeshNodeBoundsMin = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+                        var instancedDestMeshNodeBoundsMax = new Vector3(float.MinValue, float.MinValue, float.MinValue);
+                        var instancedDestToken = _gameFileService.GetCMesh(instancedDestructibleNode.Mesh.DepotPath);
+                        if (instancedDestToken.Resource is not AbbrMesh instancedDestMesh)
+                            goto DefaultLabel;
+                        
                         transforms =
                             new AbbrSectorTransform[instancedDestructibleNode.CookedInstanceTransforms.NumElements];
                         var transformsInstancedDestructibleBuffer =
@@ -232,8 +262,23 @@ public class DirectAbbrSectorParser
                                            WolvenkitToSharpDXConverter.Quaternion(nodeDataEntry.Orientation),
                                 Scale = WolvenkitToSharpDXConverter.Vector3(nodeDataEntry.Scale)
                             };
+                            
+                            foreach (var submesh in instancedDestMesh.SubMeshes)
+                            {
+                                foreach (var corner in submesh.BoundingBox.GetCorners())
+                                {
+                                    var transformedCorner = ApplyTransform(corner, transform.Position,
+                                        transform.Orientation, new WolvenKit.RED4.Types.Vector3());
+                                    
+                                    instancedDestMeshNodeBoundsMin = Vector3.Min(instancedDestMeshNodeBoundsMin, transformedCorner);
+                                    instancedDestMeshNodeBoundsMax = Vector3.Max(instancedDestMeshNodeBoundsMax, transformedCorner);
+                                }
+                            }
+                            
                             transformsInstancedDestructibleIndex++;
                         }
+                        
+                        nodeBoundingBox = new BoundingBox(instancedDestMeshNodeBoundsMin, instancedDestMeshNodeBoundsMax);
                     }
                     catch (Exception ex)
                     {
@@ -344,6 +389,50 @@ public class DirectAbbrSectorParser
                         instancedOccluderInstanceIndex++;
                     }   
                     break;
+                case worldWaterPatchNode waterPatchNode:
+                    var waterPatchNodeToken = _gameFileService.GetCMesh(waterPatchNode.Mesh.DepotPath);
+                    if (waterPatchNodeToken.Resource is AbbrMesh waterPatchNodeMesh)
+                    {
+                        var waterPatchNodeBoundsMin = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+                        var waterPatchNodeBoundsMax = new Vector3(float.MinValue, float.MinValue, float.MinValue);
+
+                        foreach (var submesh in waterPatchNodeMesh.SubMeshes)
+                        {
+                            foreach (var corner in submesh.BoundingBox.GetCorners())
+                            {
+                                var transformedCorner = ApplyTransform(corner, nodeDataEntry.Position, nodeDataEntry.Orientation, nodeDataEntry.Scale);
+                                
+                                waterPatchNodeBoundsMin = Vector3.Min(waterPatchNodeBoundsMin, transformedCorner);
+                                waterPatchNodeBoundsMax = Vector3.Max(waterPatchNodeBoundsMax, transformedCorner);
+                            }
+                        }
+
+                        waterPatchNodeBoundsMin.Z -= waterPatchNode.Depth;
+                        
+                        nodeBoundingBox = new BoundingBox(waterPatchNodeBoundsMin, waterPatchNodeBoundsMax);
+                    }
+                    goto DefaultLabel;
+                case worldMeshNode meshNode:
+                    var resourceToken = _gameFileService.GetCMesh(meshNode.Mesh.DepotPath);
+                    if (resourceToken.Resource is AbbrMesh abbrMesh)
+                    {
+                        var meshNodeBoundsMin = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+                        var meshNodeBoundsMax = new Vector3(float.MinValue, float.MinValue, float.MinValue);
+
+                        foreach (var submesh in abbrMesh.SubMeshes)
+                        {
+                            foreach (var corner in submesh.BoundingBox.GetCorners())
+                            {
+                                var transformedCorner = ApplyTransform(corner, nodeDataEntry.Position, nodeDataEntry.Orientation, nodeDataEntry.Scale);
+                                
+                                meshNodeBoundsMin = Vector3.Min(meshNodeBoundsMin, transformedCorner);
+                                meshNodeBoundsMax = Vector3.Max(meshNodeBoundsMax, transformedCorner);
+                            }
+                        }
+                        
+                        nodeBoundingBox = new BoundingBox(meshNodeBoundsMin, meshNodeBoundsMax);
+                    }
+                    goto DefaultLabel;
                 default:
                     DefaultLabel:
                     {
@@ -372,5 +461,17 @@ public class DirectAbbrSectorParser
             Nodes = nodes,
             NodeData = nodeDataOut
         };
+    }
+    
+    private SharpDX.Vector3 ApplyTransform(Vector3 point, WolvenKit.RED4.Types.Vector3 translation,  WolvenKit.RED4.Types.Quaternion rotation,  WolvenKit.RED4.Types.Vector3 scale)
+    {
+        var matrix = Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(rotation)) * Matrix.Scaling(WolvenkitToSharpDXConverter.Vector3(scale)) * Matrix.Translation(WolvenkitToSharpDXConverter.Vector3(translation));
+        return Vector3.Transform(point, matrix).ToVector3();
+    }
+    
+    private SharpDX.Vector3 ApplyTransform(Vector3 point, WolvenKit.RED4.Types.Vector4 translation,  WolvenKit.RED4.Types.Quaternion rotation,  WolvenKit.RED4.Types.Vector3 scale)
+    {
+        var matrix = Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(rotation)) * Matrix.Scaling(WolvenkitToSharpDXConverter.Vector3(scale)) * Matrix.Translation(WolvenkitToSharpDXConverter.Vector3(translation));
+        return Vector3.Transform(point, matrix).ToVector3();
     }
 }
