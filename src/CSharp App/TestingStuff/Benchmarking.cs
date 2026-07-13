@@ -78,6 +78,9 @@ public class Benchmarking
                 continue;
             }
 
+            _cacheService.ClearDatabase(CacheDatabases.Vanilla);
+            _cacheService.ClearDatabase(CacheDatabases.Modded);
+            
             for (var j = 0; j < BenchmarkCount; j++)
             {
                 var result = await RunBenchmark(dir, benchmarkResultsDir);

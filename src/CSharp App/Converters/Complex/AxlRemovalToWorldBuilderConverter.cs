@@ -21,6 +21,7 @@ using WolvenKit.RED4.CR2W.JSON;
 using WolvenKit.RED4.Types;
 using Activator = System.Activator;
 using Collision = VolumetricSelection2077.Models.WorldBuilder.Spawn.Collision.Collision;
+using Quaternion = SharpDX.Quaternion;
 using Vector4 = SharpDX.Vector4;
 using WEnums = WolvenKit.RED4.Types.Enums;
 
@@ -228,9 +229,9 @@ public class AxlRemovalToWorldBuilderConverter
                         Name = GetSpawnableName(foliageNode),
                         Spawnable = new Mesh
                         {
-                            Position = new Vector4(transform.Position, 1),
-                            EulerRotation = transform.Rotation,
-                            Scale = transform.Scale,
+                            Position = new Vector4(transform.TranslationVector, 1),
+                            EulerRotation = Quaternion.RotationMatrix(transform),
+                            Scale = transform.ScaleVector,
                             
                             PrimaryRange = nodeDataEntry.MaxStreamingDistance,
                             SecondaryRange = nodeDataEntry.UkFloat1,
@@ -268,9 +269,9 @@ public class AxlRemovalToWorldBuilderConverter
                                 Name = GetSpawnableName(instancedDestructibleMeshNode),
                                 Spawnable = new DynamicMesh
                                 {
-                                    Position = new Vector4(transform.Position, 1),
-                                    EulerRotation = transform.Rotation,
-                                    Scale = transform.Scale,
+                                    Position = new Vector4(transform.TranslationVector, 1),
+                                    EulerRotation = Quaternion.RotationMatrix(transform),
+                                    Scale = transform.ScaleVector,
                     
                                     CastLocalShadows = instancedDestructibleMeshNode.CastLocalShadows,
                                     CastShadows = instancedDestructibleMeshNode.CastShadows,
@@ -291,9 +292,9 @@ public class AxlRemovalToWorldBuilderConverter
                                 Name = GetSpawnableName(instancedDestructibleMeshNode),
                                 Spawnable = new Mesh()
                                 {
-                                    Position = new Vector4(transform.Position, 1),
-                                    EulerRotation = transform.Rotation,
-                                    Scale = transform.Scale,
+                                    Position = new Vector4(transform.TranslationVector, 1),
+                                    EulerRotation = Quaternion.RotationMatrix(transform),
+                                    Scale = transform.ScaleVector,
                     
                                     CastLocalShadows = instancedDestructibleMeshNode.CastLocalShadows,
                                     CastShadows = instancedDestructibleMeshNode.CastShadows,
@@ -561,9 +562,9 @@ public class AxlRemovalToWorldBuilderConverter
                         Name = GetSpawnableName(instancedMeshNode),
                         Spawnable = new Mesh
                         {
-                            Position = new Vector4(transform.Position, 1),
-                            EulerRotation = transform.Rotation,
-                            Scale = transform.Scale,
+                            Position = new Vector4(transform.TranslationVector, 1),
+                            EulerRotation = Quaternion.RotationMatrix(transform),
+                            Scale = transform.ScaleVector,
                     
                             CastLocalShadows = instancedMeshNode.CastLocalShadows,
                             CastShadows = instancedMeshNode.CastShadows,

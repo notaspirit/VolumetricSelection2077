@@ -238,13 +238,13 @@ public class ProcessService
                     }
                     return null;
                 }
-                var (isInside, instances) = CollisionCheckService.IsMeshInsideBox(mesh,
+                var instances = CollisionCheckService.IsMeshInsideBox(mesh,
                     selectionBox.Obb,
                     selectionBox.Aabb,
                     nodeDataEntry.Transforms,
                     checkAllTransforms: isInstanced);
 
-                if (!isInside) 
+                if (instances.Count == 0) 
                     return null;
                 
                 if (isInstanced)
@@ -267,7 +267,6 @@ public class ProcessService
                 {
                     var shapeIntersects = false;
                     var sectorHash = nodeEntry.SectorHash;
-                    var transformActor = actor.Transform;
                     
                     foreach (var shape in actor.Shapes)
                     {
@@ -287,7 +286,7 @@ public class ProcessService
                                     }
                                     continue;
                                 }
-                                bool isCollisionMeshInsideBox = CollisionCheckService.IsCollisonMeshInsideSelectionBox(collisionMesh, selectionBox.Obb, selectionBox.Aabb, transformActor, shape.Transform);
+                                var isCollisionMeshInsideBox = CollisionCheckService.IsMeshInsideBox(collisionMesh, selectionBox.Obb, selectionBox.Aabb, [shape.Transform]).Count == 0;
                                 if (isCollisionMeshInsideBox)
                                 {
                                     shapeIntersects = true;
@@ -295,7 +294,7 @@ public class ProcessService
                                 }
                                 break;
                             case WEnums.physicsShapeType.Box:
-                                bool isCollisionBoxInsideBox = CollisionCheckService.IsCollisionBoxInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb);
+                                bool isCollisionBoxInsideBox = CollisionCheckService.IsCollisionBoxInsideSelectionBox(shape, selectionBox.Aabb,  selectionBox.Obb);
                                 if (isCollisionBoxInsideBox)
                                 {
                                     shapeIntersects = true;
@@ -303,7 +302,7 @@ public class ProcessService
                                 }
                                 break;
                             case WEnums.physicsShapeType.Capsule:
-                                bool isCollisionCapsuleInsideBox = CollisionCheckService.IsCollisionCapsuleInsideSelectionBox(shape, transformActor, selectionBox.Aabb,  selectionBox.Obb);
+                                bool isCollisionCapsuleInsideBox = CollisionCheckService.IsCollisionCapsuleInsideSelectionBox(shape, selectionBox.Aabb,  selectionBox.Obb);
                                 if (isCollisionCapsuleInsideBox)
                                 {
                                     shapeIntersects = true;
@@ -311,7 +310,7 @@ public class ProcessService
                                 }
                                 break;
                             case WEnums.physicsShapeType.Sphere:
-                                bool intersects = CollisionCheckService.IsCollisionSphereInsideSelectionBox(shape, transformActor, selectionBox.Obb);
+                                bool intersects = CollisionCheckService.IsCollisionSphereInsideSelectionBox(shape, selectionBox.Obb);
                                 if (intersects)
                                 {
                                     shapeIntersects = true;
@@ -342,15 +341,13 @@ public class ProcessService
             case VEnums.CollisionCheckTypes.Default:
                 foreach (var transform in nodeDataEntry.Transforms)
                 {
-                    var intersection = selectionBox.Obb.Contains(transform.Position);
-                    if (intersection != ContainmentType.Disjoint)
+                    if (selectionBox.Obb.Contains(transform.TranslationVector) == ContainmentType.Disjoint)
+                        continue;
+                    return new AxlRemovalNodeDeletion()
                     {
-                        return new AxlRemovalNodeDeletion()
-                        {
-                            Index = index,
-                            Type = nodeEntry.Type.ToString()
-                        };
-                    }
+                        Index = index,
+                        Type = nodeEntry.Type.ToString()
+                    };
                 }
                 return null;
         }

@@ -122,22 +122,18 @@ public class BoundingBoxBuilderService
                         }
                         foreach (var transform in nodeDataEntry.Transforms)
                         {
-                            min = Vector3.Min(min, transform.Position);
-                            max = Vector3.Max(max, transform.Position);
+                            min = Vector3.Min(min, transform.TranslationVector);
+                            max = Vector3.Max(max, transform.TranslationVector);
                         }
                         continue;
                     }
 
                     foreach (var transform in nodeDataEntry.Transforms)
                     {
-                        var transformMatrix = Matrix.Scaling(transform.Scale) *
-                                              Matrix.RotationQuaternion(transform.Rotation) *
-                                              Matrix.Translation(transform.Position);
-                        
                         foreach (var submesh in mesh.SubMeshes)
                         {
                             var transformedObb = new OrientedBoundingBox(submesh.BoundingBox);
-                            transformedObb.Transform(transformMatrix);
+                            transformedObb.Transform(transform);
                             foreach (var corner in transformedObb.GetCorners())
                             {
                                 min = Vector3.Min(min, corner);
@@ -149,16 +145,8 @@ public class BoundingBoxBuilderService
                 {
                     foreach (var actor in nodeEntry.Actors)
                     {
-                        var actorTransformMatrix = Matrix.Scaling(actor.Transform.Scale) *
-                                                      Matrix.RotationQuaternion(actor.Transform.Rotation) *
-                                                      Matrix.Translation(actor.Transform.Position);
-                        
                         foreach (var shape in actor.Shapes)
                         {
-                            var shapeTransformMatrix = Matrix.Scaling(new Vector3(1,1,1)) * 
-                                                              Matrix.RotationQuaternion(shape.Transform.Rotation) * 
-                                                              Matrix.Translation(shape.Transform.Position);
-                            var summedTransformMatrix = shapeTransformMatrix * actorTransformMatrix;
                             switch (shape.ShapeType)
                             {
                                 case WEnums.physicsShapeType.TriangleMesh:
@@ -167,7 +155,7 @@ public class BoundingBoxBuilderService
                                         shape.Hash is not ulong shapeHash)
                                     {
                                         Logger.Warning($"Node Data entry contains invalid sector hash {nodeEntry.SectorHash} or shape hash {shape.Hash}, using only position data");
-                                        var combinedPosition = shape.Transform.Position + actor.Transform.Position;
+                                        var combinedPosition = shape.Transform.TranslationVector;
                                         min = Vector3.Min(min, combinedPosition);
                                         max = Vector3.Max(max, combinedPosition);
                                         continue;
@@ -184,7 +172,7 @@ public class BoundingBoxBuilderService
                                             case VEnums.ResourceTokenResult.Failure: Logger.Warning($"Failed to get collision mesh at sector hash {sectorHash} : shape hash {shapeHash}, using only position data"); break;
                                             default: Logger.Warning($"Unknown resource token result {collisionMeshToken.Result} for collision mesh at sector hash {sectorHash} : shape hash {shapeHash}, using only position data"); break;
                                         }
-                                        var combinedPosition = shape.Transform.Position + actor.Transform.Position;
+                                        var combinedPosition = shape.Transform.TranslationVector;
                                         min = Vector3.Min(min, combinedPosition);
                                         max = Vector3.Max(max, combinedPosition);
                                         continue;
@@ -193,7 +181,7 @@ public class BoundingBoxBuilderService
                                     foreach (var submesh in collisionMesh.SubMeshes)
                                     {
                                         OrientedBoundingBox obb = new(submesh.BoundingBox);
-                                        obb.Transform(summedTransformMatrix);
+                                        obb.Transform(shape.Transform);
                                         foreach (var corner in obb.GetCorners())
                                         {
                                             min = Vector3.Min(min, corner);
@@ -202,8 +190,8 @@ public class BoundingBoxBuilderService
                                     }
                                     break;
                                 case WEnums.physicsShapeType.Box:
-                                    OrientedBoundingBox collisionBox = new(-shape.Transform.Scale, shape.Transform.Scale);
-                                    collisionBox.Transform(summedTransformMatrix);
+                                    OrientedBoundingBox collisionBox = new(-shape.Scale, shape.Scale);
+                                    collisionBox.Transform(shape.Transform);
                                     foreach (var corner in collisionBox.GetCorners())
                                     {
                                         min = Vector3.Min(min, corner);
@@ -211,11 +199,16 @@ public class BoundingBoxBuilderService
                                     }
                                     break;
                                 case WEnums.physicsShapeType.Capsule:
-                                    float height = shape.Transform.Scale.Y + 2 * actor.Transform.Scale.X;   
-                                    Vector3 shapeSizeAsBox = new Vector3(shape.Transform.Scale.X, shape.Transform.Scale.X, height / 2f);
+                                    // M11 = ScaleVector.X
+                                    // shape transform is the combination of actor and shape transforms, with the shape scale we can calculate
+                                    // the actor scale
+                                    var actorScaleX = Math.Abs(shape.Scale.X - shape.Transform.M11);
+        
+                                    var height = shape.Scale.Y + 2 * actorScaleX;
+                                    var shapeSizeAsBox = new Vector3(shape.Scale.X, shape.Scale.X, height / 2f);
                                     
                                     OrientedBoundingBox capsuleObb = new(-shapeSizeAsBox, shapeSizeAsBox);
-                                    capsuleObb.Transform(summedTransformMatrix);
+                                    capsuleObb.Transform(shape.Transform);
                                     foreach (var corner in capsuleObb.GetCorners())
                                     {
                                         min = Vector3.Min(min, corner);
@@ -223,8 +216,8 @@ public class BoundingBoxBuilderService
                                     }
                                     break;
                                 case WEnums.physicsShapeType.Sphere:
-                                    OrientedBoundingBox sphereObb = new(new Vector3(-shape.Transform.Scale.X), new Vector3(shape.Transform.Scale.X));
-                                    sphereObb.Transform(summedTransformMatrix);
+                                    OrientedBoundingBox sphereObb = new(new Vector3(-shape.Scale.X), new Vector3(shape.Scale.X));
+                                    sphereObb.Transform(shape.Transform);
                                     foreach (var corner in sphereObb.GetCorners())
                                     {
                                         min = Vector3.Min(min, corner);
@@ -239,8 +232,8 @@ public class BoundingBoxBuilderService
                 {
                     foreach (var transform in nodeDataEntry.Transforms)
                     {
-                        min = Vector3.Min(min, transform.Position);
-                        max = Vector3.Max(max, transform.Position);
+                        min = Vector3.Min(min, transform.TranslationVector);
+                        max = Vector3.Max(max, transform.TranslationVector);
                     }
                 }
             }

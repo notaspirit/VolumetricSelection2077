@@ -16,23 +16,10 @@ namespace VolumetricSelection2077.Models
     }
 
     [MessagePackObject]
-    public class AbbrSectorTransform
-    {
-        [Key(0)]
-        public Vector3 Position { get; set; }
-    
-        [Key(1)]
-        public Quaternion Rotation { get; set; }
-    
-        [Key(2)]
-        public Vector3 Scale { get; set; }
-    }
-
-    [MessagePackObject]
     public class AbbrStreamingSectorNodeDataEntry
     {
         [Key(0)]
-        public required AbbrSectorTransform[] Transforms { get; set; }
+        public required Matrix[] Transforms { get; set; }
     
         [Key(1)]
         public int NodeIndex { get; set; }
@@ -64,9 +51,6 @@ namespace VolumetricSelection2077.Models
     public class AbbrCollisionActors
     {
         [Key(0)]
-        public required AbbrSectorTransform Transform { get; set; }
-    
-        [Key(1)]
         public AbbrActorShapes[]? Shapes { get; set; }
     }
 
@@ -74,12 +58,15 @@ namespace VolumetricSelection2077.Models
     public class AbbrActorShapes
     {
         [Key(0)]
-        public required AbbrSectorTransform Transform { get; set; }
-    
+        public required Matrix Transform { get; set; }
+        
         [Key(1)]
-        public ulong? Hash { get; set; }
+        public required Vector3 Scale { get; set; }
     
         [Key(2)]
+        public ulong? Hash { get; set; }
+    
+        [Key(3)]
         public required WolvenKit.RED4.Types.Enums.physicsShapeType ShapeType { get; set; }
     }
 

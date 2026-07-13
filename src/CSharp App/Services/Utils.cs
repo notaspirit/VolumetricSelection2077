@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
 using PeNet.Header.Resource;
+using SharpDX;
+using VolumetricSelection2077.Converters.Simple;
 using VolumetricSelection2077.Enums;
 using VolumetricSelection2077.Models;
 using YamlDotNet.Serialization;
@@ -127,5 +129,22 @@ namespace VolumetricSelection2077.Services
 
             return null;
         }
+        
+        public static Matrix BuildMatrix(Vector3 position, Quaternion rotation, Vector3 scale)
+            => Matrix.Scaling(scale) * 
+               Matrix.RotationQuaternion(rotation) * 
+               Matrix.Translation(position);
+
+        public static Matrix BuildMatrix(WolvenKit.RED4.Types.Vector3 position, WolvenKit.RED4.Types.Quaternion rotation,
+            WolvenKit.RED4.Types.Vector3 scale)
+            => BuildMatrix(WolvenkitToSharpDXConverter.Vector3(position),
+                WolvenkitToSharpDXConverter.Quaternion(rotation),
+                WolvenkitToSharpDXConverter.Vector3(scale));
+    
+        public static Matrix BuildMatrix(WolvenKit.RED4.Types.Vector4 position, WolvenKit.RED4.Types.Quaternion rotation,
+            WolvenKit.RED4.Types.Vector3 scale)
+            => BuildMatrix(WolvenkitToSharpDXConverter.Vector3(position),
+                WolvenkitToSharpDXConverter.Quaternion(rotation),
+                WolvenkitToSharpDXConverter.Vector3(scale)); 
     }
 }

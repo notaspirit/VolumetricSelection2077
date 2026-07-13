@@ -3,6 +3,7 @@ using SharpDX;
 using VolumetricSelection2077.Models;
 using System.Collections.Generic;
 using System.Linq;
+using HelixToolkit.SharpDX.Core;
 using OrientedBoundingBox = SharpDX.OrientedBoundingBox;
 using Plane = SharpDX.Plane;
 using Vector3 = SharpDX.Vector3;
@@ -16,124 +17,49 @@ public static class CollisionCheckService
     /// Checks if a mesh node has overlap with the obb
     /// </summary>
     /// <param name="mesh"></param>
-    /// <param name="selectionBoxOBB"></param>
+    /// <param name="selectionBoxObb"></param>
     /// <param name="selectionBoxAabb"></param>
     /// <param name="transforms"></param>
-    /// <param name="matrixTransform"></param>
     /// <param name="checkAllTransforms"></param>
     /// <returns></returns>
-    public static (bool, List<int>) IsMeshInsideBox(AbbrMesh mesh, OrientedBoundingBox selectionBoxOBB, BoundingBox selectionBoxAabb, AbbrSectorTransform[]? transforms, Matrix? matrixTransform = null, bool checkAllTransforms = false)
+    public static List<int> IsMeshInsideBox(AbbrMesh mesh, OrientedBoundingBox selectionBoxObb, BoundingBox selectionBoxAabb, Matrix[] transforms, bool checkAllTransforms = false)
     {
         var outInstances = new List<int>();
-        
-        if (transforms == null && matrixTransform == null)
-        {
-            Logger.Error("IsMeshInsideBox: No transform provided, aborting.");
-            return (false, outInstances);
-        }
-
-        if (matrixTransform != null)
+        var transformIndex = 0;
+        foreach (var transform in transforms)
         {
             foreach (var submesh in mesh.SubMeshes)
             {
-                if (!IsSubMeshInsideBox(submesh, selectionBoxOBB, selectionBoxAabb, (Matrix)matrixTransform))
+                if (!IsSubMeshInsideBox(submesh, selectionBoxObb, selectionBoxAabb, transform))
                     continue;
+                
+                outInstances.Add(transformIndex);
+                
                 if (!checkAllTransforms)
-                    return (true, outInstances);
-                outInstances.Add(0);
+                    return outInstances;
             }
-        }
-
-        if (transforms != null)
-        {
-            var transformIndex = 0;
-            foreach (var transform in transforms)
-            {
-                foreach (var submesh in mesh.SubMeshes)
-                {
-                    Matrix localTransformMatrix = Matrix.Scaling(transform.Scale) * 
-                                                  Matrix.RotationQuaternion(transform.Rotation) * 
-                                                  Matrix.Translation(transform.Position);
-                    if (!IsSubMeshInsideBox(submesh, selectionBoxOBB, selectionBoxAabb, localTransformMatrix))
-                        continue;
-                    if (!checkAllTransforms)
-                        return (true, outInstances);
-                    outInstances.Add(transformIndex);
-                }
-                transformIndex++;
-            }
+            transformIndex++;
         }
         
-        return (outInstances.Count > 0, outInstances);
-    }
-
-    /// <summary>
-    /// Checks if a collision mesh actor is overlapping with the obb
-    /// </summary>
-    /// <param name="mesh"></param>
-    /// <param name="selectionBoxObb"></param>
-    /// <param name="selectionBoxAabb"></param>
-    /// <param name="actorTransform"></param>
-    /// <param name="shapeTransform"></param>
-    /// <returns></returns>
-    public static bool IsCollisonMeshInsideSelectionBox(AbbrMesh mesh, OrientedBoundingBox selectionBoxObb,
-        BoundingBox selectionBoxAabb, AbbrSectorTransform actorTransform, AbbrSectorTransform shapeTransform)
-    {
-        // only working way to apply actor and shape transform
-        Matrix shapeTransformMatrix = Matrix.Scaling(shapeTransform.Scale) * 
-                                      Matrix.RotationQuaternion(shapeTransform.Rotation) * 
-                                      Matrix.Translation(shapeTransform.Position);
-
-        Matrix actorTransformMatrix = Matrix.Scaling(actorTransform.Scale) * 
-                                      Matrix.RotationQuaternion(actorTransform.Rotation) * 
-                                      Matrix.Translation(actorTransform.Position);
-
-        Matrix transformMatrix = shapeTransformMatrix * actorTransformMatrix;
-        
-        return IsMeshInsideBox(mesh, selectionBoxObb, selectionBoxAabb,null,  transformMatrix).Item1;
-        /* Logger.Debug("\n" +
-                     $"Build Collision Mesh Scale with {actorTransform.Scale} * {shapeTransform.Scale} => {combinedScale}\n" +
-                     $"Build Collision Mesh Rotation with {actorTransform.Rotation} * {shapeTransform.Rotation} => {combinedRotation}\n" +
-                     $"Build Collision Mesh Position with {actorTransform.Position} * {shapeTransform.Position} => {combinedTranslation}\n" +
-                     $"Mesh is inside: {isInside}."); */
+        return outInstances;
     }
 
     /// <summary>
     /// Checks if a collision box actor overlaps with the obb
     /// </summary>
     /// <param name="shape"></param>
-    /// <param name="actorTransform"></param>
     /// <param name="selectionBoxAabb"></param>
     /// <param name="selectionBoxObb"></param>
     /// <returns></returns>
-    public static bool IsCollisionBoxInsideSelectionBox(AbbrActorShapes shape, AbbrSectorTransform actorTransform, BoundingBox selectionBoxAabb, OrientedBoundingBox selectionBoxObb)
+    public static bool IsCollisionBoxInsideSelectionBox(AbbrActorShapes shape, BoundingBox selectionBoxAabb, OrientedBoundingBox selectionBoxObb)
     {
-        // only working way to apply actor and shape transform
-        Matrix shapeTransformMatrix = Matrix.Scaling(new Vector3(1,1,1)) * 
-                                Matrix.RotationQuaternion(shape.Transform.Rotation) * 
-                                Matrix.Translation(shape.Transform.Position);
 
-        Matrix actorTransformMatrix = Matrix.Scaling(actorTransform.Scale) * 
-                                Matrix.RotationQuaternion(actorTransform.Rotation) * 
-                                Matrix.Translation(actorTransform.Position);
+        OrientedBoundingBox collisionBox = new(-shape.Scale, shape.Scale);
+        collisionBox.Transform(shape.Transform);
+        var collisionBoxAabb = collisionBox.GetBoundingBox();
 
-        Matrix transformMatrix = shapeTransformMatrix * actorTransformMatrix;
-
-        OrientedBoundingBox collisionBox = new(-shape.Transform.Scale, shape.Transform.Scale);
-        collisionBox.Transform(transformMatrix);
-        BoundingBox collisionBoxAabb = collisionBox.GetBoundingBox();
-        
-        bool isInside = false;
-        ContainmentType aabbContainmentType = selectionBoxAabb.Contains(collisionBoxAabb);
-        if (aabbContainmentType != ContainmentType.Disjoint)
-        {
-            ContainmentType obbContainmentType =  selectionBoxObb.Contains(ref collisionBox);
-            if (obbContainmentType != ContainmentType.Disjoint)
-            {
-                isInside = true;
-            }
-        }
-        return isInside;
+        return selectionBoxAabb.Contains(collisionBoxAabb) == ContainmentType.Disjoint &&
+               selectionBoxObb.Contains(ref collisionBox) != ContainmentType.Disjoint;
     }
     
     /// <summary>
@@ -144,62 +70,36 @@ public static class CollisionCheckService
     /// <param name="selectionBoxAabb"></param>
     /// <param name="selectionBoxObb"></param>
     /// <returns></returns>
-    public static bool IsCollisionCapsuleInsideSelectionBox(AbbrActorShapes shape, AbbrSectorTransform actorTransform, BoundingBox selectionBoxAabb, OrientedBoundingBox selectionBoxObb)
+    public static bool IsCollisionCapsuleInsideSelectionBox(AbbrActorShapes shape, BoundingBox selectionBoxAabb, OrientedBoundingBox selectionBoxObb)
     {
-        float height = shape.Transform.Scale.Y + 2 * actorTransform.Scale.X;   
-        Vector3 shapeSizeAsBox = new Vector3(shape.Transform.Scale.X, shape.Transform.Scale.X, height / 2f);
+        // M11 = ScaleVector.X
+        // shape transform is the combination of actor and shape transforms, with the shape scale we can calculate
+        // the actor scale
+        var actorScaleX = Math.Abs(shape.Scale.X - shape.Transform.M11);
         
-        // only working way to apply actor and shape transform
-        Matrix shapeTransformMatrix = Matrix.Scaling(new Vector3(1,1,1)) * 
-                                      Matrix.RotationQuaternion(shape.Transform.Rotation) * 
-                                      Matrix.Translation(shape.Transform.Position);
-
-        Matrix actorTransformMatrix = Matrix.Scaling(actorTransform.Scale) * 
-                                      Matrix.RotationQuaternion(actorTransform.Rotation) * 
-                                      Matrix.Translation(actorTransform.Position);
-
-        Matrix transformMatrix = shapeTransformMatrix * actorTransformMatrix;
+        var height = shape.Scale.Y + 2 * actorScaleX;
+        var shapeSizeAsBox = new Vector3(shape.Scale.X, shape.Scale.X, height / 2f);
         
         OrientedBoundingBox capsuleObb = new(-shapeSizeAsBox, shapeSizeAsBox);
-        capsuleObb.Transform(transformMatrix);
-        
-        BoundingBox capsuleAabb = capsuleObb.GetBoundingBox();
-        ContainmentType aabbContainmentType = selectionBoxAabb.Contains(capsuleAabb);
-        bool isInside = false;
-        if (aabbContainmentType != ContainmentType.Disjoint)
-        {
-            ContainmentType obbContainmentType =  selectionBoxObb.Contains(ref capsuleObb);
-            if (obbContainmentType != ContainmentType.Disjoint)
-            {
-                isInside = true;
-            }
-        }
-        return isInside;
+        capsuleObb.Transform(shape.Transform);
+        var capsuleAabb = capsuleObb.GetBoundingBox();
+
+        return selectionBoxAabb.Contains(capsuleAabb) == ContainmentType.Disjoint &&
+               selectionBoxObb.Contains(ref capsuleObb) != ContainmentType.Disjoint;
     }
     
     /// <summary>
     /// Checks if a collision sphere actor overlaps with the obb
     /// </summary>
     /// <param name="shape"></param>
-    /// <param name="actorTransform"></param>
     /// <param name="selectionBoxObb"></param>
     /// <returns></returns>
-    public static bool IsCollisionSphereInsideSelectionBox(AbbrActorShapes shape, AbbrSectorTransform actorTransform,
-        OrientedBoundingBox selectionBoxObb)
+    public static bool IsCollisionSphereInsideSelectionBox(AbbrActorShapes shape, OrientedBoundingBox selectionBoxObb)
     {
-        Matrix shapeTransformMatrix = Matrix.Scaling(new Vector3(1,1,1)) * 
-                                      Matrix.RotationQuaternion(shape.Transform.Rotation) * 
-                                      Matrix.Translation(shape.Transform.Position);
-
-        Matrix actorTransformMatrix = Matrix.Scaling(new Vector3(1,1,1)) * 
-                                      Matrix.RotationQuaternion(actorTransform.Rotation) * 
-                                      Matrix.Translation(actorTransform.Position);
-
-        Matrix transformMatrix = shapeTransformMatrix * actorTransformMatrix;
+        var transformedSpherePosition = Vector4.Transform(Vector3.Transform(new Vector3(0,0,0), shape.Transform), 
+                                                         Matrix.Invert(selectionBoxObb.Transformation));
         
-        Vector4 transformedSpherePosition = Vector4.Transform(Vector3.Transform(new Vector3(0,0,0), transformMatrix), Matrix.Invert(selectionBoxObb.Transformation));
-        
-        var collisionSphere = new BoundingSphere(Vec4ToVec3(transformedSpherePosition), shape.Transform.Scale.X);
+        var collisionSphere = new BoundingSphere(transformedSpherePosition.ToVector3(), shape.Scale.X);
         
         var selectionAsAABB = new BoundingBox(-selectionBoxObb.Size / 2, selectionBoxObb.Size / 2);
         return selectionAsAABB.Contains(ref collisionSphere) != ContainmentType.Disjoint;
