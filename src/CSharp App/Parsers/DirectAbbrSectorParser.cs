@@ -227,9 +227,8 @@ public class DirectAbbrSectorParser
                         {
                             var obb = new OrientedBoundingBox(submesh.BoundingBox);
                             obb.Transform(transformMatrix);
-                            var transformedAabb = obb.GetBoundingBox();
                             
-                            foreach (var corner in transformedAabb.GetCorners())
+                            foreach (var corner in obb.GetCorners())
                             {
                                 instancedMeshNodeBoundsMin = Vector3.Min(instancedMeshNodeBoundsMin, corner);
                                 instancedMeshNodeBoundsMax = Vector3.Max(instancedMeshNodeBoundsMax, corner);
@@ -281,9 +280,8 @@ public class DirectAbbrSectorParser
                             {
                                 var obb = new OrientedBoundingBox(submesh.BoundingBox);
                                 obb.Transform(transformMatrix);
-                                var transformedAabb = obb.GetBoundingBox();
                             
-                                foreach (var corner in transformedAabb.GetCorners())
+                                foreach (var corner in obb.GetCorners())
                                 {
                                     instancedDestMeshNodeBoundsMin = Vector3.Min(instancedDestMeshNodeBoundsMin, corner);
                                     instancedDestMeshNodeBoundsMax = Vector3.Max(instancedDestMeshNodeBoundsMax, corner);
@@ -419,9 +417,8 @@ public class DirectAbbrSectorParser
                         {
                             var obb = new OrientedBoundingBox(submesh.BoundingBox);
                             obb.Transform(transformMatrix);
-                            var transformedAabb = obb.GetBoundingBox();
                             
-                            foreach (var corner in transformedAabb.GetCorners())
+                            foreach (var corner in obb.GetCorners())
                             {
                                 waterPatchNodeBoundsMin = Vector3.Min(waterPatchNodeBoundsMin, corner);
                                 waterPatchNodeBoundsMax = Vector3.Max(waterPatchNodeBoundsMax, corner);
@@ -448,9 +445,8 @@ public class DirectAbbrSectorParser
                         {
                             var obb = new OrientedBoundingBox(submesh.BoundingBox);
                             obb.Transform(transformMatrix);
-                            var transformedAabb = obb.GetBoundingBox();
                             
-                            foreach (var corner in transformedAabb.GetCorners())
+                            foreach (var corner in obb.GetCorners())
                             {
                                 meshNodeBoundsMin = Vector3.Min(meshNodeBoundsMin, corner);
                                 meshNodeBoundsMax = Vector3.Max(meshNodeBoundsMax, corner);
@@ -488,23 +484,5 @@ public class DirectAbbrSectorParser
             Nodes = nodes,
             NodeData = nodeDataOut
         };
-    }
-    
-    private SharpDX.Vector3 ApplyTransform(Vector3 point, WolvenKit.RED4.Types.Vector3 translation,  WolvenKit.RED4.Types.Quaternion rotation,  WolvenKit.RED4.Types.Vector3 scale)
-    {
-        var matrix = Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(rotation)) * Matrix.Scaling(WolvenkitToSharpDXConverter.Vector3(scale)) * Matrix.Translation(WolvenkitToSharpDXConverter.Vector3(translation));
-        return Vector3.Transform(point, matrix).ToVector3();
-    }
-    
-    private SharpDX.Vector3 ApplyTransform(Vector3 point, WolvenKit.RED4.Types.Vector4 translation,  WolvenKit.RED4.Types.Quaternion rotation,  WolvenKit.RED4.Types.Vector3 scale)
-    {
-        var matrix = Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(rotation)) * Matrix.Scaling(WolvenkitToSharpDXConverter.Vector3(scale)) * Matrix.Translation(WolvenkitToSharpDXConverter.Vector3(translation));
-        return Vector3.Transform(point, matrix).ToVector3();
-    }
-    
-    private SharpDX.Vector3 ApplyTransform(Vector3 point, SharpDX.Vector3 translation,  SharpDX.Quaternion rotation,  SharpDX.Vector3 scale)
-    {
-        var matrix = Matrix.RotationQuaternion(rotation) * Matrix.Scaling(scale) * Matrix.Translation(translation);
-        return Vector3.Transform(point, matrix).ToVector3();
     }
 }
