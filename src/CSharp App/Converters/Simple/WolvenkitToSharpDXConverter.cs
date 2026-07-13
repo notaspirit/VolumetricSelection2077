@@ -2,7 +2,7 @@ using SharpDX;
 
 namespace VolumetricSelection2077.Converters.Simple;
 
-public class WolvenkitToSharpDXConverter
+public static class WolvenkitToSharpDXConverter
 {
     public static Vector3 Vector3(WolvenKit.RED4.Types.Vector3 vector)
     {
@@ -30,5 +30,20 @@ public class WolvenkitToSharpDXConverter
             Minimum = new Vector3(box.Min.X, box.Min.Y, box.Min.Z),
             Maximum = new Vector3(box.Max.X, box.Max.Y, box.Max.Z),
         };
+    }
+    
+    public static Vector3 ToSDX(this WolvenKit.RED4.Types.Vector3 vector)
+    {
+        return new Vector3(vector.X, vector.Y, vector.Z);
+    }
+    
+    public static Vector4 ToSDX(this WolvenKit.RED4.Types.Vector4 vector)
+    {
+        return new Vector4(vector.X, vector.Y, vector.Z, vector.W);
+    }
+    
+    public static Quaternion ToSDX(this WolvenKit.RED4.Types.Quaternion quaternion)
+    {
+        return new Quaternion(quaternion.I, quaternion.J, quaternion.K, quaternion.R);
     }
 }

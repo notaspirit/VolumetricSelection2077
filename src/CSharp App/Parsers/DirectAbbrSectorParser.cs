@@ -218,16 +218,21 @@ public class DirectAbbrSectorParser
                             Rotation = WolvenkitToSharpDXConverter.Quaternion(transform.Rotation),
                             Scale = WolvenkitToSharpDXConverter.Vector3(transform.Scale)
                         };
+                        
+                        var transformMatrix = Matrix.Scaling(transform.Scale.ToSDX()) * 
+                                              Matrix.RotationQuaternion(transform.Rotation.ToSDX()) *  
+                                              Matrix.Translation(transform.Translation.ToSDX());
 
                         foreach (var submesh in instancedMesh.SubMeshes)
                         {
-                            foreach (var corner in submesh.BoundingBox.GetCorners())
+                            var obb = new OrientedBoundingBox(submesh.BoundingBox);
+                            obb.Transform(transformMatrix);
+                            var transformedAabb = obb.GetBoundingBox();
+                            
+                            foreach (var corner in transformedAabb.GetCorners())
                             {
-                                var transformedCorner = ApplyTransform(corner, transform.Translation,
-                                    transform.Rotation, transform.Scale);
-                                
-                                instancedMeshNodeBoundsMin = Vector3.Min(instancedMeshNodeBoundsMin, transformedCorner);
-                                instancedMeshNodeBoundsMax = Vector3.Max(instancedMeshNodeBoundsMax, transformedCorner);
+                                instancedMeshNodeBoundsMin = Vector3.Min(instancedMeshNodeBoundsMin, corner);
+                                instancedMeshNodeBoundsMax = Vector3.Max(instancedMeshNodeBoundsMax, corner);
                             }
                         }
                         transformsInstancedIndex++;
@@ -263,19 +268,25 @@ public class DirectAbbrSectorParser
                                 Scale = WolvenkitToSharpDXConverter.Vector3(nodeDataEntry.Scale)
                             };
                             
+                            var transformMatrix = Matrix.Scaling(
+                                                      (transform.Position.ToSDX() +
+                                                      nodeDataEntry.Position.ToSDX())
+                                                        .ToVector3()) * 
+                                                  Matrix.RotationQuaternion(
+                                                      transform.Orientation.ToSDX() *
+                                                      nodeDataEntry.Orientation.ToSDX()) *  
+                                                  Matrix.Translation(nodeDataEntry.Scale.ToSDX());
+                            
                             foreach (var submesh in instancedDestMesh.SubMeshes)
                             {
-                                foreach (var corner in submesh.BoundingBox.GetCorners())
+                                var obb = new OrientedBoundingBox(submesh.BoundingBox);
+                                obb.Transform(transformMatrix);
+                                var transformedAabb = obb.GetBoundingBox();
+                            
+                                foreach (var corner in transformedAabb.GetCorners())
                                 {
-                                    var transformedCorner = ApplyTransform(corner, 
-                                        WolvenkitToSharpDXConverter.Vector3(transform.Position) +
-                                        WolvenkitToSharpDXConverter.Vector3(nodeDataEntry.Position),
-                                        WolvenkitToSharpDXConverter.Quaternion(transform.Orientation) *
-                                        WolvenkitToSharpDXConverter.Quaternion(nodeDataEntry.Orientation),
-                                        WolvenkitToSharpDXConverter.Vector3(nodeDataEntry.Scale));
-                                    
-                                    instancedDestMeshNodeBoundsMin = Vector3.Min(instancedDestMeshNodeBoundsMin, transformedCorner);
-                                    instancedDestMeshNodeBoundsMax = Vector3.Max(instancedDestMeshNodeBoundsMax, transformedCorner);
+                                    instancedDestMeshNodeBoundsMin = Vector3.Min(instancedDestMeshNodeBoundsMin, corner);
+                                    instancedDestMeshNodeBoundsMax = Vector3.Max(instancedDestMeshNodeBoundsMax, corner);
                                 }
                             }
                             
@@ -400,14 +411,20 @@ public class DirectAbbrSectorParser
                         var waterPatchNodeBoundsMin = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
                         var waterPatchNodeBoundsMax = new Vector3(float.MinValue, float.MinValue, float.MinValue);
 
+                        var transformMatrix = Matrix.Scaling(nodeDataEntry.Position.ToSDX().ToVector3()) * 
+                                                 Matrix.RotationQuaternion(nodeDataEntry.Orientation.ToSDX()) *  
+                                                 Matrix.Translation(nodeDataEntry.Scale.ToSDX());
+                        
                         foreach (var submesh in waterPatchNodeMesh.SubMeshes)
                         {
-                            foreach (var corner in submesh.BoundingBox.GetCorners())
+                            var obb = new OrientedBoundingBox(submesh.BoundingBox);
+                            obb.Transform(transformMatrix);
+                            var transformedAabb = obb.GetBoundingBox();
+                            
+                            foreach (var corner in transformedAabb.GetCorners())
                             {
-                                var transformedCorner = ApplyTransform(corner, nodeDataEntry.Position, nodeDataEntry.Orientation, nodeDataEntry.Scale);
-                                
-                                waterPatchNodeBoundsMin = Vector3.Min(waterPatchNodeBoundsMin, transformedCorner);
-                                waterPatchNodeBoundsMax = Vector3.Max(waterPatchNodeBoundsMax, transformedCorner);
+                                waterPatchNodeBoundsMin = Vector3.Min(waterPatchNodeBoundsMin, corner);
+                                waterPatchNodeBoundsMax = Vector3.Max(waterPatchNodeBoundsMax, corner);
                             }
                         }
 
@@ -423,14 +440,20 @@ public class DirectAbbrSectorParser
                         var meshNodeBoundsMin = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
                         var meshNodeBoundsMax = new Vector3(float.MinValue, float.MinValue, float.MinValue);
 
+                        var transformMatrix = Matrix.Scaling(nodeDataEntry.Position.ToSDX().ToVector3()) * 
+                                                      Matrix.RotationQuaternion(nodeDataEntry.Orientation.ToSDX()) *  
+                                                      Matrix.Translation(nodeDataEntry.Scale.ToSDX());
+                        
                         foreach (var submesh in abbrMesh.SubMeshes)
                         {
-                            foreach (var corner in submesh.BoundingBox.GetCorners())
+                            var obb = new OrientedBoundingBox(submesh.BoundingBox);
+                            obb.Transform(transformMatrix);
+                            var transformedAabb = obb.GetBoundingBox();
+                            
+                            foreach (var corner in transformedAabb.GetCorners())
                             {
-                                var transformedCorner = ApplyTransform(corner, nodeDataEntry.Position, nodeDataEntry.Orientation, nodeDataEntry.Scale);
-                                
-                                meshNodeBoundsMin = Vector3.Min(meshNodeBoundsMin, transformedCorner);
-                                meshNodeBoundsMax = Vector3.Max(meshNodeBoundsMax, transformedCorner);
+                                meshNodeBoundsMin = Vector3.Min(meshNodeBoundsMin, corner);
+                                meshNodeBoundsMax = Vector3.Max(meshNodeBoundsMax, corner);
                             }
                         }
                         
