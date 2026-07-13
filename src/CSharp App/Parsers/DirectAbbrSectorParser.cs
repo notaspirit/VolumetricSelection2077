@@ -267,8 +267,12 @@ public class DirectAbbrSectorParser
                             {
                                 foreach (var corner in submesh.BoundingBox.GetCorners())
                                 {
-                                    var transformedCorner = ApplyTransform(corner, transform.Position,
-                                        transform.Orientation, new WolvenKit.RED4.Types.Vector3());
+                                    var transformedCorner = ApplyTransform(corner, 
+                                        WolvenkitToSharpDXConverter.Vector3(transform.Position) +
+                                        WolvenkitToSharpDXConverter.Vector3(nodeDataEntry.Position),
+                                        WolvenkitToSharpDXConverter.Quaternion(transform.Orientation) *
+                                        WolvenkitToSharpDXConverter.Quaternion(nodeDataEntry.Orientation),
+                                        WolvenkitToSharpDXConverter.Vector3(nodeDataEntry.Scale));
                                     
                                     instancedDestMeshNodeBoundsMin = Vector3.Min(instancedDestMeshNodeBoundsMin, transformedCorner);
                                     instancedDestMeshNodeBoundsMax = Vector3.Max(instancedDestMeshNodeBoundsMax, transformedCorner);
@@ -472,6 +476,12 @@ public class DirectAbbrSectorParser
     private SharpDX.Vector3 ApplyTransform(Vector3 point, WolvenKit.RED4.Types.Vector4 translation,  WolvenKit.RED4.Types.Quaternion rotation,  WolvenKit.RED4.Types.Vector3 scale)
     {
         var matrix = Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(rotation)) * Matrix.Scaling(WolvenkitToSharpDXConverter.Vector3(scale)) * Matrix.Translation(WolvenkitToSharpDXConverter.Vector3(translation));
+        return Vector3.Transform(point, matrix).ToVector3();
+    }
+    
+    private SharpDX.Vector3 ApplyTransform(Vector3 point, SharpDX.Vector3 translation,  SharpDX.Quaternion rotation,  SharpDX.Vector3 scale)
+    {
+        var matrix = Matrix.RotationQuaternion(rotation) * Matrix.Scaling(scale) * Matrix.Translation(translation);
         return Vector3.Transform(point, matrix).ToVector3();
     }
 }
