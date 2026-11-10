@@ -1,8 +1,9 @@
 .vscode/
 **/node_modules
 **/.stfolder/
-src/CSharp App/bin/
-src/CSharp App/obj/
+**/bin/
+**/obj/
+**/publish/
 **/build/
 CtrlADel.sln
 CtrlADel.code-workspace
