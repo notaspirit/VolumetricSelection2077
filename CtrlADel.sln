@@ -7,6 +7,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{79D9C5B8-508
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VolumetricSelection2077.App", "src\VolumetricSelection2077.App\VolumetricSelection2077.App.csproj", "{2E9731B1-E579-486B-9576-5E589C24E9B8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VolumetricSelection2077.Core", "src\VolumetricSelection2077.Core\VolumetricSelection2077.Core.csproj", "{2F695FED-8A28-4167-A763-C68E98033383}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,12 +19,17 @@ Global
 		{2E9731B1-E579-486B-9576-5E589C24E9B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2E9731B1-E579-486B-9576-5E589C24E9B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2E9731B1-E579-486B-9576-5E589C24E9B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F695FED-8A28-4167-A763-C68E98033383}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F695FED-8A28-4167-A763-C68E98033383}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F695FED-8A28-4167-A763-C68E98033383}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F695FED-8A28-4167-A763-C68E98033383}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{2E9731B1-E579-486B-9576-5E589C24E9B8} = {79D9C5B8-5081-4136-B4D7-87B886059E76}
+		{2F695FED-8A28-4167-A763-C68E98033383} = {79D9C5B8-5081-4136-B4D7-87B886059E76}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5ECDC3F2-0B40-45EE-85C0-6FDD607FF56C}

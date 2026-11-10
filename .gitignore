@@ -2,6 +2,7 @@
 **/node_modules
 **/.stfolder/
 **/VolumetricSelection2077.App/bin/
+**/VolumetricSelection2077.Core/bin/
 **/obj/
 **/publish/
 **/build/
