@@ -1,7 +1,7 @@
 using System;
 using Newtonsoft.Json;
 
-namespace VolumetricSelection2077.Json.Converters;
+namespace VolumetricSelection2077.App.Json.Converters;
 
 public class NormalizeZeroConverter : JsonConverter
 {

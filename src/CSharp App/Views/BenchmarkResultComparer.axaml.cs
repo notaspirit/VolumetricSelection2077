@@ -1,7 +1,7 @@
 using Avalonia.Controls;
-using VolumetricSelection2077.ViewModels;
+using VolumetricSelection2077.App.ViewModels;
 
-namespace VolumetricSelection2077.Views;
+namespace VolumetricSelection2077.App.Views;
 
 public partial class BenchmarkResultComparer : Window
 {

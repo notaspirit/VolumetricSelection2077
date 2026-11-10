@@ -3,10 +3,10 @@ using Serilog.Core;
 using System;
 using System.IO;
 using System.Collections.Generic;
-using VolumetricSelection2077.Enums;
+using VolumetricSelection2077.App.Enums;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace VolumetricSelection2077.Services
+namespace VolumetricSelection2077.App.Services
 {
     public static class Logger
     {

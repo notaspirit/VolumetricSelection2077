@@ -5,7 +5,7 @@ VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{79D9C5B8-5081-4136-B4D7-87B886059E76}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VolumetricSelection2077", "src\CSharp App\VolumetricSelection2077.csproj", "{2E9731B1-E579-486B-9576-5E589C24E9B8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VolumetricSelection2077.App", "src\CSharp App\VolumetricSelection2077.App.csproj", "{2E9731B1-E579-486B-9576-5E589C24E9B8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -2,11 +2,11 @@ using System.Collections.Generic;
 using MessagePack;
 using MessagePack.Formatters;
 using MessagePack.Resolvers;
-using VolumetricSelection2077.MessagePack.Formatters;
-using Vector3Formatter = VolumetricSelection2077.MessagePack.Formatters.Vector3Formatter;
-using QuaternionFormatter = VolumetricSelection2077.MessagePack.Formatters.QuaternionFormatter;
+using VolumetricSelection2077.App.MessagePack.Formatters;
+using Vector3Formatter = VolumetricSelection2077.App.MessagePack.Formatters.Vector3Formatter;
+using QuaternionFormatter = VolumetricSelection2077.App.MessagePack.Formatters.QuaternionFormatter;
 
-namespace VolumetricSelection2077.MessagePack.Helpers;
+namespace VolumetricSelection2077.App.MessagePack.Helpers;
 
 public static class MessagePackConfig
 {

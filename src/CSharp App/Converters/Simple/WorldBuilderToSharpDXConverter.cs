@@ -1,8 +1,8 @@
 using System;
 using SharpDX;
-using VolumetricSelection2077.models.WorldBuilder.Structs;
+using VolumetricSelection2077.App.models.WorldBuilder.Structs;
 
-namespace VolumetricSelection2077.Converters.Simple;
+namespace VolumetricSelection2077.App.Converters.Simple;
 
 public class WorldBuilderToSharpDXConverter
 {

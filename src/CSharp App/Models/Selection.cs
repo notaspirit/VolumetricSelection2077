@@ -2,7 +2,7 @@ using SharpDX;
 using System.Text.Json.Serialization;
 using System.Collections.Generic;
 
-namespace VolumetricSelection2077.Models
+namespace VolumetricSelection2077.App.Models
 {
     public class SelectionInput
     {

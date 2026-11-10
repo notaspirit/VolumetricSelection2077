@@ -1,6 +1,6 @@
-using VolumetricSelection2077.Services;
+using VolumetricSelection2077.App.Services;
 
-namespace VolumetricSelection2077.Views;
+namespace VolumetricSelection2077.App.Views;
 
 public class SettingsViewPersistentCache
 {

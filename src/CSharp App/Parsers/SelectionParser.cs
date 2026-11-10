@@ -1,11 +1,11 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using VolumetricSelection2077.Models;
+using VolumetricSelection2077.App.Models;
 using SharpDX;
 using System.Collections.Generic;
-using VolumetricSelection2077.Services;
+using VolumetricSelection2077.App.Services;
 
-namespace VolumetricSelection2077.Parsers;
+namespace VolumetricSelection2077.App.Parsers;
 
 public static class SelectionParser
 {

@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
-using VolumetricSelection2077.Models.WorldBuilder.Spawn;
+using VolumetricSelection2077.App.Models.WorldBuilder.Spawn;
 
-namespace VolumetricSelection2077.Models.WorldBuilder.Editor;
+namespace VolumetricSelection2077.App.Models.WorldBuilder.Editor;
 
 public class SpawnableElement : Positionable
 {

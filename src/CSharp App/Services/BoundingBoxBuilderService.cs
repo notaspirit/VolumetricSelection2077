@@ -4,19 +4,19 @@ using System.Linq;
 using System.Threading.Tasks;
 using MessagePack;
 using SharpDX;
-using VolumetricSelection2077.Models;
-using VEnums = VolumetricSelection2077.Enums;
+using VolumetricSelection2077.App.Models;
+using VEnums = VolumetricSelection2077.App.Enums;
 using WEnums = WolvenKit.RED4.Types.Enums;
 using Vector3 = SharpDX.Vector3;
 
-namespace VolumetricSelection2077.Services;
+namespace VolumetricSelection2077.App.Services;
 
 public class BoundingBoxBuilderService
 {
     private readonly CacheService _cacheService;
     private readonly GameFileService _gameFileService;
-    private readonly VolumetricSelection2077.Models.Progress _progress;
-    public BoundingBoxBuilderService(CacheService cacheService, GameFileService gameFileService, VolumetricSelection2077.Models.Progress progress)
+    private readonly VolumetricSelection2077.App.Models.Progress _progress;
+    public BoundingBoxBuilderService(CacheService cacheService, GameFileService gameFileService, VolumetricSelection2077.App.Models.Progress progress)
     {
         _cacheService = cacheService;
         _gameFileService = gameFileService;

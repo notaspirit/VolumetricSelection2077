@@ -4,7 +4,7 @@ using Avalonia.Data.Converters;
 using Avalonia.Media;
 using Serilog.Events;
 
-namespace VolumetricSelection2077.Converters.Simple
+namespace VolumetricSelection2077.App.Converters.Simple
 {
     public class LogLevelColorConverter : IValueConverter
     {

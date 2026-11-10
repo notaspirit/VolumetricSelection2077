@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using VolumetricSelection2077.Models.WorldBuilder.Editor;
+using VolumetricSelection2077.App.Models.WorldBuilder.Editor;
 
-namespace VolumetricSelection2077.Models;
+namespace VolumetricSelection2077.App.Models;
 
 public struct WorldBuilderMergingStruct
 {

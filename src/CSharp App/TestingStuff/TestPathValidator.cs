@@ -1,7 +1,7 @@
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Services;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Services;
 
-namespace VolumetricSelection2077.TestingStuff;
+namespace VolumetricSelection2077.App.TestingStuff;
 
 public class TestPathValidator : IDebugTool
 {

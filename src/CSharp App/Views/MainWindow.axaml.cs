@@ -1,5 +1,5 @@
 using Avalonia.Controls;
-using VolumetricSelection2077.Services;
+using VolumetricSelection2077.App.Services;
 using System;
 using System.IO;
 using Avalonia.Interactivity;
@@ -9,13 +9,13 @@ using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Microsoft.Extensions.DependencyInjection;
-using VolumetricSelection2077.Enums;
-using VolumetricSelection2077.Extensions;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.ViewModels;
-using VolumetricSelection2077.ViewStructures;
+using VolumetricSelection2077.App.Enums;
+using VolumetricSelection2077.App.Extensions;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.ViewModels;
+using VolumetricSelection2077.App.ViewStructures;
 
-namespace VolumetricSelection2077.Views;
+namespace VolumetricSelection2077.App.Views;
 public partial class MainWindow : Window
 {
     private readonly ProcessDispatcher _processService;

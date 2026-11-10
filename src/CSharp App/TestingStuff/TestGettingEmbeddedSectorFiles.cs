@@ -1,9 +1,9 @@
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Services;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Services;
 using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.Types;
 
-namespace VolumetricSelection2077.TestingStuff;
+namespace VolumetricSelection2077.App.TestingStuff;
 
 public class TestGettingEmbeddedSectorFiles : IDebugTool
 {

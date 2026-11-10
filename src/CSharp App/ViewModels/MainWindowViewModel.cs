@@ -8,13 +8,13 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
-using VolumetricSelection2077.Resources;
-using VolumetricSelection2077.Services;
-using VolumetricSelection2077.Views;
-using VolumetricSelection2077.ViewStructures;
-using VolumetricSelection2077.Enums;
+using VolumetricSelection2077.App.Resources;
+using VolumetricSelection2077.App.Services;
+using VolumetricSelection2077.App.Views;
+using VolumetricSelection2077.App.ViewStructures;
+using VolumetricSelection2077.App.Enums;
 
-namespace VolumetricSelection2077.ViewModels
+namespace VolumetricSelection2077.App.ViewModels
 {
     public partial class MainWindowViewModel : ObservableObject
     {
@@ -254,7 +254,7 @@ namespace VolumetricSelection2077.ViewModels
         {
             var sp = App.AppHost!.Services;
             Settings = sp.GetRequiredService<SettingsService>();
-            var progress = sp.GetRequiredService<VolumetricSelection2077.Models.Progress>();
+            var progress = sp.GetRequiredService<VolumetricSelection2077.App.Models.Progress>();
             
             _resourceNameFilter = Settings.Data.ResourceNameFilter;
             _resourceNameFilter.CollectionChanged += ResourceNameFilter_CollectionChanged;

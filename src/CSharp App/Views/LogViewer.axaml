@@ -1,10 +1,10 @@
 <UserControl
-    x:Class="VolumetricSelection2077.Views.LogViewer"
+    x:Class="VolumetricSelection2077.App.Views.LogViewer"
     x:DataType="views:LogViewer"
     xmlns="https://github.com/avaloniaui"
     xmlns:controls="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
-    xmlns:resources="clr-namespace:VolumetricSelection2077.Resources"
-    xmlns:views="clr-namespace:VolumetricSelection2077.Views"
+    xmlns:resources="clr-namespace:VolumetricSelection2077.App.Resources"
+    xmlns:views="clr-namespace:VolumetricSelection2077.App.Views"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid RowDefinitions="Auto,*">
         <StackPanel
@@ -97,7 +97,7 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <SelectableTextBlock
-                            FontFamily="avares://VolumetricSelection2077/assets/JetBrainsMono-VariableFont_wght.ttf#JetBrains Mono"
+                            FontFamily="avares://VolumetricSelection2077.App/assets/JetBrainsMono-VariableFont_wght.ttf#JetBrains Mono"
                             FontWeight="{OnPlatform Default=Regular,
                                                     Windows=DemiBold,
                                                     Linux=Regular}"

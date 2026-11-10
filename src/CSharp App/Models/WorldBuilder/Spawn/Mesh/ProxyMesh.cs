@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
+namespace VolumetricSelection2077.App.Models.WorldBuilder.Spawn.Mesh;
 
 public class ProxyMesh : Mesh
 {

@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace VolumetricSelection2077.Services;
+namespace VolumetricSelection2077.App.Services;
 
 /// <summary>
 /// Currently supports Windows and Linux, created to gather all the OS specific code in one place (except UpdateService)
@@ -25,7 +25,7 @@ public class OsUtilsService
     {
         if (OperatingSystem.IsWindows())
         {
-            Process.Start(new ProcessStartInfo(Path.Combine(AppContext.BaseDirectory, "VolumetricSelection2077.exe")));
+            Process.Start(new ProcessStartInfo(Path.Combine(AppContext.BaseDirectory, "VolumetricSelection2077.App.exe")));
         }
         else if (OperatingSystem.IsLinux())
         {

@@ -1,9 +1,9 @@
 <Application
     RequestedThemeVariant="Dark"
-    x:Class="VolumetricSelection2077.App"
+    x:Class="VolumetricSelection2077.App.App"
     xmlns="https://github.com/avaloniaui"
-    xmlns:local="clr-namespace:VolumetricSelection2077.Resources"
-    xmlns:simple="clr-namespace:VolumetricSelection2077.Converters.Simple"
+    xmlns:local="clr-namespace:VolumetricSelection2077.App.Resources"
+    xmlns:simple="clr-namespace:VolumetricSelection2077.App.Converters.Simple"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Application.Resources>

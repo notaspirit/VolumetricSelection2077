@@ -3,7 +3,7 @@ using MessagePack;
 using MessagePack.Formatters;
 using SharpDX;
 
-namespace VolumetricSelection2077.MessagePack.Formatters;
+namespace VolumetricSelection2077.App.MessagePack.Formatters;
 
 public class PlaneFormatter : IMessagePackFormatter<Plane>
 {

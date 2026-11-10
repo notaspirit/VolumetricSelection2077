@@ -1,6 +1,6 @@
-using VolumetricSelection2077.Models.WorldBuilder.Spawn;
+using VolumetricSelection2077.App.Models.WorldBuilder.Spawn;
 
-namespace VolumetricSelection2077.models.WorldBuilder.Spawn.Visual;
+namespace VolumetricSelection2077.App.models.WorldBuilder.Spawn.Visual;
 
 public class Effect : Visualized
 {

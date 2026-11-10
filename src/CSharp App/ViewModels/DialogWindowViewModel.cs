@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Enums;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Enums;
 
-namespace VolumetricSelection2077.ViewModels;
+namespace VolumetricSelection2077.App.ViewModels;
 
 public class DialogWindowViewModel
 {

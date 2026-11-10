@@ -4,18 +4,18 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using VolumetricSelection2077.Models;
+using VolumetricSelection2077.App.Models;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using VolumetricSelection2077.Enums;
-using VolumetricSelection2077.Json;
-using VolumetricSelection2077.Json.Converters;
-using VolumetricSelection2077.Json.Helpers;
-using VolumetricSelection2077.Models.WorldBuilder.Favorites;
-using VolumetricSelection2077.Resources;
+using VolumetricSelection2077.App.Enums;
+using VolumetricSelection2077.App.Json;
+using VolumetricSelection2077.App.Json.Converters;
+using VolumetricSelection2077.App.Json.Helpers;
+using VolumetricSelection2077.App.Models.WorldBuilder.Favorites;
+using VolumetricSelection2077.App.Resources;
 using YamlDotNet.Serialization;
 
-namespace VolumetricSelection2077.Services
+namespace VolumetricSelection2077.App.Services
 {
     public class ValidationService
     {

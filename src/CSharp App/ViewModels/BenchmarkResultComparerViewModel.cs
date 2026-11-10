@@ -5,7 +5,7 @@ using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Newtonsoft.Json;
 
-namespace VolumetricSelection2077.ViewModels;
+namespace VolumetricSelection2077.App.ViewModels;
 
 public enum BenchmarkResultSide { Left, Right }
 

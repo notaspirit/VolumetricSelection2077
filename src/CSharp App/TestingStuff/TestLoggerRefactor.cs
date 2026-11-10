@@ -1,11 +1,11 @@
 using System;
 using System.Data;
 using System.Security.Authentication;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Services;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Services;
 using WolvenKit.Modkit.Exceptions;
 
-namespace VolumetricSelection2077.TestingStuff;
+namespace VolumetricSelection2077.App.TestingStuff;
 
 public class TestLoggerRefactor : IDebugTool
 {

@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using Newtonsoft.Json;
 
-namespace VolumetricSelection2077.Json.Helpers;
+namespace VolumetricSelection2077.App.Json.Helpers;
 
 public class JsonSerializerUtils
 {

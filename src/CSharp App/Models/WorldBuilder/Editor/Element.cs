@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace VolumetricSelection2077.Models.WorldBuilder.Editor;
+namespace VolumetricSelection2077.App.Models.WorldBuilder.Editor;
 
 public class Element
 {

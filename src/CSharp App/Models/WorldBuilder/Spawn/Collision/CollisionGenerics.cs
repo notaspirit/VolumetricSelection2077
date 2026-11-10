@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 
-namespace VolumetricSelection2077.Models.WorldBuilder.Spawn.Collision;
+namespace VolumetricSelection2077.App.Models.WorldBuilder.Spawn.Collision;
 
 public static class CollisionGenerics
 {

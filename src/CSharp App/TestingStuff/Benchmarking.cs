@@ -6,13 +6,13 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using VolumetricSelection2077.Enums;
-using VolumetricSelection2077.Json.Helpers;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Services;
+using VolumetricSelection2077.App.Enums;
+using VolumetricSelection2077.App.Json.Helpers;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Services;
 using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
-namespace VolumetricSelection2077.TestingStuff;
+namespace VolumetricSelection2077.App.TestingStuff;
 
 public class Benchmarking
 {

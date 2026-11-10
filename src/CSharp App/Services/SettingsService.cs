@@ -2,9 +2,9 @@ using System;
 using System.IO;
 using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
-using VolumetricSelection2077.Models.SettingsDTO;
+using VolumetricSelection2077.App.Models.SettingsDTO;
 
-namespace VolumetricSelection2077.Services;
+namespace VolumetricSelection2077.App.Services;
 public partial class SettingsService : ObservableObject
 {
     private readonly string _settingsFilePath;

@@ -1,16 +1,16 @@
 using Avalonia.Controls;
-using VolumetricSelection2077.ViewModels;
+using VolumetricSelection2077.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Avalonia.Interactivity;
-using VolumetricSelection2077.Enums;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Services;
+using VolumetricSelection2077.App.Enums;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Services;
 
-namespace VolumetricSelection2077.Views
+namespace VolumetricSelection2077.App.Views
 {
     public partial class SettingsWindow : Window
     {

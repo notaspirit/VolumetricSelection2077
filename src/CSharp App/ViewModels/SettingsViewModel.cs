@@ -8,12 +8,12 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Resources;
-using VolumetricSelection2077.Services;
-using VolumetricSelection2077.Views;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Resources;
+using VolumetricSelection2077.App.Services;
+using VolumetricSelection2077.App.Views;
 
-namespace VolumetricSelection2077.ViewModels
+namespace VolumetricSelection2077.App.ViewModels
 {
     public partial class SettingsViewModel : ObservableObject
     {

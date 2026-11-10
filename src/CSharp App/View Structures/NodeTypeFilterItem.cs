@@ -1,7 +1,7 @@
 using System.Collections;
 using System.ComponentModel;
 
-namespace VolumetricSelection2077.ViewStructures;
+namespace VolumetricSelection2077.App.ViewStructures;
 
 public class NodeTypeFilterItem : INotifyPropertyChanged
 {

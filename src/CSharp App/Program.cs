@@ -1,8 +1,8 @@
-﻿﻿using Avalonia;
+﻿using Avalonia;
 using System;
-using VolumetricSelection2077.MessagePack.Helpers;
+using VolumetricSelection2077.App.MessagePack.Helpers;
 
-namespace VolumetricSelection2077;
+namespace VolumetricSelection2077.App;
 
 class Program
 {

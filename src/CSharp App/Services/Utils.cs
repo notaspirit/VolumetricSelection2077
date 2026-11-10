@@ -4,12 +4,12 @@ using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
 using PeNet.Header.Resource;
-using VolumetricSelection2077.Enums;
-using VolumetricSelection2077.Models;
+using VolumetricSelection2077.App.Enums;
+using VolumetricSelection2077.App.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace VolumetricSelection2077.Services
+namespace VolumetricSelection2077.App.Services
 {
     public static class Utils
     {

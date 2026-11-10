@@ -3,7 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 
-namespace VolumetricSelection2077.Controls;
+namespace VolumetricSelection2077.App.Controls;
 
 public class Int32TextBox : TextBox
 {

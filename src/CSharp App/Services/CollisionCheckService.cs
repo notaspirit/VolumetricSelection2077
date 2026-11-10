@@ -1,6 +1,6 @@
 using System;
 using SharpDX;
-using VolumetricSelection2077.Models;
+using VolumetricSelection2077.App.Models;
 using System.Collections.Generic;
 using System.Linq;
 using OrientedBoundingBox = SharpDX.OrientedBoundingBox;
@@ -8,7 +8,7 @@ using Plane = SharpDX.Plane;
 using Vector3 = SharpDX.Vector3;
 using Vector4 = SharpDX.Vector4;
 
-namespace VolumetricSelection2077.Services;
+namespace VolumetricSelection2077.App.Services;
 
 public static class CollisionCheckService
 {

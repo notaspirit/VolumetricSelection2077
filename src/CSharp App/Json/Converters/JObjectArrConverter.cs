@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using VolumetricSelection2077.Json.Helpers;
+using VolumetricSelection2077.App.Json.Helpers;
 
-namespace VolumetricSelection2077.Json.Converters;
+namespace VolumetricSelection2077.App.Json.Converters;
 
 public class JObjectArrConverter : JsonConverter<JObject>
 {

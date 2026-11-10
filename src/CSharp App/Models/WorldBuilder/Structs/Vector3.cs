@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 
-namespace VolumetricSelection2077.models.WorldBuilder.Structs;
+namespace VolumetricSelection2077.App.models.WorldBuilder.Structs;
 
 public class Vector3
 {

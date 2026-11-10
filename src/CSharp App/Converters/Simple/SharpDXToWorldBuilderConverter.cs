@@ -1,8 +1,8 @@
 using System;
 using MathNet.Spatial.Euclidean;
-using EulerAngles = VolumetricSelection2077.models.WorldBuilder.Structs.EulerAngles;
+using EulerAngles = VolumetricSelection2077.App.models.WorldBuilder.Structs.EulerAngles;
 
-namespace VolumetricSelection2077.Converters.Simple;
+namespace VolumetricSelection2077.App.Converters.Simple;
 
 public class SharpDXToWorldBuilderConverter
 {

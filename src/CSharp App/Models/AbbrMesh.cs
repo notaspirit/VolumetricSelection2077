@@ -1,7 +1,7 @@
 using MessagePack;
 using SharpDX;
 
-namespace VolumetricSelection2077.Models;
+namespace VolumetricSelection2077.App.Models;
 
 [MessagePackObject]
 public class AbbrMesh

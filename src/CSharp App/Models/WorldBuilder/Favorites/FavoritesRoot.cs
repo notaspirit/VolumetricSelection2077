@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace VolumetricSelection2077.Models.WorldBuilder.Favorites;
+namespace VolumetricSelection2077.App.Models.WorldBuilder.Favorites;
 
 public class FavoritesRoot
 {

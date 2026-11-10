@@ -5,14 +5,14 @@
     Title="VolumetricSelection2077"
     Width="750"
     WindowStartupLocation="CenterOwner"
-    x:Class="VolumetricSelection2077.Views.SettingsWindow"
+    x:Class="VolumetricSelection2077.App.Views.SettingsWindow"
     x:DataType="local:ViewModels.SettingsViewModel"
     xmlns="https://github.com/avaloniaui"
     xmlns:avalonia="clr-namespace:LoadingIndicators.Avalonia;assembly=LoadingIndicators.Avalonia"
-    xmlns:controls="clr-namespace:VolumetricSelection2077.Controls"
+    xmlns:controls="clr-namespace:VolumetricSelection2077.App.Controls"
     xmlns:fui="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
-    xmlns:local="clr-namespace:VolumetricSelection2077"
-    xmlns:resources="clr-namespace:VolumetricSelection2077.Resources"
+    xmlns:local="clr-namespace:VolumetricSelection2077.App"
+    xmlns:resources="clr-namespace:VolumetricSelection2077.App.Resources"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border Margin="5">
         <StackPanel>

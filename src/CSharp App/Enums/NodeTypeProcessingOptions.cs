@@ -1,5 +1,5 @@
 // ReSharper disable InconsistentNaming
-namespace VolumetricSelection2077.Enums;
+namespace VolumetricSelection2077.App.Enums;
 
 public enum NodeTypeProcessingOptions : byte
 {

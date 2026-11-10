@@ -3,13 +3,13 @@ using System.Collections;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using VolumetricSelection2077.Json.Helpers;
+using VolumetricSelection2077.App.Json.Helpers;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using VolumetricSelection2077.Enums;
+using VolumetricSelection2077.App.Enums;
 
-namespace VolumetricSelection2077.Models.SettingsDTO;
+namespace VolumetricSelection2077.App.Models.SettingsDTO;
 
 public partial class SettingsDTOV0 : SettingsDTO
 {

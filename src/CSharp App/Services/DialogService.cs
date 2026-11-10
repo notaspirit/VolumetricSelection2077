@@ -3,11 +3,11 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Views;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Views;
 using WolvenKit.Common.PhysX;
 
-namespace VolumetricSelection2077.Services;
+namespace VolumetricSelection2077.App.Services;
 
 public class DialogService
 {

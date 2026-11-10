@@ -4,10 +4,10 @@ using System.Text;
 using System.Threading.Tasks;
 using LightningDB;
 using MessagePack;
-using VolumetricSelection2077.Enums;
-using VolumetricSelection2077.Models;
+using VolumetricSelection2077.App.Enums;
+using VolumetricSelection2077.App.Models;
 
-namespace VolumetricSelection2077.Services;
+namespace VolumetricSelection2077.App.Services;
 
 /// <summary>
 /// This part of the partial class is responsible for read and write operations to the cache.

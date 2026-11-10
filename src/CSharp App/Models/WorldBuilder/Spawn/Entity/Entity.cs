@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace VolumetricSelection2077.Models.WorldBuilder.Spawn.Entity;
+namespace VolumetricSelection2077.App.Models.WorldBuilder.Spawn.Entity;
 
 public class Entity : Spawnable
 {

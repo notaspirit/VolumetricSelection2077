@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using Avalonia.Threading;
 
-namespace VolumetricSelection2077.Extensions;
+namespace VolumetricSelection2077.App.Extensions;
 
 public class TrackedDispatchTimer : DispatcherTimer
 {

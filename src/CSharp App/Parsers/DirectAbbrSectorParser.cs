@@ -2,10 +2,10 @@ using System;
 using System.Linq;
 using MessagePack;
 using SharpDX;
-using VolumetricSelection2077.Converters.Simple;
-using VolumetricSelection2077.Enums;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Services;
+using VolumetricSelection2077.App.Converters.Simple;
+using VolumetricSelection2077.App.Enums;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Services;
 using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.Archive.CR2W;
 using WolvenKit.RED4.Types;
@@ -13,7 +13,7 @@ using Quaternion = SharpDX.Quaternion;
 using Vector3 = SharpDX.Vector3;
 using worldNodeData = WolvenKit.RED4.Archive.Buffer.worldNodeData;
 
-namespace VolumetricSelection2077.Parsers;
+namespace VolumetricSelection2077.App.Parsers;
 
 public class DirectAbbrSectorParser
 {

@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
-using VolumetricSelection2077.models.WorldBuilder.Structs;
+using VolumetricSelection2077.App.models.WorldBuilder.Structs;
 
-namespace VolumetricSelection2077.Models.WorldBuilder.Spawn.Collision;
+namespace VolumetricSelection2077.App.Models.WorldBuilder.Spawn.Collision;
 
 public class Collision : ColliderBase
 {

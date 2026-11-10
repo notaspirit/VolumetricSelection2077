@@ -1,7 +1,7 @@
 using Serilog.Core;
 using Serilog.Events;
 using Avalonia.Threading;
-using VolumetricSelection2077.Views;
+using VolumetricSelection2077.App.Views;
 using Serilog.Formatting;
 using Serilog.Formatting.Display;
 using System.IO;

@@ -1,15 +1,15 @@
 using System.Linq;
 using MessagePack;
 using SharpDX;
-using VolumetricSelection2077.Converters.Simple;
-using VolumetricSelection2077.Enums;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Services;
+using VolumetricSelection2077.App.Converters.Simple;
+using VolumetricSelection2077.App.Enums;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Services;
 using WolvenKit.RED4.Types;
 using WEnums = WolvenKit.RED4.Types.Enums;
 using Vector3 = SharpDX.Vector3;
 
-namespace VolumetricSelection2077.TestingStuff;
+namespace VolumetricSelection2077.App.TestingStuff;
 
 public class CompareNewSectorBoundsWithStreamingBlock : IDebugTool
 {

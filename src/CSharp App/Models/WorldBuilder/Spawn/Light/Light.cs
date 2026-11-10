@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using WEnums = WolvenKit.RED4.Types.Enums;
 
-namespace VolumetricSelection2077.Models.WorldBuilder.Spawn.Light;
+namespace VolumetricSelection2077.App.Models.WorldBuilder.Spawn.Light;
 
 public class Light : Visualized
 {

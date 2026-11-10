@@ -2,19 +2,19 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
-using VolumetricSelection2077.Json.Helpers;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Models.WorldBuilder.Editor;
-using VolumetricSelection2077.Models.WorldBuilder.Favorites;
-using VolumetricSelection2077.Models.WorldBuilder.Spawn;
-using VolumetricSelection2077.Models.WorldBuilder.Spawn.Entity;
-using VolumetricSelection2077.Models.WorldBuilder.Spawn.Light;
-using VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
-using VolumetricSelection2077.models.WorldBuilder.Spawn.Visual;
-using VolumetricSelection2077.models.WorldBuilder.Structs;
+using VolumetricSelection2077.App.Json.Helpers;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Models.WorldBuilder.Editor;
+using VolumetricSelection2077.App.Models.WorldBuilder.Favorites;
+using VolumetricSelection2077.App.Models.WorldBuilder.Spawn;
+using VolumetricSelection2077.App.Models.WorldBuilder.Spawn.Entity;
+using VolumetricSelection2077.App.Models.WorldBuilder.Spawn.Light;
+using VolumetricSelection2077.App.Models.WorldBuilder.Spawn.Mesh;
+using VolumetricSelection2077.App.models.WorldBuilder.Spawn.Visual;
+using VolumetricSelection2077.App.models.WorldBuilder.Structs;
 using XXHash3NET;
 
-namespace VolumetricSelection2077.Services;
+namespace VolumetricSelection2077.App.Services;
 
 public static class WorldBuilderMergingService
 {

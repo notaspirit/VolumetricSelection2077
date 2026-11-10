@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
-using VolumetricSelection2077.Json.Converters;
+using VolumetricSelection2077.App.Json.Converters;
 
-namespace VolumetricSelection2077.Json.Helpers;
+namespace VolumetricSelection2077.App.Json.Helpers;
 
 public static class JsonSerializerPresets
 {

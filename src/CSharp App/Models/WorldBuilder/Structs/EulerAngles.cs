@@ -1,9 +1,9 @@
 using System;
 using System.Globalization;
-using VolumetricSelection2077.Converters.Simple;
+using VolumetricSelection2077.App.Converters.Simple;
 using WolvenKit.RED4.Types;
 
-namespace VolumetricSelection2077.models.WorldBuilder.Structs;
+namespace VolumetricSelection2077.App.models.WorldBuilder.Structs;
 
 public class EulerAngles
 {

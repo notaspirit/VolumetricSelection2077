@@ -5,12 +5,12 @@
     Title="{Binding Title}"
     WindowStartupLocation="CenterOwner"
     mc:Ignorable="d"
-    x:Class="VolumetricSelection2077.Views.Dialog"
+    x:Class="VolumetricSelection2077.App.Views.Dialog"
     x:DataType="viewModels:DialogWindowViewModel"
     xmlns="https://github.com/avaloniaui"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:viewModels="clr-namespace:VolumetricSelection2077.ViewModels"
+    xmlns:viewModels="clr-namespace:VolumetricSelection2077.App.ViewModels"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <StackPanel>
         <TextBlock

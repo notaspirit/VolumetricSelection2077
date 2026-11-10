@@ -1,7 +1,7 @@
 using System;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace VolumetricSelection2077.Models.SettingsDTO;
+namespace VolumetricSelection2077.App.Models.SettingsDTO;
 
 public class SettingsDTO : ObservableObject
 {

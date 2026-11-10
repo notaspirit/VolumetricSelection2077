@@ -1,6 +1,6 @@
-using VolumetricSelection2077.Enums;
+using VolumetricSelection2077.App.Enums;
 
-namespace VolumetricSelection2077.Models;
+namespace VolumetricSelection2077.App.Models;
 
 public class WriteCacheRequest
 {

@@ -1,12 +1,12 @@
 using System.IO;
 using Newtonsoft.Json;
-using VolumetricSelection2077.Json.Helpers;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Models.WorldBuilder.Editor;
+using VolumetricSelection2077.App.Json.Helpers;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Models.WorldBuilder.Editor;
 
-using VolumetricSelection2077.Services;
+using VolumetricSelection2077.App.Services;
 
-namespace VolumetricSelection2077.TestingStuff;
+namespace VolumetricSelection2077.App.TestingStuff;
 
 public class TestWheezeKitSerialization : IDebugTool
 {

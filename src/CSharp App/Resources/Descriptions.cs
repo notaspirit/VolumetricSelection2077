@@ -1,4 +1,4 @@
-namespace VolumetricSelection2077.Resources
+namespace VolumetricSelection2077.App.Resources
 {
         public static class ToolTips
         {

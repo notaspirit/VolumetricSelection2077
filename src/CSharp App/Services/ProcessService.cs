@@ -1,16 +1,16 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using VolumetricSelection2077.Models;
+using VolumetricSelection2077.App.Models;
 using System.Linq;
 using System.Text.RegularExpressions;
 using DynamicData;
 using MessagePack;
-using VEnums = VolumetricSelection2077.Enums;
+using VEnums = VolumetricSelection2077.App.Enums;
 using WEnums = WolvenKit.RED4.Types.Enums;
 using SharpDX;
 
-namespace VolumetricSelection2077.Services;
+namespace VolumetricSelection2077.App.Services;
 
 public class ProcessService
 {

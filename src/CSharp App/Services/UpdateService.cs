@@ -7,9 +7,9 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Octokit;
-using VolumetricSelection2077.Enums;
+using VolumetricSelection2077.App.Enums;
 
-namespace VolumetricSelection2077.Services;
+namespace VolumetricSelection2077.App.Services;
 
 public class UpdateService
 {
@@ -191,7 +191,7 @@ public class UpdateService
 
         if (OperatingSystem.IsWindows())
         {
-            var exePath = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "VolumetricSelection2077.exe");
+            var exePath = Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "VolumetricSelection2077.App.exe");
             var scriptPath = Path.Combine(rootTempPath, "update.ps1");
             var vbsScriptPath = Path.Combine(rootTempPath, "update.vbs");
             File.WriteAllText(scriptPath, $@"

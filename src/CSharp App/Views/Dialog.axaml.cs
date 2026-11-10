@@ -3,11 +3,11 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using DynamicData;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Services;
-using VolumetricSelection2077.ViewModels;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Services;
+using VolumetricSelection2077.App.ViewModels;
 
-namespace VolumetricSelection2077.Views;
+namespace VolumetricSelection2077.App.Views;
 
 public partial class Dialog : Window
 {

@@ -1,8 +1,8 @@
 using Newtonsoft.Json;
 using WEnums = WolvenKit.RED4.Types.Enums;
-using Vector3 = VolumetricSelection2077.models.WorldBuilder.Structs.Vector3;
+using Vector3 = VolumetricSelection2077.App.models.WorldBuilder.Structs.Vector3;
 
-namespace VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
+namespace VolumetricSelection2077.App.Models.WorldBuilder.Spawn.Mesh;
 
 public class Mesh : Spawnable
 {

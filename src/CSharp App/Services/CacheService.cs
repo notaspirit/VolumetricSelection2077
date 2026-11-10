@@ -11,11 +11,11 @@ using LightningDB;
 using MessagePack;
 using Microsoft.VisualBasic.FileIO;
 using SharpDX;
-using VolumetricSelection2077.Enums;
-using VolumetricSelection2077.Models;
+using VolumetricSelection2077.App.Enums;
+using VolumetricSelection2077.App.Models;
 using SearchOption = System.IO.SearchOption;
 
-namespace VolumetricSelection2077.Services;
+namespace VolumetricSelection2077.App.Services;
 
 /// <summary>
 /// This part of the class is responsible for managing the instance, lightingdb and debug / metadata. 

@@ -1,9 +1,9 @@
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Services;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Services;
 
-namespace VolumetricSelection2077.TestingStuff;
+namespace VolumetricSelection2077.App.TestingStuff;
 
 public class ManualTaskPlayground : IDebugTool
 {

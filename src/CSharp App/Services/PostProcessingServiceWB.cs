@@ -2,13 +2,13 @@ using System;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
-using VolumetricSelection2077.Enums;
-using VolumetricSelection2077.Json.Helpers;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Models.WorldBuilder.Editor;
-using VolumetricSelection2077.Models.WorldBuilder.Favorites;
+using VolumetricSelection2077.App.Enums;
+using VolumetricSelection2077.App.Json.Helpers;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Models.WorldBuilder.Editor;
+using VolumetricSelection2077.App.Models.WorldBuilder.Favorites;
 
-namespace VolumetricSelection2077.Services;
+namespace VolumetricSelection2077.App.Services;
 
 public partial class PostProcessingService
 {

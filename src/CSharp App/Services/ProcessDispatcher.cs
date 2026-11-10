@@ -2,11 +2,11 @@ using System;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
-using VolumetricSelection2077.Enums;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Parsers;
+using VolumetricSelection2077.App.Enums;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Parsers;
 
-namespace VolumetricSelection2077.Services;
+namespace VolumetricSelection2077.App.Services;
 
 public class ProcessDispatcher
 {

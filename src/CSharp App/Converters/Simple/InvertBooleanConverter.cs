@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using Avalonia.Data.Converters;
 
-namespace VolumetricSelection2077.Converters.Simple;
+namespace VolumetricSelection2077.App.Converters.Simple;
 
 public class InvertBooleanConverter : IValueConverter
 {

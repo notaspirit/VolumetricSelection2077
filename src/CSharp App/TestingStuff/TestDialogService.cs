@@ -1,11 +1,11 @@
 using System.Threading.Tasks;
 using Avalonia.Controls;
-using VolumetricSelection2077.Enums;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Resources;
-using VolumetricSelection2077.Services;
+using VolumetricSelection2077.App.Enums;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Resources;
+using VolumetricSelection2077.App.Services;
 
-namespace VolumetricSelection2077.TestingStuff;
+namespace VolumetricSelection2077.App.TestingStuff;
 
 public class TestDialogService
 {

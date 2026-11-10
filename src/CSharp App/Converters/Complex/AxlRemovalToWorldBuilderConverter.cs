@@ -5,26 +5,26 @@ using DynamicData;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SharpDX;
-using VolumetricSelection2077.Converters.Simple;
-using VolumetricSelection2077.Enums;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Models.WorldBuilder.Editor;
-using VolumetricSelection2077.Models.WorldBuilder.Spawn.Collision;
-using VolumetricSelection2077.Models.WorldBuilder.Spawn.Entity;
-using VolumetricSelection2077.Models.WorldBuilder.Spawn.Light;
-using VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
-using VolumetricSelection2077.models.WorldBuilder.Spawn.Visual;
-using VolumetricSelection2077.Services;
+using VolumetricSelection2077.App.Converters.Simple;
+using VolumetricSelection2077.App.Enums;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Models.WorldBuilder.Editor;
+using VolumetricSelection2077.App.Models.WorldBuilder.Spawn.Collision;
+using VolumetricSelection2077.App.Models.WorldBuilder.Spawn.Entity;
+using VolumetricSelection2077.App.Models.WorldBuilder.Spawn.Light;
+using VolumetricSelection2077.App.Models.WorldBuilder.Spawn.Mesh;
+using VolumetricSelection2077.App.models.WorldBuilder.Spawn.Visual;
+using VolumetricSelection2077.App.Services;
 using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.Archive.CR2W;
 using WolvenKit.RED4.CR2W.JSON;
 using WolvenKit.RED4.Types;
 using Activator = System.Activator;
-using Collision = VolumetricSelection2077.Models.WorldBuilder.Spawn.Collision.Collision;
+using Collision = VolumetricSelection2077.App.Models.WorldBuilder.Spawn.Collision.Collision;
 using Vector4 = SharpDX.Vector4;
 using WEnums = WolvenKit.RED4.Types.Enums;
 
-namespace VolumetricSelection2077.Converters.Complex;
+namespace VolumetricSelection2077.App.Converters.Complex;
 
 public class AxlRemovalToWorldBuilderConverter
 {

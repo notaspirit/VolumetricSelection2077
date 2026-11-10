@@ -2,21 +2,21 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
-using VolumetricSelection2077.Enums;
+using VolumetricSelection2077.App.Enums;
 using WolvenKit;
 using WolvenKit.Common.Services;
 using WolvenKit.Core.Interfaces;
 using WolvenKit.Core.Services;
 using WolvenKit.RED4.CR2W.Archive;
 using WolvenKit.RED4.CR2W;
-using VolumetricSelection2077.MessagePack.Helpers;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Models.WorldBuilder.Spawn.Collision;
-using VolumetricSelection2077.Parsers;
+using VolumetricSelection2077.App.MessagePack.Helpers;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Models.WorldBuilder.Spawn.Collision;
+using VolumetricSelection2077.App.Parsers;
 using WolvenKit.Common;
 using WolvenKit.RED4.Types.Pools;
 
-namespace VolumetricSelection2077.Services;
+namespace VolumetricSelection2077.App.Services;
 
 public class GameFileService
 {

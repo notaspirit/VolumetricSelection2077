@@ -5,12 +5,12 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using VolumetricSelection2077.Parsers;
-using VolumetricSelection2077.Services;
-using VolumetricSelection2077.TestingStuff;
-using VolumetricSelection2077.Views;
+using VolumetricSelection2077.App.Parsers;
+using VolumetricSelection2077.App.Services;
+using VolumetricSelection2077.App.TestingStuff;
+using VolumetricSelection2077.App.Views;
 
-namespace VolumetricSelection2077;
+namespace VolumetricSelection2077.App;
 
 public partial class App : Application
 {

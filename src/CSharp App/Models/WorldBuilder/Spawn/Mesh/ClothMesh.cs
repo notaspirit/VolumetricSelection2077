@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using WolvenKit.RED4.Types;
 
-namespace VolumetricSelection2077.Models.WorldBuilder.Spawn.Mesh;
+namespace VolumetricSelection2077.App.Models.WorldBuilder.Spawn.Mesh;
 
 public class ClothMesh : Mesh
 {

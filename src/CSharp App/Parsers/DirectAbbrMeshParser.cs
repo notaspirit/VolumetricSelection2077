@@ -2,15 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using SharpDX;
-using VolumetricSelection2077.Converters.Simple;
-using VolumetricSelection2077.Models;
+using VolumetricSelection2077.App.Converters.Simple;
+using VolumetricSelection2077.App.Models;
 using WolvenKit.Common.PhysX;
 using WolvenKit.RED4.Archive;
 using WolvenKit.RED4.Archive.CR2W;
 using WolvenKit.RED4.Types;
 using Vector4 = SharpDX.Vector4;
 
-namespace VolumetricSelection2077.Parsers;
+namespace VolumetricSelection2077.App.Parsers;
 
 public class DirectAbbrMeshParser
 {

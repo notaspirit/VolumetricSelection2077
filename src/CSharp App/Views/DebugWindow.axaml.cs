@@ -7,15 +7,15 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Shapes;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
-using VolumetricSelection2077.Extensions;
-using VolumetricSelection2077.Models;
-using VolumetricSelection2077.Services;
-using VolumetricSelection2077.TestingStuff;
-using VolumetricSelection2077.ViewModels;
+using VolumetricSelection2077.App.Extensions;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Services;
+using VolumetricSelection2077.App.TestingStuff;
+using VolumetricSelection2077.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Path = System.IO.Path;
 
-namespace VolumetricSelection2077.Views;
+namespace VolumetricSelection2077.App.Views;
 
 public partial class DebugWindow : Window
 {
