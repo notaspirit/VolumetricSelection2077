@@ -33,10 +33,7 @@ public class AxlRemovalNodeDeletion
     
     [JsonProperty("index")]
     public required int Index { get; set; }
-}
-
-public class AxlRemovalNodeInstanceDeletion
-{
+    
     [JsonProperty("actorDeletions")] 
     public List<int> ActorDeletions { get; set; } = [];
     

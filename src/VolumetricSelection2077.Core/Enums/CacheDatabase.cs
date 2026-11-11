@@ -1,10 +1,11 @@
 namespace VolumetricSelection2077.Core.Enums;
 
-public enum CacheDatabases
+public enum CacheDatabase
 {
     Vanilla,
     Modded,
     VanillaBounds,
     ModdedBounds,
-    All
+    AllBounds,
+    AllDatabases
 }

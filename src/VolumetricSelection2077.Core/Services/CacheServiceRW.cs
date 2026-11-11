@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using LightningDB;
@@ -26,13 +27,22 @@ public partial class CacheService
         LightningDatabase[] dbs;
         switch (request.Database)
         {
-            case CacheDatabases.Vanilla:
+            case CacheDatabase.Vanilla:
                 dbs = new[] { _vanillaDatabase };
                 break;
-            case CacheDatabases.Modded:
+            case CacheDatabase.Modded:
                 dbs = new[] { _moddedDatabase };
                 break;
-            case CacheDatabases.All:
+            case CacheDatabase.VanillaBounds:
+                dbs = new[] { _vanillaBoundsDatabase };
+                break;
+            case CacheDatabase.ModdedBounds:
+                dbs = new[] { _moddedBoundsDatabase };
+                break;
+            case CacheDatabase.AllBounds:
+                dbs = new[] { _vanillaBoundsDatabase, _moddedBoundsDatabase };
+                break;
+            case CacheDatabase.AllDatabases:
                 dbs = new[] { _vanillaDatabase, _moddedDatabase };
                 break;
             default:
@@ -56,20 +66,24 @@ public partial class CacheService
     /// <param name="database"></param>
     /// <returns></returns>
     /// <remarks>returns null if the cache is not initialized, database doesn't exist or the target is all databases</remarks>
-    public KeyValuePair<string, byte[]>[]? GetAllEntries(CacheDatabases database)
+    public KeyValuePair<string, byte[]>[]? GetAllEntries(CacheDatabase database)
     {
         if (!_isInitialized) return null;
         switch (database)
         {
-            case CacheDatabases.Vanilla:
+            case CacheDatabase.Vanilla:
                 return GetAllEntries(_vanillaDatabase);
-            case CacheDatabases.Modded:
+            case CacheDatabase.Modded:
                 return GetAllEntries(_moddedDatabase);
-            case CacheDatabases.VanillaBounds:
+            case CacheDatabase.VanillaBounds:
                 return GetAllEntries(_vanillaBoundsDatabase);
-            case CacheDatabases.ModdedBounds:
+            case CacheDatabase.ModdedBounds:
                 return GetAllEntries(_moddedBoundsDatabase);
-            case CacheDatabases.All:
+            case CacheDatabase.AllBounds:
+                return GetAllEntries(_vanillaBoundsDatabase)
+                    .Concat(GetAllEntries(_moddedBoundsDatabase))
+                    .ToArray();
+            case CacheDatabase.AllDatabases:
                 return null;
             default:
                 return null;
@@ -109,11 +123,21 @@ public partial class CacheService
         using var tx = _env.BeginTransaction();
         switch (request.Database)
         {
-            case CacheDatabases.Vanilla:
+            case CacheDatabase.Vanilla:
                 tx.Put(_vanillaDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
                 break;
-            case CacheDatabases.Modded:
+            case CacheDatabase.Modded:
                 tx.Put(_moddedDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
+                break;
+            case CacheDatabase.VanillaBounds:
+                tx.Put(_vanillaBoundsDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
+                break;
+            case CacheDatabase.ModdedBounds:
+                tx.Put(_moddedBoundsDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
+                break;
+            case CacheDatabase.AllBounds:
+                tx.Put(_vanillaBoundsDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
+                tx.Put(_moddedBoundsDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
                 break;
         }
         tx.Commit();
@@ -125,7 +149,7 @@ public partial class CacheService
     /// <param name="path">game file path</param>
     /// <param name="sector"></param>
     /// <param name="database"></param>
-    public void WriteEntry(string path, VSSector sector, CacheDatabases database)
+    public void WriteEntry(string path, VSSector sector, CacheDatabase database)
     {
         if (!_isInitialized) return;
         _ = Task.Run(() =>
@@ -141,7 +165,7 @@ public partial class CacheService
     /// <param name="path">game file path</param>
     /// <param name="mesh"></param>
     /// <param name="database"></param>
-    public void WriteEntry(string path, VSMesh mesh, CacheDatabases database)
+    public void WriteEntry(string path, VSMesh mesh, CacheDatabase database)
     {
         if (!_isInitialized) return;
         _ = Task.Run(() =>
@@ -195,16 +219,20 @@ public partial class CacheService
             {
                 switch (request.Database)
                 {
-                    case CacheDatabases.Vanilla:
+                    case CacheDatabase.Vanilla:
                         requestsVanilla.Add(request);
                         break;
-                    case CacheDatabases.Modded:
+                    case CacheDatabase.Modded:
                         requestsModded.Add(request);
                         break;
-                    case CacheDatabases.VanillaBounds:
+                    case CacheDatabase.VanillaBounds:
                         requestsVanillaBounds.Add(request);
                         break;
-                    case CacheDatabases.ModdedBounds:
+                    case CacheDatabase.ModdedBounds:
+                        requestsModdedBounds.Add(request);
+                        break;
+                    case CacheDatabase.AllBounds:
+                        requestsVanillaBounds.Add(request);
                         requestsModdedBounds.Add(request);
                         break;
                 }
@@ -258,8 +286,8 @@ public partial class CacheService
 
         if (ClearCacheOnExit)
         {
-            ClearDatabase(CacheDatabases.Vanilla, true);
-            ClearDatabase(CacheDatabases.Modded, true);
+            ClearDatabase(CacheDatabase.Vanilla, true);
+            ClearDatabase(CacheDatabase.Modded, true);
         }
             
         

@@ -79,10 +79,10 @@ public partial class CacheService
             _env.Open();
         
             var tx = _env.BeginTransaction();
-            _moddedDatabase = tx.OpenDatabase(CacheDatabases.Modded.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
-            _vanillaDatabase = tx.OpenDatabase(CacheDatabases.Vanilla.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
-            _moddedBoundsDatabase = tx.OpenDatabase(CacheDatabases.ModdedBounds.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
-            _vanillaBoundsDatabase = tx.OpenDatabase(CacheDatabases.VanillaBounds.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
+            _moddedDatabase = tx.OpenDatabase(CacheDatabase.Modded.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
+            _vanillaDatabase = tx.OpenDatabase(CacheDatabase.Vanilla.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
+            _moddedBoundsDatabase = tx.OpenDatabase(CacheDatabase.ModdedBounds.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
+            _vanillaBoundsDatabase = tx.OpenDatabase(CacheDatabase.VanillaBounds.ToString(), new DatabaseConfiguration() { Flags = DatabaseOpenFlags.Create });
             tx.Commit();
             
             LoadKnownBadResources();
@@ -93,7 +93,7 @@ public partial class CacheService
                 _logger.Warning("Cache is stale, resetting database");
                 ClearMetaData();
                 ClearKnownBadResources();
-                ClearDatabase(CacheDatabases.All, true);
+                ClearDatabase(CacheDatabase.AllDatabases, true);
             }
             _isInitialized = true;
         }
@@ -180,7 +180,7 @@ public partial class CacheService
             MaxReaders = MaxReaders
         };
         tempEnv.Open();
-        var databases = new [] { CacheDatabases.Vanilla.ToString(), CacheDatabases.Modded.ToString(), CacheDatabases.VanillaBounds.ToString(), CacheDatabases.ModdedBounds.ToString() };
+        var databases = new [] { CacheDatabase.Vanilla.ToString(), CacheDatabase.Modded.ToString(), CacheDatabase.VanillaBounds.ToString(), CacheDatabase.ModdedBounds.ToString() };
 
         foreach (var database in databases)
         {
@@ -228,7 +228,7 @@ public partial class CacheService
     /// <param name="database">target database(s)</param>
     /// <param name="bypass">bypass initialization check</param>
     /// <exception cref="Exception">Cache service is not initialized</exception>
-    public void ClearDatabase(CacheDatabases database, bool bypass = false)
+    public void ClearDatabase(CacheDatabase database, bool bypass = false)
     {
         if (!_isInitialized && !bypass) throw new Exception("Cache service must be initialized before calling ClearDatabase");
         var resize = ShouldResize(database, GetStats(), _cacheDirectory);
@@ -239,20 +239,25 @@ public partial class CacheService
             var queuedDataBases = new List<LightningDatabase>(); 
             switch (database)
             {
-                case CacheDatabases.Vanilla:
+                case CacheDatabase.Vanilla:
                     queuedDataBases.Add(_vanillaDatabase);
                     break;
-                case CacheDatabases.Modded:
+                case CacheDatabase.Modded:
                     queuedDataBases.Add(_moddedDatabase);
                     break;
-                case CacheDatabases.VanillaBounds:
+                case CacheDatabase.VanillaBounds:
                     queuedDataBases.Add(_vanillaBoundsDatabase);
                     SetMetaDataVanillaBoundsStatus(false);
                     break;
-                case CacheDatabases.ModdedBounds:
+                case CacheDatabase.ModdedBounds:
                     queuedDataBases.Add(_moddedBoundsDatabase);
                     break;
-                case CacheDatabases.All:
+                case CacheDatabase.AllBounds:
+                    queuedDataBases.Add(_vanillaBoundsDatabase);
+                    queuedDataBases.Add(_moddedBoundsDatabase);
+                    SetMetaDataVanillaBoundsStatus(false);
+                    break;
+                case CacheDatabase.AllDatabases:
                     queuedDataBases.Add(_vanillaDatabase);
                     queuedDataBases.Add(_moddedDatabase);
                     queuedDataBases.Add(_vanillaBoundsDatabase);
@@ -530,7 +535,7 @@ public partial class CacheService
     {
         if (!File.Exists(path))
             throw new Exception("File does not exist!");
-        ClearDatabase(CacheDatabases.VanillaBounds);
+        ClearDatabase(CacheDatabase.VanillaBounds);
         var dump = MessagePackSerializer.Deserialize<SerializedSectorBoundingBoxes>(File.ReadAllBytes(path));
         var cacheMetadata = GetMetadata();
         if (dump.GameVersion != cacheMetadata.GameVersion || dump.DatabaseVersion != cacheMetadata.DatabaseVersion)
@@ -600,7 +605,7 @@ public partial class CacheService
     /// <param name="resizeAfterBytes">threshold for resizing</param>
     /// <returns></returns>
     /// <exception cref="ArgumentOutOfRangeException">if CacheDatabases.All is passed</exception>
-    private static bool ShouldResize(CacheDatabases db, CacheStats stats, string cacheDirectory, ulong resizeAfterBytes = 1024 * 1024 * 1024)
+    private static bool ShouldResize(CacheDatabase db, CacheStats stats, string cacheDirectory, ulong resizeAfterBytes = 1024 * 1024 * 1024)
     {
         FileSize sizeToRemove;
         FileSize totalSize = new FileSize(stats.EstVanillaSize.Bytes + 
@@ -610,19 +615,22 @@ public partial class CacheService
         
         switch (db)
         {
-            case CacheDatabases.Vanilla:
+            case CacheDatabase.Vanilla:
                 sizeToRemove = stats.EstVanillaSize;
                 break;
-            case CacheDatabases.Modded:
+            case CacheDatabase.Modded:
                 sizeToRemove = stats.EstModdedSize;
                 break;
-            case CacheDatabases.VanillaBounds:
+            case CacheDatabase.VanillaBounds:
                 sizeToRemove = stats.EstVanillaBoundsSize;
                 break;
-            case CacheDatabases.ModdedBounds:
+            case CacheDatabase.ModdedBounds:
                 sizeToRemove = stats.EstModdedBoundsSize;
                 break;
-            case CacheDatabases.All:
+            case CacheDatabase.AllBounds:
+                sizeToRemove = new FileSize(stats.EstVanillaBoundsSize.Bytes + stats.EstModdedBoundsSize.Bytes);
+                break;
+            case CacheDatabase.AllDatabases:
                 sizeToRemove = totalSize;
                 break;
             default:

@@ -8,7 +8,7 @@ namespace VolumetricSelection2077.Core.Models
     public class VSSector
     {
         [Key(0)]
-        public required VSSectorNode[] Nodes { get; set; }
+        public required VSNode[] Nodes { get; set; }
     
         [Key(1)]
         public required VSNodeData[] NodeData { get; set; }
@@ -41,7 +41,7 @@ namespace VolumetricSelection2077.Core.Models
     }
 
     [MessagePackObject]
-    public class VSSectorNode
+    public class VSNode
     {
         [Key(0)]
         public string Type { get; set; }
@@ -66,7 +66,7 @@ namespace VolumetricSelection2077.Core.Models
         public required VSTransform Transform { get; set; }
     
         [Key(1)]
-        public VSActorShape[]? Shapes { get; set; }
+        public VSActorShape[] Shapes { get; set; }
     }
 
     [MessagePackObject]

@@ -4,9 +4,9 @@ namespace VolumetricSelection2077.Core.Models;
 
 public class ReadCacheRequest
 {
-    public CacheDatabases Database { get; set; }
+    public CacheDatabase Database { get; set; }
     public string Key { get; set; }
-    public ReadCacheRequest(string key, CacheDatabases database = CacheDatabases.Vanilla)
+    public ReadCacheRequest(string key, CacheDatabase database = CacheDatabase.Vanilla)
     {
         Key = key;
         Database = database;
