@@ -4,9 +4,9 @@ using VolumetricSelection2077.Core.Models.WorldBuilder.Structs;
 
 namespace VolumetricSelection2077.App.Converters.Simple;
 
-public class WorldBuilderToSharpDXConverter
+public static class WorldBuilderToSharpDXConverter
 {
-    public static Quaternion Quaternion(EulerAngles eulerAngles)
+    public static Quaternion ToSDXQ(this EulerAngles eulerAngles)
     {
         double halfPitch = eulerAngles.roll * Math.PI / 180.0 * 0.5;
         double halfYaw = eulerAngles.yaw * Math.PI / 180.0 * 0.5;

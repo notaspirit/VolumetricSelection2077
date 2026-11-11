@@ -1,8 +1,7 @@
-using System;
-using MathNet.Spatial.Euclidean;
+using SharpDX;
 using EulerAngles = VolumetricSelection2077.Core.Models.WorldBuilder.Structs.EulerAngles;
 
-namespace VolumetricSelection2077.App.Converters.Simple;
+namespace VolumetricSelection2077.Core.Converters.Simple;
 
 public class SharpDXToWorldBuilderConverter
 {
@@ -43,10 +42,10 @@ public class SharpDXToWorldBuilderConverter
 
     private static double[,] GetMatrix(Quaternion q)
     {
-        double w = q.Real;
-        double x = q.ImagX;
-        double y = q.ImagY;
-        double z = q.ImagZ;
+        double w = q.W;
+        double x = q.X;
+        double y = q.Y;
+        double z = q.Z;
 
         double[,] m = new double[3,3];
 
