@@ -81,11 +81,11 @@ public class SelectionService : ISelectionService
             {
                 case ResultStatus.Error:
                     result.Status = ResultStatus.Warning;
-                    result.Message += $"Failed to query sector with path {localSectors[i]}: {sectorResult.Result.Message}\n";
+                    result.AddMessage($"Failed to query sector with path {localSectors[i]}: {sectorResult.Result.Message}");
                     break;
                 case ResultStatus.Warning:
                     result.Status = ResultStatus.Warning;
-                    result.Message += $"Warning when querying sector with path {localSectors[i]}: {sectorResult.Result.Message}\n";
+                    result.AddMessage($"Warning when querying sector with path {localSectors[i]}: {sectorResult.Result.Message}");
                     break;
                 case ResultStatus.Ok when sectorResult.Result.Data != null:
                     removalFile.Streaming.Sectors.Add(sectorResult.Result.Data);
@@ -124,7 +124,7 @@ public class SelectionService : ISelectionService
         if (sectorResult.Status == ResultStatus.Error || sectorResult.Data == null)
         {
             result.Status = ResultStatus.Error;
-            result.Message = $"Failed to get sector {sectorPath}: {sectorResult.Message}";
+            result.AddMessage($"Failed to get sector {sectorPath}: {sectorResult.Message}");
             return result;
         }
 
@@ -146,11 +146,11 @@ public class SelectionService : ISelectionService
             {
                 case ResultStatus.Error:
                     result.Status = ResultStatus.Warning;
-                    result.Message += $"Failed to query node at index {i}: {nodeResult.Result.Message}\n";
+                    result.AddMessage($"Failed to query node at index {i}: {nodeResult.Result.Message}");
                     break;
                 case ResultStatus.Warning:
                     result.Status = ResultStatus.Warning;
-                    result.Message += $"Warning when querying node at index {i}: {nodeResult.Result.Message}\n";
+                    result.AddMessage($"Warning when querying node at index {i}: {nodeResult.Result.Message}");
                     break;
                 case ResultStatus.Ok when nodeResult.Result.Data != null:
                     removalSector.NodeDeletions.Add(nodeResult.Result.Data);
@@ -245,7 +245,7 @@ public class SelectionService : ISelectionService
         if (meshResult.Status == ResultStatus.Error || meshResult.Data == null)
         {
             result.Status = ResultStatus.Error;
-            result.Message = $"Failed to get mesh {node.ResourcePath}: {meshResult.Message}";
+            result.AddMessage($"Failed to get mesh {node.ResourcePath}: {meshResult.Message}");
             return result;
         }
 
@@ -307,7 +307,7 @@ public class SelectionService : ISelectionService
             if (actorResult.Status == ResultStatus.Warning)
             {
                 result.Status = ResultStatus.Warning;
-                result.Message += actorResult.Message;
+                result.AddMessage(actorResult.Message);
             }
 
             if (actorResult.Data)
@@ -365,7 +365,7 @@ public class SelectionService : ISelectionService
                     if (collisionMeshResult.Status == ResultStatus.Error || collisionMeshResult.Data == null)
                     {
                         result.Status = ResultStatus.Warning;
-                        result.Message += $"Failed to get collision mesh for actor {actorIndex} shape index {shapeIndex} in node {nodeDataIndex}: {collisionMeshResult.Message}\n";
+                        result.AddMessage($"Failed to get collision mesh for actor {actorIndex} shape index {shapeIndex} in node {nodeDataIndex}: {collisionMeshResult.Message}");
                         break;
                     }
 

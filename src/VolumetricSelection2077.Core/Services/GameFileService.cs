@@ -102,7 +102,7 @@ public class GameFileService
         if (rawMesh == null)
         {
             result.Status = ResultStatus.Error;
-            result.Message = $"Failed to get PhysX mesh for sector hash {sectorHash} and actor hash {actorHash}";
+            result.AddMessage($"Failed to get PhysX mesh for sector hash {sectorHash} and actor hash {actorHash}");
             return result;
         }
 
@@ -114,7 +114,7 @@ public class GameFileService
         catch (Exception ex)
         {
             result.Status = ResultStatus.Error;
-            result.Message = $"Failed to parse PhysX mesh: {ex.Message}";
+            result.AddMessage($"Failed to parse PhysX mesh: {ex.Message}");
         }
 
         return result;
@@ -133,11 +133,7 @@ public class GameFileService
         if (type == typeof(VSSector))
             return GetResource<VSSector>(path);
 
-        return new Result
-        {
-            Status = ResultStatus.Error,
-            Message = $"Unsupported resource type: {type.Name}"
-        };
+        return new Result(ResultStatus.Error, $"Unsupported resource type: {type.Name}");
     }
 
     /// <summary>
@@ -153,7 +149,7 @@ public class GameFileService
         if (typeof(T) != typeof(VSMesh) && typeof(T) != typeof(VSSector))
         {
             result.Status = ResultStatus.Error;
-            result.Message = $"Unsupported resource type: {typeof(T).Name}";
+            result.AddMessage($"Unsupported resource type: {typeof(T).Name}");
             return result;
         }
         
@@ -164,12 +160,12 @@ public class GameFileService
             result.Status = ResultStatus.Ok;
             return result;
         }
-        
+
         var rawResource = ArchiveManager.GetCR2WFile(path);
         if (rawResource == null)
         {
             result.Status = ResultStatus.Error;
-            result.Message = "Failed to get CR2W file at specified filepath";
+            result.AddMessage("Failed to get CR2W file at specified filepath");
             return result;
         }
         
@@ -185,14 +181,14 @@ public class GameFileService
             catch (Exception ex)
             {
                 result.Status = ResultStatus.Error;
-                result.Message = $"Failed to parse mesh {path}: {ex.Message}";
+                result.AddMessage($"Failed to parse mesh {path}: {ex.Message}");
                 return result;
             }
 
             if (parsedMesh == null)
             {
                 result.Status = ResultStatus.Error;
-                result.Message = $"Failed to parse mesh {path}";
+                result.AddMessage($"Failed to parse mesh {path}");
                 return result;
             }
 
@@ -213,20 +209,20 @@ public class GameFileService
         catch (Exception ex)
         {
             result.Status = ResultStatus.Error;
-            result.Message = $"Failed to parse sector {path}: {ex.Message}";
+            result.AddMessage($"Failed to parse sector {path}: {ex.Message}");
             return result;
         }
 
         if (parsedSector.Status == ResultStatus.Error)
         {
             result.Status = parsedSector.Status;
-            result.Message = parsedSector.Message;
+            result.AddMessage(parsedSector.Message);
             return result;
         }
-        
+
         result.Data = (T)(object)parsedSector.Data!;
         result.Status = parsedSector.Status;
-        result.Message = parsedSector.Message;
+        result.AddMessage(parsedSector.Message);
 
         if (db != CacheDatabase.Modded || _useModdedResources)
             _cacheService.WriteEntry(path, parsedSector.Data!, db);

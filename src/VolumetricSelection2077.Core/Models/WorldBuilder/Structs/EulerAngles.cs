@@ -20,13 +20,13 @@ public class EulerAngles
     
     public EulerAngles() : this(0, 0, 0) { }
     
-    public static implicit operator SharpDX.Quaternion(EulerAngles value) => WorldBuilderToSharpDXConverter.Quaternion(value);
+    public static implicit operator SharpDX.Quaternion(EulerAngles value) => value.ToSDXQ();
     
     public static implicit operator EulerAngles(SharpDX.Quaternion value) => SharpDXToWorldBuilderConverter.EulerAngles(value);
     
     public static implicit operator WolvenKit.RED4.Types.Quaternion(EulerAngles value)
     {
-        var sharpdx = WorldBuilderToSharpDXConverter.Quaternion(value);
+        var sharpdx = value.ToSDXQ();
         return new Quaternion
         {
             I = sharpdx.X,

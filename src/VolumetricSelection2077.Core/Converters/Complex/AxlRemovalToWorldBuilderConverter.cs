@@ -111,12 +111,14 @@ public class AxlRemovalToWorldBuilderConverter
                  $"{formattedPaths}");
         }
 
-        return new Result<Element>
+        var result = new Result<Element>
         {
             Status = _messages.Count > 0 ? ResultStatus.Warning : ResultStatus.Ok,
-            Message = _messages.Count > 0 ? string.Join(Environment.NewLine, _messages) : null,
             Data = root
         };
+        if (_messages.Count > 0)
+            result.AddMessage(string.Join(Environment.NewLine, _messages));
+        return result;
     }
 
     private List<Element> ConvertNode(AxlRemovalNodeDeletion remNode, CR2WFile sectorCR2W,

@@ -37,7 +37,7 @@ public class VSSectorParser
         if (input.RootChunk is not worldStreamingSector sector)
         {
             result.Status = ResultStatus.Error;
-            result.Message = "Input file is not a world streaming sector";
+            result.AddMessage("Input file is not a world streaming sector");
             return result;
         }
     
@@ -371,7 +371,7 @@ public class VSSectorParser
         };
         result.Status = warnings.Count > 0 ? ResultStatus.Warning : ResultStatus.Ok;
         if (warnings.Count > 0)
-            result.Message = string.Join(Environment.NewLine, warnings);
+            result.AddMessage(string.Join(Environment.NewLine, warnings));
         
         return result;
     }
