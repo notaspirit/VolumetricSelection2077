@@ -1,22 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using DynamicData;
-using HelixToolkit.SharpDX.Core;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SharpDX;
-using VolumetricSelection2077.App.Converters.Simple;
-using VolumetricSelection2077.App.Enums;
-using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.Core.Converters.Simple;
+using VolumetricSelection2077.Core.Enums;
+using VolumetricSelection2077.Core.Models;
 using VolumetricSelection2077.Core.Models.WorldBuilder.Editor;
 using VolumetricSelection2077.Core.Models.WorldBuilder.Spawn.Collision;
 using VolumetricSelection2077.Core.Models.WorldBuilder.Spawn.Entity;
 using VolumetricSelection2077.Core.Models.WorldBuilder.Spawn.Light;
 using VolumetricSelection2077.Core.Models.WorldBuilder.Spawn.Mesh;
 using VolumetricSelection2077.Core.Models.WorldBuilder.Spawn.Visual;
-using VolumetricSelection2077.App.Services;
-using VolumetricSelection2077.Core.Models;
+using VolumetricSelection2077.Core.Services;
 using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.Archive.CR2W;
 using WolvenKit.RED4.CR2W.JSON;
@@ -30,24 +27,35 @@ namespace VolumetricSelection2077.Core.Converters.Complex;
 
 public class AxlRemovalToWorldBuilderConverter
 {
-    private GameFileService _gfs;
-    private List<string> _warnedTypes;
-    private Dictionary<string, List<string>> _embeddedResourcePaths;
-    private SettingsService _settings;
-    
-    public AxlRemovalToWorldBuilderConverter(GameFileService gfs, SettingsService settings)
+    private readonly GameFileService _gfs;
+    private readonly List<string> _warnedTypes;
+    private readonly Dictionary<string, List<string>> _embeddedResourcePaths;
+    private readonly List<string> _messages = new();
+
+    public AxlRemovalToWorldBuilderConverter(GameFileService gfs)
     {
         _gfs = gfs;
         _warnedTypes = new List<string>();
         _embeddedResourcePaths = new Dictionary<string, List<string>>();
-        _settings = settings;
     }
 
-    public Element Convert(AxlRemovalFile axlFile, string rootName)
+    /// <summary>
+    /// Converts an AXL removal file into a World Builder element tree.
+    /// </summary>
+    /// <param name="axlFile">The removal file to convert.</param>
+    /// <param name="rootName">Name of the generated root element.</param>
+    /// <param name="config">Conversion settings.</param>
+    /// <returns>
+    /// A result containing the generated root element. Any warnings produced during conversion are collected
+    /// in the message and set the status to <see cref="ResultStatus.Warning"/>.
+    /// </returns>
+    public Result<Element> Convert(AxlRemovalFile axlFile, string rootName,
+        AxlRemovalToWorldBuilderConverterConfig config)
     {
         _warnedTypes.Clear();
         _embeddedResourcePaths.Clear();
-        
+        _messages.Clear();
+
         var root = new PositionableGroup
         {
             Name = rootName
@@ -61,18 +69,18 @@ public class AxlRemovalToWorldBuilderConverter
             var worldSectorCR2W = _gfs?.ArchiveManager?.GetCR2WFile(sector.Path);
             if (worldSectorCR2W is not { RootChunk: worldStreamingSector wse })
             {
-                Logger.Warning($"Failed to get sector {sector.Path}, no nodes from that sector will be added.");
+                Warn($"Failed to get sector {sector.Path}, no nodes from that sector will be added.");
                 continue;
             }
 
-            AbbrSector? worldSectorAbbr = null;
-            
+            VSSector? worldSector = null;
+
             foreach (var node in sector.NodeDeletions)
             {
-                var convertedNode = ConvertNode(node, worldSectorCR2W, ref worldSectorAbbr, sector.Path);
+                var convertedNode = ConvertNode(node, worldSectorCR2W, ref worldSector, sector.Path, config);
                 if (convertedNode.Count == 0)
                     continue;
-                
+
                 if (root.Children.OfType<PositionableGroup>().All(pg => pg.Name != node.Type))
                     root.Children.Add(new PositionableGroup
                     {
@@ -97,17 +105,22 @@ public class AxlRemovalToWorldBuilderConverter
                 }
                 formattedPaths += "\n";
             }
-            
-            Logger.Warning($"Found {embeddedFilesCount} embedded resource paths. These will need to be manually extracted from their respective sectors and added to the project otherwise they will simply not show up in game.");
-            Logger.Warning("The following paths were found:\n" +
-                           $"{formattedPaths}");
+
+            Warn($"Found {embeddedFilesCount} embedded resource paths. These will need to be manually extracted from their respective sectors and added to the project otherwise they will simply not show up in game.");
+            Warn("The following paths were found:\n" +
+                 $"{formattedPaths}");
         }
-        
-        _warnedTypes.Clear();
-        _embeddedResourcePaths.Clear();
-        return root;
+
+        return new Result<Element>
+        {
+            Status = _messages.Count > 0 ? ResultStatus.Warning : ResultStatus.Ok,
+            Message = _messages.Count > 0 ? string.Join(Environment.NewLine, _messages) : null,
+            Data = root
+        };
     }
-    private List<Element> ConvertNode(AxlRemovalNodeDeletion remNode, CR2WFile sectorCR2W, ref AbbrSector? worldSectorAbbr, string sectorPath)
+
+    private List<Element> ConvertNode(AxlRemovalNodeDeletion remNode, CR2WFile sectorCR2W,
+        ref VSSector? worldSector, string sectorPath, AxlRemovalToWorldBuilderConverterConfig config)
     {
         var sector = sectorCR2W.RootChunk as worldStreamingSector;
         
@@ -214,17 +227,17 @@ public class AxlRemovalToWorldBuilderConverter
 
                 HandleEmbeddedResourceWarning(foliageNode.Mesh.DepotPath, sectorPath, ref sectorCR2W);
                 
-                worldSectorAbbr ??= _gfs.GetSector(sectorPath).Resource as AbbrSector;
-                if (worldSectorAbbr == null)
+                worldSector ??= GetSector(sectorPath);
+                if (worldSector == null)
                     return spawnableElements;
-                var abbrFoliageNodeNodeDataEntry = worldSectorAbbr.NodeData[remNode.Index];
-                foreach (var transform in abbrFoliageNodeNodeDataEntry.Transforms)
+                var foliageNodeDataEntry = worldSector.NodeData[remNode.Index];
+                for (var i = 0; i < foliageNodeDataEntry.Transforms.Length; i++)
                 {
-                    if (remNode.ActorDeletions != null && remNode.ActorDeletions.Count != 0)
-                        if (remNode.ActorDeletions.All(x => x != abbrFoliageNodeNodeDataEntry.Transforms.IndexOf(transform)))
-                            continue;
-                    
-                    
+                    if (remNode.ActorDeletions.Count != 0 && !remNode.ActorDeletions.Contains(i))
+                        continue;
+
+                    var transform = foliageNodeDataEntry.Transforms[i];
+
                     spawnableElements.Add(new SpawnableElement
                     {
                         Name = GetSpawnableName(foliageNode),
@@ -251,18 +264,19 @@ public class AxlRemovalToWorldBuilderConverter
 
                 HandleEmbeddedResourceWarning(instancedDestructibleMeshNode.Mesh.DepotPath, sectorPath, ref sectorCR2W);
                 
-                worldSectorAbbr ??= _gfs.GetSector(sectorPath).Resource as AbbrSector;
-                if (worldSectorAbbr == null)
+                worldSector ??= GetSector(sectorPath);
+                if (worldSector == null)
                     return spawnableElements;
-                var abbrInstancedDestructibleMeshNodeDataEntry = worldSectorAbbr.NodeData[remNode.Index];
-                foreach (var transform in abbrInstancedDestructibleMeshNodeDataEntry.Transforms)
+                var instancedDestructibleMeshNodeDataEntry = worldSector.NodeData[remNode.Index];
+                for (var i = 0; i < instancedDestructibleMeshNodeDataEntry.Transforms.Length; i++)
                 {
-                    if (remNode.ActorDeletions != null && remNode.ActorDeletions.Count != 0)
-                        if (remNode.ActorDeletions.All(x => x != abbrInstancedDestructibleMeshNodeDataEntry.Transforms.IndexOf(transform)))
-                            continue;
+                    if (remNode.ActorDeletions.Count != 0 && !remNode.ActorDeletions.Contains(i))
+                        continue;
+
+                    var transform = instancedDestructibleMeshNodeDataEntry.Transforms[i];
 
                     SpawnableElement instDestMeshNode;
-                    switch (_settings.Data.DestructibleMeshTreatment)
+                    switch (config.DestructibleMeshTreatment)
                     {
                         case DestructibleMeshTreatment.DynamicMesh:
                             instDestMeshNode = new SpawnableElement
@@ -311,7 +325,7 @@ public class AxlRemovalToWorldBuilderConverter
                             };
                             break;
                         default:
-                            throw new NotImplementedException($"Destructible Mesh Treatment {_settings.Data.DestructibleMeshTreatment} is not implemented.");
+                            throw new NotImplementedException($"Destructible Mesh Treatment {config.DestructibleMeshTreatment} is not implemented.");
                     }
                     spawnableElements.Add(instDestMeshNode);
                 }
@@ -323,7 +337,7 @@ public class AxlRemovalToWorldBuilderConverter
                 HandleEmbeddedResourceWarning(destructionNode.Mesh.DepotPath, sectorPath, ref sectorCR2W);
                 
                 SpawnableElement spawnabledestructionMesh; 
-                switch (_settings.Data.DestructibleMeshTreatment)
+                switch (config.DestructibleMeshTreatment)
                 {
                     case DestructibleMeshTreatment.DynamicMesh:
                         spawnabledestructionMesh = new SpawnableElement
@@ -350,7 +364,7 @@ public class AxlRemovalToWorldBuilderConverter
                         };
                         break;
                     default:
-                        throw new NotImplementedException($"Destructible Mesh Treatment {_settings.Data.DestructibleMeshTreatment} is not implemented.");
+                        throw new NotImplementedException($"Destructible Mesh Treatment {config.DestructibleMeshTreatment} is not implemented.");
                 }
                 PopulateSpawnable(ref spawnabledestructionMesh, nodeDataEntry);
                 spawnableElements.Add(spawnabledestructionMesh);
@@ -362,7 +376,7 @@ public class AxlRemovalToWorldBuilderConverter
                 HandleEmbeddedResourceWarning(dynamicMeshNode.Mesh.DepotPath, sectorPath, ref sectorCR2W);
 
                 SpawnableElement spawnabledynamicMesh;
-                switch (_settings.Data.DestructibleMeshTreatment)
+                switch (config.DestructibleMeshTreatment)
                 {
                     case DestructibleMeshTreatment.DynamicMesh:
                         spawnabledynamicMesh = new SpawnableElement
@@ -382,7 +396,7 @@ public class AxlRemovalToWorldBuilderConverter
                         };
                         break;
                     default:
-                        throw new NotImplementedException($"Destructible Mesh Treatment {_settings.Data.DestructibleMeshTreatment} is not implemented.");
+                        throw new NotImplementedException($"Destructible Mesh Treatment {config.DestructibleMeshTreatment} is not implemented.");
                 }
                 
                 PopulateBaseMesh(ref spawnabledynamicMesh, dynamicMeshNode, nodeDataEntry);
@@ -548,16 +562,17 @@ public class AxlRemovalToWorldBuilderConverter
 
                 HandleEmbeddedResourceWarning(instancedMeshNode.Mesh.DepotPath, sectorPath, ref sectorCR2W);
                 
-                worldSectorAbbr ??= _gfs.GetSector(sectorPath).Resource as AbbrSector;
-                if (worldSectorAbbr == null)
+                worldSector ??= GetSector(sectorPath);
+                if (worldSector == null)
                     return spawnableElements;
-                var abbrInstancedMeshNodeDataEntry = worldSectorAbbr.NodeData[remNode.Index];
-                foreach (var transform in abbrInstancedMeshNodeDataEntry.Transforms)
+                var instancedMeshNodeDataEntry = worldSector.NodeData[remNode.Index];
+                for (var i = 0; i < instancedMeshNodeDataEntry.Transforms.Length; i++)
                 {
-                    if (remNode.ActorDeletions != null && remNode.ActorDeletions.Count != 0)
-                        if (remNode.ActorDeletions.All(x => x != abbrInstancedMeshNodeDataEntry.Transforms.IndexOf(transform)))
-                            continue;
-                    
+                    if (remNode.ActorDeletions.Count != 0 && !remNode.ActorDeletions.Contains(i))
+                        continue;
+
+                    var transform = instancedMeshNodeDataEntry.Transforms[i];
+
                     spawnableElements.Add(new SpawnableElement
                     {
                         Name = GetSpawnableName(instancedMeshNode),
@@ -613,7 +628,7 @@ public class AxlRemovalToWorldBuilderConverter
             case worldCollisionNode collisionNode:
                 if (collisionNode.CompiledData.Data is not CollisionBuffer cb)
                 {
-                    Logger.Warning("Collision node buffer is not CollisionBuffer. Skipping...");
+                    Warn("Collision node buffer is not CollisionBuffer. Skipping...");
                     break;
                 }
 
@@ -683,7 +698,7 @@ public class AxlRemovalToWorldBuilderConverter
                                 spawnableElements.Add(cssSpawnable);
                                 break;
                             default:
-                                Logger.Warning($"Collision shape {shape.GetType()} is not supported. Skipping...");
+                                Warn($"Collision shape {shape.GetType()} is not supported. Skipping...");
                                 break;
                         }
                     }
@@ -693,7 +708,7 @@ public class AxlRemovalToWorldBuilderConverter
                 var nodeTypeString = node?.GetType().ToString() ?? "";
                 if (!_warnedTypes.Contains(nodeTypeString))
                 {
-                    Logger.Warning($"{nodeTypeString} is not a supported node type. Skipping...");
+                    Warn($"{nodeTypeString} is not a supported node type. Skipping...");
                     _warnedTypes.Add(nodeTypeString);
                 }
                 break;
@@ -705,25 +720,44 @@ public class AxlRemovalToWorldBuilderConverter
     {
         var matIndex = -1;
         if (shape.Materials.Count != 0)
-            matIndex = CollisionGenerics.Materials.IndexOf(shape.Materials[0].GetResolvedText());
+            matIndex = Array.IndexOf(CollisionGenerics.Materials, shape.Materials[0].GetResolvedText());
 
         if (matIndex != -1) return matIndex;
         matIndex = 1;
-        Logger.Warning($"Failed to resolve material {(shape.Materials.Count != 0 ? shape.Materials[0].GetResolvedText() : "")} (Hash: {shape.Materials[0].GetRedHash()}) for collision shape {shape.GetType()}. Using default.");
+        var material = shape.Materials.Count != 0 ? shape.Materials[0].GetResolvedText() : "";
+        var hash = shape.Materials.Count != 0 ? shape.Materials[0].GetRedHash().ToString() : "";
+        Warn($"Failed to resolve material {material} (Hash: {hash}) for collision shape {shape.GetType()}. Using default.");
 
         return matIndex;
     }
 
     private int GetPresetIndex(CollisionShape shape)
     {
-        var presIndex = CollisionGenerics.Presets.IndexOf(shape.Preset.GetResolvedText());
+        var presIndex = Array.IndexOf(CollisionGenerics.Presets, shape.Preset.GetResolvedText());
 
         if (presIndex != -1) return presIndex;
         presIndex = 33;
-        Logger.Warning($"Failed to resolve preset {shape.Preset.GetResolvedText()} (Hash: {shape.Preset.GetRedHash()}) for collision shape {shape.GetType()}. Using default.");
+        Warn($"Failed to resolve preset {shape.Preset.GetResolvedText()} (Hash: {shape.Preset.GetRedHash()}) for collision shape {shape.GetType()}. Using default.");
 
         return presIndex;
     }
+
+    private VSSector? GetSector(string sectorPath)
+    {
+        var sectorResult = _gfs.GetResource<VSSector>(sectorPath);
+        if (sectorResult.Status == ResultStatus.Error || sectorResult.Data == null)
+        {
+            Warn($"Failed to get sector {sectorPath}: {sectorResult.Message}");
+            return null;
+        }
+
+        if (!string.IsNullOrEmpty(sectorResult.Message))
+            Warn(sectorResult.Message);
+
+        return sectorResult.Data;
+    }
+
+    private void Warn(string message) => _messages.Add(message);
     
     private static string GetShapeTypeID(CEnum<WEnums.physicsShapeType> shapeType) => shapeType.GetEnumValue() switch
     {
@@ -806,12 +840,12 @@ public class AxlRemovalToWorldBuilderConverter
             return;
         
         var shapeTransformMatrix = Matrix.Scaling(new SharpDX.Vector3(1, 1, 1)) *
-                                   Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(cs.Rotation)) *
-                                   Matrix.Translation(WolvenkitToSharpDXConverter.Vector3(cs.Position));
+                                   Matrix.RotationQuaternion(cs.Rotation.ToSDXQ()) *
+                                   Matrix.Translation(cs.Position.ToSDXV3());
 
-        var actorTransformMatrixWScale = Matrix.Scaling(WolvenkitToSharpDXConverter.Vector3(ca.Scale)) * 
-                                         Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(ca.Orientation)) * 
-                                         Matrix.Translation(new SharpDX.Vector3(ca.Position.X, ca.Position.Y, ca.Position.Z));
+        var actorTransformMatrixWScale = Matrix.Scaling(ca.Scale.ToSDXV3()) *
+                                         Matrix.RotationQuaternion(ca.Orientation.ToSDXQ()) *
+                                         Matrix.Translation(FixedPointVector3Converter.PosBitsToVec3(ca.Position));
 
         var transformMatrixCombined = shapeTransformMatrix * actorTransformMatrixWScale;
         
@@ -825,8 +859,8 @@ public class AxlRemovalToWorldBuilderConverter
         
         // rotation breaks when matrix is calculated with scaling
         var actorTransformMatrixNoScale = Matrix.Scaling(new SharpDX.Vector3(1, 1, 1)) * 
-                                          Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(ca.Orientation)) * 
-                                          Matrix.Translation(new SharpDX.Vector3(ca.Position.X, ca.Position.Y, ca.Position.Z));
+                                          Matrix.RotationQuaternion(ca.Orientation.ToSDXQ()) *
+                                          Matrix.Translation(FixedPointVector3Converter.PosBitsToVec3(ca.Position));
 
         var transformMatrixNoScale = shapeTransformMatrix * actorTransformMatrixNoScale;
         
@@ -843,19 +877,19 @@ public class AxlRemovalToWorldBuilderConverter
             return;
         
         var shapeTransformMatrix = Matrix.Scaling(new SharpDX.Vector3(1, 1, 1)) *
-                                   Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(cs.Rotation)) *
-                                   Matrix.Translation(WolvenkitToSharpDXConverter.Vector3(cs.Position));
+                                   Matrix.RotationQuaternion(cs.Rotation.ToSDXQ()) *
+                                   Matrix.Translation(cs.Position.ToSDXV3());
 
-        var actorTransformMatrixWScale = Matrix.Scaling(WolvenkitToSharpDXConverter.Vector3(ca.Scale)) * 
-                                         Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(ca.Orientation)) * 
-                                         Matrix.Translation(new SharpDX.Vector3(ca.Position.X, ca.Position.Y, ca.Position.Z));
+        var actorTransformMatrixWScale = Matrix.Scaling(ca.Scale.ToSDXV3()) *
+                                         Matrix.RotationQuaternion(ca.Orientation.ToSDXQ()) *
+                                         Matrix.Translation(FixedPointVector3Converter.PosBitsToVec3(ca.Position));
 
         var transformMatrixCombined = shapeTransformMatrix * actorTransformMatrixWScale;
         
         // rotation breaks when matrix is calculated with scaling
         var actorTransformMatrixNoScale = Matrix.Scaling(new SharpDX.Vector3(1, 1, 1)) * 
-                                          Matrix.RotationQuaternion(WolvenkitToSharpDXConverter.Quaternion(ca.Orientation)) * 
-                                          Matrix.Translation(new SharpDX.Vector3(ca.Position.X, ca.Position.Y, ca.Position.Z));
+                                          Matrix.RotationQuaternion(ca.Orientation.ToSDXQ()) *
+                                          Matrix.Translation(FixedPointVector3Converter.PosBitsToVec3(ca.Position));
 
         var transformMatrixNoScale = shapeTransformMatrix * actorTransformMatrixNoScale;
         

@@ -1,12 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using MessagePack;
 using SharpDX;
 using VolumetricSelection2077.Core.Converters.Simple;
 using VolumetricSelection2077.Core.Enums;
 using VolumetricSelection2077.Core.Models;
-using VolumetricSelection2077.App.Services;
 using VolumetricSelection2077.Core.Services;
 using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.Archive.CR2W;
