@@ -138,129 +138,190 @@ public class SelectionService : ISelectionService
         int nodeDataIndex,
         VSQuery query)
     {
+        if (!ShouldProcessNode(nodeData, node, nodeDataIndex, query))
+            return new Result<AxlRemovalNodeDeletion> { Status = ResultStatus.Ok };
+
+        if (IsMeshNode(node))
+            return QueryMeshNode(nodeData, node, nodeDataIndex, query);
+
+        if (node is { SectorHash: not null, Actors.Length: > 0 })
+            return await QueryActorNode(nodeData, node, nodeDataIndex, query);
+
+        return QueryTransformNode(nodeData, node, nodeDataIndex, query);
+    }
+
+    private static bool IsMeshNode(VSNode node)
+    {
+        return (node.ResourcePath?.EndsWith(@".mesh", StringComparison.Ordinal) ?? false) ||
+               (node.ResourcePath?.EndsWith(@".w2mesh", StringComparison.Ordinal) ?? false);
+    }
+
+    private Result<AxlRemovalNodeDeletion> QueryMeshNode(VSNodeData nodeData,
+        VSNode node,
+        int nodeDataIndex,
+        VSQuery query)
+    {
         var result = new Result<AxlRemovalNodeDeletion>
         {
             Status = ResultStatus.Ok
         };
 
-        if (!ShouldProcessNode(nodeData, node, nodeDataIndex, query))
-            return result;
-        
-        if ((node.ResourcePath?.EndsWith(@".mesh", StringComparison.Ordinal) ?? false) ||
-            (node.ResourcePath?.EndsWith(@".w2mesh", StringComparison.Ordinal) ?? false))
+        if (nodeData.AABB != null)
         {
-            if (nodeData.AABB != null)
-            {
-                var nodeDataAABB = (BoundingBox)nodeData.AABB;
-                if (query.OBB.Contains(ref nodeDataAABB) == ContainmentType.Disjoint)
-                    return result;
-            }
-            
-            var meshResult = _gameFileService.GetResource<VSMesh>(node.ResourcePath);
-            if (meshResult.Status == ResultStatus.Error || meshResult.Data == null)
-            {
-                result.Status = ResultStatus.Error;
-                result.Message = $"Failed to get mesh {node.ResourcePath}: {meshResult.Message}";
+            var nodeDataAABB = (BoundingBox)nodeData.AABB;
+            if (query.OBB.Contains(ref nodeDataAABB) == ContainmentType.Disjoint)
                 return result;
-            }
+        }
 
-            var matchingInstances = CollisionCheckService.IsMeshInsideBox(meshResult.Data,
-                query.OBB,
-                query.AABB,
-                nodeData.Transforms);
-            
-            if (matchingInstances.Count == 0)
-                return result;
-
-            result.Data = new AxlRemovalNodeDeletion
-            {
-                Type = node.Type,
-                Index = nodeDataIndex
-            };
-
-            if (InstancedMeshNodes.Contains(node.Type))
-            {
-                result.Data.ActorDeletions = matchingInstances;
-                result.Data.ExpectedActors = nodeData.Transforms.Length;
-            }
-            
+        var meshResult = _gameFileService.GetResource<VSMesh>(node.ResourcePath!);
+        if (meshResult.Status == ResultStatus.Error || meshResult.Data == null)
+        {
+            result.Status = ResultStatus.Error;
+            result.Message = $"Failed to get mesh {node.ResourcePath}: {meshResult.Message}";
             return result;
         }
 
-        if (node is { SectorHash: not null, Actors.Length: > 0 })
-        {
-            List<int> actorRemovals = [];
-            var actorIndex = 0;
+        var matchingInstances = CollisionCheckService.IsMeshInsideBox(meshResult.Data,
+            query.OBB,
+            query.AABB,
+            nodeData.Transforms);
 
-            foreach (var actor in node.Actors)
+        if (matchingInstances.Count == 0)
+            return result;
+
+        result.Data = new AxlRemovalNodeDeletion
+        {
+            Type = node.Type,
+            Index = nodeDataIndex
+        };
+
+        if (InstancedMeshNodes.Contains(node.Type))
+        {
+            result.Data.ActorDeletions = matchingInstances;
+            result.Data.ExpectedActors = nodeData.Transforms.Length;
+        }
+
+        return result;
+    }
+
+    private async Task<Result<AxlRemovalNodeDeletion>> QueryActorNode(VSNodeData nodeData,
+        VSNode node,
+        int nodeDataIndex,
+        VSQuery query)
+    {
+        var result = new Result<AxlRemovalNodeDeletion>
+        {
+            Status = ResultStatus.Ok
+        };
+
+        List<int> actorRemovals = [];
+        var actorIndex = 0;
+
+        foreach (var actor in node.Actors!)
+        {
+            var actorResult = await ShouldRemoveActor(node, actor, actorIndex, nodeDataIndex, query);
+
+            if (actorResult.Status == ResultStatus.Warning)
             {
-                var shapeIndex = 0;
-                foreach (var shape in actor.Shapes)
-                {
-                    switch (shape.ShapeType)
+                result.Status = ResultStatus.Warning;
+                result.Message += actorResult.Message;
+            }
+
+            if (actorResult.Data)
+                actorRemovals.Add(actorIndex);
+
+            actorIndex++;
+        }
+
+        if (actorRemovals.Count == 0)
+            return result;
+
+        result.Data = new AxlRemovalNodeDeletion
+        {
+            Index = nodeDataIndex,
+            Type = node.Type,
+            ActorDeletions = actorRemovals,
+            ExpectedActors = node.Actors!.Length
+        };
+        return result;
+    }
+
+    private async Task<Result<bool>> ShouldRemoveActor(VSNode node,
+        VSCollisionActor actor,
+        int actorIndex,
+        int nodeDataIndex,
+        VSQuery query)
+    {
+        var result = new Result<bool>
+        {
+            Status = ResultStatus.Ok,
+            Data = false
+        };
+
+        var shapeIndex = 0;
+        foreach (var shape in actor.Shapes)
+        {
+            switch (shape.ShapeType)
+            {
+                case WEnums.physicsShapeType.TriangleMesh:
+                case WEnums.physicsShapeType.ConvexMesh:
+                    var collisionMeshResult = await _gameFileService.GetPhysXMesh((ulong)node.SectorHash!, (ulong)shape.Hash!);
+                    if (collisionMeshResult.Status == ResultStatus.Error || collisionMeshResult.Data == null)
                     {
-                        case WEnums.physicsShapeType.TriangleMesh:
-                        case WEnums.physicsShapeType.ConvexMesh:
-                            var collisionMeshResult = await _gameFileService.GetPhysXMesh((ulong)node.SectorHash, (ulong)shape.Hash!);
-                            if (collisionMeshResult.Status == ResultStatus.Error || collisionMeshResult.Data == null)
-                            {
-                                result.Status = ResultStatus.Warning;
-                                result.Message += $"Failed to get collision mesh for actor {actorIndex} shape index {shapeIndex} in node {nodeDataIndex}: {collisionMeshResult.Message}\n";
-                                continue;
-                            }
-                            
-                            if (CollisionCheckService.IsCollisonMeshInsideSelectionBox(collisionMeshResult.Data, query.OBB, query.AABB, actor.Transform, shape.Transform))
-                            {
-                                actorRemovals.Add(actorIndex);
-                                goto breakShapeLoop;
-                            }
-                            break;
-                        case WEnums.physicsShapeType.Box:
-                            if (CollisionCheckService.IsCollisionBoxInsideSelectionBox(shape, actor.Transform, query.AABB,  query.OBB))
-                            {
-                                actorRemovals.Add(actorIndex);
-                                goto breakShapeLoop;
-                            }
-                            break;
-                        case WEnums.physicsShapeType.Capsule:
-                            if (CollisionCheckService.IsCollisionCapsuleInsideSelectionBox(shape, actor.Transform, query.AABB,  query.OBB))
-                            {
-                                actorRemovals.Add(actorIndex);
-                                goto breakShapeLoop;
-                            }
-                            break;
-                        case WEnums.physicsShapeType.Sphere:
-                            if (CollisionCheckService.IsCollisionSphereInsideSelectionBox(shape, actor.Transform, query.OBB))
-                            {
-                                actorRemovals.Add(actorIndex);
-                                goto breakShapeLoop;
-                            }
-                            break;
+                        result.Status = ResultStatus.Warning;
+                        result.Message += $"Failed to get collision mesh for actor {actorIndex} shape index {shapeIndex} in node {nodeDataIndex}: {collisionMeshResult.Message}\n";
+                        break;
                     }
-                    shapeIndex++;
-                }
-                breakShapeLoop:
-                actorIndex++;
+
+                    if (CollisionCheckService.IsCollisonMeshInsideSelectionBox(collisionMeshResult.Data, query.OBB, query.AABB, actor.Transform, shape.Transform))
+                    {
+                        result.Data = true;
+                        return result;
+                    }
+                    break;
+                case WEnums.physicsShapeType.Box:
+                    if (CollisionCheckService.IsCollisionBoxInsideSelectionBox(shape, actor.Transform, query.AABB, query.OBB))
+                    {
+                        result.Data = true;
+                        return result;
+                    }
+                    break;
+                case WEnums.physicsShapeType.Capsule:
+                    if (CollisionCheckService.IsCollisionCapsuleInsideSelectionBox(shape, actor.Transform, query.AABB, query.OBB))
+                    {
+                        result.Data = true;
+                        return result;
+                    }
+                    break;
+                case WEnums.physicsShapeType.Sphere:
+                    if (CollisionCheckService.IsCollisionSphereInsideSelectionBox(shape, actor.Transform, query.OBB))
+                    {
+                        result.Data = true;
+                        return result;
+                    }
+                    break;
             }
-            
-            if (actorRemovals.Count == 0)
-                return result;
-            
-            result.Data = new AxlRemovalNodeDeletion
-            {
-                Index = nodeDataIndex,
-                Type = node.Type,
-                ActorDeletions = actorRemovals,
-                ExpectedActors = node.Actors.Length
-            };
-            return result;
+            shapeIndex++;
         }
-        
+
+        return result;
+    }
+
+    private static Result<AxlRemovalNodeDeletion> QueryTransformNode(VSNodeData nodeData,
+        VSNode node,
+        int nodeDataIndex,
+        VSQuery query)
+    {
+        var result = new Result<AxlRemovalNodeDeletion>
+        {
+            Status = ResultStatus.Ok
+        };
+
         foreach (var transform in nodeData.Transforms)
         {
             if (query.OBB.Contains(transform.Position) == ContainmentType.Disjoint)
                 continue;
-            
+
             result.Data = new AxlRemovalNodeDeletion
             {
                 Index = nodeDataIndex,
@@ -268,7 +329,7 @@ public class SelectionService : ISelectionService
             };
             return result;
         }
-        
+
         return result;
     }
     
