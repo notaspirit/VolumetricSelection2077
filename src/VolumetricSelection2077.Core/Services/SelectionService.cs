@@ -15,8 +15,8 @@ public class SelectionService : ISelectionService
         "worldFoliageNode"
     ];
 
-    private CacheService _cacheService;
-    private GameFileService _gameFileService;
+    private readonly CacheService _cacheService;
+    private readonly GameFileService _gameFileService;
     
     public SelectionService(CacheService cacheService,
         GameFileService gameFileService)
@@ -27,7 +27,12 @@ public class SelectionService : ISelectionService
     
     public async Task<Result<AxlRemovalFile>> QueryWorldData(VSQuery query)
     {
-        var result = new Result<AxlRemovalFile>();
+        var result = new Result<AxlRemovalFile>
+        {
+            Status = ResultStatus.Ok
+        };
+        
+        _cacheService.StartListening();
 
         var localSectors = _cacheService.GetAllEntries(query.DataSource.ToCacheDatabaseBounds())?
             .Where(s =>
@@ -69,6 +74,8 @@ public class SelectionService : ISelectionService
         
         if (removalFile.Streaming.Sectors.Count > 0)
             result.Data = removalFile;
+        
+        _cacheService.StopListening();
         
         return result;
     }
@@ -139,9 +146,16 @@ public class SelectionService : ISelectionService
         if (!ShouldProcessNode(nodeData, node, nodeDataIndex, query))
             return result;
         
-        if ((node.ResourcePath?.EndsWith(@".mesh") ?? false) ||
-            (node.ResourcePath?.EndsWith(@".w2mesh") ?? false))
+        if ((node.ResourcePath?.EndsWith(@".mesh", StringComparison.Ordinal) ?? false) ||
+            (node.ResourcePath?.EndsWith(@".w2mesh", StringComparison.Ordinal) ?? false))
         {
+            if (nodeData.AABB != null)
+            {
+                var nodeDataAABB = (BoundingBox)nodeData.AABB;
+                if (query.OBB.Contains(ref nodeDataAABB) == ContainmentType.Disjoint)
+                    return result;
+            }
+            
             var meshResult = _gameFileService.GetResource<VSMesh>(node.ResourcePath);
             if (meshResult.Status == ResultStatus.Error || meshResult.Data == null)
             {
@@ -173,7 +187,7 @@ public class SelectionService : ISelectionService
             return result;
         }
 
-        if (node.SectorHash != null && (node.Actors != null || node.Actors?.Length > 0))
+        if (node is { SectorHash: not null, Actors.Length: > 0 })
         {
             List<int> actorRemovals = [];
             var actorIndex = 0;
@@ -192,7 +206,7 @@ public class SelectionService : ISelectionService
                             {
                                 result.Status = ResultStatus.Warning;
                                 result.Message += $"Failed to get collision mesh for actor {actorIndex} shape index {shapeIndex} in node {nodeDataIndex}: {collisionMeshResult.Message}\n";
-                                return result;
+                                continue;
                             }
                             
                             if (CollisionCheckService.IsCollisonMeshInsideSelectionBox(collisionMeshResult.Data, query.OBB, query.AABB, actor.Transform, shape.Transform))
@@ -263,12 +277,10 @@ public class SelectionService : ISelectionService
         if (query.Filters.Count == 0)
             return true;
         
-        var matchingFilters = query.Filters.Count(f => f.Filter(nodeData, node, nodeDataIndex));
-        
-        if (matchingFilters == query.Filters.Count)
-            return true;
-        
-        if (matchingFilters > 0 && !query.MatchAllFilters)
+        if (query.Filters.Where(f => f.Required).Any(f => !f.Filter(nodeData, node, nodeDataIndex)))
+            return false;
+
+        if (query.Filters.Where(f => !f.Required).Any(f => f.Filter(nodeData, node, nodeDataIndex)))
             return true;
         
         return false;
