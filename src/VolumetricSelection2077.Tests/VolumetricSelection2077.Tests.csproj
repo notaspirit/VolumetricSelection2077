@@ -22,4 +22,19 @@
         <ProjectReference Include="..\VolumetricSelection2077.Core\VolumetricSelection2077.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <None Include="$(NuGetPackageRoot)wolvenkit.core\8.16.1\contentFiles\any\any\kraken.dll" Condition="Exists('$(NuGetPackageRoot)wolvenkit.core\8.16.1\contentFiles\any\any\kraken.dll')">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>false</Visible>
+        </None>
+        <None Include="$(NuGetPackageRoot)wolvenkit.core\8.16.1\contentFiles\any\any\libkraken.dylib" Condition="Exists('$(NuGetPackageRoot)wolvenkit.core\8.16.1\contentFiles\any\any\libkraken.dylib')">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>false</Visible>
+        </None>
+        <None Include="$(NuGetPackageRoot)wolvenkit.core\8.16.1\contentFiles\any\any\libkraken.so" Condition="Exists('$(NuGetPackageRoot)wolvenkit.core\8.16.1\contentFiles\any\any\libkraken.so')">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Visible>false</Visible>
+        </None>
+    </ItemGroup>
+
 </Project>

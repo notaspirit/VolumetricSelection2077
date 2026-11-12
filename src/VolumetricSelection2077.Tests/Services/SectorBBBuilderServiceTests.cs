@@ -47,4 +47,19 @@ public class SectorBBBuilderServiceTests
 
         _cacheService.VerifyGet(x => x.IsInitialized, Times.Never);
     }
+
+    [Fact]
+    public async Task BuildBounds_MissingModded_GetAllEntriesError_ReturnsError()
+    {
+        _gameFileService.SetupGet(x => x.IsInitialized).Returns(true);
+        _cacheService.SetupGet(x => x.IsInitialized).Returns(true);
+        var err = new Result<KeyValuePair<string, byte[]>[]> { Status = ResultStatus.Error };
+        err.AddMessage("db error");
+        _cacheService.Setup(x => x.GetAllEntries(CacheDatabase.ModdedBounds)).Returns(err);
+
+        var result = await CreateService().BuildBounds(BuildBoundsMode.MissingModded);
+
+        Assert.Equal(ResultStatus.Error, result.Status);
+        Assert.Contains("Failed to get cached modded bounds: db error", result.Message);
+    }
 }

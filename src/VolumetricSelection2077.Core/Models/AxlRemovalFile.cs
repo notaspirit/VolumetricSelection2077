@@ -4,35 +4,35 @@ namespace VolumetricSelection2077.Core.Models;
 
 public class AxlRemovalFile
 {
-    [JsonProperty("streaming")]
-    public required AxlRemovalStreaming Streaming { get; set; }
+    [JsonProperty("streaming")] 
+    public AxlRemovalStreaming Streaming { get; set; } = new();
 }
 
 public class AxlRemovalStreaming
 {
     [JsonProperty("sectors")]
-    public required List<AxlRemovalSector> Sectors { get; set; }
+    public List<AxlRemovalSector> Sectors { get; set; } = [];
 }
 
 public class AxlRemovalSector
 {
-    [JsonProperty("nodeDeletions")]
-    public required List<AxlRemovalNodeDeletion> NodeDeletions { get; set; }
+    [JsonProperty("nodeDeletions")] 
+    public List<AxlRemovalNodeDeletion> NodeDeletions { get; set; } = [];
     
     [JsonProperty("expectedNodes")]
-    public required int ExpectedNodes { get; set; }
-    
+    public int ExpectedNodes { get; set; }
+
     [JsonProperty("path")]
-    public required string Path { get; set; }
+    public string Path { get; set; } = "";
 }
 
 public class AxlRemovalNodeDeletion
 {
-    [JsonProperty("type")]
-    public required string Type { get; set; }
+    [JsonProperty("type")] 
+    public string Type { get; set; } = "";
     
     [JsonProperty("index")]
-    public required int Index { get; set; }
+    public int Index { get; set; }
     
     [JsonProperty("actorDeletions")] 
     public List<int> ActorDeletions { get; set; } = [];

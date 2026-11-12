@@ -76,4 +76,21 @@ public class AxlRemovalToWorldBuilderConverterTests
         Assert.Equal("root", result.Data.RootElement.Name);
         Assert.Empty(result.Data.RootElement.Children);
     }
+
+    [Fact]
+    public void AxlRemovalFile_DefaultConstructor_InitializesEmpty()
+    {
+        var file = new AxlRemovalFile();
+        Assert.NotNull(file.Streaming);
+        Assert.Empty(file.Streaming.Sectors);
+    }
+
+    [Fact]
+    public void AxlRemovalSector_DefaultConstructor_InitializesEmpty()
+    {
+        var sector = new AxlRemovalSector();
+        Assert.Equal(string.Empty, sector.Path);
+        Assert.Equal(0, sector.ExpectedNodes);
+        Assert.Empty(sector.NodeDeletions);
+    }
 }
