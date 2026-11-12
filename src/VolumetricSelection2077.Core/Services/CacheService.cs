@@ -15,7 +15,7 @@ namespace VolumetricSelection2077.Core.Services;
 /// <summary>
 /// This part of the class is responsible for managing the instance, lightingdb and debug / metadata.
 /// </summary>
-public partial class CacheService
+public partial class CacheService : ICacheService
 {
     private string _cacheDirectory;
     private string _gameVersion;
@@ -273,7 +273,7 @@ public partial class CacheService
                 var dstDb = dstTxn.OpenDatabase(dbName, new DatabaseConfiguration { Flags = DatabaseOpenFlags.Create });
                 using (var cursor = srcTxn.CreateCursor(srcDb))
                 {
-                    while (cursor.Next().resultCode == MDBResultCode.Success)
+                    while (cursor.Next() == MDBResultCode.Success)
                     {
                         dstTxn.Put(dstDb, cursor.GetCurrent().key.CopyToNewArray(), cursor.GetCurrent().value.CopyToNewArray());
                     }
@@ -358,7 +358,7 @@ public partial class CacheService
             foreach (var db in queuedDataBases)
             {
                 using var cursor = tx.CreateCursor(db);
-                while (cursor.Next().resultCode == MDBResultCode.Success)
+                while (cursor.Next() == MDBResultCode.Success)
                 {
                     cursor.Delete();
                 }
@@ -538,7 +538,7 @@ public partial class CacheService
             using (var cursor = tx.CreateCursor(_vanillaDatabase))
             {
                 int i = 0;
-                while (cursor.Next().resultCode == MDBResultCode.Success)
+                while (cursor.Next() == MDBResultCode.Success)
                 {
                     if (i == sampleSize) break;
                     var entry = cursor.GetCurrent();
@@ -551,7 +551,7 @@ public partial class CacheService
             using (var cursor = tx.CreateCursor(_moddedDatabase))
             {
                 int i = 0;
-                while (cursor.Next().resultCode == MDBResultCode.Success)
+                while (cursor.Next() == MDBResultCode.Success)
                 {
                     if (i == sampleSize) break;
                     var entry = cursor.GetCurrent();
@@ -671,7 +671,7 @@ public partial class CacheService
             outData.SectorBoundingBoxes = new List<KeyValuePair<string, BoundingBox>>();
             using var tx = _env.BeginTransaction();
             using var cursor = tx.CreateCursor(_vanillaBoundsDatabase);
-            while (cursor.Next().resultCode == MDBResultCode.Success)
+            while (cursor.Next() == MDBResultCode.Success)
             {
                 var entry = cursor.GetCurrent();
                 outData.SectorBoundingBoxes.Add(new KeyValuePair<string, BoundingBox>(

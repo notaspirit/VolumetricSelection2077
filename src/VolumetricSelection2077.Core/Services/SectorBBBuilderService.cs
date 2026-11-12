@@ -12,13 +12,13 @@ namespace VolumetricSelection2077.Core.Services;
 /// <summary>
 /// Builds accurate bounding boxes for streaming sectors and writes them to the sector bounds cache.
 /// </summary>
-public class SectorBBBuilderService
+public class SectorBBBuilderService : ISectorBBBuilderService
 {
     private const string StartupProgressSection = "BoundingBoxBuilderStartup";
     private const string ProcessingProgressSection = "BoundingBoxBuilderProcessing";
 
-    private readonly CacheService _cacheService;
-    private readonly GameFileService _gameFileService;
+    private readonly ICacheService _cacheService;
+    private readonly IGameFileService _gameFileService;
     private readonly IProgressService _progressService;
 
     /// <summary>
@@ -27,8 +27,8 @@ public class SectorBBBuilderService
     /// <param name="cacheService">Cache service used to enumerate and write sector bounds.</param>
     /// <param name="gameFileService">Game file service used to load sectors, meshes, and PhysX collision meshes.</param>
     /// <param name="progressService">Progress service used to track progress.</param>
-    public SectorBBBuilderService(CacheService cacheService,
-        GameFileService gameFileService,
+    public SectorBBBuilderService(ICacheService cacheService,
+        IGameFileService gameFileService,
         IProgressService progressService)
     {
         _cacheService = cacheService;

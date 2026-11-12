@@ -7,13 +7,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="HelixToolkit.SharpDX.Core" Version="2.27.3" />
-      <PackageReference Include="LightningDB" Version="0.23.1" />
-      <PackageReference Include="MessagePack" Version="3.1.12" />
-      <PackageReference Include="Newtonsoft.Json.Schema" Version="4.0.2" />
+      <PackageReference Include="HelixToolkit.SharpDX.Core" Version="2.25.0" />
+      <PackageReference Include="LightningDB" Version="0.16.0" />
+      <PackageReference Include="MessagePack" Version="3.1.7" />
+      <PackageReference Include="Newtonsoft.Json.Schema" Version="4.0.1" />
       <PackageReference Include="PeNet" Version="5.1.0" />
-      <PackageReference Include="WolvenKit.Common" Version="8.20.0" />
-      <PackageReference Include="WolvenKit.Modkit" Version="8.20.0" />
+      <PackageReference Include="WolvenKit.Common" Version="8.16.1" />
+      <PackageReference Include="WolvenKit.Modkit" Version="8.16.1" />
     </ItemGroup>
 
 </Project>

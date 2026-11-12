@@ -13,12 +13,12 @@ using worldNodeData = WolvenKit.RED4.Archive.Buffer.worldNodeData;
 
 namespace VolumetricSelection2077.Core.Parsers;
 
-public class VSSectorParser
+public class VSSectorParser : IVSSectorParser
 {
-    private readonly GameFileService _gameFileService;
-    private readonly CacheService _cacheService;
+    private readonly IGameFileService _gameFileService;
+    private readonly ICacheService _cacheService;
     
-    public VSSectorParser(GameFileService gameFileService, CacheService cacheService)
+    public VSSectorParser(IGameFileService gameFileService, ICacheService cacheService)
     {
         _gameFileService = gameFileService;
         _cacheService = cacheService;

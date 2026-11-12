@@ -145,7 +145,7 @@ public partial class CacheService
             using (var cursor = tx.CreateCursor(db))
             {
                 int i = 0;
-                while (cursor.Next().resultCode == MDBResultCode.Success)
+                while (cursor.Next() == MDBResultCode.Success)
                 {
                     entries[i] = new KeyValuePair<string, byte[]>(Encoding.UTF8.GetString(cursor.GetCurrent().key.CopyToNewArray()), cursor.GetCurrent().value.CopyToNewArray());
                     i++;

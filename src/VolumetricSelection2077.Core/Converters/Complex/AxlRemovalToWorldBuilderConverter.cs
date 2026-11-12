@@ -22,14 +22,14 @@ using WEnums = WolvenKit.RED4.Types.Enums;
 
 namespace VolumetricSelection2077.Core.Converters.Complex;
 
-public class AxlRemovalToWorldBuilderConverter
+public class AxlRemovalToWorldBuilderConverter : IAxlRemovalToWorldBuilderConverter
 {
-    private readonly GameFileService _gfs;
+    private readonly IGameFileService _gfs;
     private readonly List<string> _warnedTypes;
     private readonly Dictionary<string, List<string>> _embeddedResourcePaths;
     private readonly List<string> _messages = new();
 
-    public AxlRemovalToWorldBuilderConverter(GameFileService gfs)
+    public AxlRemovalToWorldBuilderConverter(IGameFileService gfs)
     {
         _gfs = gfs;
         _warnedTypes = new List<string>();

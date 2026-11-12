@@ -14,14 +14,14 @@ using WolvenKit.RED4.Types.Pools;
 
 namespace VolumetricSelection2077.Core.Services;
 
-public class GameFileService
+public class GameFileService : IGameFileService
 {
-    private readonly CacheService _cacheService;
-    private readonly VSSectorParser _sectorParser;
+    private readonly ICacheService _cacheService;
+    private readonly IVSSectorParser _sectorParser;
     
     private readonly ILoggerService _loggerService = new SerilogWrapper();
     private readonly IProgressService<double> _progressService = new ProgressService<double>();
-    public readonly ArchiveManager ArchiveManager;
+    public ArchiveManager ArchiveManager { get; }
     private readonly HashService _hashService;
     private readonly HookService _hookService;
     private readonly Red4ParserService _red4ParserService;
@@ -31,7 +31,7 @@ public class GameFileService
     private bool _useModdedResources;
     private string _gameExePath;
     
-    public GameFileService(CacheService cacheService, string gameExePath, bool useModdedResources = false)
+    public GameFileService(ICacheService cacheService, string gameExePath, bool useModdedResources = false)
     {
         _gameExePath = gameExePath;
         _useModdedResources = useModdedResources;

@@ -29,8 +29,8 @@ public class SelectionService : ISelectionService
         "worldFoliageNode"
     ];
     
-    private readonly CacheService _cacheService;
-    private readonly GameFileService _gameFileService;
+    private readonly ICacheService _cacheService;
+    private readonly IGameFileService _gameFileService;
     private readonly IProgressService _progressService;
     
     /// <summary>
@@ -39,8 +39,8 @@ public class SelectionService : ISelectionService
     /// <param name="cacheService">Cache service used to enumerate and listen for sector bounds.</param>
     /// <param name="gameFileService">Game file service used to load sectors, meshes, and PhysX collision meshes.</param>
     /// <param name="progressService">Progress service used to track progress.</param>
-    public SelectionService(CacheService cacheService,
-        GameFileService gameFileService,
+    public SelectionService(ICacheService cacheService,
+        IGameFileService gameFileService,
         IProgressService progressService)
     {
         _cacheService = cacheService;

@@ -3,6 +3,7 @@
 **/.stfolder/
 **/VolumetricSelection2077.App/bin/
 **/VolumetricSelection2077.Core/bin/
+**/VolumetricSelection2077.Tests/bin/
 **/obj/
 **/publish/
 **/build/

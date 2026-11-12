@@ -5,10 +5,9 @@ namespace VolumetricSelection2077.Core.Converters.Simple;
 
 public class SharpDXToWorldBuilderConverter
 {
-    public static EulerAngles EulerAngles(SharpDX.Quaternion q)
+    public static EulerAngles EulerAngles(Quaternion q)
     {
-        var quat = new Quaternion(q.W, q.X, q.Y, q.Z);
-        var euler = ToEulerAngles(quat);
+        var euler = ToEulerAngles(q);
         
         return new EulerAngles(pitch: (float)euler.x, roll: (float)euler.y, yaw: (float)euler.z);
     }
