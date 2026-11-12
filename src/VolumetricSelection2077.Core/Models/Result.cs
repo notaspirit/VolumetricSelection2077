@@ -37,7 +37,7 @@ public class Result
 
     public void ClearMessage()
     {
-        _message = null;
+        _message = "";
     }
 }
 
