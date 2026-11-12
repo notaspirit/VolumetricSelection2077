@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SharpDX;
@@ -51,7 +48,7 @@ public class AxlRemovalToWorldBuilderConverter
     /// <see cref="ResultStatus.Warning"/>.
     /// </returns>
     public Result<WBConversionResult> Convert(AxlRemovalFile axlFile, string rootName,
-        AxlRemovalToWorldBuilderConverterConfig config)
+        WBConverterConfig config)
     {
         _warnedTypes.Clear();
         _embeddedResourcePaths.Clear();
@@ -112,7 +109,7 @@ public class AxlRemovalToWorldBuilderConverter
     }
 
     private List<Element> ConvertNode(AxlRemovalNodeDeletion remNode, CR2WFile sectorCR2W,
-        ref VSSector? worldSector, string sectorPath, AxlRemovalToWorldBuilderConverterConfig config)
+        ref VSSector? worldSector, string sectorPath, WBConverterConfig config)
     {
         var sector = sectorCR2W.RootChunk as worldStreamingSector;
         

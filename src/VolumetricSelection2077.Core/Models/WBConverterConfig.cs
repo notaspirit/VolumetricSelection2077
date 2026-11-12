@@ -1,8 +1,8 @@
 using VolumetricSelection2077.Core.Enums;
 
-namespace VolumetricSelection2077.Core.Converters.Complex;
+namespace VolumetricSelection2077.Core.Models;
 
-public class AxlRemovalToWorldBuilderConverterConfig
+public class WBConverterConfig
 {
     public DestructibleMeshTreatment DestructibleMeshTreatment { get; set; } = DestructibleMeshTreatment.DynamicMesh;
 }
