@@ -17,6 +17,9 @@ namespace VolumetricSelection2077.Core.Services;
 /// </remarks>
 public class SelectionService : ISelectionService
 {
+    private const string SectorBoundsFiltering = "SectorBoundsFiltering";
+    private const string SectorQuerying = "SectorQuerying";
+    
     /// <summary>
     /// Node types whose mesh instances are reported as actor deletions.
     /// </summary>
@@ -60,9 +63,9 @@ public class SelectionService : ISelectionService
             Status = ResultStatus.Ok
         };
         _progressService.Reset();
-        _progressService.AddSection(new ProgressSection("SectorBoundsFiltering", 1, true));
-        _progressService.AddSection(new ProgressSection("SectorQuerying", 8, true));
-        _progressService.AddTarget("SectorBoundsFiltering", 1);
+        _progressService.AddSection(new ProgressSection(SectorBoundsFiltering, 1, true));
+        _progressService.AddSection(new ProgressSection(SectorQuerying, 8, true));
+        _progressService.AddTarget(SectorBoundsFiltering, 1);
         _cacheService.StartListening();
 
         var localSectors = _cacheService.GetAllEntries(query.DataSource.ToCacheDatabaseBounds())?
@@ -70,14 +73,14 @@ public class SelectionService : ISelectionService
                 query.AABB.Contains(MessagePackSerializer.Deserialize<BoundingBox>(s.Value)) != ContainmentType.Disjoint)
             .Select(s => s.Key).ToArray() ?? [];
         
-        _progressService.AddTarget("SectorQuerying", (uint)localSectors.Length);
-        _progressService.AddProgress("SectorBoundsFiltering", 1);
+        _progressService.AddTarget(SectorQuerying, (uint)localSectors.Length);
+        _progressService.AddProgress(SectorBoundsFiltering, 1);
         
         var sectorResults = 
             localSectors.Select(sectorPath => Task.Run(() =>
             {
                 var res = QuerySector(sectorPath, query);
-                _progressService.AddProgress("SectorQuerying", 1);
+                _progressService.AddProgress(SectorQuerying, 1);
                 return res;
             })).ToArray();
         await Task.WhenAll(sectorResults);

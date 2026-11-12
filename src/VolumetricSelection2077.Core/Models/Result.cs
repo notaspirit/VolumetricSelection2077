@@ -5,9 +5,9 @@ namespace VolumetricSelection2077.Core.Models;
 public class Result
 {
     public ResultStatus Status { get; set; }
-    private string? _message;
+    private string _message = "";
 
-    public string? Message
+    public string Message
     {
         get => _message;
         private set => _message = value;
@@ -17,7 +17,7 @@ public class Result
     {
     }
 
-    public Result(ResultStatus status, string? message = null)
+    public Result(ResultStatus status, string message = "")
     {
         Status = status;
         Message = message;
