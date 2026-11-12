@@ -1,5 +1,6 @@
 using MessagePack;
 using SharpDX;
+using VolumetricSelection2077.Core.Components;
 using VolumetricSelection2077.Core.Enums;
 using VolumetricSelection2077.Core.Extensions;
 using VolumetricSelection2077.Core.Models;
@@ -27,17 +28,21 @@ public class SelectionService : ISelectionService
     
     private readonly CacheService _cacheService;
     private readonly GameFileService _gameFileService;
+    private readonly IProgressService _progressService;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="SelectionService"/> class.
     /// </summary>
     /// <param name="cacheService">Cache service used to enumerate and listen for sector bounds.</param>
     /// <param name="gameFileService">Game file service used to load sectors, meshes, and PhysX collision meshes.</param>
+    /// <param name="progressService">Progress service used to track progress.</param>
     public SelectionService(CacheService cacheService,
-        GameFileService gameFileService)
+        GameFileService gameFileService,
+        IProgressService progressService)
     {
         _cacheService = cacheService;
         _gameFileService = gameFileService;
+        _progressService = progressService;
     }
     
     /// <summary>
@@ -54,7 +59,10 @@ public class SelectionService : ISelectionService
         {
             Status = ResultStatus.Ok
         };
-        
+        _progressService.Reset();
+        _progressService.AddSection(new ProgressSection("SectorBoundsFiltering", 1, true));
+        _progressService.AddSection(new ProgressSection("SectorQuerying", 8, true));
+        _progressService.AddTarget("SectorBoundsFiltering", 1);
         _cacheService.StartListening();
 
         var localSectors = _cacheService.GetAllEntries(query.DataSource.ToCacheDatabaseBounds())?
@@ -62,8 +70,16 @@ public class SelectionService : ISelectionService
                 query.AABB.Contains(MessagePackSerializer.Deserialize<BoundingBox>(s.Value)) != ContainmentType.Disjoint)
             .Select(s => s.Key).ToArray() ?? [];
         
+        _progressService.AddTarget("SectorQuerying", (uint)localSectors.Length);
+        _progressService.AddProgress("SectorBoundsFiltering", 1);
+        
         var sectorResults = 
-            localSectors.Select(sectorPath => Task.Run(() => QuerySector(sectorPath, query))).ToArray();
+            localSectors.Select(sectorPath => Task.Run(() =>
+            {
+                var res = QuerySector(sectorPath, query);
+                _progressService.AddProgress("SectorQuerying", 1);
+                return res;
+            })).ToArray();
         await Task.WhenAll(sectorResults);
 
         var removalFile = new AxlRemovalFile
