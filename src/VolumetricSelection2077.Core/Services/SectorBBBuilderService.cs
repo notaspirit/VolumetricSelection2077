@@ -81,8 +81,15 @@ public class SectorBBBuilderService
                     moddedSectors = GetModdedSectors();
                     break;
                 case BuildBoundsMode.MissingModded:
-                    var cachedModdedBounds = _cacheService.GetAllEntries(CacheDatabase.ModdedBounds)
-                        ?.Select(x => x.Key).ToList() ?? [];
+                    var cachedModdedBoundsResult = _cacheService.GetAllEntries(CacheDatabase.ModdedBounds);
+                    if (cachedModdedBoundsResult.Status == ResultStatus.Error || cachedModdedBoundsResult.Data == null)
+                    {
+                        result.Status = ResultStatus.Error;
+                        result.AddMessage($"Failed to get cached modded bounds: {cachedModdedBoundsResult.Message}");
+                        return result;
+                    }
+
+                    var cachedModdedBounds = cachedModdedBoundsResult.Data.Select(x => x.Key).ToList();
                     moddedSectors = GetModdedSectors().Except(cachedModdedBounds).ToList();
                     break;
             }
@@ -96,7 +103,13 @@ public class SectorBBBuilderService
             _progressService.AddTarget(ProcessingProgressSection, (uint)sectors.Count);
             _progressService.AddProgress(StartupProgressSection, 1);
 
-            _cacheService.StartListening();
+            var startListeningResult = _cacheService.StartListening();
+            if (startListeningResult.Status == ResultStatus.Error)
+            {
+                result.Status = ResultStatus.Error;
+                result.AddMessage(startListeningResult.Message);
+                return result;
+            }
 
             Task<Result>[] tasks;
             try
@@ -106,7 +119,12 @@ public class SectorBBBuilderService
             }
             finally
             {
-                _cacheService.StopListening();
+                var stopListeningResult = _cacheService.StopListening();
+                if (stopListeningResult.Status == ResultStatus.Error)
+                {
+                    result.Status = ResultStatus.Error;
+                    result.AddMessage(stopListeningResult.Message);
+                }
             }
 
             for (var i = 0; i < tasks.Length; i++)
@@ -126,7 +144,14 @@ public class SectorBBBuilderService
             }
 
             if (mode is BuildBoundsMode.Vanilla or BuildBoundsMode.All)
-                _cacheService.SetMetaDataVanillaBoundsStatus(true);
+            {
+                var metadataResult = _cacheService.SetMetaDataVanillaBoundsStatus(true);
+                if (metadataResult.Status == ResultStatus.Error)
+                {
+                    result.Status = ResultStatus.Error;
+                    result.AddMessage(metadataResult.Message);
+                }
+            }
 
             return result;
         }

@@ -154,7 +154,8 @@ public class GameFileService
         }
         
         var cachedResource = _cacheService.GetEntry(new ReadCacheRequest(path, _readCacheTarget));
-        if (MessagePackHelper.TryDeserialize<T>(cachedResource, out var cached))
+        if (cachedResource is { Status: ResultStatus.Ok, Data: not null } &&
+            MessagePackHelper.TryDeserialize<T>(cachedResource.Data, out var cached))
         {
             result.Data = cached;
             result.Status = ResultStatus.Ok;

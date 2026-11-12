@@ -66,12 +66,27 @@ public class SelectionService : ISelectionService
         _progressService.AddSection(new ProgressSection(SectorBoundsFiltering, 1, true));
         _progressService.AddSection(new ProgressSection(SectorQuerying, 8, true));
         _progressService.AddTarget(SectorBoundsFiltering, 1);
-        _cacheService.StartListening();
+        var startListeningResult = _cacheService.StartListening();
+        if (startListeningResult.Status == ResultStatus.Error)
+        {
+            result.Status = ResultStatus.Error;
+            result.AddMessage(startListeningResult.Message);
+            return result;
+        }
 
-        var localSectors = _cacheService.GetAllEntries(query.DataSource.ToCacheDatabaseBounds())?
+        var cachedEntriesResult = _cacheService.GetAllEntries(query.DataSource.ToCacheDatabaseBounds());
+        if (cachedEntriesResult.Status == ResultStatus.Error || cachedEntriesResult.Data == null)
+        {
+            result.Status = ResultStatus.Error;
+            result.AddMessage($"Failed to get cached sectors: {cachedEntriesResult.Message}");
+            _cacheService.StopListening();
+            return result;
+        }
+
+        var localSectors = cachedEntriesResult.Data
             .Where(s =>
                 query.AABB.Contains(MessagePackSerializer.Deserialize<BoundingBox>(s.Value)) != ContainmentType.Disjoint)
-            .Select(s => s.Key).ToArray() ?? [];
+            .Select(s => s.Key).ToArray();
         
         _progressService.AddTarget(SectorQuerying, (uint)localSectors.Length);
         _progressService.AddProgress(SectorBoundsFiltering, 1);
@@ -117,7 +132,12 @@ public class SelectionService : ISelectionService
         if (removalFile.Streaming.Sectors.Count > 0)
             result.Data = removalFile;
         
-        _cacheService.StopListening();
+        var stopListeningResult = _cacheService.StopListening();
+        if (stopListeningResult.Status == ResultStatus.Error)
+        {
+            result.Status = ResultStatus.Error;
+            result.AddMessage(stopListeningResult.Message);
+        }
         
         return result;
     }

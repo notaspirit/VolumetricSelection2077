@@ -51,7 +51,9 @@ public class VSSectorParser
                     warnings.Add($"Failed to parse embedded file {efile.FileName}");
                     continue;
                 }
-                _cacheService.WriteSingleEntry(new WriteCacheRequest(efile.FileName, MessagePackSerializer.Serialize(parsedMesh)));
+                var writeResult = _cacheService.WriteSingleEntry(new WriteCacheRequest(efile.FileName, MessagePackSerializer.Serialize(parsedMesh)));
+                if (writeResult.Status == ResultStatus.Error)
+                    warnings.Add($"Failed to write embedded mesh {efile.FileName} to cache: {writeResult.Message}");
             }
         }
         

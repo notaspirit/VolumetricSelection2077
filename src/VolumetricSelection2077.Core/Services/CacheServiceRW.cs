@@ -16,59 +16,86 @@ namespace VolumetricSelection2077.Core.Services;
 public partial class CacheService
 {
     /// <summary>
-    /// Gets a single entry from the cache 
+    /// Gets a single entry from the cache
     /// </summary>
     /// <param name="request"></param>
-    /// <returns>null if db is not supported, value doesn't exist or cache service is uninitialized</returns>
-    public byte[]? GetEntry(ReadCacheRequest request)
+    /// <returns>A result containing the entry data. The data is null if the entry does not exist.</returns>
+    public Result<byte[]> GetEntry(ReadCacheRequest request)
     {
-        if (!_isInitialized) return null;
-        using var tx = _env.BeginTransaction();
-        LightningDatabase[] dbs;
-        switch (request.Database)
+        if (!_isInitialized)
         {
-            case CacheDatabase.Vanilla:
-                dbs = new[] { _vanillaDatabase };
-                break;
-            case CacheDatabase.Modded:
-                dbs = new[] { _moddedDatabase };
-                break;
-            case CacheDatabase.VanillaBounds:
-                dbs = new[] { _vanillaBoundsDatabase };
-                break;
-            case CacheDatabase.ModdedBounds:
-                dbs = new[] { _moddedBoundsDatabase };
-                break;
-            case CacheDatabase.AllBounds:
-                dbs = new[] { _vanillaBoundsDatabase, _moddedBoundsDatabase };
-                break;
-            case CacheDatabase.AllDatabases:
-                dbs = new[] { _vanillaDatabase, _moddedDatabase };
-                break;
-            default:
-                return null;
+            var errorResult = new Result<byte[]> { Status = ResultStatus.Error };
+            errorResult.AddMessage("Cache service is not initialized.");
+            return errorResult;
         }
 
-        foreach (LightningDatabase db in dbs)
+        try
         {
-            var (code, _, value) = tx.Get(db, Encoding.UTF8.GetBytes(request.Key));
-            if (code == MDBResultCode.Success)
+            using var tx = _env.BeginTransaction();
+            LightningDatabase[] dbs;
+            switch (request.Database)
             {
-                return value.CopyToNewArray();
+                case CacheDatabase.Vanilla:
+                    dbs = [_vanillaDatabase];
+                    break;
+                case CacheDatabase.Modded:
+                    dbs = [_moddedDatabase];
+                    break;
+                case CacheDatabase.VanillaBounds:
+                    dbs = [_vanillaBoundsDatabase];
+                    break;
+                case CacheDatabase.ModdedBounds:
+                    dbs = [_moddedBoundsDatabase];
+                    break;
+                case CacheDatabase.AllBounds:
+                    dbs = [_vanillaBoundsDatabase, _moddedBoundsDatabase];
+                    break;
+                case CacheDatabase.AllDatabases:
+                    dbs = [_vanillaDatabase, _moddedDatabase];
+                    break;
+                default:
+                    var unsupportedResult = new Result<byte[]> { Status = ResultStatus.Error };
+                    unsupportedResult.AddMessage($"Unsupported database: {request.Database}");
+                    return unsupportedResult;
             }
+
+            foreach (LightningDatabase db in dbs)
+            {
+                var (code, _, value) = tx.Get(db, Encoding.UTF8.GetBytes(request.Key));
+                if (code == MDBResultCode.Success)
+                {
+                    return new Result<byte[]>
+                    {
+                        Status = ResultStatus.Ok,
+                        Data = value.CopyToNewArray()
+                    };
+                }
+            }
+
+            return new Result<byte[]> { Status = ResultStatus.Ok };
         }
-        return null;
+        catch (Exception ex)
+        {
+            var result = new Result<byte[]> { Status = ResultStatus.Error };
+            result.AddMessage($"Failed to get cache entry with key {request.Key}: {ex.Message}");
+            return result;
+        }
     }
-    
+
     /// <summary>
     /// Gets all entries from the specified database.
     /// </summary>
     /// <param name="database"></param>
-    /// <returns></returns>
-    /// <remarks>returns null if the cache is not initialized, database doesn't exist or the target is all databases</remarks>
-    public KeyValuePair<string, byte[]>[]? GetAllEntries(CacheDatabase database)
+    /// <returns>A result containing all entries in the requested database.</returns>
+    public Result<KeyValuePair<string, byte[]>[]> GetAllEntries(CacheDatabase database)
     {
-        if (!_isInitialized) return null;
+        if (!_isInitialized)
+        {
+            var errorResult = new Result<KeyValuePair<string, byte[]>[]> { Status = ResultStatus.Error };
+            errorResult.AddMessage("Cache service is not initialized.");
+            return errorResult;
+        }
+
         switch (database)
         {
             case CacheDatabase.Vanilla:
@@ -80,69 +107,117 @@ public partial class CacheService
             case CacheDatabase.ModdedBounds:
                 return GetAllEntries(_moddedBoundsDatabase);
             case CacheDatabase.AllBounds:
-                return GetAllEntries(_vanillaBoundsDatabase)
-                    .Concat(GetAllEntries(_moddedBoundsDatabase))
-                    .ToArray();
+                var vanillaResult = GetAllEntries(_vanillaBoundsDatabase);
+                if (vanillaResult.Status == ResultStatus.Error || vanillaResult.Data == null)
+                    return vanillaResult;
+
+                var moddedResult = GetAllEntries(_moddedBoundsDatabase);
+                if (moddedResult.Status == ResultStatus.Error || moddedResult.Data == null)
+                    return moddedResult;
+
+                return new Result<KeyValuePair<string, byte[]>[]>
+                {
+                    Status = ResultStatus.Ok,
+                    Data = vanillaResult.Data.Concat(moddedResult.Data).ToArray()
+                };
             case CacheDatabase.AllDatabases:
-                return null;
+                var unsupportedResult = new Result<KeyValuePair<string, byte[]>[]> { Status = ResultStatus.Error };
+                unsupportedResult.AddMessage("Getting all entries from all databases is not supported.");
+                return unsupportedResult;
             default:
-                return null;
+                var defaultResult = new Result<KeyValuePair<string, byte[]>[]> { Status = ResultStatus.Error };
+                defaultResult.AddMessage($"Unsupported database: {database}");
+                return defaultResult;
         }
     }
-    
+
     /// <summary>
     /// Gets all entries from the provided database.
     /// </summary>
     /// <param name="db"></param>
-    /// <returns></returns>
-    /// <exception cref="Exception">if cache is not initialized</exception>
-    private KeyValuePair<string, byte[]>[] GetAllEntries(LightningDatabase db)
+    /// <returns>A result containing all entries in the database.</returns>
+    private Result<KeyValuePair<string, byte[]>[]> GetAllEntries(LightningDatabase db)
     {
-        using var tx = _env.BeginTransaction();
-        KeyValuePair<string, byte[]>[] entries = new KeyValuePair<string, byte[]>[db.DatabaseStats.Entries];
-        using (var cursor = tx.CreateCursor(db))
+        try
         {
-            int i = 0;
-            while (cursor.Next().resultCode == MDBResultCode.Success)
+            using var tx = _env.BeginTransaction();
+            KeyValuePair<string, byte[]>[] entries = new KeyValuePair<string, byte[]>[db.DatabaseStats.Entries];
+            using (var cursor = tx.CreateCursor(db))
             {
-                entries[i] = new KeyValuePair<string, byte[]>(Encoding.UTF8.GetString(cursor.GetCurrent().key.CopyToNewArray()), cursor.GetCurrent().value.CopyToNewArray());
-                i++;
+                int i = 0;
+                while (cursor.Next().resultCode == MDBResultCode.Success)
+                {
+                    entries[i] = new KeyValuePair<string, byte[]>(Encoding.UTF8.GetString(cursor.GetCurrent().key.CopyToNewArray()), cursor.GetCurrent().value.CopyToNewArray());
+                    i++;
+                }
             }
+
+            return new Result<KeyValuePair<string, byte[]>[]>
+            {
+                Status = ResultStatus.Ok,
+                Data = entries
+            };
         }
-        return entries;
+        catch (Exception ex)
+        {
+            var result = new Result<KeyValuePair<string, byte[]>[]> { Status = ResultStatus.Error };
+            result.AddMessage($"Failed to get all cache entries: {ex.Message}");
+            return result;
+        }
     }
-    
+
     /// <summary>
     /// Writes a single entry to the cache
     /// </summary>
     /// <param name="request"></param>
-    /// <exception cref="Exception">Cache is uninitialized</exception>
-    public void WriteSingleEntry(WriteCacheRequest request)
+    /// <returns>A result indicating whether the entry was written.</returns>
+    public Result WriteSingleEntry(WriteCacheRequest request)
     {
-        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling WriteSingleEntry");
-        using var tx = _env.BeginTransaction();
-        switch (request.Database)
+        if (!_isInitialized)
+            return new Result(ResultStatus.Error, "Cache service must be initialized before calling WriteSingleEntry");
+
+        try
         {
-            case CacheDatabase.Vanilla:
-                tx.Put(_vanillaDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
-                break;
-            case CacheDatabase.Modded:
-                tx.Put(_moddedDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
-                break;
-            case CacheDatabase.VanillaBounds:
-                tx.Put(_vanillaBoundsDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
-                break;
-            case CacheDatabase.ModdedBounds:
-                tx.Put(_moddedBoundsDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
-                break;
-            case CacheDatabase.AllBounds:
-                tx.Put(_vanillaBoundsDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
-                tx.Put(_moddedBoundsDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
-                break;
+            using var tx = _env.BeginTransaction();
+            MDBResultCode status;
+            switch (request.Database)
+            {
+                case CacheDatabase.Vanilla:
+                    status = tx.Put(_vanillaDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    break;
+                case CacheDatabase.Modded:
+                    status = tx.Put(_moddedDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    break;
+                case CacheDatabase.VanillaBounds:
+                    status = tx.Put(_vanillaBoundsDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    break;
+                case CacheDatabase.ModdedBounds:
+                    status = tx.Put(_moddedBoundsDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    break;
+                case CacheDatabase.AllBounds:
+                    status = tx.Put(_vanillaBoundsDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    if (status == MDBResultCode.Success)
+                        status = tx.Put(_moddedBoundsDatabase, Encoding.UTF8.GetBytes(request.Key), request.Data);
+                    break;
+                default:
+                    return new Result(ResultStatus.Error, $"Unsupported database: {request.Database}");
+            }
+
+            if (status != MDBResultCode.Success)
+                return new Result(ResultStatus.Error, $"Failed to write data with key {request.Key} to {request.Database} with status {status}");
+
+            var commitStatus = tx.Commit();
+            if (commitStatus != MDBResultCode.Success)
+                return new Result(ResultStatus.Error, $"Failed to commit data with key {request.Key} to {request.Database} with status {commitStatus}");
+
+            return new Result(ResultStatus.Ok);
         }
-        tx.Commit();
+        catch (Exception ex)
+        {
+            return new Result(ResultStatus.Error, $"Failed to write data with key {request.Key} to {request.Database}: {ex.Message}");
+        }
     }
-    
+
     /// <summary>
     /// Enqueues AbbrSector (serialized on a background thread) to be written to cache
     /// </summary>
@@ -158,7 +233,7 @@ public partial class CacheService
             _requestWriteQueue.Enqueue(request);
         });
     }
-    
+
     /// <summary>
     /// Enqueues AbbrMesh (serialized on a background thread) to be written to cache
     /// </summary>
@@ -174,7 +249,7 @@ public partial class CacheService
             _requestWriteQueue.Enqueue(request);
         });
     }
-    
+
     /// <summary>
     /// Enqueues serialized data to be written to cache
     /// </summary>
@@ -188,115 +263,158 @@ public partial class CacheService
     /// <summary>
     /// Loops while IsProcessing is true or request queue is > 0, writes all entries in bulk to cache
     /// </summary>
-    /// <exception cref="Exception">Cache Service is not initialized</exception>
-    private async Task ProcessWriteQueue()
+    /// <returns>A result describing the outcome of writing all queued entries.</returns>
+    private async Task<Result> ProcessWriteQueue()
     {
-        if (!_isInitialized) throw new Exception("Cache service must be initialized before calling ProcessWriteQueue");
+        if (!_isInitialized)
+            return new Result(ResultStatus.Error, "Cache service must be initialized before calling ProcessWriteQueue");
+
+        var result = new Result(ResultStatus.Ok);
         bool wroteExitLog = false;
-        while (IsProcessing || _requestWriteQueue.Count > 0)
+        try
         {
-            await Task.Delay(BatchDelay);
-            if (!IsProcessing && !wroteExitLog && _requestWriteQueue.Count > 0)
+            while (IsProcessing || _requestWriteQueue.Count > 0)
             {
-                _logger.Warning($"Continuing to write {_requestWriteQueue.Count} entries to cache, do not close the application...");
-                wroteExitLog = true;
+                await Task.Delay(BatchDelay);
+                if (!IsProcessing && !wroteExitLog && _requestWriteQueue.Count > 0)
+                {
+                    result.Status = ResultStatus.Warning;
+                    result.AddMessage($"Continuing to write {_requestWriteQueue.Count} entries to cache, do not close the application...");
+                    wroteExitLog = true;
+                }
+
+                if (!(_requestWriteQueue.Count > 0)) continue;
+                WriteCacheRequest[] requests;
+
+                lock (_lock)
+                {
+                    requests = _requestWriteQueue.ToArray();
+                    _requestWriteQueue.Clear();
+                }
+
+                List<WriteCacheRequest> requestsModded = new();
+                List<WriteCacheRequest> requestsVanilla = new();
+                List<WriteCacheRequest> requestsModdedBounds = new();
+                List<WriteCacheRequest> requestsVanillaBounds = new();
+                foreach (var request in requests)
+                {
+                    switch (request.Database)
+                    {
+                        case CacheDatabase.Vanilla:
+                            requestsVanilla.Add(request);
+                            break;
+                        case CacheDatabase.Modded:
+                            requestsModded.Add(request);
+                            break;
+                        case CacheDatabase.VanillaBounds:
+                            requestsVanillaBounds.Add(request);
+                            break;
+                        case CacheDatabase.ModdedBounds:
+                            requestsModdedBounds.Add(request);
+                            break;
+                        case CacheDatabase.AllBounds:
+                            requestsVanillaBounds.Add(request);
+                            requestsModdedBounds.Add(request);
+                            break;
+                    }
+                }
+
+                using var tx = _env.BeginTransaction();
+                if (requestsModded.Count > 0)
+                {
+                    foreach (var request in requestsModded)
+                    {
+                        var status = tx.Put(_moddedDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                        if (status != MDBResultCode.Success)
+                        {
+                            result.Status = ResultStatus.Error;
+                            result.AddMessage($"Failed to write data with key {request.Key} to {request.Database} with status {status}");
+                        }
+                    }
+                }
+
+                if (requestsVanilla.Count > 0)
+                {
+                    foreach (var request in requestsVanilla)
+                    {
+                        var status = tx.Put(_vanillaDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                        if (status != MDBResultCode.Success)
+                        {
+                            result.Status = ResultStatus.Error;
+                            result.AddMessage($"Failed to write data with key {request.Key} to {request.Database} with status {status}");
+                        }
+                    }
+                }
+
+                if (requestsVanillaBounds.Count > 0)
+                {
+                    foreach (var request in requestsVanillaBounds)
+                    {
+                        var status = tx.Put(_vanillaBoundsDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                        if (status != MDBResultCode.Success)
+                        {
+                            result.Status = ResultStatus.Error;
+                            result.AddMessage($"Failed to write data with key {request.Key} to {request.Database} with status {status}");
+                        }
+                    }
+                }
+
+                if (requestsModdedBounds.Count > 0)
+                {
+                    foreach (var request in requestsModdedBounds)
+                    {
+                        var status = tx.Put(_moddedBoundsDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
+                        if (status != MDBResultCode.Success)
+                        {
+                            result.Status = ResultStatus.Error;
+                            result.AddMessage($"Failed to write data with key {request.Key} to {request.Database} with status {status}");
+                        }
+                    }
+                }
+
+                var commitStatus = tx.Commit();
+                if (commitStatus != MDBResultCode.Success)
+                {
+                    result.Status = ResultStatus.Error;
+                    result.AddMessage($"Failed to commit {requests.Length} entries to cache with status {commitStatus}");
+                }
             }
 
-            if (!(_requestWriteQueue.Count > 0)) continue;
-            WriteCacheRequest[] requests;
-    
-            lock (_lock)
+            if (ClearCacheOnExit)
             {
-                requests = _requestWriteQueue.ToArray();
-                _requestWriteQueue.Clear();
-            }
-            
-            List<WriteCacheRequest> requestsModded = new();
-            List<WriteCacheRequest> requestsVanilla = new();
-            List<WriteCacheRequest> requestsModdedBounds = new();
-            List<WriteCacheRequest> requestsVanillaBounds = new();
-            foreach (var request in requests)
-            {
-                switch (request.Database)
+                var clearVanillaResult = ClearDatabase(CacheDatabase.Vanilla, true);
+                if (clearVanillaResult.Status != ResultStatus.Ok)
                 {
-                    case CacheDatabase.Vanilla:
-                        requestsVanilla.Add(request);
-                        break;
-                    case CacheDatabase.Modded:
-                        requestsModded.Add(request);
-                        break;
-                    case CacheDatabase.VanillaBounds:
-                        requestsVanillaBounds.Add(request);
-                        break;
-                    case CacheDatabase.ModdedBounds:
-                        requestsModdedBounds.Add(request);
-                        break;
-                    case CacheDatabase.AllBounds:
-                        requestsVanillaBounds.Add(request);
-                        requestsModdedBounds.Add(request);
-                        break;
+                    if (clearVanillaResult.Status == ResultStatus.Error)
+                        result.Status = ResultStatus.Error;
+                    else if (result.Status == ResultStatus.Ok)
+                        result.Status = ResultStatus.Warning;
+                    result.AddMessage(clearVanillaResult.Message);
                 }
-            }
-            
-            using var tx = _env.BeginTransaction();
-            if (requestsModded.Count > 0)
-            {
-                foreach (var request in requestsModded)
+
+                var clearModdedResult = ClearDatabase(CacheDatabase.Modded, true);
+                if (clearModdedResult.Status != ResultStatus.Ok)
                 {
-                    var status = tx.Put(_moddedDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
-                    if (status != MDBResultCode.Success)
-                        _logger.Error($"Failed to write data with key {request.Key} to {request.Database} with status {status}");
-                }
-            }
-            
-            if (requestsVanilla.Count > 0)
-            {
-                foreach (var request in requestsVanilla)
-                {
-                    var status = tx.Put(_vanillaDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
-                    if (status != MDBResultCode.Success)
-                        _logger.Error($"Failed to write data with key {request.Key} to {request.Database} with status {status}");
-                }
-            }
-            
-            if (requestsVanillaBounds.Count > 0)
-            {
-                foreach (var request in requestsVanillaBounds)
-                {
-                    var status = tx.Put(_vanillaBoundsDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
-                    if (status != MDBResultCode.Success)
-                        _logger.Error($"Failed to write data with key {request.Key} to {request.Database} with status {status}");
-                }
-            }
-                
-            if (requestsModdedBounds.Count > 0)
-            {
-                foreach (var request in requestsModdedBounds)
-                {
-                    var status = tx.Put(_moddedBoundsDatabase,Encoding.UTF8.GetBytes(request.Key), request.Data);
-                    if (status != MDBResultCode.Success)
-                        _logger.Error($"Failed to write data with key {request.Key} to {request.Database} with status {status}");
+                    if (clearModdedResult.Status == ResultStatus.Error)
+                        result.Status = ResultStatus.Error;
+                    else if (result.Status == ResultStatus.Ok)
+                        result.Status = ResultStatus.Warning;
+                    result.AddMessage(clearModdedResult.Message);
                 }
             }
 
-            var commitStatus = tx.Commit();
-            if (commitStatus != MDBResultCode.Success)
-                _logger.Error($"Failed to commit {requests.Length} entries to cache with status {commitStatus}");
+            if (wroteExitLog)
+                result.AddMessage("Finished writing all queued entries to cache");
+        }
+        catch (Exception ex)
+        {
+            result.Status = ResultStatus.Error;
+            result.AddMessage($"Failed to process cache write queue: {ex.Message}");
         }
 
-        if (ClearCacheOnExit)
-        {
-            ClearDatabase(CacheDatabase.Vanilla, true);
-            ClearDatabase(CacheDatabase.Modded, true);
-        }
-            
-        
-        if (wroteExitLog)
-        {
-            _logger.Success("Finished writing all queued entries to cache");
-        }
+        return result;
     }
-    
+
     /// <summary>
     /// Checks if the resource path has failed before (thus being "bad")
     /// </summary>
