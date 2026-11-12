@@ -33,14 +33,12 @@ public partial class CacheService
     static ConcurrentQueue<WriteCacheRequest> _requestWriteQueue = new();
 
     private readonly object _lock = new object();
-    private readonly object _saveKnownBadResourcesLock = new();
 
     private LightningDatabase _vanillaDatabase;
     private LightningDatabase _moddedDatabase;
     private LightningDatabase _vanillaBoundsDatabase;
     private LightningDatabase _moddedBoundsDatabase;
 
-    private readonly ConcurrentDictionary<string, byte> _knownBadResources = new();
     private bool _isInitialized;
 
     public bool IsInitialized => _isInitialized;
@@ -97,13 +95,6 @@ public partial class CacheService
 
             var result = new Result(ResultStatus.Ok);
 
-            var loadKnownBadResourcesResult = LoadKnownBadResources();
-            if (loadKnownBadResourcesResult.Status != ResultStatus.Ok)
-            {
-                result.Status = ResultStatus.Warning;
-                result.AddMessage(loadKnownBadResourcesResult.Message);
-            }
-
             var validationResult = ValidateCache();
             if (validationResult.Status == ResultStatus.Error)
             {
@@ -153,10 +144,6 @@ public partial class CacheService
         var clearMetaDataResult = ClearMetaData();
         if (clearMetaDataResult.Status == ResultStatus.Error)
             return clearMetaDataResult;
-
-        var clearKnownBadResourcesResult = ClearKnownBadResources();
-        if (clearKnownBadResourcesResult.Status == ResultStatus.Error)
-            return clearKnownBadResourcesResult;
 
         var clearDatabaseResult = ClearDatabase(CacheDatabase.AllDatabases, true);
         if (clearDatabaseResult.Status == ResultStatus.Error)
@@ -226,11 +213,11 @@ public partial class CacheService
     /// <summary>
     /// Stops listening to read requests
     /// </summary>
-    /// <returns>A result indicating whether the known bad resources were saved successfully.</returns>
+    /// <returns>A result indicating whether listening was stopped successfully.</returns>
     public Result StopListening()
     {
         IsProcessing = false;
-        return SaveKnownBadResources();
+        return new Result(ResultStatus.Ok);
     }
 
     /// <summary>
@@ -832,68 +819,6 @@ public partial class CacheService
         catch (Exception ex)
         {
             return new Result(ResultStatus.Error, $"Failed to clear cache metadata: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Deletes the cache metadata file if it exists
-    /// </summary>
-    /// <returns>A result indicating whether the known bad resources were cleared.</returns>
-    public Result ClearKnownBadResources()
-    {
-        try
-        {
-            var knownBadResourcesFile = Path.Combine(_cacheDirectory, "knownBadResources.txt");
-            if (File.Exists(knownBadResourcesFile))
-                File.Delete(knownBadResourcesFile);
-            _knownBadResources.Clear();
-            return new Result(ResultStatus.Ok);
-        }
-        catch (Exception ex)
-        {
-            _knownBadResources.Clear();
-            return new Result(ResultStatus.Error, $"Failed to clear known bad resources: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Gets the count of known bad resources
-    /// </summary>
-    /// <returns></returns>
-    public int GetKnownBadResourceCount() => _knownBadResources.Count;
-
-    private Result SaveKnownBadResources()
-    {
-        lock (_saveKnownBadResourcesLock)
-        {
-            if (_knownBadResources.IsEmpty) return new Result(ResultStatus.Ok);
-            try
-            {
-                var knownBadResourcesFile = Path.Combine(_cacheDirectory, "knownBadResources.txt");
-                File.WriteAllLines(knownBadResourcesFile, _knownBadResources.Keys);
-                return new Result(ResultStatus.Ok);
-            }
-            catch (Exception ex)
-            {
-                return new Result(ResultStatus.Error, $"Failed to save known bad resources: {ex.Message}");
-            }
-        }
-    }
-
-    private Result LoadKnownBadResources()
-    {
-        try
-        {
-            var knownBadResourcesFile = Path.Combine(_cacheDirectory, "knownBadResources.txt");
-            if (!File.Exists(knownBadResourcesFile))
-                return new Result(ResultStatus.Ok);
-            foreach (var line in File.ReadAllLines(knownBadResourcesFile))
-                _knownBadResources.TryAdd(line, 0);
-            return new Result(ResultStatus.Ok);
-        }
-        catch (Exception ex)
-        {
-            return new Result(ResultStatus.Error, $"Failed to load known bad resources: {ex.Message}");
         }
     }
 
