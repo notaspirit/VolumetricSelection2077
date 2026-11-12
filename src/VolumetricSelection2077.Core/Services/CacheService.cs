@@ -457,7 +457,7 @@ public partial class CacheService
     /// </summary>
     /// <param name="newValue"></param>
     /// <returns></returns>
-    private void SetMetaDataVanillaBoundsStatus(bool newValue)
+    public void SetMetaDataVanillaBoundsStatus(bool newValue)
     {
         var metadata = GetMetadata();
         metadata.AreVanillaSectorBBsBuild = newValue;
