@@ -46,10 +46,11 @@ public class AxlRemovalToWorldBuilderConverter
     /// <param name="rootName">Name of the generated root element.</param>
     /// <param name="config">Conversion settings.</param>
     /// <returns>
-    /// A result containing the generated root element. Any warnings produced during conversion are collected
-    /// in the message and set the status to <see cref="ResultStatus.Warning"/>.
+    /// A result containing the generated root element and any embedded file paths that need to be extracted manually.
+    /// Any warnings produced during conversion are collected in the message and set the status to
+    /// <see cref="ResultStatus.Warning"/>.
     /// </returns>
-    public Result<Element> Convert(AxlRemovalFile axlFile, string rootName,
+    public Result<WBConversionResult> Convert(AxlRemovalFile axlFile, string rootName,
         AxlRemovalToWorldBuilderConverterConfig config)
     {
         _warnedTypes.Clear();
@@ -92,29 +93,18 @@ public class AxlRemovalToWorldBuilderConverter
         }
 
 
-        var embeddedFilesCount = _embeddedResourcePaths.Values.Sum(v => v.Count);
-        if (embeddedFilesCount > 0)
+        var converterResult = new WBConversionResult
         {
-            var formattedPaths = "";
-            foreach (var (key, value) in _embeddedResourcePaths)
-            {
-                formattedPaths += $"{key}\n";
-                foreach (var path in value)
-                {
-                    formattedPaths += $"  {path}\n";
-                }
-                formattedPaths += "\n";
-            }
+            RootElement = root,
+            EmbeddedFiles = _embeddedResourcePaths.ToDictionary(
+                kvp => kvp.Key,
+                kvp => new List<string>(kvp.Value))
+        };
 
-            Warn($"Found {embeddedFilesCount} embedded resource paths. These will need to be manually extracted from their respective sectors and added to the project otherwise they will simply not show up in game.");
-            Warn("The following paths were found:\n" +
-                 $"{formattedPaths}");
-        }
-
-        var result = new Result<Element>
+        var result = new Result<WBConversionResult>
         {
             Status = _messages.Count > 0 ? ResultStatus.Warning : ResultStatus.Ok,
-            Data = root
+            Data = converterResult
         };
         if (_messages.Count > 0)
             result.AddMessage(string.Join(Environment.NewLine, _messages));
