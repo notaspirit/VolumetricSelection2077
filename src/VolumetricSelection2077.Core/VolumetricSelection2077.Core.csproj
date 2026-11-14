@@ -14,6 +14,7 @@
       <PackageReference Include="PeNet" Version="5.1.0" />
       <PackageReference Include="WolvenKit.Common" Version="8.16.1" />
       <PackageReference Include="WolvenKit.Modkit" Version="8.16.1" />
+      <PackageReference Include="XXHash3.NET" Version="2.1.0" />
     </ItemGroup>
 
 </Project>
