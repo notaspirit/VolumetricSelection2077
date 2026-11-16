@@ -1,15 +1,10 @@
 using VolumetricSelection2077.Core.Enums;
-using WolvenKit;
+using WolvenKit.Common;
 using WolvenKit.Common.Services;
-using WolvenKit.Core.Interfaces;
-using WolvenKit.Core.Services;
-using WolvenKit.RED4.CR2W.Archive;
-using WolvenKit.RED4.CR2W;
 using VolumetricSelection2077.Core.MessagePack.Helpers;
 using VolumetricSelection2077.Core.Models;
 using VolumetricSelection2077.Core.Models.WorldBuilder.Spawn.Collision;
 using VolumetricSelection2077.Core.Parsers;
-using WolvenKit.Common;
 using WolvenKit.RED4.Types.Pools;
 
 namespace VolumetricSelection2077.Core.Services;
@@ -18,73 +13,19 @@ public class GameFileService : IGameFileService
 {
     private readonly ICacheService _cacheService;
     private readonly IVSSectorParser _sectorParser;
-    
-    private readonly ILoggerService _loggerService = new SerilogWrapper();
-    private readonly IProgressService<double> _progressService = new ProgressService<double>();
-    public ArchiveManager ArchiveManager { get; }
-    private readonly HashService _hashService;
-    private readonly HookService _hookService;
-    private readonly Red4ParserService _red4ParserService;
+    private readonly IArchiveManager _archiveManager;
     private readonly GeometryCacheService _geometryCacheService;
     
-    private CacheDatabase _readCacheTarget;
-    private bool _useModdedResources;
-    private string _gameExePath;
-    
-    public GameFileService(ICacheService cacheService, string gameExePath, bool useModdedResources = false)
+    public GameFileService(
+        ICacheService cacheService,
+        IVSSectorParser sectorParser,
+        IArchiveManager archiveManager,
+        GeometryCacheService geometryCacheService)
     {
-        _gameExePath = gameExePath;
-        _useModdedResources = useModdedResources;
-        
         _cacheService = cacheService;
-        _sectorParser = new VSSectorParser(this, cacheService);
-        
-        _hashService = new HashService();
-        _hookService = new HookService();
-        _red4ParserService = new Red4ParserService(
-            _hashService,
-            _loggerService,
-            _hookService);
-        ArchiveManager = new ArchiveManager(
-            _hashService,
-            _red4ParserService,
-            _loggerService,
-            _progressService
-        );
-        _geometryCacheService = new GeometryCacheService(
-            ArchiveManager,
-            _red4ParserService
-        );
-    }
-
-    private bool _isInitialized;
-    public bool IsInitialized => _isInitialized;
-
-    public void Initialize()
-    {
-        if (_isInitialized) return;
-        
-        ArchiveManager.Initialize(new FileInfo(_gameExePath), _useModdedResources);
-        _readCacheTarget = _useModdedResources ? CacheDatabase.AllDatabases : CacheDatabase.Vanilla;
-        InitializeCNames();
-
-        _isInitialized = true;
-    }
-
-    /// <summary>
-    /// Initializes the CNamePool with CNames expected to be encountered.
-    /// </summary>
-    private static void InitializeCNames()
-    {
-        foreach (var entry in CollisionGenerics.OriginalMaterials)
-        {
-            CNamePool.AddOrGetHash(entry);
-        }
-
-        foreach (var entry in CollisionGenerics.Presets)
-        {
-            CNamePool.AddOrGetHash(entry);
-        }
+        _sectorParser = sectorParser;
+        _archiveManager = archiveManager;
+        _geometryCacheService = geometryCacheService;
     }
     
     /// <summary>
@@ -153,7 +94,7 @@ public class GameFileService : IGameFileService
             return result;
         }
         
-        var cachedResource = _cacheService.GetEntry(new ReadCacheRequest(path, _readCacheTarget));
+        var cachedResource = _cacheService.GetEntry(new ReadCacheRequest(path, CacheDatabase.AllDatabases));
         if (cachedResource is { Status: ResultStatus.Ok, Data: not null } &&
             MessagePackHelper.TryDeserialize<T>(cachedResource.Data, out var cached))
         {
@@ -162,7 +103,7 @@ public class GameFileService : IGameFileService
             return result;
         }
 
-        var rawResource = ArchiveManager.GetCR2WFile(path);
+        var rawResource = _archiveManager.GetCR2WFile(path);
         if (rawResource == null)
         {
             result.Status = ResultStatus.Error;
@@ -170,7 +111,7 @@ public class GameFileService : IGameFileService
             return result;
         }
         
-        var db = _useModdedResources && ArchiveManager.Lookup(path, ArchiveManagerScope.Mods) != null ? CacheDatabase.Modded : CacheDatabase.Vanilla;
+        var db = _archiveManager.Lookup(path, ArchiveManagerScope.Mods) != null ? CacheDatabase.Modded : CacheDatabase.Vanilla;
 
         if (typeof(T) == typeof(VSMesh))
         {
@@ -195,9 +136,8 @@ public class GameFileService : IGameFileService
 
             result.Data = (T)(object)parsedMesh;
             result.Status = ResultStatus.Ok;
-
-            if (db != CacheDatabase.Modded || _useModdedResources)
-                _cacheService.WriteEntry(path, parsedMesh, db);
+            
+            _cacheService.WriteEntry(path, parsedMesh, db);
             
             return result;
         }
@@ -224,9 +164,8 @@ public class GameFileService : IGameFileService
         result.Data = (T)(object)parsedSector.Data!;
         result.Status = parsedSector.Status;
         result.AddMessage(parsedSector.Message);
-
-        if (db != CacheDatabase.Modded || _useModdedResources)
-            _cacheService.WriteEntry(path, parsedSector.Data!, db);
+        
+        _cacheService.WriteEntry(path, parsedSector.Data!, db);
         
         return result;
     }

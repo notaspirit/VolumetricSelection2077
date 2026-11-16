@@ -15,7 +15,6 @@ using VolumetricSelection2077.App.ViewStructures;
 using VolumetricSelection2077.App.Enums;
 using VolumetricSelection2077.Core.Enums;
 using VolumetricSelection2077.Core.Services;
-using Utils = VolumetricSelection2077.App.Services.Utils;
 
 namespace VolumetricSelection2077.App.ViewModels
 {
@@ -126,7 +125,7 @@ namespace VolumetricSelection2077.App.ViewModels
         public string FilterSectionButtonLabel => Labels.FilterCollapseButton +
                                                   $" [ {(Settings.Data.DebugNameFilter.Count == 0 ? 0 : 1) 
                                                         + (Settings.Data.ResourceNameFilter.Count == 0 ? 0 : 1) 
-                                                        + (Settings.Data.NodeTypeFilter.Count == Utils.WorldNodeNames.Length ? 0 : 1)} / 3 ]";
+                                                        + (Settings.Data.NodeTypeFilter.Count == AppUtils.WorldNodeNames.Length ? 0 : 1)} / 3 ]";
         public bool IsFilterSelectionVisible
         {
             get => Settings.Data.IsFiltersMWVisible;
@@ -263,7 +262,7 @@ namespace VolumetricSelection2077.App.ViewModels
             _resourceNameFilter.CollectionChanged += ResourceNameFilter_CollectionChanged;
             Settings.Data.DebugNameFilter.CollectionChanged += DebugNameFilter_CollectionChanged;
             _nodeTypeFilterItems = new();
-            foreach (var nodeTypeName in Utils.WorldNodeNames)
+            foreach (var nodeTypeName in AppUtils.WorldNodeNames)
             {
                 var item = new NodeTypeFilterItem(nodeTypeName, Settings.Data.NodeTypeFilter);
                 item.PropertyChanged += OnNodeTypeFilterItemChanged;

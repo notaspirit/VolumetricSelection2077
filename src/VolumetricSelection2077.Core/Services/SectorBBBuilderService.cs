@@ -3,6 +3,7 @@ using SharpDX;
 using VolumetricSelection2077.Core.Components;
 using VolumetricSelection2077.Core.Enums;
 using VolumetricSelection2077.Core.Models;
+using WolvenKit.Common;
 using WEnums = WolvenKit.RED4.Types.Enums;
 using Vector3 = SharpDX.Vector3;
 using Result = VolumetricSelection2077.Core.Models.Result;
@@ -20,6 +21,7 @@ public class SectorBBBuilderService : ISectorBBBuilderService
     private readonly ICacheService _cacheService;
     private readonly IGameFileService _gameFileService;
     private readonly IProgressService _progressService;
+    private readonly IArchiveManager _archiveManager;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SectorBBBuilderService"/> class.
@@ -27,13 +29,17 @@ public class SectorBBBuilderService : ISectorBBBuilderService
     /// <param name="cacheService">Cache service used to enumerate and write sector bounds.</param>
     /// <param name="gameFileService">Game file service used to load sectors, meshes, and PhysX collision meshes.</param>
     /// <param name="progressService">Progress service used to track progress.</param>
-    public SectorBBBuilderService(ICacheService cacheService,
+    /// <param name="archiveManager">Archive manager used for indexing game files</param>
+    public SectorBBBuilderService(
+        ICacheService cacheService,
         IGameFileService gameFileService,
-        IProgressService progressService)
+        IProgressService progressService,
+        IArchiveManager archiveManager)
     {
         _cacheService = cacheService;
         _gameFileService = gameFileService;
         _progressService = progressService;
+        _archiveManager = archiveManager;
     }
 
     /// <summary>
@@ -47,9 +53,6 @@ public class SectorBBBuilderService : ISectorBBBuilderService
     /// </returns>
     public async Task<Result> BuildBounds(BuildBoundsMode mode)
     {
-        if (!_gameFileService.IsInitialized)
-            return new Result(ResultStatus.Error, "Game file service is not initialized!");
-
         if (!_cacheService.IsInitialized)
             return new Result(ResultStatus.Error, "Cache service is not initialized!");
 
@@ -337,14 +340,14 @@ public class SectorBBBuilderService : ISectorBBBuilderService
     }
 
     private List<string> GetVanillaSectors() =>
-        _gameFileService.ArchiveManager.GetGameArchives()
+        _archiveManager.GetGameArchives()
             .SelectMany(x => x.Files.Values
                 .Where(y => y.Extension == ".streamingsector")
                 .Select(y => y.FileName))
             .ToList();
 
     private List<string> GetModdedSectors() =>
-        _gameFileService.ArchiveManager.GetModArchives()
+        _archiveManager.GetModArchives()
             .SelectMany(x => x.Files.Values
                 .Where(y => y.Extension == ".streamingsector")
                 .Select(y => y.FileName))

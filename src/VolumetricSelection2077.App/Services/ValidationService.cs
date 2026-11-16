@@ -9,6 +9,7 @@ using VolumetricSelection2077.Core.Json.Helpers;
 using VolumetricSelection2077.Core.Models.WorldBuilder.Favorites;
 using VolumetricSelection2077.Core.Models;
 using VolumetricSelection2077.Core.Services;
+using WolvenKit.Common;
 
 namespace VolumetricSelection2077.App.Services
 {
@@ -16,14 +17,17 @@ namespace VolumetricSelection2077.App.Services
     {
         private readonly SettingsService _settingsService;
         private readonly ICacheService _cacheService;
-        private readonly IGameFileService _gameFileService;
+        private readonly IArchiveManager _archiveManager;
         private static readonly char[] InvalidCharacters = Path.GetInvalidPathChars().Concat(new[] { '?', '*', '"', '<', '>', '|' }).Distinct().ToArray();
 
-        public ValidationService(SettingsService settingsService, ICacheService cacheService, IGameFileService gameFileService)
+        public ValidationService(
+            SettingsService settingsService,
+            ICacheService cacheService,
+            IArchiveManager archiveManager)
         {
             _settingsService = settingsService;
             _cacheService = cacheService;
-            _gameFileService = gameFileService;
+            _archiveManager = archiveManager;
         }
         
         /// <summary>
@@ -120,7 +124,7 @@ namespace VolumetricSelection2077.App.Services
             if (!File.Exists(gameExePath))
                 throw new ArgumentException("Could not find Game Executable.");
 
-            string? version = Utils.GetExeVersion(gameExePath);
+            string? version = AppUtils.GetExeVersion(gameExePath);
             if (version != metadata.GameVersion)
                 return false;
 
@@ -212,7 +216,7 @@ namespace VolumetricSelection2077.App.Services
             if (!_settingsService.Data.SupportModdedResources)
                 return true;
             
-            var inArchiveSectors = _gameFileService.ArchiveManager.GetModArchives()
+            var inArchiveSectors = _archiveManager.GetModArchives()
                 .SelectMany(x => x.Files.Values.Where(y => y.Extension == ".streamingsector").Select(y => y.FileName))
                 .ToList();
 

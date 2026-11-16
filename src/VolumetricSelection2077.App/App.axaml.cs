@@ -10,7 +10,16 @@ using VolumetricSelection2077.App.Parsers;
 using VolumetricSelection2077.App.Services;
 using VolumetricSelection2077.App.TestingStuff;
 using VolumetricSelection2077.App.Views;
+using VolumetricSelection2077.Core.Converters.Complex;
+using VolumetricSelection2077.Core.Parsers;
 using VolumetricSelection2077.Core.Services;
+using WolvenKit;
+using WolvenKit.Common;
+using WolvenKit.Common.Services;
+using WolvenKit.Core.Interfaces;
+using WolvenKit.Core.Services;
+using WolvenKit.RED4.CR2W;
+using WolvenKit.RED4.CR2W.Archive;
 using YamlDotNet.Serialization;
 
 namespace VolumetricSelection2077.App;
@@ -35,7 +44,16 @@ public partial class App : Application
         hostBuilder.Services.AddSingleton<SettingsService>(new SettingsService(settingsPath));
         hostBuilder.Services.AddSingleton<IProgressService, AppProgressService>();
         hostBuilder.Services.AddSingleton<ICacheService, CacheService>(sp => new CacheService(sp.GetRequiredService<SettingsService>().Data.CacheDirectory, "2.5", !sp.GetRequiredService<SettingsService>().Data.CacheEnabled));
-        hostBuilder.Services.AddSingleton<IGameFileService, GameFileService>(sp => new GameFileService(sp.GetRequiredService<ICacheService>(), sp.GetRequiredService<SettingsService>().Data.GameDirectory + "\\bin\\x64\\Cyberpunk2077.exe", sp.GetRequiredService<SettingsService>().Data.SupportModdedResources));
+        hostBuilder.Services.AddSingleton<ILoggerService>(new SerilogWrapper());
+        hostBuilder.Services.AddSingleton<IProgressService<double>, ProgressService<double>>();
+        hostBuilder.Services.AddSingleton<IHashService, HashService>();
+        hostBuilder.Services.AddSingleton<IHookService, HookService>();
+        hostBuilder.Services.AddSingleton<Red4ParserService>();
+        hostBuilder.Services.AddSingleton<IArchiveManager, ArchiveManager>();
+        hostBuilder.Services.AddSingleton<GeometryCacheService>();
+        hostBuilder.Services.AddSingleton<IVSSectorParser, VSSectorParser>();
+        hostBuilder.Services.AddSingleton<IGameFileService, GameFileService>();
+        hostBuilder.Services.AddSingleton<IAxlRemovalToWorldBuilderConverter, AxlRemovalToWorldBuilderConverter>();
         hostBuilder.Services.AddSingleton<ValidationService>();
         hostBuilder.Services.AddSingleton<SettingsViewPersistentCache>();
         hostBuilder.Services.AddSingleton<UpdateService>(sp => new UpdateService(

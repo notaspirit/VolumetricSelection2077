@@ -11,6 +11,7 @@ using VolumetricSelection2077.Core.Models.WorldBuilder.Spawn.Light;
 using VolumetricSelection2077.Core.Models.WorldBuilder.Spawn.Mesh;
 using VolumetricSelection2077.Core.Models.WorldBuilder.Spawn.Visual;
 using VolumetricSelection2077.Core.Services;
+using WolvenKit.Common;
 using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.Archive.CR2W;
 using WolvenKit.RED4.CR2W.JSON;
@@ -25,13 +26,17 @@ namespace VolumetricSelection2077.Core.Converters.Complex;
 public class AxlRemovalToWorldBuilderConverter : IAxlRemovalToWorldBuilderConverter
 {
     private readonly IGameFileService _gfs;
+    private readonly IArchiveManager _archiveManager;
     private readonly List<string> _warnedTypes;
     private readonly Dictionary<string, List<string>> _embeddedResourcePaths;
     private readonly List<string> _messages = new();
 
-    public AxlRemovalToWorldBuilderConverter(IGameFileService gfs)
+    public AxlRemovalToWorldBuilderConverter(
+        IGameFileService gfs,
+        IArchiveManager archiveManager)
     {
         _gfs = gfs;
+        _archiveManager =  archiveManager;
         _warnedTypes = new List<string>();
         _embeddedResourcePaths = new Dictionary<string, List<string>>();
     }
@@ -64,7 +69,7 @@ public class AxlRemovalToWorldBuilderConverter : IAxlRemovalToWorldBuilderConver
             if (sector.NodeDeletions.Count <= 0)
                 continue;
 
-            var worldSectorCR2W = _gfs?.ArchiveManager?.GetCR2WFile(sector.Path);
+            var worldSectorCR2W = _archiveManager.GetCR2WFile(sector.Path);
             if (worldSectorCR2W is not { RootChunk: worldStreamingSector wse })
             {
                 Warn($"Failed to get sector {sector.Path}, no nodes from that sector will be added.");
@@ -185,7 +190,7 @@ public class AxlRemovalToWorldBuilderConverter : IAxlRemovalToWorldBuilderConver
 
                 HandleEmbeddedResourceWarning(entityNode.EntityTemplate.DepotPath, sectorPath, ref sectorCR2W);
                 
-                var rawEntTemplate = _gfs.ArchiveManager?.GetCR2WFile(entityNode.EntityTemplate.DepotPath);
+                var rawEntTemplate = _archiveManager.GetCR2WFile(entityNode.EntityTemplate.DepotPath);
                 if (rawEntTemplate?.RootChunk is not entEntityTemplate entTemplate)
                     return spawnableElements;
 

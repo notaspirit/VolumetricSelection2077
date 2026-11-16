@@ -5,6 +5,7 @@ using VolumetricSelection2077.Core.Enums;
 using VolumetricSelection2077.Core.Models;
 using VolumetricSelection2077.Core.Parsers;
 using VolumetricSelection2077.Core.Services;
+using WolvenKit.Common;
 using WolvenKit.RED4.Archive;
 using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.Archive.CR2W;
@@ -22,7 +23,7 @@ namespace VolumetricSelection2077.Tests.Parsers;
 
 public class VSSectorParserTests
 {
-    private readonly Mock<IGameFileService> _gameFileServiceMock = new();
+    private readonly Mock<IArchiveManager> _archiveManagerMock = new();
     private readonly Mock<ICacheService> _cacheServiceMock = new();
 
     private class TestNodeDataArray : CArray<worldNodeData>, IParseableBuffer
@@ -39,7 +40,7 @@ public class VSSectorParserTests
 
     private VSSectorParser CreateParser()
     {
-        return new VSSectorParser(_gameFileServiceMock.Object, _cacheServiceMock.Object);
+        return new VSSectorParser(_cacheServiceMock.Object, _archiveManagerMock.Object);
     }
 
     private static WolvenKit.RED4.Types.DataBuffer CreateDataBuffer(IParseableBuffer data)
@@ -325,40 +326,5 @@ public class VSSectorParserTests
         var nodeData = Assert.Single(result.Data.NodeData);
         var transform = Assert.Single(nodeData.Transforms);
         Assert.Equal(new Vector3(10, 20, 30), transform.Position);
-    }
-
-    [Fact]
-    public void ParseFromCR2W_WithFoliageNode_UninitializedGameFileService_ProducesWarning()
-    {
-        var sector = new worldStreamingSector();
-        var foliageNode = new worldFoliageNode
-        {
-            FoliageResource = new CResourceAsyncReference<worldFoliageCompiledResource>("base\\foliage.foliage")
-        };
-
-        sector.Nodes.Add(new CHandle<worldNode>(foliageNode));
-
-        var nodeDataArray = new TestNodeDataArray
-        {
-            new worldNodeData
-            {
-                NodeIndex = 0,
-                Position = new WVector4(),
-                Orientation = new WolvenKit.RED4.Types.Quaternion { R = 1 },
-                Scale = new WolvenKit.RED4.Types.Vector3 { X = 1, Y = 1, Z = 1 }
-            }
-        };
-
-        sector.NodeData = CreateDataBuffer(nodeDataArray);
-
-        var cr2w = new CR2WFile();
-        cr2w.RootChunk = sector;
-
-        _gameFileServiceMock.SetupGet(g => g.IsInitialized).Returns(false);
-
-        var result = CreateParser().ParseFromCR2W(cr2w);
-
-        Assert.Equal(ResultStatus.Warning, result.Status);
-        Assert.Contains("game file service is not initialized", result.Message);
     }
 }

@@ -8,12 +8,6 @@ namespace VolumetricSelection2077.Core.Services;
 /// </summary>
 public interface IGameFileService
 {
-    bool IsInitialized { get; }
-
-    ArchiveManager ArchiveManager { get; }
-
-    void Initialize();
-
     Task<Result<VSMesh>> GetPhysXMesh(ulong sectorHash, ulong actorHash);
 
     Result GetResource(string path, Type type);

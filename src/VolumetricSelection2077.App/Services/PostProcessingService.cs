@@ -14,7 +14,7 @@ public partial class PostProcessingService
 {
     private readonly IProgressService _progressService;
     private readonly SettingsService _settingsService;
-    private readonly AxlRemovalToWorldBuilderConverter _removalToWorldBuilderConverter;
+    private readonly IAxlRemovalToWorldBuilderConverter _removalToWorldBuilderConverter;
 
     private readonly string? _outputFileNameOverride;
     private readonly bool _createBackup;
@@ -22,12 +22,13 @@ public partial class PostProcessingService
     public PostProcessingService(SettingsService settingsService,
         IProgressService progressService,
         IGameFileService gfs,
+        IAxlRemovalToWorldBuilderConverter removalToWorldBuilderConverter,
         string? outputFileNameOverride = null,
         bool createBackup = true)
     {
         _progressService = progressService;
         _settingsService = settingsService;
-        _removalToWorldBuilderConverter = new AxlRemovalToWorldBuilderConverter(gfs);
+        _removalToWorldBuilderConverter = removalToWorldBuilderConverter;
         
         _outputFileNameOverride = outputFileNameOverride;
         _createBackup = createBackup;

@@ -1,9 +1,13 @@
 
+using System.Reflection;
 using PeNet.Header.Resource;
+using VolumetricSelection2077.Core.Models.WorldBuilder.Spawn.Collision;
+using WolvenKit.RED4.Types;
+using WolvenKit.RED4.Types.Pools;
 
 namespace VolumetricSelection2077.Core.Services
 {
-    public static class Utils
+    public abstract class Utils
     {
         /// <summary>
         /// Formats TimeSpan to H Hour M minute S.MS Second with the larger ones only being added if it is not 0
@@ -96,5 +100,60 @@ namespace VolumetricSelection2077.Core.Services
 
             return null;
         }
+
+        /// <summary>
+        /// Initializes the CNamePool with CNames expected to be encountered.
+        /// </summary>
+        public static void InitializeCNames()
+        {
+            foreach (var entry in CollisionGenerics.OriginalMaterials)
+            {
+                CNamePool.AddOrGetHash(entry);
+            }
+
+            foreach (var entry in CollisionGenerics.Presets)
+            {
+                CNamePool.AddOrGetHash(entry);
+            }
+        }
+        
+        public static string FormatDictionaryForDisplay(Dictionary<string, List<string>> dictionary)
+        {
+            var res = "";
+            foreach (var (key, value) in dictionary)
+            {
+                res += $"{res}\n";
+                res = value.Aggregate(res, (current, v) => current + $"{v}\n");
+                res = res.TrimEnd('\n');
+            }
+            res = res.TrimEnd('\n');
+            
+            return res;
+        }
+
+        private static readonly Lazy<Type[]> _worldNodeTypes = new(() =>
+        {
+            var red4 = typeof(worldNode).Assembly;
+
+            Type[] types;
+            try
+            {
+                types = red4.GetTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                types = [.. ex.Types.Where(t => t != null)!];
+            }
+
+            return
+            [
+                .. types.Where(t => t.IsAssignableTo(typeof(worldNode)))
+            ];
+        });
+
+        private static readonly Lazy<string[]> _worldNodeNames = new(() => [.. _worldNodeTypes.Value.Select(t => t.Name)]);
+        
+        public static Type[] WorldNodeTypes => _worldNodeTypes.Value;
+        public static string[] WorldNodeNames => _worldNodeNames.Value;
     }
 }

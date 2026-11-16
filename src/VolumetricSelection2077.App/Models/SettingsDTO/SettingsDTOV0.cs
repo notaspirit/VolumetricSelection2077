@@ -15,6 +15,7 @@ namespace VolumetricSelection2077.App.Models.SettingsDTO;
 public partial class SettingsDTOV0 : SettingsDTO
 {
     [ObservableProperty] private string _gameDirectory;
+    public string GameExecutable => Path.Combine(GameDirectory, "bin", "x64", "Cyberpunk2077.exe");
     [ObservableProperty] private bool _cacheEnabled;
     [ObservableProperty] private string _cacheDirectory;
     [ObservableProperty] private SaveFileLocation _saveFileLocation;
@@ -58,7 +59,7 @@ public partial class SettingsDTOV0 : SettingsDTO
         SaveFileLocation = SaveFileLocation.GameDirectory;
         OutputDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "output");
         OutputFilename = "";
-        NodeTypeFilter = [.. Utils.WorldNodeNames];
+        NodeTypeFilter = [.. AppUtils.WorldNodeNames];
         ResourceNameFilter = [];
         DebugNameFilter = [];
         FilterModeOr = true;

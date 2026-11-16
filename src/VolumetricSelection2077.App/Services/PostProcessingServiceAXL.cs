@@ -7,6 +7,7 @@ using VolumetricSelection2077.App.Enums;
 using VolumetricSelection2077.App.Models;
 using VolumetricSelection2077.Core.Json.Helpers;
 using VolumetricSelection2077.Core.Models;
+using VolumetricSelection2077.Core.Services;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -109,7 +110,7 @@ public partial class PostProcessingService
             if (_settingsService.Data.SaveMode is SaveFileMode.Extend or SaveFileMode.Subtract)
             {
                 var fileContent = File.ReadAllText(outputFilePath);
-                existingRemovals = Utils.TryParseAxlRemovalFile(fileContent);
+                existingRemovals = AppUtils.TryParseAxlRemovalFile(fileContent);
                 if (existingRemovals == null)
                     throw new FileLoadException($"Failed to find or parse existing Removal File at {outputFilePath}!"); 
             }

@@ -3,6 +3,7 @@ using VolumetricSelection2077.Core.Converters.Complex;
 using VolumetricSelection2077.Core.Enums;
 using VolumetricSelection2077.Core.Models;
 using VolumetricSelection2077.Core.Services;
+using WolvenKit.Common;
 
 namespace VolumetricSelection2077.Tests.Converters;
 
@@ -10,7 +11,7 @@ public class AxlRemovalToWorldBuilderConverterTests
 {
     private static AxlRemovalToWorldBuilderConverter CreateConverter()
     {
-        return new AxlRemovalToWorldBuilderConverter(new Mock<IGameFileService>().Object);
+        return new AxlRemovalToWorldBuilderConverter(new Mock<IGameFileService>().Object, new Mock<IArchiveManager>().Object);
     }
 
     private static AxlRemovalFile RemovalFile(params AxlRemovalSector[] sectors) => new()

@@ -5,23 +5,44 @@ using VolumetricSelection2077.Core.Enums;
 using VolumetricSelection2077.Core.Models;
 using VolumetricSelection2077.Core.Parsers;
 using VolumetricSelection2077.Core.Services;
+using WolvenKit.Common;
+using WolvenKit.Common.Services;
+using WolvenKit.Core.Interfaces;
+using WolvenKit.Core.Services;
+using WolvenKit.RED4.CR2W;
+using WolvenKit.RED4.CR2W.Archive;
 
 namespace VolumetricSelection2077.Tests.Services;
 
 public class GameFileServiceTests
 {
     private readonly Mock<ICacheService> _cacheServiceMock = new();
+    private readonly Mock<IVSSectorParser> _sectorParserMock = new();
+    private readonly Mock<ILoggerService> _loggerServiceMock = new();
+    private readonly Mock<IProgressService<double>> _progressServiceMock = new();
+    private readonly Mock<IHashService> _hashServiceMock = new();
+    private readonly HookService _hookService = new();
 
     private GameFileService CreateService(bool useModded = false)
     {
-        return new GameFileService(_cacheServiceMock.Object, "C:\\Cyberpunk2077\\bin\\x64\\Cyberpunk2077.exe", useModded);
-    }
+        var red4ParserService = new Red4ParserService(
+            _hashServiceMock.Object,
+            _loggerServiceMock.Object,
+            _hookService);
+        var archiveManager = new ArchiveManager(
+            _hashServiceMock.Object,
+            red4ParserService,
+            _loggerServiceMock.Object,
+            _progressServiceMock.Object);
+        var geometryCacheService = new GeometryCacheService(
+            archiveManager,
+            red4ParserService);
 
-    [Fact]
-    public void IsInitialized_InitiallyFalse()
-    {
-        var service = CreateService();
-        Assert.False(service.IsInitialized);
+        return new GameFileService(
+            _cacheServiceMock.Object,
+            _sectorParserMock.Object,
+            archiveManager,
+            geometryCacheService);
     }
 
     [Fact]

@@ -10,8 +10,10 @@ using Newtonsoft.Json;
 using VolumetricSelection2077.App.Enums;
 using VolumetricSelection2077.App.Models;
 using VolumetricSelection2077.App.Services;
+using VolumetricSelection2077.Core.Converters.Complex;
 using VolumetricSelection2077.Core.Json.Helpers;
 using VolumetricSelection2077.Core.Services;
+using WolvenKit.Common;
 using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 namespace VolumetricSelection2077.App.TestingStuff;
@@ -25,6 +27,7 @@ public class Benchmarking
     private readonly CacheService _cacheService;
     private readonly ProgressService _progress;
     private readonly GameFileService _gfs;
+    private readonly IArchiveManager _archiveManager;
     
     private const int BenchmarkCount = 3;
     
@@ -33,7 +36,8 @@ public class Benchmarking
         SectorBBBuilderService boundingBoxBuilderService,
         SettingsService settings, CacheService cacheService,
         ProgressService progress,
-        GameFileService gameFileService)
+        GameFileService gameFileService,
+        IArchiveManager archiveManager)
     {
         _validationService = validationService;
         _dialogService = dialogService;
@@ -42,6 +46,7 @@ public class Benchmarking
         _cacheService = cacheService;
         _progress = progress;
         _gfs = gameFileService;
+        _archiveManager = archiveManager;
     }
     
     public async Task Run()
@@ -123,7 +128,7 @@ public class Benchmarking
 
     private ProcessDispatcher BuildDispatcher(SettingsService settingsService, string outputFilePath)
     {
-        var postProcessingService = new PostProcessingService(settingsService, _progress, _gfs, outputFilePath, false);
+        var postProcessingService = new PostProcessingService(settingsService, _progress, _gfs, new AxlRemovalToWorldBuilderConverter(_gfs, _archiveManager), outputFilePath, false);
         var processService = new SelectionService(_cacheService, _gfs, _progress);
         return new ProcessDispatcher(processService, _dialogService, _progress,
             _validationService, _boundingBoxBuilderService,

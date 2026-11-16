@@ -16,7 +16,7 @@ using VolumetricSelection2077.App.ViewModels;
 using VolumetricSelection2077.App.ViewStructures;
 using VolumetricSelection2077.Core.Enums;
 using VolumetricSelection2077.Core.Services;
-using Utils = VolumetricSelection2077.App.Services.Utils;
+using WolvenKit.Common;
 
 namespace VolumetricSelection2077.App.Views;
 public partial class MainWindow : Window
@@ -65,7 +65,7 @@ public partial class MainWindow : Window
         _progressBar = progressBar;
         
         _dispatcherTimer = new TrackedDispatchTimer() { Interval = TimeSpan.FromSeconds(1) };
-        _dispatcherTimer.Tick += (_, _) => ProgressTextBlock.Text = $"{Utils.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
+        _dispatcherTimer.Tick += (_, _) => ProgressTextBlock.Text = $"{AppUtils.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
         _progressService.OnProgressChangedOnUiThread += (_, _) => _progressBar.Value = _progressService.Progress;
     }
     
@@ -119,7 +119,7 @@ public partial class MainWindow : Window
         finally
         {
             _dispatcherTimer.Stop();
-            var formattedTime = Utils.FormatElapsedTime(_dispatcherTimer.Elapsed);
+            var formattedTime = AppUtils.FormatElapsedTime(_dispatcherTimer.Elapsed);
             Logger.Info($"Process finished after: {formattedTime}");
             _mainWindowViewModel.MainTaskProcessing = false;
         }
@@ -447,11 +447,13 @@ public partial class MainWindow : Window
             Logger.Exception(ex, "Failed to Check for Updates.");
         }
 
-        var gameFileService = App.AppHost!.Services.GetRequiredService<IGameFileService>();
-        await Task.Run(() => gameFileService.Initialize());
+        AppUtils.InitializeCNames();
         
-        if (gameFileService.IsInitialized)
-            _mainWindowViewModel.AppInitialized = true;
+        var am = App.AppHost!.Services.GetRequiredService<IArchiveManager>();
+        var ss = App.AppHost!.Services.GetRequiredService<SettingsService>();
+        await Task.Run(() => am.Initialize(new FileInfo(ss.Data.GameExecutable)));
+        
+        _mainWindowViewModel.AppInitialized = true;
         _mainWindowViewModel.IsProcessing = false;
     }
 

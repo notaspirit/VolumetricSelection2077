@@ -59,7 +59,7 @@ public partial class PostProcessingService
             Logger.Warning($"Encountered warnings while converting to WorldBuilder: {convertedData.Message}");
         
         if (convertedData.Data.EmbeddedFiles.Count > 0)
-            Logger.Warning($"The following files are embedded and must be extracted for reliable use:\n {Utils.FormatDictionaryForDisplay(convertedData.Data.EmbeddedFiles)}");
+            Logger.Warning($"The following files are embedded and must be extracted for reliable use:\n {AppUtils.FormatDictionaryForDisplay(convertedData.Data.EmbeddedFiles)}");
         
         Logger.Success($"Found {convertedData.Data.RootElement.Children.OfType<PositionableGroup>().Sum(g => g.Children.Count)} WorldBuilder elements");
         if (!File.Exists(favoritesPath))

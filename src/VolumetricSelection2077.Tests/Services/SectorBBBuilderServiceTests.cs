@@ -2,6 +2,7 @@ using Moq;
 using VolumetricSelection2077.Core.Enums;
 using VolumetricSelection2077.Core.Models;
 using VolumetricSelection2077.Core.Services;
+using WolvenKit.Common;
 
 namespace VolumetricSelection2077.Tests.Services;
 
@@ -9,27 +10,16 @@ public class SectorBBBuilderServiceTests
 {
     private readonly Mock<ICacheService> _cacheService = new();
     private readonly Mock<IGameFileService> _gameFileService = new();
+    private readonly Mock<IArchiveManager> _archiveManager = new();
 
     private SectorBBBuilderService CreateService()
     {
-        return new SectorBBBuilderService(_cacheService.Object, _gameFileService.Object, new ProgressService());
-    }
-
-    [Fact]
-    public async Task BuildBounds_ReturnsErrorWhenGameFileServiceIsNotInitialized()
-    {
-        _gameFileService.SetupGet(x => x.IsInitialized).Returns(false);
-
-        var result = await CreateService().BuildBounds(BuildBoundsMode.All);
-
-        Assert.Equal(ResultStatus.Error, result.Status);
-        Assert.Contains("Game file service is not initialized", result.Message);
+        return new SectorBBBuilderService(_cacheService.Object, _gameFileService.Object, new ProgressService(), _archiveManager.Object);
     }
 
     [Fact]
     public async Task BuildBounds_ReturnsErrorWhenCacheServiceIsNotInitialized()
     {
-        _gameFileService.SetupGet(x => x.IsInitialized).Returns(true);
         _cacheService.SetupGet(x => x.IsInitialized).Returns(false);
 
         var result = await CreateService().BuildBounds(BuildBoundsMode.All);
@@ -41,8 +31,6 @@ public class SectorBBBuilderServiceTests
     [Fact]
     public async Task BuildBounds_ChecksGameFileServiceBeforeCacheService()
     {
-        _gameFileService.SetupGet(x => x.IsInitialized).Returns(false);
-
         await CreateService().BuildBounds(BuildBoundsMode.All);
 
         _cacheService.VerifyGet(x => x.IsInitialized, Times.Never);
@@ -51,7 +39,6 @@ public class SectorBBBuilderServiceTests
     [Fact]
     public async Task BuildBounds_MissingModded_GetAllEntriesError_ReturnsError()
     {
-        _gameFileService.SetupGet(x => x.IsInitialized).Returns(true);
         _cacheService.SetupGet(x => x.IsInitialized).Returns(true);
         var err = new Result<KeyValuePair<string, byte[]>[]> { Status = ResultStatus.Error };
         err.AddMessage("db error");
