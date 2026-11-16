@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using VolumetricSelection2077.App.Services;
 using System;
+using System.Diagnostics;
 using System.IO;
 using Avalonia.Interactivity;
 using System.Threading.Tasks;
@@ -366,18 +367,19 @@ public partial class MainWindow : Window
         }
     }
 
-    private string? TryGetGamePathFromWolvenKit()
+    private bool TryGetGamePathFromWolvenKit(out string? gamePath)
     {
+        gamePath = null;
         var wkitConfigFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "REDModding", "WolvenKit", "config.json");
         if (!File.Exists(wkitConfigFile))
-            return null;
+            return false;
         var config = File.ReadAllText(wkitConfigFile);
         var json = Newtonsoft.Json.Linq.JObject.Parse(config);
         var gamepath = json["CP77ExecutablePath"]?.ToString();
         if (string.IsNullOrEmpty(gamepath))
-            return null;
-        gamepath = gamepath.Replace(@"\bin\x64\Cyberpunk2077.exe", "");
-        return gamepath;
+            return false;
+        gamePath = gamepath.Replace(@"\bin\x64\Cyberpunk2077.exe", "");
+        return true;
     }
     
     protected override async void OnOpened(EventArgs e)
@@ -395,9 +397,19 @@ public partial class MainWindow : Window
         
         Logger.Info($"VS2077 Version: {_mainWindowViewModel.Settings.ProgramVersion}");
         _mainWindowViewModel.IsProcessing = true;
-        var validationResult = ValidationService.ValidateGamePath(_mainWindowViewModel.Settings.Data.GameDirectory).Item1;
-        if (!(validationResult == GamePathValidationResult.Valid ||
-              validationResult == GamePathValidationResult.CetNotFound))
+
+        if (ValidationService.ValidateGamePath(_mainWindowViewModel.Settings.Data.GameDirectory).Item1 ==
+            GamePathValidationResult.InvalidGamePath && 
+            TryGetGamePathFromWolvenKit(out var wkitGamePath) && 
+            wkitGamePath is not null)
+        {
+            _mainWindowViewModel.Settings.Data.GameDirectory = wkitGamePath;
+            _mainWindowViewModel.Settings.SaveSettings();
+        }
+        
+        
+        if (ValidationService.ValidateGamePath(_mainWindowViewModel.Settings.Data.GameDirectory).Item1 ==
+            GamePathValidationResult.InvalidGamePath)
         {
             Logger.Error("Failed to initialize VS2077! Invalid Game Path, update it in the settings and restart the application.");
             _mainWindowViewModel.AppInitialized = false;
@@ -449,9 +461,15 @@ public partial class MainWindow : Window
 
         AppUtils.InitializeCNames();
         
+        var sw = Stopwatch.StartNew();
+        
         var am = App.AppHost!.Services.GetRequiredService<IArchiveManager>();
         var ss = App.AppHost!.Services.GetRequiredService<SettingsService>();
+        
         await Task.Run(() => am.Initialize(new FileInfo(ss.Data.GameExecutable)));
+        
+        sw.Stop();
+        Logger.Info($"Initialized Archive Manager in {AppUtils.FormatElapsedTime(sw.Elapsed)}");
         
         _mainWindowViewModel.AppInitialized = true;
         _mainWindowViewModel.IsProcessing = false;
