@@ -18,24 +18,24 @@ public class ProcessDispatcher
 {
     private static string RelativeSelectionFilePath => Path.Combine("bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "VolumetricSelection2077", "data", "selection.json");
     
-    private readonly SelectionService _selectionService;
-    private readonly ProgressService _progressService;
+    private readonly ISelectionService _selectionService;
+    private readonly IProgressService _progressService;
     private readonly ValidationService _validationService;
     private readonly DialogService _dialogService;
-    private readonly SectorBBBuilderService _boundingBoxBuilderService;
+    private readonly ISectorBBBuilderService _boundingBoxBuilderService;
     private readonly SettingsService _settings;
-    private readonly CacheService _cacheService;
+    private readonly ICacheService _cacheService;
     private readonly PostProcessingService _postProcessingService;
     private readonly HttpClient _httpClient;
     
     public ProcessDispatcher(
-        SelectionService selectionService,
+        ISelectionService selectionService,
         DialogService dialogService,
-        ProgressService progressService,
+        IProgressService progressService,
         ValidationService validationService,
-        SectorBBBuilderService boundingBoxBuilderService,
+        ISectorBBBuilderService boundingBoxBuilderService,
         SettingsService settings,
-        CacheService cacheService,
+        ICacheService cacheService,
         PostProcessingService postProcessingService,
         HttpClient httpClient)
     {
@@ -168,6 +168,11 @@ public class ProcessDispatcher
     private void ConfigureQuery(VSQuery query)
     {
         query.DataSource = _settings.Data.SupportModdedResources ? WorldDataSource.All : WorldDataSource.VanillaOnly;
+
+        query.Filters.Add(new NodeTypeFilter
+        {
+            NodeTypes = _settings.Data.NodeTypeFilter
+        });
         
         if (_settings.Data.DebugNameFilter.Count > 0)
         {

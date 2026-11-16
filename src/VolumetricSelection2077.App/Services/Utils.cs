@@ -146,8 +146,7 @@ namespace VolumetricSelection2077.App.Services
 
         private static readonly Lazy<Type[]> _worldNodeTypes = new(() =>
         {
-            var red4 = AppDomain.CurrentDomain.GetAssemblies()
-                .First(a => a.GetName().Name == "WolvenKit.RED4");
+            var red4 = typeof(worldNode).Assembly;
 
             Type[] types;
             try

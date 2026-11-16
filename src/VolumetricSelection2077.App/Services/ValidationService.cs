@@ -15,11 +15,11 @@ namespace VolumetricSelection2077.App.Services
     public class ValidationService
     {
         private readonly SettingsService _settingsService;
-        private readonly CacheService _cacheService;
-        private readonly GameFileService _gameFileService;
+        private readonly ICacheService _cacheService;
+        private readonly IGameFileService _gameFileService;
         private static readonly char[] InvalidCharacters = Path.GetInvalidPathChars().Concat(new[] { '?', '*', '"', '<', '>', '|' }).Distinct().ToArray();
 
-        public ValidationService(SettingsService settingsService, CacheService cacheService, GameFileService gameFileService)
+        public ValidationService(SettingsService settingsService, ICacheService cacheService, IGameFileService gameFileService)
         {
             _settingsService = settingsService;
             _cacheService = cacheService;

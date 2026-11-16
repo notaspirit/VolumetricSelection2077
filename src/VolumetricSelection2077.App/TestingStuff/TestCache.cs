@@ -108,7 +108,7 @@ public class TestCache : IDebugTool
 
     public static void Run2()
     {
-        var cs = App.AppHost!.Services.GetRequiredService<CacheService>();
+        var cs = App.AppHost!.Services.GetRequiredService<ICacheService>();
         cs.StartListening();
         cs.WriteEntry(new WriteCacheRequest("YesSIR", Encoding.UTF8.GetBytes("value"), CacheDatabase.Vanilla));
         Task.Delay(1000).Wait();

@@ -1,8 +1,8 @@
 using System;
-using System.Collections;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
+using VolumetricSelection2077.App.Services;
 using VolumetricSelection2077.Core.Json.Helpers;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Newtonsoft.Json;
@@ -22,15 +22,7 @@ public partial class SettingsDTOV0 : SettingsDTO
     [ObservableProperty] private string _outputFilename;
     [ObservableProperty] private bool _supportModdedResources;
 
-    [JsonIgnore]
-    public BitArray NodeTypeFilter;
-
-    [JsonProperty(nameof(NodeTypeFilter))]
-    public bool[] NodeTypeFilterProxy
-    {
-        get => NodeTypeFilter.Cast<bool>().ToArray();
-        set => NodeTypeFilter = new BitArray(value);
-    }
+    public HashSet<string> NodeTypeFilter;
 
     [ObservableProperty] private ObservableCollection<string> _resourceNameFilter;
     [ObservableProperty] private ObservableCollection<string> _debugNameFilter;
@@ -66,7 +58,7 @@ public partial class SettingsDTOV0 : SettingsDTO
         SaveFileLocation = SaveFileLocation.GameDirectory;
         OutputDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "output");
         OutputFilename = "";
-        NodeTypeFilter = new BitArray(122, true);
+        NodeTypeFilter = [.. Utils.WorldNodeNames];
         ResourceNameFilter = [];
         DebugNameFilter = [];
         FilterModeOr = true;
@@ -116,7 +108,7 @@ public partial class SettingsDTOV0 : SettingsDTO
 
         OutputFilename = j.Value<string>(nameof(OutputFilename)) ?? OutputFilename;
         
-        NodeTypeFilterProxy = j[nameof(NodeTypeFilter)]?.ToObject<bool[]>() ?? NodeTypeFilterProxy;
+        NodeTypeFilter = j[nameof(NodeTypeFilter)]?.ToObject<HashSet<string>>() ?? NodeTypeFilter;
         
         var tempResourceNameFilter = j[nameof(ResourceNameFilter)]?.ToObject<ObservableCollection<string>>() ?? ResourceNameFilter;
         ResourceNameFilter.Clear();

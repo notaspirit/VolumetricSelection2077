@@ -19,7 +19,7 @@ namespace VolumetricSelection2077.App.ViewModels
 {
     public partial class SettingsViewModel : ObservableObject
     {
-        private readonly CacheService _cacheService;
+        private readonly ICacheService _cacheService;
         
         private CacheStats _cacheStats;
         private bool _cacheWorking;
@@ -96,7 +96,7 @@ namespace VolumetricSelection2077.App.ViewModels
         { 
             var sp = App.AppHost!.Services;
             Settings = sp.GetRequiredService<SettingsService>();
-            _cacheService = sp.GetRequiredService<CacheService>();
+            _cacheService = sp.GetRequiredService<ICacheService>();
             PersistentCache = sp.GetRequiredService<SettingsViewPersistentCache>();
             try
             {

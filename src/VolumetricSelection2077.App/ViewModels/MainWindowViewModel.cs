@@ -15,6 +15,7 @@ using VolumetricSelection2077.App.ViewStructures;
 using VolumetricSelection2077.App.Enums;
 using VolumetricSelection2077.Core.Enums;
 using VolumetricSelection2077.Core.Services;
+using Utils = VolumetricSelection2077.App.Services.Utils;
 
 namespace VolumetricSelection2077.App.ViewModels
 {
@@ -125,7 +126,7 @@ namespace VolumetricSelection2077.App.ViewModels
         public string FilterSectionButtonLabel => Labels.FilterCollapseButton +
                                                   $" [ {(Settings.Data.DebugNameFilter.Count == 0 ? 0 : 1) 
                                                         + (Settings.Data.ResourceNameFilter.Count == 0 ? 0 : 1) 
-                                                        + (Settings.Data.NodeTypeFilter.Cast<bool>().Count( b => b) == 122 ? 0 : 1)} / 3 ]";
+                                                        + (Settings.Data.NodeTypeFilter.Count == Utils.WorldNodeNames.Length ? 0 : 1)} / 3 ]";
         public bool IsFilterSelectionVisible
         {
             get => Settings.Data.IsFiltersMWVisible;
@@ -262,10 +263,9 @@ namespace VolumetricSelection2077.App.ViewModels
             _resourceNameFilter.CollectionChanged += ResourceNameFilter_CollectionChanged;
             Settings.Data.DebugNameFilter.CollectionChanged += DebugNameFilter_CollectionChanged;
             _nodeTypeFilterItems = new();
-            var enumValues = NodeType
-            for (int i = 0; i < enumValues.Length; i++)
+            foreach (var nodeTypeName in Utils.WorldNodeNames)
             {
-                var item = new NodeTypeFilterItem(enumValues.GetValue(i)?.ToString() ?? " ", i, Settings.Data.NodeTypeFilter);
+                var item = new NodeTypeFilterItem(nodeTypeName, Settings.Data.NodeTypeFilter);
                 item.PropertyChanged += OnNodeTypeFilterItemChanged;
                 NodeTypeFilterItems.Add(item);
             }
@@ -330,8 +330,11 @@ namespace VolumetricSelection2077.App.ViewModels
             CheckedCount = NodeTypeFilterItems.Count(item => item.IsChecked);
             if (sender is not NodeTypeFilterItem item1)
                 return;
-            var globalIndex = NodeTypeFilterItems.IndexOf(item1);
-            Settings.Data.NodeTypeFilter[globalIndex] = item1.IsChecked;
+            if (item1.IsChecked)
+                Settings.Data.NodeTypeFilter.Add(item1.Label);
+            else
+                Settings.Data.NodeTypeFilter.Remove(item1.Label);
+            OnPropertyChanged(nameof(FilterSectionButtonLabel));
         }
     }
 }

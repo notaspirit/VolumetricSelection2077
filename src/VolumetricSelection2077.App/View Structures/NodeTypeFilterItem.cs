@@ -1,41 +1,42 @@
-using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace VolumetricSelection2077.App.ViewStructures;
 
 public class NodeTypeFilterItem : INotifyPropertyChanged
 {
-    private BitArray _bitArray;
-    private readonly int _index;
+    private HashSet<string> _nodeTypeFilter;
 
     public string Label { get; }
 
     public bool IsChecked
     {
-        get => _bitArray[_index];
+        get => _nodeTypeFilter.Contains(Label);
         set
         {
-            if (_bitArray[_index] != value)
-            {
-                _bitArray[_index] = value;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsChecked)));
-            }
+            if (IsChecked == value)
+                return;
+
+            if (value)
+                _nodeTypeFilter.Add(Label);
+            else
+                _nodeTypeFilter.Remove(Label);
+
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsChecked)));
         }
     }
 
-    public NodeTypeFilterItem(string label, int index, BitArray bitArray)
+    public NodeTypeFilterItem(string label, HashSet<string> nodeTypeFilter)
     {
         Label = label;
-        _index = index;
-        _bitArray = bitArray;
+        _nodeTypeFilter = nodeTypeFilter;
     }
-    
-    public void NotifyChange(BitArray newBitArray)
+
+    public void NotifyChange(HashSet<string> newNodeTypeFilter)
     {
-        _bitArray = newBitArray;
+        _nodeTypeFilter = newNodeTypeFilter;
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsChecked)));
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 }
-

@@ -17,7 +17,7 @@ namespace VolumetricSelection2077.App.Views
     public partial class SettingsWindow : Window
     {
         private readonly SettingsViewModel _settingsViewModel;
-        private readonly CacheService _cacheService;
+        private readonly ICacheService _cacheService;
         
         private bool _showedDialog;
         private bool _moveCache = true;
@@ -26,7 +26,7 @@ namespace VolumetricSelection2077.App.Views
         {
             InitializeComponent();
             var sp = App.AppHost!.Services;
-            _cacheService = sp.GetRequiredService<CacheService>();
+            _cacheService = sp.GetRequiredService<ICacheService>();
             
             DataContext = new SettingsViewModel();
             _settingsViewModel = (DataContext as SettingsViewModel)!;

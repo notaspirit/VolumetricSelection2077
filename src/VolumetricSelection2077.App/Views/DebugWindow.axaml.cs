@@ -85,7 +85,7 @@ public partial class DebugWindow : Window
     private void DumpSectorBounds_Click(object? sender, RoutedEventArgs e)
     {
         _debugWindowViewModel.IsProcessing = true;
-        var cs = App.AppHost!.Services.GetRequiredService<CacheService>();
+        var cs = App.AppHost!.Services.GetRequiredService<ICacheService>();
         cs.SerializeSectorBoundingBoxesToFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "debug",
             $"{1 + 1}-{ICacheService.CurrentCacheVersion}"));
         _debugWindowViewModel.IsProcessing = false;
@@ -94,7 +94,7 @@ public partial class DebugWindow : Window
     private void LoadSectorBounds_Click(object? sender, RoutedEventArgs e)
     {
         _debugWindowViewModel.IsProcessing = true;
-        var cacheService = App.AppHost!.Services.GetRequiredService<CacheService>();
+        var cacheService = App.AppHost!.Services.GetRequiredService<ICacheService>();
         var cacheMetadata = cacheService.GetMetadata();
         cacheService.LoadSectorBBFromFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "debug",
             $"{cacheMetadata.Data.GameVersion}-{cacheMetadata.Data.DatabaseVersion}.bin"));

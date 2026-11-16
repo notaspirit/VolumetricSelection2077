@@ -12,7 +12,7 @@ namespace VolumetricSelection2077.App.Services;
 
 public partial class PostProcessingService
 {
-    private readonly ProgressService _progressService;
+    private readonly IProgressService _progressService;
     private readonly SettingsService _settingsService;
     private readonly AxlRemovalToWorldBuilderConverter _removalToWorldBuilderConverter;
 
@@ -20,8 +20,8 @@ public partial class PostProcessingService
     private readonly bool _createBackup;
     
     public PostProcessingService(SettingsService settingsService,
-        ProgressService progressService,
-        GameFileService gfs,
+        IProgressService progressService,
+        IGameFileService gfs,
         string? outputFileNameOverride = null,
         bool createBackup = true)
     {

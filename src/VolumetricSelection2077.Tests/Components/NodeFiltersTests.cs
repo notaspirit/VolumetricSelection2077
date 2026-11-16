@@ -11,9 +11,9 @@ public class NodeFiltersTests
         NodeIndex = 0
     };
 
-    private static VSNode Node(string? resourcePath = null, string? debugName = null) => new()
+    private static VSNode Node(string? resourcePath = null, string? debugName = null, string? type = null) => new()
     {
-        Type = "worldStaticMeshNode",
+        Type = type ?? "worldStaticMeshNode",
         ResourcePath = resourcePath,
         DebugName = debugName
     };
@@ -71,6 +71,33 @@ public class NodeFiltersTests
         };
 
         Assert.Equal(expected, filter.Filter(NodeData(), Node(resourcePath: resourcePath), 0));
+    }
+
+    [Fact]
+    public void NodeTypeFilter_NoNodeTypes_MatchesNothing()
+    {
+        var filter = new NodeTypeFilter();
+
+        Assert.False(filter.Filter(NodeData(), Node(), 0));
+    }
+
+    [Theory]
+    [InlineData("worldStaticMeshNode", true)]
+    [InlineData("worldEntityNode", false)]
+    public void NodeTypeFilter_MatchesAgainstNodeType(string nodeType, bool expected)
+    {
+        var filter = new NodeTypeFilter
+        {
+            NodeTypes = ["worldStaticMeshNode"]
+        };
+
+        Assert.Equal(expected, filter.Filter(NodeData(), Node(type: nodeType), 0));
+    }
+
+    [Fact]
+    public void NodeTypeFilter_IsRequiredByDefault()
+    {
+        Assert.True(new NodeTypeFilter().Required);
     }
 
     [Fact]

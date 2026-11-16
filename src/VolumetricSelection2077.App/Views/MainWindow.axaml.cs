@@ -212,8 +212,7 @@ public partial class MainWindow : Window
     {
         foreach (var item in _mainWindowViewModel.FilteredNodeTypeFilterItems)
         {
-            var globalIndex = _mainWindowViewModel.NodeTypeFilterItems.IndexOf(item);
-            _mainWindowViewModel.Settings.Data.NodeTypeFilter[globalIndex] = true;
+            _mainWindowViewModel.Settings.Data.NodeTypeFilter.Add(item.Label);
             item.IsChecked = true;
         }
 
@@ -224,8 +223,7 @@ public partial class MainWindow : Window
     {
         foreach (var item in _mainWindowViewModel.FilteredNodeTypeFilterItems)
         {
-            var globalIndex = _mainWindowViewModel.NodeTypeFilterItems.IndexOf(item);
-            _mainWindowViewModel.Settings.Data.NodeTypeFilter[globalIndex] = false;
+            _mainWindowViewModel.Settings.Data.NodeTypeFilter.Remove(item.Label);
             item.IsChecked = false;
         }
 
@@ -449,7 +447,7 @@ public partial class MainWindow : Window
             Logger.Exception(ex, "Failed to Check for Updates.");
         }
 
-        var gameFileService = App.AppHost!.Services.GetRequiredService<GameFileService>();
+        var gameFileService = App.AppHost!.Services.GetRequiredService<IGameFileService>();
         await Task.Run(() => gameFileService.Initialize());
         
         if (gameFileService.IsInitialized)

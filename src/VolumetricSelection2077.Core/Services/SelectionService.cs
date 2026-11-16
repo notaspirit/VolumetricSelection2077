@@ -493,8 +493,9 @@ public class SelectionService : ISelectionService
     /// <param name="nodeDataIndex">Index of the node data entry within the sector.</param>
     /// <param name="query">The selection query containing the filters.</param>
     /// <returns>
-    /// <c>true</c> when no filters are configured, or when all required filters pass and at least one
-    /// non-required filter matches; otherwise <c>false</c>.
+    /// <c>true</c> when no filters are configured, when all required filters pass and there are no
+    /// non-required filters, or when all required filters pass and at least one non-required filter
+    /// matches; otherwise <c>false</c>.
     /// </returns>
     private static bool ShouldProcessNode(VSNodeData nodeData, VSNode node, int nodeDataIndex, VSQuery query)
     {
@@ -504,9 +505,8 @@ public class SelectionService : ISelectionService
         if (query.Filters.Where(f => f.Required).Any(f => !f.Filter(nodeData, node, nodeDataIndex)))
             return false;
 
-        if (query.Filters.Where(f => !f.Required).Any(f => f.Filter(nodeData, node, nodeDataIndex)))
-            return true;
-        
-        return false;
+        var optionalFilters = query.Filters.Where(f => !f.Required).ToArray();
+        return optionalFilters.Length == 0 ||
+               optionalFilters.Any(f => f.Filter(nodeData, node, nodeDataIndex));
     }
 }

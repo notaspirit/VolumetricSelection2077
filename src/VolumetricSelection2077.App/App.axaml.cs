@@ -11,6 +11,7 @@ using VolumetricSelection2077.App.Services;
 using VolumetricSelection2077.App.TestingStuff;
 using VolumetricSelection2077.App.Views;
 using VolumetricSelection2077.Core.Services;
+using YamlDotNet.Serialization;
 
 namespace VolumetricSelection2077.App;
 
@@ -33,8 +34,8 @@ public partial class App : Application
         hostBuilder.Services.AddSingleton<HttpClient>();
         hostBuilder.Services.AddSingleton<SettingsService>(new SettingsService(settingsPath));
         hostBuilder.Services.AddSingleton<IProgressService, AppProgressService>();
-        hostBuilder.Services.AddSingleton<ICacheService, CacheService>();
-        hostBuilder.Services.AddSingleton<IGameFileService, GameFileService>();
+        hostBuilder.Services.AddSingleton<ICacheService, CacheService>(sp => new CacheService(sp.GetRequiredService<SettingsService>().Data.CacheDirectory, "2.5", !sp.GetRequiredService<SettingsService>().Data.CacheEnabled));
+        hostBuilder.Services.AddSingleton<IGameFileService, GameFileService>(sp => new GameFileService(sp.GetRequiredService<ICacheService>(), sp.GetRequiredService<SettingsService>().Data.GameDirectory + "\\bin\\x64\\Cyberpunk2077.exe", sp.GetRequiredService<SettingsService>().Data.SupportModdedResources));
         hostBuilder.Services.AddSingleton<ValidationService>();
         hostBuilder.Services.AddSingleton<SettingsViewPersistentCache>();
         hostBuilder.Services.AddSingleton<UpdateService>(sp => new UpdateService(

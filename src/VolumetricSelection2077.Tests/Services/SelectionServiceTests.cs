@@ -220,6 +220,42 @@ public class SelectionServiceTests
     }
 
     [Fact]
+    public async Task QuerySector_RequiredFilterThatMatches_DeletesNode()
+    {
+        var node = Node();
+        var filter = new Mock<IVSNodeQueryFilter>();
+        filter.SetupGet(x => x.Required).Returns(true);
+        filter.Setup(x => x.Filter(It.IsAny<VSNodeData>(), It.IsAny<VSNode>(), It.IsAny<int>())).Returns(true);
+        _gameFileService.Setup(x => x.GetResource<VSSector>("sector"))
+            .Returns(new Result<VSSector> { Status = ResultStatus.Ok, Data = Sector(node, NodeData()) });
+
+        var result = await CreateService().QuerySector("sector", CreateQuery([filter.Object]));
+
+        Assert.Equal(ResultStatus.Ok, result.Status);
+        Assert.NotNull(result.Data);
+        Assert.Single(result.Data.NodeDeletions);
+    }
+
+    [Fact]
+    public async Task QuerySector_RequiredFilterAndOptionalFilterThatDoesNotMatch_SkipsNode()
+    {
+        var node = Node();
+        var requiredFilter = new Mock<IVSNodeQueryFilter>();
+        requiredFilter.SetupGet(x => x.Required).Returns(true);
+        requiredFilter.Setup(x => x.Filter(It.IsAny<VSNodeData>(), It.IsAny<VSNode>(), It.IsAny<int>())).Returns(true);
+        var optionalFilter = new Mock<IVSNodeQueryFilter>();
+        optionalFilter.SetupGet(x => x.Required).Returns(false);
+        optionalFilter.Setup(x => x.Filter(It.IsAny<VSNodeData>(), It.IsAny<VSNode>(), It.IsAny<int>())).Returns(false);
+        _gameFileService.Setup(x => x.GetResource<VSSector>("sector"))
+            .Returns(new Result<VSSector> { Status = ResultStatus.Ok, Data = Sector(node, NodeData()) });
+
+        var result = await CreateService().QuerySector("sector", CreateQuery([requiredFilter.Object, optionalFilter.Object]));
+
+        Assert.Equal(ResultStatus.Ok, result.Status);
+        Assert.Null(result.Data);
+    }
+
+    [Fact]
     public async Task QuerySector_OptionalFilterThatDoesNotMatch_SkipsNode()
     {
         var node = Node();
