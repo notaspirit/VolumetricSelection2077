@@ -9,3 +9,6 @@
 **/build/
 CtrlADel.sln
 CtrlADel.code-workspace
+**/.vs
+**/.idea
+**.user

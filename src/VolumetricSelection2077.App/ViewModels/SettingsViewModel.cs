@@ -80,17 +80,6 @@ namespace VolumetricSelection2077.App.ViewModels
         public bool CacheButtonsAvailable => !CacheWorking;
         public Bitmap SettingsIcon { get; set; }
 
-        public bool RememberFailedResources
-        {
-            get => Settings.Data.RememberFailedResources;
-            set
-            {
-                Settings.Data.RememberFailedResources = value;
-                OnPropertyChanged(nameof(RememberFailedResources));
-            }
-        }
-        
-        public string ClearKnownBadResourcesLabel => $"";
         
         public SettingsViewModel() 
         { 

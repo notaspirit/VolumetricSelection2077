@@ -44,7 +44,6 @@ public partial class SettingsDTOV0 : SettingsDTO
     [ObservableProperty] private SaveFileFormat _saveFileFormat;
     [ObservableProperty] private int _maxBackupFiles;
     [ObservableProperty] private bool _autoScrollLogViewer;
-    [ObservableProperty] private bool _rememberFailedResources;
     
     [ObservableProperty] private bool _debugMode;
     
@@ -79,7 +78,6 @@ public partial class SettingsDTOV0 : SettingsDTO
         BackupDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "OutputBackup");
         MaxBackupFiles = 10;
         AutoScrollLogViewer = true;
-        RememberFailedResources = true;
 
         DebugMode = false;
     }
@@ -144,7 +142,6 @@ public partial class SettingsDTOV0 : SettingsDTO
         MaxBackupFiles = j.Value<int?>(nameof(MaxBackupFiles)) ?? MaxBackupFiles;
         AutoScrollLogViewer = j.Value<bool?>(nameof(AutoScrollLogViewer)) ?? AutoScrollLogViewer;
         
-        RememberFailedResources = j.Value<bool?>(nameof(RememberFailedResources)) ?? RememberFailedResources;
 
         DebugMode = j.Value<bool?>(nameof(DebugMode)) ?? DebugMode;
     }
