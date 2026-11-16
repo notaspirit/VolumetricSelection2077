@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
+using VolumetricSelection2077.App.Enums;
 using VolumetricSelection2077.App.Models.SettingsDTO;
 
 namespace VolumetricSelection2077.App.Services;
@@ -17,10 +18,18 @@ public partial class SettingsService : ObservableObject
         Data = new SettingsDTOV0();
         
         LoadSettings();
+        
+        if (ValidationService.ValidateGamePath(Data.GameDirectory).Item1 ==
+            GamePathValidationResult.InvalidGamePath && 
+            TryGetGamePathFromWolvenKit(out var wkitGamePath) && 
+            wkitGamePath is not null)
+        {
+            Data.GameDirectory = wkitGamePath;
+            SaveSettings();
+        }
     }
     
     [ObservableProperty] private SettingsDTOV0 _data;
-    public static string MinimumCacheVersion => "1000.0.0-beta11";
     public readonly string LogDirectory;
     public string ProgramVersion { get; }
     
@@ -66,5 +75,20 @@ public partial class SettingsService : ObservableObject
         {
             Logger.Exception(ex, "Failed to save settings.");
         }
+    }
+    
+    private static bool TryGetGamePathFromWolvenKit(out string? gamePath)
+    {
+        gamePath = null;
+        var wkitConfigFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "REDModding", "WolvenKit", "config.json");
+        if (!File.Exists(wkitConfigFile))
+            return false;
+        var config = File.ReadAllText(wkitConfigFile);
+        var json = Newtonsoft.Json.Linq.JObject.Parse(config);
+        var gamepath = json["CP77ExecutablePath"]?.ToString();
+        if (string.IsNullOrEmpty(gamepath))
+            return false;
+        gamePath = gamepath.Replace(@"\bin\x64\Cyberpunk2077.exe", "");
+        return true;
     }
 }

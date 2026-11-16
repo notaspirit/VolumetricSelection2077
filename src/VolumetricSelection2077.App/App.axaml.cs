@@ -43,7 +43,10 @@ public partial class App : Application
         hostBuilder.Services.AddSingleton<HttpClient>();
         hostBuilder.Services.AddSingleton<SettingsService>(new SettingsService(settingsPath));
         hostBuilder.Services.AddSingleton<IProgressService, AppProgressService>();
-        hostBuilder.Services.AddSingleton<ICacheService, CacheService>(sp => new CacheService(sp.GetRequiredService<SettingsService>().Data.CacheDirectory, "2.5", !sp.GetRequiredService<SettingsService>().Data.CacheEnabled));
+        hostBuilder.Services.AddSingleton<ICacheService, CacheService>(sp => 
+            new CacheService(sp.GetRequiredService<SettingsService>().Data.CacheDirectory,
+                AppUtils.GetExeVersion(sp.GetRequiredService<SettingsService>().Data.GameExecutable),
+                !sp.GetRequiredService<SettingsService>().Data.CacheEnabled));
         hostBuilder.Services.AddSingleton<ILoggerService>(new SerilogWrapper());
         hostBuilder.Services.AddSingleton<IProgressService<double>, ProgressService<double>>();
         hostBuilder.Services.AddSingleton<IHashService, HashService>();

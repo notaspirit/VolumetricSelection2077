@@ -366,21 +366,6 @@ public partial class MainWindow : Window
             return false;
         }
     }
-
-    private bool TryGetGamePathFromWolvenKit(out string? gamePath)
-    {
-        gamePath = null;
-        var wkitConfigFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "REDModding", "WolvenKit", "config.json");
-        if (!File.Exists(wkitConfigFile))
-            return false;
-        var config = File.ReadAllText(wkitConfigFile);
-        var json = Newtonsoft.Json.Linq.JObject.Parse(config);
-        var gamepath = json["CP77ExecutablePath"]?.ToString();
-        if (string.IsNullOrEmpty(gamepath))
-            return false;
-        gamePath = gamepath.Replace(@"\bin\x64\Cyberpunk2077.exe", "");
-        return true;
-    }
     
     protected override async void OnOpened(EventArgs e)
     {
@@ -397,16 +382,6 @@ public partial class MainWindow : Window
         
         Logger.Info($"VS2077 Version: {_mainWindowViewModel.Settings.ProgramVersion}");
         _mainWindowViewModel.IsProcessing = true;
-
-        if (ValidationService.ValidateGamePath(_mainWindowViewModel.Settings.Data.GameDirectory).Item1 ==
-            GamePathValidationResult.InvalidGamePath && 
-            TryGetGamePathFromWolvenKit(out var wkitGamePath) && 
-            wkitGamePath is not null)
-        {
-            _mainWindowViewModel.Settings.Data.GameDirectory = wkitGamePath;
-            _mainWindowViewModel.Settings.SaveSettings();
-        }
-        
         
         if (ValidationService.ValidateGamePath(_mainWindowViewModel.Settings.Data.GameDirectory).Item1 ==
             GamePathValidationResult.InvalidGamePath)
