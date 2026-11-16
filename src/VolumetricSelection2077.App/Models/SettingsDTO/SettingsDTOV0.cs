@@ -23,7 +23,7 @@ public partial class SettingsDTOV0 : SettingsDTO
     [ObservableProperty] private string _outputFilename;
     [ObservableProperty] private bool _supportModdedResources;
 
-    public HashSet<string> NodeTypeFilter;
+    [ObservableProperty] private HashSet<string> _nodeTypeFilter;
 
     [ObservableProperty] private ObservableCollection<string> _resourceNameFilter;
     [ObservableProperty] private ObservableCollection<string> _debugNameFilter;
