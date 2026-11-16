@@ -14,6 +14,9 @@ using VolumetricSelection2077.App.Extensions;
 using VolumetricSelection2077.App.Models;
 using VolumetricSelection2077.App.ViewModels;
 using VolumetricSelection2077.App.ViewStructures;
+using VolumetricSelection2077.Core.Enums;
+using VolumetricSelection2077.Core.Services;
+using Utils = VolumetricSelection2077.App.Services.Utils;
 
 namespace VolumetricSelection2077.App.Views;
 public partial class MainWindow : Window
@@ -22,7 +25,7 @@ public partial class MainWindow : Window
     private readonly MainWindowViewModel _mainWindowViewModel;
     private readonly ProgressBar _progressBar;
     private readonly TrackedDispatchTimer _dispatcherTimer;
-    private readonly Progress _progress;
+    private readonly AppProgressService _progressService;
     
     public TextBlock ProgressTextBlock { get; }
     
@@ -33,7 +36,7 @@ public partial class MainWindow : Window
         var sp = App.AppHost!.Services;
         
         _processService = sp.GetRequiredService<ProcessDispatcher>();
-        _progress = sp.GetRequiredService<Progress>();
+        _progressService = (sp.GetRequiredService<IProgressService>() as AppProgressService)!;
         
         DataContext = new MainWindowViewModel();
         _mainWindowViewModel = (DataContext as MainWindowViewModel)!;
@@ -63,7 +66,7 @@ public partial class MainWindow : Window
         
         _dispatcherTimer = new TrackedDispatchTimer() { Interval = TimeSpan.FromSeconds(1) };
         _dispatcherTimer.Tick += (_, _) => ProgressTextBlock.Text = $"{Utils.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
-        _progress.ProgressChanged += (_, i) => _progressBar.Value = i;
+        _progressService.OnProgressChangedOnUiThread += (_, _) => _progressBar.Value = _progressService.Progress;
     }
     
     /// <summary>
@@ -103,10 +106,10 @@ public partial class MainWindow : Window
         {
             _mainWindowViewModel.MainTaskProcessing = true;
             AddQueuedFilters();
-            var (success, error) = await Task.Run(() => _processService.StartProcess());
-            if (!success)
+            var result = await Task.Run(() => _processService.StartProcess());
+            if (result.Status == ResultStatus.Error)
             {
-                Logger.Error($"Process failed: {error}");
+                Logger.Error($"Process failed: {result.Message}");
             }
         }
         catch (Exception ex)

@@ -3,11 +3,12 @@ using System.Collections;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using VolumetricSelection2077.App.Json.Helpers;
+using VolumetricSelection2077.Core.Json.Helpers;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using VolumetricSelection2077.App.Enums;
+using VolumetricSelection2077.Core.Enums;
 
 namespace VolumetricSelection2077.App.Models.SettingsDTO;
 

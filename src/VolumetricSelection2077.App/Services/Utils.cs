@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Newtonsoft.Json;
 using PeNet.Header.Resource;
 using VolumetricSelection2077.App.Enums;
-using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.Core.Models;
+using WolvenKit.RED4.Types;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -127,5 +129,45 @@ namespace VolumetricSelection2077.App.Services
 
             return null;
         }
+        
+        public static string FormatDictionaryForDisplay(Dictionary<string, List<string>> dictionary)
+        {
+            var res = "";
+            foreach (var (key, value) in dictionary)
+            {
+                res += $"{res}\n";
+                res = value.Aggregate(res, (current, v) => current + $"{v}\n");
+                res = res.TrimEnd('\n');
+            }
+            res = res.TrimEnd('\n');
+            
+            return res;
+        }
+
+        private static readonly Lazy<Type[]> _worldNodeTypes = new(() =>
+        {
+            var red4 = AppDomain.CurrentDomain.GetAssemblies()
+                .First(a => a.GetName().Name == "WolvenKit.RED4");
+
+            Type[] types;
+            try
+            {
+                types = red4.GetTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                types = [.. ex.Types.Where(t => t != null)!];
+            }
+
+            return
+            [
+                .. types.Where(t => t.IsAssignableTo(typeof(worldNode)))
+            ];
+        });
+
+        private static readonly Lazy<string[]> _worldNodeNames = new(() => [.. _worldNodeTypes.Value.Select(t => t.Name)]);
+        
+        public static Type[] WorldNodeTypes => _worldNodeTypes.Value;
+        public static string[] WorldNodeNames => _worldNodeNames.Value;
     }
 }

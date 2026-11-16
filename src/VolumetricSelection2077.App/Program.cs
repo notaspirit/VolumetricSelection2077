@@ -1,6 +1,6 @@
 ﻿using Avalonia;
 using System;
-using VolumetricSelection2077.App.MessagePack.Helpers;
+using VolumetricSelection2077.Core.MessagePack.Helpers;
 
 namespace VolumetricSelection2077.App;
 

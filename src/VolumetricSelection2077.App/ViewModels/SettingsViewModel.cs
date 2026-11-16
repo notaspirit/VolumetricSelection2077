@@ -12,6 +12,8 @@ using VolumetricSelection2077.App.Models;
 using VolumetricSelection2077.App.Resources;
 using VolumetricSelection2077.App.Services;
 using VolumetricSelection2077.App.Views;
+using VolumetricSelection2077.Core.Models;
+using VolumetricSelection2077.Core.Services;
 
 namespace VolumetricSelection2077.App.ViewModels
 {
@@ -88,7 +90,7 @@ namespace VolumetricSelection2077.App.ViewModels
             }
         }
         
-        public string ClearKnownBadResourcesLabel => $"{Labels.RememberFailedResources} [ {_cacheService.GetKnownBadResourceCount()} resource paths ]";
+        public string ClearKnownBadResourcesLabel => $"";
         
         public SettingsViewModel() 
         { 
@@ -98,7 +100,7 @@ namespace VolumetricSelection2077.App.ViewModels
             PersistentCache = sp.GetRequiredService<SettingsViewPersistentCache>();
             try
             {
-                _cacheStats = _cacheService.IsInitialized ? _cacheService.GetStats() : new CacheStats();
+                _cacheStats = _cacheService.IsInitialized ? _cacheService.GetStats().Data! : new CacheStats();
             }
             catch (Exception ex)
             {

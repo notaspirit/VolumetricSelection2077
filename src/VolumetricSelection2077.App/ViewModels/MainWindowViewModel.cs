@@ -13,6 +13,8 @@ using VolumetricSelection2077.App.Services;
 using VolumetricSelection2077.App.Views;
 using VolumetricSelection2077.App.ViewStructures;
 using VolumetricSelection2077.App.Enums;
+using VolumetricSelection2077.Core.Enums;
+using VolumetricSelection2077.Core.Services;
 
 namespace VolumetricSelection2077.App.ViewModels
 {
@@ -254,13 +256,13 @@ namespace VolumetricSelection2077.App.ViewModels
         {
             var sp = App.AppHost!.Services;
             Settings = sp.GetRequiredService<SettingsService>();
-            var progress = sp.GetRequiredService<VolumetricSelection2077.App.Models.Progress>();
+            var progress = sp.GetRequiredService<IProgressService>();
             
             _resourceNameFilter = Settings.Data.ResourceNameFilter;
             _resourceNameFilter.CollectionChanged += ResourceNameFilter_CollectionChanged;
             Settings.Data.DebugNameFilter.CollectionChanged += DebugNameFilter_CollectionChanged;
             _nodeTypeFilterItems = new();
-            var enumValues = Enum.GetValues(typeof(NodeTypeProcessingOptions));
+            var enumValues = NodeType
             for (int i = 0; i < enumValues.Length; i++)
             {
                 var item = new NodeTypeFilterItem(enumValues.GetValue(i)?.ToString() ?? " ", i, Settings.Data.NodeTypeFilter);

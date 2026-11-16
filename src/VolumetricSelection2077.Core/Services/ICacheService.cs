@@ -8,6 +8,7 @@ namespace VolumetricSelection2077.Core.Services;
 /// </summary>
 public interface ICacheService
 {
+    public const uint CurrentCacheVersion = 1;
     bool IsInitialized { get; }
 
     bool ClearCacheOnExit { get; set; }

@@ -8,6 +8,9 @@ using Serilog;
 using VolumetricSelection2077.App.Enums;
 using VolumetricSelection2077.App.Models;
 using VolumetricSelection2077.App.Services;
+using VolumetricSelection2077.Core.Enums;
+using VolumetricSelection2077.Core.Models;
+using VolumetricSelection2077.Core.Services;
 
 namespace VolumetricSelection2077.App.TestingStuff;
 
@@ -32,17 +35,17 @@ public class TestCache : IDebugTool
         string testSectorPath = @"base\worlds\03_night_city\_compiled\default\exterior_-4_-8_0_4.streamingsector";
 
         cs.StartListening();
-        cs.ClearDatabase(CacheDatabases.Modded);
-        cs.ClearDatabase(CacheDatabases.Vanilla);
+        cs.ClearDatabase(CacheDatabase.Modded);
+        cs.ClearDatabase(CacheDatabase.Vanilla);
         
         Logger.Info("Getting CMesh without cache...");
         var swGetMeshReg = new Stopwatch();
         swGetMeshReg.Start();
 
-        AbbrMesh? regularCMesh = null;
+        VSMesh? regularCMesh = null;
         try
         { 
-            regularCMesh = gfs.GetCMesh(testMeshPath).Resource as AbbrMesh;
+            regularCMesh = gfs.GetResource<VSMesh>(testMeshPath).Data;
         }
         catch (Exception e)
         {
@@ -58,7 +61,7 @@ public class TestCache : IDebugTool
         var swGetMeshCache = new Stopwatch();
         swGetMeshCache.Start();
         
-        var cachedCMesh = gfs.GetCMesh(testMeshPath).Resource as AbbrMesh;
+        var cachedCMesh = gfs.GetResource<VSMesh>(testMeshPath).Data;
 
         swGetMeshCache.Stop();
         Logger.Info($"Got CMesh cached time: {swGetMeshCache.ElapsedMilliseconds} ms");
@@ -68,7 +71,7 @@ public class TestCache : IDebugTool
         var swGetSectorReg = new Stopwatch();
         swGetSectorReg.Start();
         
-        var regularSector = gfs.GetSector(testSectorPath).Resource as AbbrSector;
+        var regularSector = gfs.GetResource<VSSector>(testSectorPath).Data;
 
         swGetSectorReg.Stop();
         Logger.Info($"Got Sector regular time: {swGetSectorReg.ElapsedMilliseconds} ms");
@@ -79,15 +82,15 @@ public class TestCache : IDebugTool
         var swGetSectorCache = new Stopwatch();
         swGetSectorCache.Start();
         
-        var cachedSector = gfs.GetSector(testSectorPath).Resource as AbbrSector;
+        var cachedSector = gfs.GetResource<VSSector>(testSectorPath).Data;
 
         swGetSectorCache.Stop();
         Logger.Info($"Got Sector cached time: {swGetSectorCache.ElapsedMilliseconds} ms");
         Logger.Info($"cached sector is correct: {cachedSector == regularSector}");
         
-        cs.WriteEntry(new WriteCacheRequest("YesSIR", Encoding.UTF8.GetBytes("value"), CacheDatabases.Vanilla));
+        cs.WriteEntry(new WriteCacheRequest("YesSIR", Encoding.UTF8.GetBytes("value"), CacheDatabase.Vanilla));
         Task.Delay(1000).Wait();
-        var result = cs.GetEntry(new ReadCacheRequest("YesSIR", CacheDatabases.Vanilla));
+        var result = cs.GetEntry(new ReadCacheRequest("YesSIR", CacheDatabase.Vanilla));
         if (result == null)
         {
             Logger.Error("Failed to get entry");
@@ -107,9 +110,9 @@ public class TestCache : IDebugTool
     {
         var cs = App.AppHost!.Services.GetRequiredService<CacheService>();
         cs.StartListening();
-        cs.WriteEntry(new WriteCacheRequest("YesSIR", Encoding.UTF8.GetBytes("value"), CacheDatabases.Vanilla));
+        cs.WriteEntry(new WriteCacheRequest("YesSIR", Encoding.UTF8.GetBytes("value"), CacheDatabase.Vanilla));
         Task.Delay(1000).Wait();
-        var result = cs.GetEntry(new ReadCacheRequest("YesSIR", CacheDatabases.Vanilla));
+        var result = cs.GetEntry(new ReadCacheRequest("YesSIR", CacheDatabase.Vanilla));
         if (result == null)
         {
             Logger.Error("Failed to get entry");
@@ -122,10 +125,10 @@ public class TestCache : IDebugTool
 
         var testSector = cs.GetEntry(
             new ReadCacheRequest("base\\worlds\\03_night_city\\_compiled\\default\\exterior_-4_-8_0_4.streamingsector"));
-        Logger.Info($"{testSector?.Length}");
+        Logger.Info($"{testSector.Data?.Length}");
         
         var testMesh = cs.GetEntry(
             new ReadCacheRequest("base\\environment\\decoration\\medical\\accessories\\medkit\\medkit_d_mobile.mesh"));
-        Logger.Info($"{testMesh?.Length}");
+        Logger.Info($"{testMesh.Data?.Length}");
     }
 }

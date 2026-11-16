@@ -47,4 +47,9 @@ public interface IProgressService
     /// and is not yet completed.
     /// </summary>
     float Progress { get; }
+    
+    /// <summary>
+    /// Event that is raised when the overall progress changes.
+    /// </summary>
+    event EventHandler OnProgressChanged;
 }

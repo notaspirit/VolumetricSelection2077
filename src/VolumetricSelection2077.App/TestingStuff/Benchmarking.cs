@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using VolumetricSelection2077.App.Enums;
-using VolumetricSelection2077.App.Json.Helpers;
 using VolumetricSelection2077.App.Models;
 using VolumetricSelection2077.App.Services;
+using VolumetricSelection2077.Core.Json.Helpers;
+using VolumetricSelection2077.Core.Services;
 using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 namespace VolumetricSelection2077.App.TestingStuff;
@@ -18,19 +20,19 @@ public class Benchmarking
 {
     private readonly ValidationService _validationService;
     private readonly DialogService _dialogService;
-    private readonly BoundingBoxBuilderService _boundingBoxBuilderService;
+    private readonly SectorBBBuilderService _boundingBoxBuilderService;
     private readonly SettingsService _settings;
     private readonly CacheService _cacheService;
-    private readonly Progress _progress;
+    private readonly ProgressService _progress;
     private readonly GameFileService _gfs;
     
     private const int BenchmarkCount = 3;
     
     public Benchmarking(DialogService dialogService,
         ValidationService validationService,
-        BoundingBoxBuilderService boundingBoxBuilderService,
+        SectorBBBuilderService boundingBoxBuilderService,
         SettingsService settings, CacheService cacheService,
-        Progress progress,
+        ProgressService progress,
         GameFileService gameFileService)
     {
         _validationService = validationService;
@@ -122,9 +124,11 @@ public class Benchmarking
     private ProcessDispatcher BuildDispatcher(SettingsService settingsService, string outputFilePath)
     {
         var postProcessingService = new PostProcessingService(settingsService, _progress, _gfs, outputFilePath, false);
-        var processService = new ProcessService(settingsService, _gfs, _cacheService, postProcessingService, _progress);
-        return new ProcessDispatcher(_dialogService, processService, _validationService, _boundingBoxBuilderService,
-            settingsService, _cacheService, _progress);
+        var processService = new SelectionService(_cacheService, _gfs, _progress);
+        return new ProcessDispatcher(processService, _dialogService, _progress,
+            _validationService, _boundingBoxBuilderService,
+            settingsService, _cacheService, postProcessingService,
+            new HttpClient());
     }
     private string FormatDateTime(DateTime dateTime) => dateTime.ToString("yyyy-MM-dd HH-mm-ss");
 

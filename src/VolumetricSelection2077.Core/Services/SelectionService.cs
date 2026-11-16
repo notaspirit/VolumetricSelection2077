@@ -121,10 +121,13 @@ public class SelectionService : ISelectionService
                     result.Status = ResultStatus.Warning;
                     result.AddMessage($"Warning when querying sector with path {localSectors[i]}: {sectorResult.Result.Message}");
                     break;
-                case ResultStatus.Ok when sectorResult.Result.Data != null:
-                    removalFile.Streaming.Sectors.Add(sectorResult.Result.Data);
+                case ResultStatus.Ok:
+                default:
                     break;
             }
+            
+            if (sectorResult.Result.Data != null)
+                removalFile.Streaming.Sectors.Add(sectorResult.Result.Data);
 
             i++;
         }
@@ -191,11 +194,14 @@ public class SelectionService : ISelectionService
                     result.Status = ResultStatus.Warning;
                     result.AddMessage($"Warning when querying node at index {i}: {nodeResult.Result.Message}");
                     break;
-                case ResultStatus.Ok when nodeResult.Result.Data != null:
-                    removalSector.NodeDeletions.Add(nodeResult.Result.Data);
+                case ResultStatus.Ok:
+                default:
                     break;
             }
 
+            if (nodeResult.Result.Data != null)
+                removalSector.NodeDeletions.Add(nodeResult.Result.Data);
+            
             i++;
         }
         

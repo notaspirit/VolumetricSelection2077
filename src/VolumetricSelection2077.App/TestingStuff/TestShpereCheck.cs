@@ -2,6 +2,8 @@ using VolumetricSelection2077.App.Models;
 using WEnums = WolvenKit.RED4.Types.Enums;
 using SharpDX;
 using VolumetricSelection2077.App.Services;
+using VolumetricSelection2077.Core.Models;
+using VolumetricSelection2077.Core.Services;
 
 namespace VolumetricSelection2077.App.TestingStuff;
 
@@ -9,7 +11,7 @@ public class TestShpereCheck : IDebugTool
 {
     public void Run()
     {
-        var defaultTransform = new AbbrSectorTransform()
+        var defaultTransform = new VSTransform()
         {
             Position = new Vector3(0, 0, 0),
             Rotation = new Quaternion(0, 0, 0,1),
@@ -20,10 +22,10 @@ public class TestShpereCheck : IDebugTool
         var OBB = new OrientedBoundingBox(new Vector3(0, 0, 0), new Vector3(1,0,1));
         OBB.Transform(Matrix.RotationQuaternion(new Quaternion(0.72f,0,0.72f,1)));
         
-        var sphereInside1 = new AbbrActorShapes()
+        var sphereInside1 = new VSActorShape
         {
             ShapeType = WEnums.physicsShapeType.Sphere,
-            Transform = new AbbrSectorTransform()
+            Transform = new VSTransform
             {
                 Rotation = new Quaternion(),
                 Position = new Vector3(1, 1, 1),
@@ -31,10 +33,10 @@ public class TestShpereCheck : IDebugTool
             }
         };
         
-        var sphereInside2 = new AbbrActorShapes()
+        var sphereInside2 = new VSActorShape
         {
             ShapeType = WEnums.physicsShapeType.Sphere,
-            Transform = new AbbrSectorTransform()
+            Transform = new VSTransform
             {
                 Rotation = new Quaternion(),
                 Position = new Vector3(3, 6, 1),
@@ -42,10 +44,10 @@ public class TestShpereCheck : IDebugTool
             }
         };
         
-        var sphereOutside = new AbbrActorShapes()
+        var sphereOutside = new VSActorShape
         {
             ShapeType = WEnums.physicsShapeType.Sphere,
-            Transform = new AbbrSectorTransform()
+            Transform = new VSTransform
             {
                 Rotation = new Quaternion(),
                 Position = new Vector3(10, 6, 1),

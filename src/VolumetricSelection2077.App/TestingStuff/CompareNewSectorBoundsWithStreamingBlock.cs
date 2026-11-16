@@ -5,6 +5,9 @@ using VolumetricSelection2077.App.Converters.Simple;
 using VolumetricSelection2077.App.Enums;
 using VolumetricSelection2077.App.Models;
 using VolumetricSelection2077.App.Services;
+using VolumetricSelection2077.Core.Converters.Simple;
+using VolumetricSelection2077.Core.Enums;
+using VolumetricSelection2077.Core.Services;
 using WolvenKit.RED4.Types;
 using WEnums = WolvenKit.RED4.Types.Enums;
 using Vector3 = SharpDX.Vector3;
@@ -24,6 +27,7 @@ public class CompareNewSectorBoundsWithStreamingBlock : IDebugTool
 
     public void Run()
     {
+        /*
         var gfs = _gameFileService;
         var cs = _cacheService;
         Logger.Info("Getting basegame streamingblock...");
@@ -60,11 +64,11 @@ public class CompareNewSectorBoundsWithStreamingBlock : IDebugTool
         var minInteriorSizeDifference = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
         
         
-        var exteriorSectorsVanilla = cs.GetAllEntries(CacheDatabases.VanillaBounds);
+        var exteriorSectorsVanilla = cs.GetAllEntries(CacheDatabase.VanillaBounds);
         
         foreach (var sector in exteriorSectors)
         {
-            var customBoundsRaw = exteriorSectorsVanilla.FirstOrDefault(x => x.Key == sector.Data.DepotPath).Value;
+            var customBoundsRaw = exteriorSectorsVanilla.Data.FirstOrDefault(x => x.Key == sector.Data.DepotPath).Value;
             if (customBoundsRaw == null)
             {
                 Logger.Error($"Failed to get vanilla bounds for {sector.Data.DepotPath}");
@@ -117,5 +121,6 @@ public class CompareNewSectorBoundsWithStreamingBlock : IDebugTool
         
         Logger.Info($"Minimum exterior size difference: {minExternalSizeDifference}");
         Logger.Info($"Minimum interior size difference: {minInteriorSizeDifference}");
+        */
     }
 }

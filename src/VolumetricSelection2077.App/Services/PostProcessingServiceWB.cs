@@ -3,10 +3,12 @@ using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
 using VolumetricSelection2077.App.Enums;
-using VolumetricSelection2077.App.Json.Helpers;
-using VolumetricSelection2077.App.Models;
-using VolumetricSelection2077.App.Models.WorldBuilder.Editor;
-using VolumetricSelection2077.App.Models.WorldBuilder.Favorites;
+using VolumetricSelection2077.Core.Enums;
+using VolumetricSelection2077.Core.Json.Helpers;
+using VolumetricSelection2077.Core.Models;
+using VolumetricSelection2077.Core.Models.WorldBuilder.Editor;
+using VolumetricSelection2077.Core.Models.WorldBuilder.Favorites;
+using VolumetricSelection2077.Core.Services;
 
 namespace VolumetricSelection2077.App.Services;
 
@@ -48,9 +50,18 @@ public partial class PostProcessingService
             Name = "GeneratedByVS2077",
             Favorites = new()
         };
-
-        var convertedData = _removalToWorldBuilderConverter.Convert(axlRemovalFile, _settingsService.Data.OutputFilename);
-        Logger.Success($"Found {convertedData.Children.OfType<PositionableGroup>().Sum(g => g.Children.Count)} WorldBuilder elements");
+        var cfg = new WBConverterConfig()
+        {
+            DestructibleMeshTreatment = _settingsService.Data.DestructibleMeshTreatment
+        };
+        var convertedData = _removalToWorldBuilderConverter.Convert(axlRemovalFile, _settingsService.Data.OutputFilename, cfg);
+        if (convertedData.Status == ResultStatus.Warning)
+            Logger.Warning($"Encountered warnings while converting to WorldBuilder: {convertedData.Message}");
+        
+        if (convertedData.Data.EmbeddedFiles.Count > 0)
+            Logger.Warning($"The following files are embedded and must be extracted for reliable use:\n {Utils.FormatDictionaryForDisplay(convertedData.Data.EmbeddedFiles)}");
+        
+        Logger.Success($"Found {convertedData.Data.RootElement.Children.OfType<PositionableGroup>().Sum(g => g.Children.Count)} WorldBuilder elements");
         if (!File.Exists(favoritesPath))
         {
             if (_settingsService.Data.SaveMode == SaveFileMode.Subtract)
@@ -62,7 +73,7 @@ public partial class PostProcessingService
             favRoot.Favorites.Add(new Favorite
             {
                 Name =  _settingsService.Data.OutputFilename,
-                Data = (Positionable)convertedData
+                Data = (Positionable)convertedData.Data.RootElement
             });
             logMessage = $"Created prefab {_settingsService.Data.OutputFilename} at {favoritesPath}";
 
@@ -78,7 +89,7 @@ public partial class PostProcessingService
                     if (existingOverwritePrefab != null)
                     {
                         existingOverwritePrefab.Data =
-                            (Positionable)convertedData;
+                            (Positionable)convertedData.Data.RootElement;
                         logMessage = $"Overwrote prefab {_settingsService.Data.OutputFilename} at {favoritesPath}";
                     }
                     else
@@ -92,7 +103,7 @@ public partial class PostProcessingService
                         existingExtendPrefab.Data = WorldBuilderMergingService.Merge(existingExtendPrefab, new Favorite
                         {
                             Name = _settingsService.Data.OutputFilename,
-                            Data = (Positionable)convertedData
+                            Data = (Positionable)convertedData.Data.RootElement
                         }).Data;
                         var newElementsCount = existingExtendPrefab.Data.Children.OfType<PositionableGroup>().Sum(g => g.Children.Count);
                         logMessage = $"Extended prefab {_settingsService.Data.OutputFilename} with {newElementsCount - existingElementsCount} new elements at {favoritesPath}";
@@ -108,7 +119,7 @@ public partial class PostProcessingService
                         existingFavorites?.Favorites.Add(new Favorite
                         {
                             Name = _settingsService.Data.OutputFilename,
-                            Data = (Positionable)convertedData
+                            Data = (Positionable)convertedData.Data.RootElement
                         });
                         logMessage = $"Created prefab {_settingsService.Data.OutputFilename} at {favoritesPath}";
                     }
@@ -119,7 +130,7 @@ public partial class PostProcessingService
                         existingFavorites?.Favorites.Add(new Favorite
                         {
                             Name = newOutputFilename,
-                            Data = (Positionable)convertedData
+                            Data = (Positionable)convertedData.Data.RootElement
                         });
                         logMessage = $"Created prefab {newOutputFilename} at {favoritesPath}";
                     }
@@ -132,7 +143,7 @@ public partial class PostProcessingService
                         existingSubtractPrefab.Data = WorldBuilderMergingService.Subtract(existingSubtractPrefab, new Favorite
                         {
                             Name = _settingsService.Data.OutputFilename,
-                            Data = (Positionable)convertedData
+                            Data = (Positionable)convertedData.Data.RootElement
                         }).Data;
                         var newElementsCount = existingSubtractPrefab.Data.Children.OfType<PositionableGroup>().Sum(g => g.Children.Count);
                         logMessage = $"Removed {(newElementsCount - existingElementsCount) * -1} elements from prefab {_settingsService.Data.OutputFilename} at {favoritesPath}";

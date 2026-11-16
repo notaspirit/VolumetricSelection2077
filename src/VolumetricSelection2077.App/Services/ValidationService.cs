@@ -1,19 +1,14 @@
 using System.Text.RegularExpressions;
 using System.IO;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using VolumetricSelection2077.App.Models;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
 using VolumetricSelection2077.App.Enums;
-using VolumetricSelection2077.App.Json;
-using VolumetricSelection2077.App.Json.Converters;
-using VolumetricSelection2077.App.Json.Helpers;
-using VolumetricSelection2077.App.Models.WorldBuilder.Favorites;
-using VolumetricSelection2077.App.Resources;
-using YamlDotNet.Serialization;
+using VolumetricSelection2077.Core.Enums;
+using VolumetricSelection2077.Core.Json.Helpers;
+using VolumetricSelection2077.Core.Models.WorldBuilder.Favorites;
+using VolumetricSelection2077.Core.Models;
+using VolumetricSelection2077.Core.Services;
 
 namespace VolumetricSelection2077.App.Services
 {
@@ -116,10 +111,10 @@ namespace VolumetricSelection2077.App.Services
         /// </summary>
         /// <param name="metadata"></param>
         /// <param name="gamePath">Path to the root of the game directory</param>
-        /// <param name="minimumProgramVersion">Oldest VS2077 that the cache can be from</param>
+        /// <param name="databaseVersion">Oldest VS2077 that the cache can be from</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException">Did not find game executable</exception>
-        public static bool ValidateCache(CacheDatabaseMetadata metadata, string gamePath, string minimumProgramVersion)
+        public static bool ValidateCache(CacheDatabaseMetadata metadata, string gamePath, int databaseVersion)
         {
             var gameExePath = Path.Combine(gamePath, "bin", "x64", "Cyberpunk2077.exe");
             if (!File.Exists(gameExePath))
@@ -129,7 +124,7 @@ namespace VolumetricSelection2077.App.Services
             if (version != metadata.GameVersion)
                 return false;
 
-            return metadata.VS2077Version == minimumProgramVersion;
+            return metadata.DatabaseVersion == databaseVersion;
         }
 
         /// <summary>
@@ -205,7 +200,7 @@ namespace VolumetricSelection2077.App.Services
         
         private bool AreVanillaSectorBBsBuild()
         {
-            return _cacheService.GetMetadata().AreVanillaSectorBBsBuild;
+            return _cacheService.GetMetadata().Data?.AreVanillaSectorBBsBuild ?? false;
         }
         
         /// <summary>
@@ -221,11 +216,11 @@ namespace VolumetricSelection2077.App.Services
                 .SelectMany(x => x.Files.Values.Where(y => y.Extension == ".streamingsector").Select(y => y.FileName))
                 .ToList();
 
-            var cachedBBSectors = _cacheService.GetAllEntries(CacheDatabases.ModdedBounds)
+            var cachedBBSectors = _cacheService.GetAllEntries(CacheDatabase.ModdedBounds).Data?
                 .Select(x => x.Key)
                 .ToList();
 
-            return inArchiveSectors.All(sector => cachedBBSectors.Contains(sector));
+            return inArchiveSectors.All(sector => cachedBBSectors?.Contains(sector) ?? false);
         }
         
         /// <summary>

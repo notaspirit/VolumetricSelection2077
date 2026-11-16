@@ -20,8 +20,6 @@ public partial class CacheService : ICacheService
     private string _cacheDirectory;
     private string _gameVersion;
 
-    private const uint CurrentCacheVersion = 1;
-
     private LightningEnvironment _env;
 
     private static readonly long Kb = 1024;
@@ -164,7 +162,7 @@ public partial class CacheService : ICacheService
 
         var metaData = metadataResult.Data;
         var result = new Result<bool> { Status = ResultStatus.Ok };
-        result.Data = metaData.DatabaseVersion == CurrentCacheVersion && _gameVersion == metaData.GameVersion;
+        result.Data = metaData.DatabaseVersion == ICacheService.CurrentCacheVersion && _gameVersion == metaData.GameVersion;
         return result;
     }
 
@@ -600,7 +598,7 @@ public partial class CacheService : ICacheService
                 }
             }
 
-            var newMetadata = new CacheDatabaseMetadata(CurrentCacheVersion, _gameVersion);
+            var newMetadata = new CacheDatabaseMetadata(ICacheService.CurrentCacheVersion, _gameVersion);
             Directory.CreateDirectory(_cacheDirectory);
             File.WriteAllText(filePath, JsonSerializer.Serialize(newMetadata));
             return new Result<CacheDatabaseMetadata>

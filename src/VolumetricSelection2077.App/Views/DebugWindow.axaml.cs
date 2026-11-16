@@ -13,7 +13,9 @@ using VolumetricSelection2077.App.Services;
 using VolumetricSelection2077.App.TestingStuff;
 using VolumetricSelection2077.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
+using VolumetricSelection2077.Core.Services;
 using Path = System.IO.Path;
+using Utils = VolumetricSelection2077.App.Services.Utils;
 
 namespace VolumetricSelection2077.App.Views;
 
@@ -83,7 +85,9 @@ public partial class DebugWindow : Window
     private void DumpSectorBounds_Click(object? sender, RoutedEventArgs e)
     {
         _debugWindowViewModel.IsProcessing = true;
-        App.AppHost!.Services.GetRequiredService<CacheService>().DumpSectorBBToFile();
+        var cs = App.AppHost!.Services.GetRequiredService<CacheService>();
+        cs.SerializeSectorBoundingBoxesToFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "debug",
+            $"{1 + 1}-{ICacheService.CurrentCacheVersion}"));
         _debugWindowViewModel.IsProcessing = false;
     }
 
@@ -93,7 +97,7 @@ public partial class DebugWindow : Window
         var cacheService = App.AppHost!.Services.GetRequiredService<CacheService>();
         var cacheMetadata = cacheService.GetMetadata();
         cacheService.LoadSectorBBFromFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "debug",
-            $"{cacheMetadata.GameVersion}-{cacheMetadata.VS2077Version}.bin"));
+            $"{cacheMetadata.Data.GameVersion}-{cacheMetadata.Data.DatabaseVersion}.bin"));
         _debugWindowViewModel.IsProcessing = false;
     }
 

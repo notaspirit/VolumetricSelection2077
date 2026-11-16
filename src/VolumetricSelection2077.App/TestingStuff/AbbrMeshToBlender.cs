@@ -1,11 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using SharpDX;
 using VolumetricSelection2077.App.Models;
-using VolumetricSelection2077.App.Services;
+using VolumetricSelection2077.Core.Services;
 
 namespace VolumetricSelection2077.App.TestingStuff;
 

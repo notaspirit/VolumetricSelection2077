@@ -114,7 +114,7 @@ public class SectorBBBuilderService : ISectorBBBuilderService
             Task<Result>[] tasks;
             try
             {
-                tasks = sectors.Select(s => Task.Run(() => ProcessStreamingsector(s.Path, s.Database))).ToArray();
+                tasks = sectors.Select(s => Task.Run(() => BuildSectorBounds(s.Path, s.Database))).ToArray();
                 await Task.WhenAll(tasks);
             }
             finally
@@ -173,7 +173,7 @@ public class SectorBBBuilderService : ISectorBBBuilderService
     /// error occurs, <see cref="ResultStatus.Warning"/> if part of the sector could not be resolved and only
     /// position data was used, and <see cref="ResultStatus.Ok"/> otherwise.
     /// </returns>
-    private async Task<Result> ProcessStreamingsector(string sectorPath, CacheDatabase? database)
+    public async Task<Result> BuildSectorBounds(string sectorPath, CacheDatabase? database)
     {
         var result = new Result
         {

@@ -26,6 +26,7 @@ public class ProgressService : IProgressService
                 section.Target = 0;
                 section.Current = 0;
             }
+            OnProgressChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -39,6 +40,7 @@ public class ProgressService : IProgressService
             _sections.Clear();
             _sectionMap.Clear();
             _weightSum = 0;
+            OnProgressChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -56,6 +58,7 @@ public class ProgressService : IProgressService
                 return;
 
             section.Current += progress;
+            OnProgressChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -73,6 +76,7 @@ public class ProgressService : IProgressService
                 return;
 
             sectionEntry.Target += target;
+            OnProgressChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -91,6 +95,7 @@ public class ProgressService : IProgressService
             _sections.Add(section);
             _sectionMap.Add(section.Id, section);
             _weightSum += section.Weight;
+            OnProgressChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -114,4 +119,6 @@ public class ProgressService : IProgressService
             return total;
         }
     }
+
+    public event EventHandler? OnProgressChanged;
 }

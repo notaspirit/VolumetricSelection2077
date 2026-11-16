@@ -4,8 +4,9 @@ using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
 using VolumetricSelection2077.App.Enums;
-using VolumetricSelection2077.App.Json.Helpers;
 using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.Core.Json.Helpers;
+using VolumetricSelection2077.Core.Models;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -172,7 +173,7 @@ public partial class PostProcessingService
                             existingNode.ActorDeletions?.Count != null ||
                             existingNode.ActorDeletions?.Count > 0)
                         {
-                            existingNode.ExpectedActors =  newNode.ExpectedActors ?? existingNode.ExpectedActors;
+                            existingNode.ExpectedActors =  newNode.ExpectedActors;
                             HashSet<int> actorSet = new HashSet<int>(newNode.ActorDeletions ?? new List<int>());
                             actorSet.UnionWith(existingNode.ActorDeletions ?? new List<int>());
                             existingNode.ActorDeletions = actorSet.ToList();

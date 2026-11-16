@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Net.Http;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -9,6 +10,7 @@ using VolumetricSelection2077.App.Parsers;
 using VolumetricSelection2077.App.Services;
 using VolumetricSelection2077.App.TestingStuff;
 using VolumetricSelection2077.App.Views;
+using VolumetricSelection2077.Core.Services;
 
 namespace VolumetricSelection2077.App;
 
@@ -28,10 +30,11 @@ public partial class App : Application
         
         var settingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "VolumetricSelection2077", "settings.json");
+        hostBuilder.Services.AddSingleton<HttpClient>();
         hostBuilder.Services.AddSingleton<SettingsService>(new SettingsService(settingsPath));
-        hostBuilder.Services.AddSingleton<Models.Progress>();
-        hostBuilder.Services.AddSingleton<CacheService>();
-        hostBuilder.Services.AddSingleton<GameFileService>();
+        hostBuilder.Services.AddSingleton<IProgressService, AppProgressService>();
+        hostBuilder.Services.AddSingleton<ICacheService, CacheService>();
+        hostBuilder.Services.AddSingleton<IGameFileService, GameFileService>();
         hostBuilder.Services.AddSingleton<ValidationService>();
         hostBuilder.Services.AddSingleton<SettingsViewPersistentCache>();
         hostBuilder.Services.AddSingleton<UpdateService>(sp => new UpdateService(
@@ -43,9 +46,9 @@ public partial class App : Application
         
         #region Transient Services
         
-        hostBuilder.Services.AddTransient<BoundingBoxBuilderService>();
+        hostBuilder.Services.AddTransient<ISectorBBBuilderService, SectorBBBuilderService>();
         hostBuilder.Services.AddTransient<PostProcessingService>();
-        hostBuilder.Services.AddTransient<ProcessService>();
+        hostBuilder.Services.AddTransient<ISelectionService, SelectionService>();
         hostBuilder.Services.AddTransient<ProcessDispatcher>();
         
         #endregion

@@ -9,6 +9,8 @@ using Avalonia.Interactivity;
 using VolumetricSelection2077.App.Enums;
 using VolumetricSelection2077.App.Models;
 using VolumetricSelection2077.App.Services;
+using VolumetricSelection2077.Core.Enums;
+using VolumetricSelection2077.Core.Services;
 
 namespace VolumetricSelection2077.App.Views
 {
@@ -37,7 +39,7 @@ namespace VolumetricSelection2077.App.Views
         {
             try
             {
-                _settingsViewModel.CacheStats = _cacheService.GetStats();
+                _settingsViewModel.CacheStats = _cacheService.GetStats().Data!;
             }
             catch (Exception ex)
             {
@@ -48,7 +50,7 @@ namespace VolumetricSelection2077.App.Views
         {
             if(!_cacheService.IsInitialized) return;
             _settingsViewModel.CacheWorking = true;
-            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Vanilla));
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabase.Vanilla));
             _settingsViewModel.CacheWorking = false;
             UpdateCacheStats();
         }
@@ -57,7 +59,7 @@ namespace VolumetricSelection2077.App.Views
         {
             if(!_cacheService.IsInitialized) return;
             _settingsViewModel.CacheWorking = true;
-            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.Modded));
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabase.Modded));
             _settingsViewModel.CacheWorking = false;
             UpdateCacheStats();
         }
@@ -66,7 +68,7 @@ namespace VolumetricSelection2077.App.Views
         {
             if(!_cacheService.IsInitialized) return;
             _settingsViewModel.CacheWorking = true;
-            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.VanillaBounds));
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabase.VanillaBounds));
             _settingsViewModel.CacheWorking = false;
             UpdateCacheStats();
         }
@@ -75,7 +77,7 @@ namespace VolumetricSelection2077.App.Views
         {
             if(!_cacheService.IsInitialized) return;
             _settingsViewModel.CacheWorking = true;
-            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabases.ModdedBounds));
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabase.ModdedBounds));
             _settingsViewModel.CacheWorking = false;
             UpdateCacheStats();
         }
@@ -133,7 +135,7 @@ namespace VolumetricSelection2077.App.Views
                 try
                 {
                     successMove = !_moveCache || _cacheService.Move(_settingsViewModel.PersistentCache.InitialCachePath,
-                        _settingsViewModel.Settings.Data.CacheDirectory);
+                        _settingsViewModel.Settings.Data.CacheDirectory).Status != ResultStatus.Error;
                 }
                 catch (Exception ex)
                 {
@@ -160,7 +162,6 @@ namespace VolumetricSelection2077.App.Views
 
         private void ClearKnownBadResources_Click(object? sender, RoutedEventArgs e)
         {
-            _cacheService.ClearKnownBadResources();
             _settingsViewModel.RaiseOnPropertyChanged("ClearKnownBadResourcesLabel");
         }
     };

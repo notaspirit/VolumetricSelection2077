@@ -5,6 +5,8 @@ using SharpDX;
 using VolumetricSelection2077.App.Enums;
 using VolumetricSelection2077.App.Models;
 using VolumetricSelection2077.App.Services;
+using VolumetricSelection2077.Core.Enums;
+using VolumetricSelection2077.Core.Services;
 using WEnums = WolvenKit.RED4.Types.Enums;
 using Vector3 = SharpDX.Vector3;
 
@@ -26,8 +28,9 @@ public class BuildKnownBadSectorVerbose : IDebugTool
     }
     
     
-    private async Task ProcessStreamingsector(string sectorPath, CacheDatabases? database)
+    private async Task ProcessStreamingsector(string sectorPath, CacheDatabase? database)
     {
+        /*
         try
         {
             Logger.Info($"Building bounds for {sectorPath}...");
@@ -198,5 +201,6 @@ public class BuildKnownBadSectorVerbose : IDebugTool
         {
             Logger.Exception(e, $"Failed to build bounding box for {sectorPath}");
         }
+        */
     }
 }

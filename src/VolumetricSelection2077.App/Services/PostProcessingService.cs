@@ -1,33 +1,33 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
-using VolumetricSelection2077.App.Converters.Complex;
+using VolumetricSelection2077.Core.Converters.Complex;
 using VolumetricSelection2077.App.Enums;
-using VolumetricSelection2077.App.Json.Helpers;
 using VolumetricSelection2077.App.Models;
-using VolumetricSelection2077.App.Models.WorldBuilder.Editor;
-using VolumetricSelection2077.App.Models.WorldBuilder.Favorites;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
+using VolumetricSelection2077.Core.Models;
+using VolumetricSelection2077.Core.Services;
 
 namespace VolumetricSelection2077.App.Services;
 
 public partial class PostProcessingService
 {
-    private readonly Progress _progress;
+    private readonly ProgressService _progressService;
     private readonly SettingsService _settingsService;
     private readonly AxlRemovalToWorldBuilderConverter _removalToWorldBuilderConverter;
 
     private readonly string? _outputFileNameOverride;
     private readonly bool _createBackup;
     
-    public PostProcessingService(SettingsService settingsService, Progress progress, GameFileService gfs, string? outputFileNameOverride = null, bool createBackup = true)
+    public PostProcessingService(SettingsService settingsService,
+        ProgressService progressService,
+        GameFileService gfs,
+        string? outputFileNameOverride = null,
+        bool createBackup = true)
     {
-        _progress = progress;
+        _progressService = progressService;
         _settingsService = settingsService;
-        _removalToWorldBuilderConverter = new AxlRemovalToWorldBuilderConverter(gfs, settingsService);
+        _removalToWorldBuilderConverter = new AxlRemovalToWorldBuilderConverter(gfs);
         
         _outputFileNameOverride = outputFileNameOverride;
         _createBackup = createBackup;
@@ -36,27 +36,8 @@ public partial class PostProcessingService
     /// <summary>
     /// Entry method to be called from ProcessingService
     /// </summary>
-    public void Run(AxlRemovalSector?[] rawSectors)
+    public void Run(AxlRemovalFile removalFile)
     {
-        _progress.AddTarget(2, Progress.ProgressSections.Finalization);
-
-        var nullCheckedSectors = rawSectors.Where(s => s != null).ToList() as List<AxlRemovalSector>;
-        if (nullCheckedSectors.Count == 0)
-        {
-            Logger.Warning("No sectors intersect, no output file generated!");
-            return;
-        }
-        
-        _progress.AddCurrent(1, Progress.ProgressSections.Finalization);
-        
-        var removalFile = new AxlRemovalFile
-        {
-            Streaming = new AxlRemovalStreaming
-            {
-                Sectors = nullCheckedSectors
-            }
-        };
-        
         switch (_settingsService.Data.SaveFileFormat)
         {
             case SaveFileFormat.ArchiveXLJson:
@@ -68,7 +49,7 @@ public partial class PostProcessingService
                 break;
         }
         
-        _progress.AddCurrent(1, Progress.ProgressSections.Finalization);
+        _progressService.AddProgress(ProgressSections.MainTaskFinalization, 1);
     }
     
     private static string GetOutputFilename(string outputFilename)

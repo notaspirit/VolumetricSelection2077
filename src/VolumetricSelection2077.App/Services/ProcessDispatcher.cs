@@ -1,90 +1,128 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using VolumetricSelection2077.App.Enums;
 using VolumetricSelection2077.App.Models;
 using VolumetricSelection2077.App.Parsers;
+using VolumetricSelection2077.Core.Components;
+using VolumetricSelection2077.Core.Enums;
+using VolumetricSelection2077.Core.Models;
+using VolumetricSelection2077.Core.Services;
+using YamlDotNet.Core.Tokens;
 
 namespace VolumetricSelection2077.App.Services;
 
 public class ProcessDispatcher
 {
-    private readonly ProcessService _processService;
+    private static string RelativeSelectionFilePath => Path.Combine("bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "VolumetricSelection2077", "data", "selection.json");
+    
+    private readonly SelectionService _selectionService;
+    private readonly ProgressService _progressService;
     private readonly ValidationService _validationService;
     private readonly DialogService _dialogService;
-    private readonly BoundingBoxBuilderService _boundingBoxBuilderService;
+    private readonly SectorBBBuilderService _boundingBoxBuilderService;
     private readonly SettingsService _settings;
     private readonly CacheService _cacheService;
-    private readonly Progress _progress;
+    private readonly PostProcessingService _postProcessingService;
+    private readonly HttpClient _httpClient;
     
-    public ProcessDispatcher(DialogService dialogService, ProcessService processService, ValidationService validationService, BoundingBoxBuilderService boundingBoxBuilderService, SettingsService settings, CacheService cacheService, Models.Progress progress)
+    public ProcessDispatcher(
+        SelectionService selectionService,
+        DialogService dialogService,
+        ProgressService progressService,
+        ValidationService validationService,
+        SectorBBBuilderService boundingBoxBuilderService,
+        SettingsService settings,
+        CacheService cacheService,
+        PostProcessingService postProcessingService,
+        HttpClient httpClient)
     {
-        _processService = processService;
+        _selectionService = selectionService;
+        _progressService = progressService;
         _validationService = validationService;
         _dialogService = dialogService;
         _boundingBoxBuilderService = boundingBoxBuilderService;
         _settings = settings;
         _cacheService = cacheService;
-        _progress = progress;
+        _postProcessingService = postProcessingService;
+        _httpClient = httpClient;
     }
 
-    public async Task<(bool success, string error)> StartProcess(string? customRemovalFile = null)
+    public async Task<Result> StartProcess(string? customRemovalFile = null)
     {
+        var result = new Result { Status = ResultStatus.Ok };
+        
         Logger.Info("Validating inputs...");
 
         try
         {
             var validationResult = _validationService.ValidateInput(_settings.Data.GameDirectory, _settings.Data.OutputFilename);
             if (!await EvaluateInputValidation(validationResult))
-                return (false, "Invalid Input");
+            {
+                result.Status = ResultStatus.Error;
+                result.AddMessage("Invalid inputs, see log for details");
+                return result;
+            }
         }
         catch (Exception ex)
         {
             Logger.Exception(ex, fileOnly: true);
-            return (false, ex.Message + " : Failed to validate inputs");
+            result.Status = ResultStatus.Error;
+            result.AddMessage($"{ex.Message} : Failed to validate inputs");
+            return result;
         }
         
-        Logger.Info("Starting Process...");
+        Logger.Info("Querying world data...");
         
-        _progress.Reset();
-        _progress.SetWeight(0.05f, 0.9f, 0.05f);
+        _progressService.AddSection(
+            new ProgressSection(ProgressSections.MainTaskFinalization, 1)
+            {
+                Current = 0,
+                Target = 1,
+                Weight = 1
+            });
         
-        _progress.AddTarget(2, Progress.ProgressSections.Startup);
+        _progressService.Reset();
         
         if (customRemovalFile != null && !File.Exists(customRemovalFile))
         {
-            throw new ArgumentException($"Provided file ({customRemovalFile}) doesn't exist!");
+            result.Status = ResultStatus.Error;
+            result.AddMessage($"Custom removal file {customRemovalFile} does not exist!");
+            return result;
         }
-
-        SelectionInput? CETOutputFile;
         
-        if (customRemovalFile == null)
-        {
-            string CETOuputFilepath;
-            if (string.IsNullOrWhiteSpace(_settings.Data.CustomSelectionFilePath))
-                CETOuputFilepath= Path.Combine(_settings.Data.GameDirectory, "bin", "x64", "plugins", "cyber_engine_tweaks",
-                "mods", "VolumetricSelection2077", "data", "selection.json");
-            else
-                CETOuputFilepath= Path.Combine(_settings.Data.CustomSelectionFilePath, "bin", "x64", "plugins", "cyber_engine_tweaks",
-                    "mods", "VolumetricSelection2077", "data", "selection.json");
-            
-            string CETOutputFileString = File.ReadAllText(CETOuputFilepath);
-            ( var successSP, var errorSP, CETOutputFile) = SelectionParser.ParseSelection(CETOutputFileString);
+        var selectionFilePath = customRemovalFile;
 
-            if (CETOutputFile == null || successSP == false)
+        if (selectionFilePath == null)
+        {
+            if (string.IsNullOrWhiteSpace(_settings.Data.CustomSelectionFilePath))
             {
-                return (false, $"Failed to parse CET output file with error: {errorSP}");
+                selectionFilePath = Path.Combine(_settings.Data.GameDirectory, RelativeSelectionFilePath);
+            }
+            else
+            {
+                selectionFilePath = Path.Combine(_settings.Data.CustomSelectionFilePath, RelativeSelectionFilePath);
             }
         }
-        else
+
+        if (!File.Exists(selectionFilePath))
         {
-            string customOutputFileString = File.ReadAllText(customRemovalFile);
-            (var successSP, var errorSP, CETOutputFile) = SelectionParser.ParseSelection(customOutputFileString);
-            if (CETOutputFile == null || successSP == false)
-            {
-                return (false, $"Failed to parse CET output file with error: {errorSP}");
-            }
+            result.Status = ResultStatus.Error;
+            result.AddMessage($"Selection file {selectionFilePath} does not exist!");
+            return result;
+        }
+
+        var query = new VSQuery();
+        ConfigureQuery(query);
+        
+        var parsingResult = SelectionParser.ParseSelection(await File.ReadAllTextAsync(selectionFilePath), query);
+        if (parsingResult.Status == ResultStatus.Error)
+        {
+            result.Status = ResultStatus.Error;
+            result.AddMessage($"Failed to parse selection file with error {parsingResult.Message}");
+            return result;
         }
         
         try
@@ -94,12 +132,62 @@ public class ProcessDispatcher
         catch (Exception ex)
         {
             Logger.Exception(ex, "Failed to start listening to write requests in cache service!", fileOnly: true);
-            return (false, "Failed to start listening to write requests in cache service!");
+            result.Status = ResultStatus.Error;
+            result.AddMessage("Failed to start listening to write requests in cache service!");
+            return result;
         }
 
-        _progress.AddCurrent(1, Progress.ProgressSections.Startup);
+        var queryResult = await _selectionService.QueryWorldData(query);
+
+        switch (queryResult.Status)
+        {
+            case ResultStatus.Error:
+                result.Status = ResultStatus.Error;
+                result.AddMessage($"Failed to query world data with error: {queryResult.Message}");
+                return result;
+            case ResultStatus.Warning:
+                result.Status = ResultStatus.Warning;
+                result.AddMessage($"Encountered warnings while querying world data: {queryResult.Message}");
+                break;
+            case ResultStatus.Ok:
+            default:
+                break;
+        }
+
+        if (queryResult.Data == null)
+        {
+            result.AddMessage("No world data matching filters found");
+            return result;
+        }
         
-        return await _processService.MainProcessTask(CETOutputFile);
+        _postProcessingService.Run(queryResult.Data);
+        
+        return result;
+    }
+
+    private void ConfigureQuery(VSQuery query)
+    {
+        query.DataSource = _settings.Data.SupportModdedResources ? WorldDataSource.All : WorldDataSource.VanillaOnly;
+        
+        if (_settings.Data.DebugNameFilter.Count > 0)
+        {
+            var debugNameFilter = new DebugNameFilter
+            {
+                DebugNameRegexPatterns = _settings.Data.DebugNameFilter.ToList(),
+                Required = !_settings.Data.FilterModeOr
+            };
+            query.Filters.Add(debugNameFilter);
+        }
+
+        if (_settings.Data.ResourceNameFilter.Count > 0)
+        {
+            var resourcePathFilter = new ResourcePathFilter
+            {
+                ResourcePathRegexPatterns = _settings.Data.ResourceNameFilter.ToList(),
+                Required = !_settings.Data.FilterModeOr
+            };
+            query.Filters.Add(resourcePathFilter);
+        }
     }
     
      /// <summary>
@@ -192,7 +280,7 @@ public class ProcessDispatcher
                     RetryFetchingRemote:
                     Logger.Info("Fetching Sector Bounds from remote...");
                     var result = await FetchRemoteSectorBBs();
-                    if (result)
+                    if (result.Status == ResultStatus.Ok)
                         Logger.Success("Vanilla Sector BBs       : OK");
                     else
                     {
@@ -294,31 +382,39 @@ public class ProcessDispatcher
     /// Fetches remote sector bounds from VS2077 Resource repo 
     /// </summary>
     /// <returns>true if successful</returns>
-    private async Task<bool> FetchRemoteSectorBBs()
+    private async Task<Result> FetchRemoteSectorBBs()
     {
-        var cacheMetadata = _cacheService.GetMetadata();
-        string fileUrl = $"https://github.com/notaspirit/VolumetricSelection2077Resources/raw/refs/heads/main/SectorBounds/{cacheMetadata.GameVersion}-{cacheMetadata.VS2077Version}.bin";
-        string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "VolumetricSelection2077", "temp", $"{cacheMetadata.GameVersion}-{cacheMetadata.VS2077Version}.bin");
-        Directory.CreateDirectory(Path.GetDirectoryName(filePath));
-        using (HttpClient client = new HttpClient())
+        var result = new Result { Status = ResultStatus.Ok };
+        
+        var cacheMetadataResult = _cacheService.GetMetadata();
+        if (cacheMetadataResult.Status == ResultStatus.Error || cacheMetadataResult.Data == null)
         {
-            try
-            {
-                Logger.Info($"Fetching {fileUrl}...");
-                byte[] fileData = await client.GetByteArrayAsync(fileUrl);
+            result.Status = ResultStatus.Error;
+            result.AddMessage($"Failed to get cache metadata with message: {cacheMetadataResult.Message}");
+            return result;
+        }
+        
+        var cacheMetadata = cacheMetadataResult.Data;
+        
+        var fileUrl = $"https://github.com/notaspirit/VolumetricSelection2077Resources/raw/refs/heads/main/SectorBounds/{cacheMetadata.GameVersion}-{cacheMetadata.DatabaseVersion}.bin";
+        var filePath = Path.Combine(Path.GetTempPath(), $"VolumetricSelection2077-{cacheMetadata.GameVersion}-{cacheMetadata.DatabaseVersion}.bin");
+        try
+        {
+            Logger.Info($"Fetching {fileUrl}...");
+            byte[] fileData = await _httpClient.GetByteArrayAsync(fileUrl);
 
-                await File.WriteAllBytesAsync(filePath, fileData);
-            }
-            catch (HttpRequestException e)
-            {
-                Logger.Exception(e, $"Failed to fetch remote sector bounds! {e.Message}");
-                return false;
-            }
+            await File.WriteAllBytesAsync(filePath, fileData);
+        }
+        catch (HttpRequestException e)
+        {
+            Logger.Exception(e, $"Failed to fetch remote sector bounds! {e.Message}");
+            result.Status = ResultStatus.Error;
+            result.AddMessage($"Failed to fetch remote sector bounds! {e.Message}");
+            return result;
         }
         
         _cacheService.LoadSectorBBFromFile(filePath);
         File.Delete(filePath);
-        return true;
+        return result;
     }
 }

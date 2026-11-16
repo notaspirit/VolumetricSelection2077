@@ -2,13 +2,14 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using VolumetricSelection2077.App.Models;
 using VolumetricSelection2077.App.Services;
+using VolumetricSelection2077.Core.Services;
 
 namespace VolumetricSelection2077.App.TestingStuff;
 
 public class TestSectorAABBTime : IDebugTool
 {
-    private readonly BoundingBoxBuilderService _boundingBoxBuilderService;
-    public TestSectorAABBTime(BoundingBoxBuilderService boundingBoxBuilderService)
+    private readonly SectorBBBuilderService _boundingBoxBuilderService;
+    public TestSectorAABBTime(SectorBBBuilderService boundingBoxBuilderService)
     {
         _boundingBoxBuilderService = boundingBoxBuilderService;
     }
@@ -17,7 +18,7 @@ public class TestSectorAABBTime : IDebugTool
     {
         var testSector = @"base\worlds\03_night_city\_compiled\default\exterior_-4_8_-1_2.streamingsector";
         var sw = Stopwatch.StartNew();
-        await _boundingBoxBuilderService.ProcessStreamingsector(testSector, null);
+        await _boundingBoxBuilderService.BuildSectorBounds(testSector, null);
         sw.Stop();
         Logger.Info($"Time: {sw.ElapsedMilliseconds}");
     }
