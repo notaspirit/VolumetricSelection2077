@@ -16,6 +16,8 @@ namespace VolumetricSelection2077.App.Models.SettingsDTO;
 public partial class SettingsDTOV1 : SettingsDTO
 {
     [ObservableProperty] private string _gameDirectory;
+    
+    [JsonIgnore]
     public string GameExecutable => Path.Combine(GameDirectory, "bin", "x64", "Cyberpunk2077.exe");
     [ObservableProperty] private bool _cacheEnabled;
     [ObservableProperty] private string _cacheDirectory;
