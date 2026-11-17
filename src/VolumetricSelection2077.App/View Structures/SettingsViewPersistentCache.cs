@@ -5,8 +5,6 @@ namespace VolumetricSelection2077.App.Views;
 public class SettingsViewPersistentCache
 {
     private readonly SettingsService _settingsService;
-
-    public bool InitialModdedResourceValue { get; }
     public string InitialGamePath { get; }
     public string InitialCachePath { get; set; }
 
@@ -17,13 +15,12 @@ public class SettingsViewPersistentCache
     
     public bool RequiresRestart
     {
-        get => (InitialModdedResourceValue != _settingsService.Data.SupportModdedResources) || (InitialGamePath != _settingsService.Data.GameDirectory);
+        get => InitialGamePath != _settingsService.Data.GameDirectory;
     }
     
     public SettingsViewPersistentCache(SettingsService settingsService)
     {
        _settingsService = settingsService;
-       InitialModdedResourceValue = _settingsService.Data.SupportModdedResources;
        InitialGamePath = _settingsService.Data.GameDirectory;
        InitialCachePath = _settingsService.Data.CacheDirectory;
     }
