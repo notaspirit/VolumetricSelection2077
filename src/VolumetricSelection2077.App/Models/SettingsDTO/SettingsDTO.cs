@@ -1,5 +1,6 @@
 using System;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Newtonsoft.Json.Linq;
 
 namespace VolumetricSelection2077.App.Models.SettingsDTO;
 
@@ -13,5 +14,6 @@ public class SettingsDTO : ObservableObject
     }
 
     public virtual void Deserialize(string json) => throw new NotImplementedException();
+    public virtual void Deserialize(JObject json) => throw new NotImplementedException();
     public virtual string Serialize() => throw new NotImplementedException();
 }

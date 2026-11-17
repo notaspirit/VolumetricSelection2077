@@ -4,6 +4,7 @@ using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using VolumetricSelection2077.App.Enums;
 using VolumetricSelection2077.App.Models.SettingsDTO;
+using VolumetricSelection2077.Core.Enums;
 
 namespace VolumetricSelection2077.App.Services;
 public partial class SettingsService : ObservableObject
@@ -15,7 +16,7 @@ public partial class SettingsService : ObservableObject
         ProgramVersion = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion?.Split("+")[0] ?? "Version not found.";
         LogDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "Logs");
         _settingsFilePath = settingsFilePath;
-        Data = new SettingsDTOV0();
+        Data = new SettingsDTOV1();
         
         LoadSettings();
         
@@ -29,7 +30,7 @@ public partial class SettingsService : ObservableObject
         }
     }
     
-    [ObservableProperty] private SettingsDTOV0 _data;
+    [ObservableProperty] private SettingsDTOV1 _data;
     public readonly string LogDirectory;
     public string ProgramVersion { get; }
     
@@ -46,7 +47,16 @@ public partial class SettingsService : ObservableObject
         {
             try
             {
-                Data.Deserialize(File.ReadAllText(_settingsFilePath));
+                var dtoRes = SettingsDtoHelper.SmartDeserialize(File.ReadAllText(_settingsFilePath));
+                if (dtoRes.Status != ResultStatus.Ok)
+                {
+                    Logger.Error($"Failed to load settings with error: {dtoRes.Message}");
+                    SaveSettings();
+                }
+                else
+                {
+                    Data = dtoRes.Data!;
+                }
             }
             catch (Exception ex)
             {

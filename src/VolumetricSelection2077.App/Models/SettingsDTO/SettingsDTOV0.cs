@@ -1,21 +1,20 @@
 using System;
-using System.Collections.Generic;
+using System.Collections;
 using System.Collections.ObjectModel;
 using System.IO;
-using VolumetricSelection2077.App.Services;
-using VolumetricSelection2077.Core.Json.Helpers;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using VolumetricSelection2077.App.Enums;
 using VolumetricSelection2077.Core.Enums;
+using VolumetricSelection2077.Core.Json.Helpers;
 
 namespace VolumetricSelection2077.App.Models.SettingsDTO;
 
 public partial class SettingsDTOV0 : SettingsDTO
 {
     [ObservableProperty] private string _gameDirectory;
-    public string GameExecutable => Path.Combine(GameDirectory, "bin", "x64", "Cyberpunk2077.exe");
     [ObservableProperty] private bool _cacheEnabled;
     [ObservableProperty] private string _cacheDirectory;
     [ObservableProperty] private SaveFileLocation _saveFileLocation;
@@ -23,7 +22,15 @@ public partial class SettingsDTOV0 : SettingsDTO
     [ObservableProperty] private string _outputFilename;
     [ObservableProperty] private bool _supportModdedResources;
 
-    [ObservableProperty] private HashSet<string> _nodeTypeFilter;
+    [JsonIgnore]
+    public BitArray NodeTypeFilter;
+
+    [JsonProperty(nameof(NodeTypeFilter))]
+    public bool[] NodeTypeFilterProxy
+    {
+        get => NodeTypeFilter.Cast<bool>().ToArray();
+        set => NodeTypeFilter = new BitArray(value);
+    }
 
     [ObservableProperty] private ObservableCollection<string> _resourceNameFilter;
     [ObservableProperty] private ObservableCollection<string> _debugNameFilter;
@@ -44,6 +51,7 @@ public partial class SettingsDTOV0 : SettingsDTO
     [ObservableProperty] private SaveFileFormat _saveFileFormat;
     [ObservableProperty] private int _maxBackupFiles;
     [ObservableProperty] private bool _autoScrollLogViewer;
+    [ObservableProperty] private bool _rememberFailedResources;
     
     [ObservableProperty] private bool _debugMode;
     
@@ -58,7 +66,7 @@ public partial class SettingsDTOV0 : SettingsDTO
         SaveFileLocation = SaveFileLocation.GameDirectory;
         OutputDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "output");
         OutputFilename = "";
-        NodeTypeFilter = [.. AppUtils.WorldNodeNames];
+        NodeTypeFilter = new BitArray(122, true);
         ResourceNameFilter = [];
         DebugNameFilter = [];
         FilterModeOr = true;
@@ -78,72 +86,75 @@ public partial class SettingsDTOV0 : SettingsDTO
         BackupDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "OutputBackup");
         MaxBackupFiles = 10;
         AutoScrollLogViewer = true;
+        RememberFailedResources = true;
 
         DebugMode = false;
     }
     
-    public override void Deserialize(string json) 
+    public override void Deserialize(string json) => Deserialize(JObject.Parse(json));
+    
+    public override void Deserialize(JObject json) 
     {
-        var j = JObject.Parse(json);
-        GameDirectory = j.Value<string>(nameof(GameDirectory)) ?? GameDirectory;
-        CacheEnabled = j.Value<bool?>(nameof(CacheEnabled)) ?? CacheEnabled;
+        GameDirectory = json.Value<string>(nameof(GameDirectory)) ?? GameDirectory;
+        CacheEnabled = json.Value<bool?>(nameof(CacheEnabled)) ?? CacheEnabled;
         
-        var tempCacheDirectory = j.Value<string>(nameof(CacheDirectory));
+        var tempCacheDirectory = json.Value<string>(nameof(CacheDirectory));
         if (!string.IsNullOrEmpty(tempCacheDirectory))
             CacheDirectory = tempCacheDirectory;
         
         // replaced with SaveFileLocation after 1000.0.0-beta12
-        var OLDSaveToArchiveMods = j.Value<bool?>("SaveToArchiveMods");
+        var OLDSaveToArchiveMods = json.Value<bool?>("SaveToArchiveMods");
         if (OLDSaveToArchiveMods != null)
             SaveFileLocation = (bool)OLDSaveToArchiveMods
                 ? SaveFileLocation.GameDirectory
                 : SaveFileLocation.OutputDirectory;
         else
-            SaveFileLocation = (SaveFileLocation?)j.Value<long?>(nameof(SaveFileLocation)) ?? SaveFileLocation;
+            SaveFileLocation = (SaveFileLocation?)json.Value<long?>(nameof(SaveFileLocation)) ?? SaveFileLocation;
 
-        var tempOutputDirectory = j.Value<string>(nameof(OutputDirectory));
+        var tempOutputDirectory = json.Value<string>(nameof(OutputDirectory));
         if (!string.IsNullOrEmpty(tempOutputDirectory))
             OutputDirectory = tempOutputDirectory;
 
-        OutputFilename = j.Value<string>(nameof(OutputFilename)) ?? OutputFilename;
+        OutputFilename = json.Value<string>(nameof(OutputFilename)) ?? OutputFilename;
         
-        NodeTypeFilter = j[nameof(NodeTypeFilter)]?.ToObject<HashSet<string>>() ?? NodeTypeFilter;
+        NodeTypeFilterProxy = json[nameof(NodeTypeFilter)]?.ToObject<bool[]>() ?? NodeTypeFilterProxy;
         
-        var tempResourceNameFilter = j[nameof(ResourceNameFilter)]?.ToObject<ObservableCollection<string>>() ?? ResourceNameFilter;
+        var tempResourceNameFilter = json[nameof(ResourceNameFilter)]?.ToObject<ObservableCollection<string>>() ?? ResourceNameFilter;
         ResourceNameFilter.Clear();
         foreach (var s in tempResourceNameFilter)
             ResourceNameFilter.Add(s);
 
-        var tempDebugNameFilter = j[nameof(DebugNameFilter)]?.ToObject<ObservableCollection<string>>() ?? DebugNameFilter;
+        var tempDebugNameFilter = json[nameof(DebugNameFilter)]?.ToObject<ObservableCollection<string>>() ?? DebugNameFilter;
         DebugNameFilter.Clear();
         foreach (var s in tempDebugNameFilter)
             DebugNameFilter.Add(s);
         
-        FilterModeOr = j.Value<bool?>(nameof(FilterModeOr)) ?? FilterModeOr;
-        IsFiltersMWVisible = j.Value<bool?>(nameof(IsFiltersMWVisible)) ?? IsFiltersMWVisible;
-        IsParametersMWVisible = j.Value<bool?>(nameof(IsParametersMWVisible)) ?? IsParametersMWVisible;
+        FilterModeOr = json.Value<bool?>(nameof(FilterModeOr)) ?? FilterModeOr;
+        IsFiltersMWVisible = json.Value<bool?>(nameof(IsFiltersMWVisible)) ?? IsFiltersMWVisible;
+        IsParametersMWVisible = json.Value<bool?>(nameof(IsParametersMWVisible)) ?? IsParametersMWVisible;
 
-        SaveMode = (SaveFileMode?)j.Value<long?>(nameof(SaveMode)) ?? SaveMode;
-        SaveFileFormat = (SaveFileFormat?)j.Value<long?>(nameof(SaveFileFormat)) ?? SaveFileFormat;
-        DestructibleMeshTreatment = (DestructibleMeshTreatment?)j.Value<long?>(nameof(DestructibleMeshTreatment)) ?? DestructibleMeshTreatment;
+        SaveMode = (SaveFileMode?)json.Value<long?>(nameof(SaveMode)) ?? SaveMode;
+        SaveFileFormat = (SaveFileFormat?)json.Value<long?>(nameof(SaveFileFormat)) ?? SaveFileFormat;
+        DestructibleMeshTreatment = (DestructibleMeshTreatment?)json.Value<long?>(nameof(DestructibleMeshTreatment)) ?? DestructibleMeshTreatment;
         
-        SupportModdedResources = j.Value<bool?>(nameof(SupportModdedResources)) ?? SupportModdedResources;
-        AutoUpdate = j.Value<bool?>(nameof(AutoUpdate)) ?? AutoUpdate;
-        DidUpdate = j.Value<bool?>(nameof(DidUpdate)) ?? DidUpdate;
-        GameRunningDuringUpdate = j.Value<bool?>(nameof(GameRunningDuringUpdate)) ?? GameRunningDuringUpdate;
+        SupportModdedResources = json.Value<bool?>(nameof(SupportModdedResources)) ?? SupportModdedResources;
+        AutoUpdate = json.Value<bool?>(nameof(AutoUpdate)) ?? AutoUpdate;
+        DidUpdate = json.Value<bool?>(nameof(DidUpdate)) ?? DidUpdate;
+        GameRunningDuringUpdate = json.Value<bool?>(nameof(GameRunningDuringUpdate)) ?? GameRunningDuringUpdate;
 
-        CETInstallLocation = j.Value<string>(nameof(CETInstallLocation)) ?? CETInstallLocation;
-        CacheModdedResources = j.Value<bool?>(nameof(CacheModdedResources)) ?? CacheModdedResources;
+        CETInstallLocation = json.Value<string>(nameof(CETInstallLocation)) ?? CETInstallLocation;
+        CacheModdedResources = json.Value<bool?>(nameof(CacheModdedResources)) ?? CacheModdedResources;
         
-        WindowRecoveryState = j[nameof(WindowRecoveryState)]?.ToObject<WindowRecoveryState>() ?? WindowRecoveryState;
+        WindowRecoveryState = json[nameof(WindowRecoveryState)]?.ToObject<WindowRecoveryState>() ?? WindowRecoveryState;
 
-        CustomSelectionFilePath = j.Value<string>(nameof(CustomSelectionFilePath)) ?? CustomSelectionFilePath;
-        BackupDirectory = j.Value<string>(nameof(BackupDirectory)) ?? BackupDirectory;
-        MaxBackupFiles = j.Value<int?>(nameof(MaxBackupFiles)) ?? MaxBackupFiles;
-        AutoScrollLogViewer = j.Value<bool?>(nameof(AutoScrollLogViewer)) ?? AutoScrollLogViewer;
+        CustomSelectionFilePath = json.Value<string>(nameof(CustomSelectionFilePath)) ?? CustomSelectionFilePath;
+        BackupDirectory = json.Value<string>(nameof(BackupDirectory)) ?? BackupDirectory;
+        MaxBackupFiles = json.Value<int?>(nameof(MaxBackupFiles)) ?? MaxBackupFiles;
+        AutoScrollLogViewer = json.Value<bool?>(nameof(AutoScrollLogViewer)) ?? AutoScrollLogViewer;
         
+        RememberFailedResources = json.Value<bool?>(nameof(RememberFailedResources)) ?? RememberFailedResources;
 
-        DebugMode = j.Value<bool?>(nameof(DebugMode)) ?? DebugMode;
+        DebugMode = json.Value<bool?>(nameof(DebugMode)) ?? DebugMode;
     }
     
     public override string Serialize() => JsonConvert.SerializeObject(this, JsonSerializerPresets.Default);
