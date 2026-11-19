@@ -11,16 +11,12 @@ namespace VolumetricSelection2077.App.Services;
 
 public class DialogService
 {
-    private readonly Window _owner;
-    
-    public DialogService(Window owner)
-    {
-        _owner = owner;
-    }
+    public Window? Owner { get; set; }
     
     public Task<int> ShowDialog(string title, string message, DialogButton[] buttonContents)
     {
-        return ShowDialog(title, message, buttonContents, _owner);
+        ArgumentNullException.ThrowIfNull(Owner);
+        return ShowDialog(title, message, buttonContents, Owner);
     }
     
     public static async Task<int> ShowDialog(string title, string message, DialogButton[] buttonContents, Window owner)

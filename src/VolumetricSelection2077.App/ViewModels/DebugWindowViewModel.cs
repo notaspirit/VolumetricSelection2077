@@ -19,8 +19,6 @@ public class DebugWindowViewModel
         var sp = App.AppHost!.Services;
         DebugServices = new()
         {
-            {nameof(CompareNewSectorBoundsWithStreamingBlock), sp.GetRequiredService<CompareNewSectorBoundsWithStreamingBlock>()},
-            {nameof(ManualTaskPlayground), sp.GetRequiredService<ManualTaskPlayground>()},
             {nameof(TestCache), sp.GetRequiredService<TestCache>()},
             {nameof(TestCacheResizing), sp.GetRequiredService<TestCacheResizing>()},
             {nameof(TestEulerQuatConversion), sp.GetRequiredService<TestEulerQuatConversion>()},
@@ -30,8 +28,6 @@ public class DebugWindowViewModel
             {nameof(TestSectorAABBTime), sp.GetRequiredService<TestSectorAABBTime>()},
             {nameof(TestShpereCheck), sp.GetRequiredService<TestShpereCheck>()},
             {nameof(TestWheezeKitSerialization), sp.GetRequiredService<TestWheezeKitSerialization>()},
-            {nameof(BuildKnownBadSectorVerbose), sp.GetRequiredService<BuildKnownBadSectorVerbose>()},
-            {nameof(AbbrMeshToBlender), sp.GetRequiredService<AbbrMeshToBlender>()}
         };
     }
 }

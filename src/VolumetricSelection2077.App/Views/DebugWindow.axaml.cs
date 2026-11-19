@@ -31,7 +31,8 @@ public partial class DebugWindow : Window
         DataContext = new DebugWindowViewModel(parent);
         _debugWindowViewModel = DataContext as DebugWindowViewModel;
         _mainWindowViewModel = _debugWindowViewModel?.ParentViewModel;
-        _dialogService = new DialogService(this);
+        _dialogService = new DialogService();
+        _dialogService.Owner = this;
         mainWindow = parent as MainWindow;
         
         _dispatcherTimer = new TrackedDispatchTimer() { Interval = TimeSpan.FromSeconds(1) };

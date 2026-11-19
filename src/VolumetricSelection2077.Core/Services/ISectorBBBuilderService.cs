@@ -9,4 +9,5 @@ namespace VolumetricSelection2077.Core.Services;
 public interface ISectorBBBuilderService
 {
     Task<Result> BuildBounds(BuildBoundsMode mode);
+    Task<Result> BuildSectorBounds(string sectorPath, CacheDatabase? database);
 }

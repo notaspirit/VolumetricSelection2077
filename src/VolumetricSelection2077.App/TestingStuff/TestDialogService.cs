@@ -11,7 +11,8 @@ public class TestDialogService
 {
     public static async Task Run(Window owner)
     {
-        var dialogService = new DialogService(owner);
+        var dialogService = new DialogService();
+        dialogService.Owner = owner;
         var resultDynamic = await dialogService.ShowDialog("Test This", "Dynamic Method", new[]
         {
             new DialogButton("Retry", DialogButtonStyling.Primary),

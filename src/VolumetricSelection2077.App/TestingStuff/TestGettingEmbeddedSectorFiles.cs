@@ -9,9 +9,9 @@ namespace VolumetricSelection2077.App.TestingStuff;
 
 public class TestGettingEmbeddedSectorFiles : IDebugTool
 {
-    private readonly GameFileService _gameFileService;
+    private readonly IGameFileService _gameFileService;
     private readonly IArchiveManager _archiveManager;
-    public TestGettingEmbeddedSectorFiles(GameFileService gameFileService,
+    public TestGettingEmbeddedSectorFiles(IGameFileService gameFileService,
         IArchiveManager archiveManager)
     {
         _gameFileService = gameFileService;

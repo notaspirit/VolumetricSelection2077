@@ -6,8 +6,8 @@ namespace VolumetricSelection2077.App.TestingStuff;
 
 public class TestCacheResizing : IDebugTool
 {
-    private readonly CacheService _cacheService;
-    public TestCacheResizing(CacheService cacheService)
+    private readonly ICacheService _cacheService;
+    public TestCacheResizing(ICacheService cacheService)
     {
         _cacheService = cacheService;
     }

@@ -16,10 +16,10 @@ namespace VolumetricSelection2077.App.TestingStuff;
 
 public class TestCache : IDebugTool
 {
-    private readonly GameFileService _gameFileService;
-    private readonly CacheService _cacheService;
+    private readonly IGameFileService _gameFileService;
+    private readonly ICacheService _cacheService;
 
-    public TestCache(GameFileService gameFileService, CacheService cacheService)
+    public TestCache(IGameFileService gameFileService, ICacheService cacheService)
     {
         _gameFileService = gameFileService;
         _cacheService = cacheService;

@@ -6,7 +6,6 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using VolumetricSelection2077.App.Parsers;
 using VolumetricSelection2077.App.Services;
 using VolumetricSelection2077.App.TestingStuff;
 using VolumetricSelection2077.App.Views;
@@ -20,7 +19,6 @@ using WolvenKit.Core.Interfaces;
 using WolvenKit.Core.Services;
 using WolvenKit.RED4.CR2W;
 using WolvenKit.RED4.CR2W.Archive;
-using YamlDotNet.Serialization;
 
 namespace VolumetricSelection2077.App;
 
@@ -60,6 +58,7 @@ public partial class App : Application
             sp.GetRequiredService<SettingsService>(),
             "notaspirit",
             "VolumetricSelection2077"));
+        hostBuilder.Services.AddSingleton<DialogService>();
         
         #endregion
         
@@ -74,8 +73,6 @@ public partial class App : Application
         
         #region Debug Tools
         
-        hostBuilder.Services.AddTransient<CompareNewSectorBoundsWithStreamingBlock>();
-        hostBuilder.Services.AddTransient<ManualTaskPlayground>();
         hostBuilder.Services.AddTransient<TestCache>();
         hostBuilder.Services.AddTransient<TestCacheResizing>();
         hostBuilder.Services.AddTransient<TestEulerQuatConversion>();
@@ -85,19 +82,17 @@ public partial class App : Application
         hostBuilder.Services.AddTransient<TestSectorAABBTime>();
         hostBuilder.Services.AddTransient<TestShpereCheck>();
         hostBuilder.Services.AddTransient<TestWheezeKitSerialization>();
-        hostBuilder.Services.AddTransient<BuildKnownBadSectorVerbose>();
-        hostBuilder.Services.AddTransient<AbbrMeshToBlender>();
         hostBuilder.Services.AddTransient<Benchmarking>();
         
         #endregion
-
-        var desktop = ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
-        hostBuilder.Services.AddSingleton<DialogService>(new DialogService(desktop.MainWindow!));
         
         AppHost = hostBuilder.Build();
         AppHost.Start();
         
+        var desktop = ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
         desktop.MainWindow = new MainWindow();
+        
+        AppHost.Services.GetRequiredService<DialogService>().Owner = desktop.MainWindow;
         
         base.OnFrameworkInitializationCompleted();
     }

@@ -8,8 +8,8 @@ namespace VolumetricSelection2077.App.TestingStuff;
 
 public class TestSectorAABBTime : IDebugTool
 {
-    private readonly SectorBBBuilderService _boundingBoxBuilderService;
-    public TestSectorAABBTime(SectorBBBuilderService boundingBoxBuilderService)
+    private readonly ISectorBBBuilderService _boundingBoxBuilderService;
+    public TestSectorAABBTime(ISectorBBBuilderService boundingBoxBuilderService)
     {
         _boundingBoxBuilderService = boundingBoxBuilderService;
     }
