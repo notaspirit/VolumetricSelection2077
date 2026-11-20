@@ -70,7 +70,7 @@ public partial class MainWindow : Window
         
         _dispatcherTimer = new TrackedDispatchTimer() { Interval = TimeSpan.FromSeconds(1) };
         _dispatcherTimer.Tick += (_, _) => ProgressTextBlock.Text = $"{AppUtils.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
-        _progressService.OnProgressChangedOnUiThread += (_, _) => _progressBar.Value = _progressService.Progress;
+        _progressService.OnProgressChangedOnUiThread += (_, _) => _progressBar.Value = _progressService.Progress * 10;
     }
     
     /// <summary>
