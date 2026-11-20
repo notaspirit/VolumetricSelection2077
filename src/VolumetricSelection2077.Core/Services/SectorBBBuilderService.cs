@@ -20,7 +20,6 @@ public class SectorBBBuilderService : ISectorBBBuilderService
 
     private readonly ICacheService _cacheService;
     private readonly IGameFileService _gameFileService;
-    private readonly IProgressService _progressService;
     private readonly IArchiveManager _archiveManager;
 
     /// <summary>
@@ -28,17 +27,14 @@ public class SectorBBBuilderService : ISectorBBBuilderService
     /// </summary>
     /// <param name="cacheService">Cache service used to enumerate and write sector bounds.</param>
     /// <param name="gameFileService">Game file service used to load sectors, meshes, and PhysX collision meshes.</param>
-    /// <param name="progressService">Progress service used to track progress.</param>
     /// <param name="archiveManager">Archive manager used for indexing game files</param>
     public SectorBBBuilderService(
         ICacheService cacheService,
         IGameFileService gameFileService,
-        IProgressService progressService,
         IArchiveManager archiveManager)
     {
         _cacheService = cacheService;
         _gameFileService = gameFileService;
-        _progressService = progressService;
         _archiveManager = archiveManager;
     }
 
@@ -46,12 +42,14 @@ public class SectorBBBuilderService : ISectorBBBuilderService
     /// Builds bounding boxes for all sectors matching the provided mode.
     /// </summary>
     /// <param name="mode">The sectors to build bounds for.</param>
+    /// <param name="progressService">The <see cref="IProgressService"/> this operation will report to.
+    /// It is assumed that this operation is the only one reporting to this instance.</param>   
     /// <returns>
     /// A result with status <see cref="ResultStatus.Error"/> if the services are not initialized or an
     /// unexpected error occurs, <see cref="ResultStatus.Warning"/> if one or more sectors fail or produce
     /// warnings, and <see cref="ResultStatus.Ok"/> otherwise.
     /// </returns>
-    public async Task<Result> BuildBounds(BuildBoundsMode mode)
+    public async Task<Result> BuildBounds(BuildBoundsMode mode, IProgressService? progressService = null)
     {
         if (!_cacheService.IsInitialized)
             return new Result(ResultStatus.Error, "Cache service is not initialized!");
@@ -63,10 +61,10 @@ public class SectorBBBuilderService : ISectorBBBuilderService
 
         try
         {
-            _progressService.Reset();
-            _progressService.AddSection(new ProgressSection(StartupProgressSection, 1, true));
-            _progressService.AddSection(new ProgressSection(ProcessingProgressSection, 8));
-            _progressService.AddTarget(StartupProgressSection, 1);
+            progressService?.Reset();
+            progressService?.AddSection(new ProgressSection(StartupProgressSection, 1));
+            progressService?.AddSection(new ProgressSection(ProcessingProgressSection, 8));
+            progressService?.AddTarget(StartupProgressSection, 1);
 
             List<string> vanillaSectors = [];
             List<string> moddedSectors = [];
@@ -103,8 +101,8 @@ public class SectorBBBuilderService : ISectorBBBuilderService
                     .Select(x => (Path: x, Database: CacheDatabase.ModdedBounds)))
                 .ToList();
 
-            _progressService.AddTarget(ProcessingProgressSection, (uint)sectors.Count);
-            _progressService.AddProgress(StartupProgressSection, 1);
+            progressService?.AddTarget(ProcessingProgressSection, (uint)sectors.Count);
+            progressService?.AddProgress(StartupProgressSection, 1);
 
             var startListeningResult = _cacheService.StartListening();
             if (startListeningResult.Status == ResultStatus.Error)
@@ -117,7 +115,15 @@ public class SectorBBBuilderService : ISectorBBBuilderService
             Task<Result>[] tasks;
             try
             {
-                tasks = sectors.Select(s => Task.Run(() => BuildSectorBounds(s.Path, s.Database))).ToArray();
+                tasks =
+                [
+                    .. sectors.Select(s => Task.Run(() =>
+                    {
+                        var res = BuildSectorBounds(s.Path, s.Database);
+                        progressService?.AddProgress(ProcessingProgressSection, 1);
+                        return res;
+                    }))
+                ];
                 await Task.WhenAll(tasks);
             }
             finally
@@ -332,10 +338,6 @@ public class SectorBBBuilderService : ISectorBBBuilderService
             result.Status = ResultStatus.Error;
             result.AddMessage($"Failed to build bounding box for {sectorPath}: {e.Message}");
             return result;
-        }
-        finally
-        {
-            _progressService.AddProgress(ProcessingProgressSection, 1);
         }
     }
 

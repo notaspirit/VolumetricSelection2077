@@ -61,6 +61,24 @@ public class ProgressService : IProgressService
             OnProgressChanged?.Invoke(this, EventArgs.Empty);
         }
     }
+    
+    /// <summary>
+    /// Sets the given progress state for the <see cref="IProgressSection.Current"/> value of the section
+    /// identified by <paramref name="sectionId"/>. Does nothing if no such section is registered.
+    /// </summary>
+    /// <param name="sectionId">The identifier of the target section.</param>
+    /// <param name="progress">The progress to set.</param>
+    public void SetProgress(string sectionId, uint progress)
+    {
+        lock (Lock)
+        {
+            if (!_sectionMap.TryGetValue(sectionId, out var section))
+                return;
+
+            section.Current = progress;
+            OnProgressChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
 
     /// <summary>
     /// Adds the given amount to the <see cref="IProgressSection.Target"/> value of the section
@@ -108,9 +126,11 @@ public class ProgressService : IProgressService
     {
         get
         {
-            if (_weightSum == 0) return 0;
+            if (_weightSum == 0)
+                return 0;
+            
             float total = 0;
-            foreach (var section in _sections)
+            foreach (var section in _sections.Where(section => section.Target >= 1))
             {
                 total += section.Progress * section.Weight / _weightSum;
                 if (section is { BlockingDownstreamUpdates: true, IsCompleted: false })

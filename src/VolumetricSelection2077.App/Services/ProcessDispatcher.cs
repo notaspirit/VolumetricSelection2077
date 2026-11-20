@@ -10,16 +10,18 @@ using VolumetricSelection2077.Core.Components;
 using VolumetricSelection2077.Core.Enums;
 using VolumetricSelection2077.Core.Models;
 using VolumetricSelection2077.Core.Services;
-using YamlDotNet.Core.Tokens;
 
 namespace VolumetricSelection2077.App.Services;
 
 public class ProcessDispatcher
 {
+    private const string QueryProgressSection = "query-progress-section";
+    private const string FinalizationProgressSection = "finalization-progress-section";
+    private const string BuildBoundsProgressSection = "build-bounds-progress-section";
+    
     private static string RelativeSelectionFilePath => Path.Combine("bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "VolumetricSelection2077", "data", "selection.json");
     
     private readonly ISelectionService _selectionService;
-    private readonly IProgressService _progressService;
     private readonly ValidationService _validationService;
     private readonly DialogService _dialogService;
     private readonly ISectorBBBuilderService _boundingBoxBuilderService;
@@ -31,7 +33,6 @@ public class ProcessDispatcher
     public ProcessDispatcher(
         ISelectionService selectionService,
         DialogService dialogService,
-        IProgressService progressService,
         ValidationService validationService,
         ISectorBBBuilderService boundingBoxBuilderService,
         SettingsService settings,
@@ -40,7 +41,6 @@ public class ProcessDispatcher
         HttpClient httpClient)
     {
         _selectionService = selectionService;
-        _progressService = progressService;
         _validationService = validationService;
         _dialogService = dialogService;
         _boundingBoxBuilderService = boundingBoxBuilderService;
@@ -50,16 +50,29 @@ public class ProcessDispatcher
         _httpClient = httpClient;
     }
 
-    public async Task<Result> StartProcess(string? customRemovalFile = null)
+    public async Task<Result> StartProcess(string? customRemovalFile = null, IProgressService? progressService = null)
     {
         var result = new Result { Status = ResultStatus.Ok };
         
         Logger.Info("Validating inputs...");
 
+        progressService?.AddSection(
+            new ProgressSection(QueryProgressSection, 9)
+            {
+                Current = 0,
+                Target = 1000
+            });
+        progressService?.AddSection(
+            new ProgressSection(FinalizationProgressSection, 1)
+            {
+                Current = 0,
+                Target = 1
+            });
+        
         try
         {
             var validationResult = _validationService.ValidateInput(_settings.Data.GameDirectory, _settings.Data.OutputFilename);
-            if (!await EvaluateInputValidation(validationResult))
+            if (!await EvaluateInputValidation(validationResult, progressService))
             {
                 result.Status = ResultStatus.Error;
                 result.AddMessage("Invalid inputs, see log for details");
@@ -75,16 +88,6 @@ public class ProcessDispatcher
         }
         
         Logger.Info("Querying world data...");
-        
-        _progressService.AddSection(
-            new ProgressSection(ProgressSections.MainTaskFinalization, 1)
-            {
-                Current = 0,
-                Target = 1,
-                Weight = 1
-            });
-        
-        _progressService.Reset();
         
         if (customRemovalFile != null && !File.Exists(customRemovalFile))
         {
@@ -137,7 +140,17 @@ public class ProcessDispatcher
             return result;
         }
 
-        var queryResult = await _selectionService.QueryWorldData(query);
+        ProgressService? queryProgressService = null;
+        if (progressService is not null)
+        {
+            queryProgressService = new ProgressService();
+            queryProgressService.OnProgressChanged += ReportQueryProgress;
+        }
+        
+        var queryResult = await _selectionService.QueryWorldData(query, queryProgressService);
+        
+        if (queryProgressService is not null) 
+            queryProgressService.OnProgressChanged -= ReportQueryProgress;
 
         switch (queryResult.Status)
         {
@@ -162,7 +175,14 @@ public class ProcessDispatcher
         
         _postProcessingService.Run(queryResult.Data);
         
+        progressService?.AddProgress(FinalizationProgressSection, 1);
+        
         return result;
+
+        void ReportQueryProgress(object? sender, EventArgs args)
+        {
+            progressService?.SetProgress(QueryProgressSection, (uint)(queryProgressService.Progress * 10));
+        }
     }
 
     private void ConfigureQuery(VSQuery query)
@@ -194,13 +214,14 @@ public class ProcessDispatcher
             query.Filters.Add(resourcePathFilter);
         }
     }
-    
-     /// <summary>
+
+    /// <summary>
     /// Logs and Evaluates ValidationServiceResult
     /// </summary>
     /// <param name="vr"></param>
+    /// <param name="parentProgress"></param>
     /// <returns>true if all are valid, false if at least one is invalid</returns>
-    private async Task<bool> EvaluateInputValidation(Enums.InputValidationResult vr)
+    private async Task<bool> EvaluateInputValidation(Enums.InputValidationResult vr, IProgressService? parentProgress = null)
     {
         int invalidCount = 0;
         bool invalidRegex = false;
@@ -311,7 +332,32 @@ public class ProcessDispatcher
                     Logger.Info("Building Sector Bounds...");
                     try
                     {
-                        await _boundingBoxBuilderService.BuildBounds(BuildBoundsMode.Vanilla);
+                        IProgressService? boundsProgress = null;
+                        
+                        if (parentProgress != null)
+                        {
+                            parentProgress.AddSection(new ProgressSection(BuildBoundsProgressSection, 90)
+                            {
+                                Current = 0,
+                                Target = 1000
+                            });
+
+                            boundsProgress = new ProgressService();
+                            boundsProgress.OnProgressChanged += ReportBoundsProgress;
+                        }
+                        
+                        await _boundingBoxBuilderService.BuildBounds(BuildBoundsMode.Vanilla, boundsProgress);
+
+                        if (boundsProgress != null)
+                        {
+                            boundsProgress.OnProgressChanged -= ReportBoundsProgress;
+                        }
+                        
+                        void ReportBoundsProgress(object? sender, EventArgs args)
+                        {
+                            parentProgress?.SetProgress(BuildBoundsProgressSection, (uint)(boundsProgress.Progress * 10));
+                        }
+                        
                         Logger.Success("Vanilla Sector BBs       : OK");
                     }
                     catch (Exception e)

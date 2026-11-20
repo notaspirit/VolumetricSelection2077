@@ -15,6 +15,7 @@ using VolumetricSelection2077.App.Extensions;
 using VolumetricSelection2077.App.Models;
 using VolumetricSelection2077.App.ViewModels;
 using VolumetricSelection2077.App.ViewStructures;
+using VolumetricSelection2077.Core.Components;
 using VolumetricSelection2077.Core.Enums;
 using VolumetricSelection2077.Core.Services;
 using WolvenKit.Common;
@@ -22,6 +23,8 @@ using WolvenKit.Common;
 namespace VolumetricSelection2077.App.Views;
 public partial class MainWindow : Window
 {
+    private const string FindSelectionProgressSection = "find-selection-progress";
+    
     private readonly ProcessDispatcher _processService;
     private readonly MainWindowViewModel _mainWindowViewModel;
     private readonly ProgressBar _progressBar;
@@ -102,12 +105,23 @@ public partial class MainWindow : Window
     private async void FindSelectedButton_Click(object? sender, RoutedEventArgs e)
     {
         if (_mainWindowViewModel.IsProcessing) return;
+        
         _dispatcherTimer.Start();
+        var processProgress = new ProgressService();
+        processProgress.OnProgressChanged += ReportProcessProgress;
         try
         {
             _mainWindowViewModel.MainTaskProcessing = true;
             AddQueuedFilters();
-            var result = await Task.Run(() => _processService.StartProcess());
+            
+            _progressService.Clear();
+            _progressService.AddSection(new ProgressSection(FindSelectionProgressSection, 1)
+            {
+                Current = 0,
+                Target = 1000
+            });
+            
+            var result = await Task.Run(() => _processService.StartProcess(null, processProgress));
             if (result.Status == ResultStatus.Error)
             {
                 Logger.Error($"Process failed: {result.Message}");
@@ -119,10 +133,18 @@ public partial class MainWindow : Window
         }
         finally
         {
+            processProgress.OnProgressChanged -= ReportProcessProgress;
             _dispatcherTimer.Stop();
             var formattedTime = AppUtils.FormatElapsedTime(_dispatcherTimer.Elapsed);
             Logger.Info($"Process finished after: {formattedTime}");
             _mainWindowViewModel.MainTaskProcessing = false;
+        }
+
+        return;
+
+        void ReportProcessProgress(object? progressSender, EventArgs args)
+        {
+            _progressService.SetProgress(FindSelectionProgressSection, (uint)(processProgress.Progress * 10));
         }
     }
     

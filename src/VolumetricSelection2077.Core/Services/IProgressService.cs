@@ -27,6 +27,14 @@ public interface IProgressService
     void AddProgress(string sectionId, uint progress);
 
     /// <summary>
+    /// Sets the given progress state for the <see cref="IProgressSection.Current"/> value of the section
+    /// identified by <paramref name="sectionId"/>. Does nothing if no such section is registered.
+    /// </summary>
+    /// <param name="sectionId">The identifier of the target section.</param>
+    /// <param name="progress">The progress to set.</param>
+    public void SetProgress(string sectionId, uint progress);
+
+    /// <summary>
     /// Adds the given amount to the <see cref="IProgressSection.Target"/> value of the section
     /// identified by <paramref name="sectionId"/>. Does nothing if no such section is registered.
     /// </summary>

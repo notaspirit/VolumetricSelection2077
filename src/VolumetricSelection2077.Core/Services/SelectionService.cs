@@ -31,41 +31,39 @@ public class SelectionService : ISelectionService
     
     private readonly ICacheService _cacheService;
     private readonly IGameFileService _gameFileService;
-    private readonly IProgressService _progressService;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="SelectionService"/> class.
     /// </summary>
     /// <param name="cacheService">Cache service used to enumerate and listen for sector bounds.</param>
     /// <param name="gameFileService">Game file service used to load sectors, meshes, and PhysX collision meshes.</param>
-    /// <param name="progressService">Progress service used to track progress.</param>
     public SelectionService(ICacheService cacheService,
-        IGameFileService gameFileService,
-        IProgressService progressService)
+        IGameFileService gameFileService)
     {
         _cacheService = cacheService;
         _gameFileService = gameFileService;
-        _progressService = progressService;
     }
     
     /// <summary>
     /// Queries all cached sectors that intersect the query volume and builds a complete AXL removal file.
     /// </summary>
     /// <param name="query">The selection query containing the bounds, data source, and node filters.</param>
+    /// <param name="progressService">The <see cref="IProgressService"/> this operation will report to.
+    /// It is assumed that this operation is the only one reporting to this instance.</param>
     /// <returns>
     /// A result containing the removal file. The status is <see cref="ResultStatus.Warning"/> when one or
     /// more sectors fail or produce warnings; <c>Data</c> is only set when at least one sector has deletions.
     /// </returns>
-    public async Task<Result<AxlRemovalFile>> QueryWorldData(VSQuery query)
+    public async Task<Result<AxlRemovalFile>> QueryWorldData(VSQuery query, IProgressService? progressService = null)
     {
         var result = new Result<AxlRemovalFile>
         {
             Status = ResultStatus.Ok
         };
-        _progressService.Reset();
-        _progressService.AddSection(new ProgressSection(SectorBoundsFiltering, 1, true));
-        _progressService.AddSection(new ProgressSection(SectorQuerying, 8, true));
-        _progressService.AddTarget(SectorBoundsFiltering, 1);
+        
+        progressService?.AddSection(new ProgressSection(SectorBoundsFiltering, 1, true));
+        progressService?.AddSection(new ProgressSection(SectorQuerying, 8, true));
+        progressService?.AddTarget(SectorBoundsFiltering, 1);
         var startListeningResult = _cacheService.StartListening();
         if (startListeningResult.Status == ResultStatus.Error)
         {
@@ -88,14 +86,14 @@ public class SelectionService : ISelectionService
                 query.AABB.Contains(MessagePackSerializer.Deserialize<BoundingBox>(s.Value)) != ContainmentType.Disjoint)
             .Select(s => s.Key).ToArray();
         
-        _progressService.AddTarget(SectorQuerying, (uint)localSectors.Length);
-        _progressService.AddProgress(SectorBoundsFiltering, 1);
+        progressService?.AddTarget(SectorQuerying, (uint)localSectors.Length);
+        progressService?.AddProgress(SectorBoundsFiltering, 1);
         
         var sectorResults = 
             localSectors.Select(sectorPath => Task.Run(() =>
             {
                 var res = QuerySector(sectorPath, query);
-                _progressService.AddProgress(SectorQuerying, 1);
+                progressService?.AddProgress(SectorQuerying, 1);
                 return res;
             })).ToArray();
         await Task.WhenAll(sectorResults);
