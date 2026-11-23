@@ -9,5 +9,5 @@ public class VSQuery
     public WorldDataSource DataSource { get; set; }
     public BoundingBox AABB { get; set; }
     public OrientedBoundingBox OBB { get; set; }
-    public List<IVSNodeQueryFilter> Filters { get; set; }
+    public List<IVSNodeQueryFilter> Filters { get; set; } = [];
 }
