@@ -176,7 +176,7 @@ public class SelectionService : ISelectionService
         };
 
         var nodeResults =
-            sectorResult.Data.NodeData.Select((nodeData, i) => Task.Run(() => QueryNode(nodeData, sectorResult.Data.Nodes[i], i, query))).ToArray();
+            sectorResult.Data.NodeData.Select((nodeData, i) => Task.Run(() => QueryNode(nodeData, sectorResult.Data.Nodes[nodeData.NodeIndex], i, query))).ToArray();
         await Task.WhenAll(nodeResults);
 
         var i = 0;
