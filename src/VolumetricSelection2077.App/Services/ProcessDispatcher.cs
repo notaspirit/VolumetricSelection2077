@@ -346,11 +346,26 @@ public class ProcessDispatcher
                             boundsProgress.OnProgressChanged += ReportBoundsProgress;
                         }
                         
-                        await _boundingBoxBuilderService.BuildBounds(BuildBoundsMode.Vanilla, boundsProgress);
-
+                        var boundsRes = await _boundingBoxBuilderService.BuildBounds(BuildBoundsMode.Vanilla, boundsProgress);
+                        
                         if (boundsProgress != null)
                         {
                             boundsProgress.OnProgressChanged -= ReportBoundsProgress;
+                        }
+                        
+                        switch (boundsRes.Status)
+                        {
+                            case ResultStatus.Warning:
+                                Logger.Warning($"Build bounds with warning: {boundsRes.Message}");
+                                break;
+                            case ResultStatus.Error:
+                                Logger.Warning($"Failed to build bounds with error: {boundsRes.Message}");
+                                invalidCount++;
+                                break;
+                            case ResultStatus.Ok:
+                            default:
+                                Logger.Success("Vanilla Sector BBs       : OK");
+                                break;
                         }
                         
                         void ReportBoundsProgress(object? sender, EventArgs args)
@@ -358,7 +373,7 @@ public class ProcessDispatcher
                             parentProgress?.SetProgress(BuildBoundsProgressSection, (uint)(boundsProgress.Progress * 10));
                         }
                         
-                        Logger.Success("Vanilla Sector BBs       : OK");
+                        
                     }
                     catch (Exception e)
                     {
@@ -399,13 +414,49 @@ public class ProcessDispatcher
             switch (dialogResult)
             {
                 case 0:
-                    await _boundingBoxBuilderService.BuildBounds(
+                {
+                    var boundsRes = await _boundingBoxBuilderService.BuildBounds(
                         BuildBoundsMode.MissingModded);
+
+                    switch (boundsRes.Status)
+                    {
+                        case ResultStatus.Warning:
+                            Logger.Warning($"Build bounds with warning: {boundsRes.Message}");
+                            break;
+                        case ResultStatus.Error:
+                            Logger.Warning($"Failed to build bounds with error: {boundsRes.Message}");
+                            invalidCount++;
+                            break;
+                        case ResultStatus.Ok:
+                        default:
+                            Logger.Success("Modded Sector BBs        : OK");
+                            break;
+                    }
+
                     break;
+                }
                 case 1:
-                    await _boundingBoxBuilderService.BuildBounds(
+                {
+                    var boundsRes = await _boundingBoxBuilderService.BuildBounds(
                         BuildBoundsMode.RebuildModded);
+
+                    switch (boundsRes.Status)
+                    {
+                        case ResultStatus.Warning:
+                            Logger.Warning($"Build bounds with warning: {boundsRes.Message}");
+                            break;
+                        case ResultStatus.Error:
+                            Logger.Warning($"Failed to build bounds with error: {boundsRes.Message}");
+                            invalidCount++;
+                            break;
+                        case ResultStatus.Ok:
+                        default:
+                            Logger.Success("Modded Sector BBs        : OK");
+                            break;
+                    }
+
                     break;
+                }
                 case 2:
                     Logger.Warning("Modded Sector BBs        : User Ignored");
                     break;
