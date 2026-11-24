@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
-using VolumetricSelection2077.App.Enums;
 using VolumetricSelection2077.Core.Enums;
 using VolumetricSelection2077.Core.Json.Helpers;
 using VolumetricSelection2077.Core.Models;
@@ -14,6 +13,7 @@ namespace VolumetricSelection2077.App.Services;
 
 public partial class PostProcessingService
 {
+    /*
     /// <summary>
     /// Saves the AxlRemovalFile as a world builder prefab
     /// </summary>
@@ -59,12 +59,12 @@ public partial class PostProcessingService
             Logger.Warning($"Encountered warnings while converting to WorldBuilder: {convertedData.Message}");
         
         if (convertedData.Data.EmbeddedFiles.Count > 0)
-            Logger.Warning($"The following files are embedded and must be extracted for reliable use:\n {AppUtils.FormatDictionaryForDisplay(convertedData.Data.EmbeddedFiles)}");
+            Logger.Warning($"The following files are embedded and must be extracted for reliable use:\n {Utils.FormatDictionaryForDisplay(convertedData.Data.EmbeddedFiles)}");
         
         Logger.Success($"Found {convertedData.Data.RootElement.Children.OfType<PositionableGroup>().Sum(g => g.Children.Count)} WorldBuilder elements");
         if (!File.Exists(favoritesPath))
         {
-            if (_settingsService.Data.SaveMode == SaveFileMode.Subtract)
+            if (_settingsService.Data.SaveMode == FilePostProcessingMode.Subtract)
             {
                 Logger.Error($"No Existing File to remove from found at {favoritesPath}");
                 return;
@@ -84,7 +84,7 @@ public partial class PostProcessingService
             
             switch (_settingsService.Data.SaveMode)
             {
-                case SaveFileMode.Overwrite:
+                case FilePostProcessingMode.Overwrite:
                     var existingOverwritePrefab = existingFavorites?.Favorites.FirstOrDefault(f => f.Name == _settingsService.Data.OutputFilename);
                     if (existingOverwritePrefab != null)
                     {
@@ -95,7 +95,7 @@ public partial class PostProcessingService
                     else
                         goto newPrefab;
                     break;
-                case SaveFileMode.Extend:
+                case FilePostProcessingMode.Extend:
                     var existingExtendPrefab = existingFavorites?.Favorites.FirstOrDefault(f => f.Name == _settingsService.Data.OutputFilename);
                     if (existingExtendPrefab != null)
                     {
@@ -111,7 +111,7 @@ public partial class PostProcessingService
                     else
                         goto newPrefab;
                     break;
-                case SaveFileMode.New:
+                case FilePostProcessingMode.New:
                     newPrefab:
                     var existingNewPrefab = existingFavorites?.Favorites.FirstOrDefault(f => f.Name == _settingsService.Data.OutputFilename);
                     if (existingNewPrefab == null)
@@ -135,7 +135,7 @@ public partial class PostProcessingService
                         logMessage = $"Created prefab {newOutputFilename} at {favoritesPath}";
                     }
                     break;
-                case SaveFileMode.Subtract:
+                case FilePostProcessingMode.Subtract:
                     var existingSubtractPrefab = existingFavorites?.Favorites.FirstOrDefault(f => f.Name == _settingsService.Data.OutputFilename);
                     if (existingSubtractPrefab != null)
                     {
@@ -165,4 +165,5 @@ public partial class PostProcessingService
         Logger.Info(logMessage);
         WriteBackupFile(favoritesPath, serialized);
     }
+    */
 }

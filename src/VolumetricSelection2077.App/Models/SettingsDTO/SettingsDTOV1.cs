@@ -10,6 +10,7 @@ using Newtonsoft.Json.Linq;
 using VolumetricSelection2077.App.Enums;
 using VolumetricSelection2077.Core.Enums;
 using VolumetricSelection2077.Core.Extensions;
+using VolumetricSelection2077.Core.Services;
 
 namespace VolumetricSelection2077.App.Models.SettingsDTO;
 
@@ -34,7 +35,7 @@ public partial class SettingsDTOV1 : SettingsDTO
     [ObservableProperty] private bool _filterModeOr;
     [ObservableProperty] private bool _isFiltersMWVisible;
     [ObservableProperty] private bool _isParametersMWVisible;
-    [ObservableProperty] private SaveFileMode _saveMode;
+    [ObservableProperty] private FilePostProcessingMode _postProcessingMode;
     [ObservableProperty] private DestructibleMeshTreatment _destructibleMeshTreatment;
     [ObservableProperty] private bool _autoUpdate;
     [ObservableProperty] private bool _didUpdate;
@@ -61,7 +62,7 @@ public partial class SettingsDTOV1 : SettingsDTO
         SaveFileLocation = SaveFileLocation.GameDirectory;
         OutputDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "output");
         OutputFilename = "";
-        NodeTypeFilter = [.. AppUtils.WorldNodeNames];
+        NodeTypeFilter = [.. Utils.WorldNodeNames];
         ResourceNameFilter = [];
         DebugNameFilter = [];
         FilterModeOr = true;
@@ -69,7 +70,7 @@ public partial class SettingsDTOV1 : SettingsDTO
         IsParametersMWVisible = false;
         SaveFileFormat = SaveFileFormat.ArchiveXLJson;
         DestructibleMeshTreatment = DestructibleMeshTreatment.DynamicMesh;
-        SaveMode = SaveFileMode.New;
+        PostProcessingMode = FilePostProcessingMode.New;
         SupportModdedResources = false;
         CacheModdedResources = true;
         AutoUpdate = true;

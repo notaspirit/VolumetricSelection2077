@@ -80,7 +80,7 @@ public static class SettingsDtoHelper
         v1.FilterModeOr = v0.FilterModeOr;
         v1.IsFiltersMWVisible = v0.IsFiltersMWVisible;
         v1.IsParametersMWVisible = v0.IsParametersMWVisible;
-        v1.SaveMode = v0.SaveMode;
+        v1.PostProcessingMode = v0.PostProcessingMode;
         v1.DestructibleMeshTreatment = v0.DestructibleMeshTreatment;
         v1.AutoUpdate = v0.AutoUpdate;
         v1.DidUpdate = v0.DidUpdate;

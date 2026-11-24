@@ -69,7 +69,7 @@ public partial class MainWindow : Window
         _progressBar = progressBar;
         
         _dispatcherTimer = new TrackedDispatchTimer() { Interval = TimeSpan.FromSeconds(1) };
-        _dispatcherTimer.Tick += (_, _) => ProgressTextBlock.Text = $"{AppUtils.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
+        _dispatcherTimer.Tick += (_, _) => ProgressTextBlock.Text = $"{Utils.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
         _progressService.OnProgressChangedOnUiThread += (_, _) => _progressBar.Value = _progressService.Progress * 10;
     }
     
@@ -149,7 +149,7 @@ public partial class MainWindow : Window
         {
             processProgress.OnProgressChanged -= ReportProcessProgress;
             _dispatcherTimer.Stop();
-            var formattedTime = AppUtils.FormatElapsedTime(_dispatcherTimer.Elapsed);
+            var formattedTime = Utils.FormatElapsedTime(_dispatcherTimer.Elapsed);
             Logger.Info($"Process finished after: {formattedTime}");
             _mainWindowViewModel.MainTaskProcessing = false;
         }
@@ -470,7 +470,7 @@ public partial class MainWindow : Window
             Logger.Exception(ex, "Failed to Check for Updates.");
         }
 
-        AppUtils.InitializeCNames();
+        Utils.InitializeCNames();
         
         var sw = Stopwatch.StartNew();
         
@@ -480,7 +480,7 @@ public partial class MainWindow : Window
         await Task.Run(() => am.Initialize(new FileInfo(ss.Data.GameExecutable)));
         
         sw.Stop();
-        Logger.Info($"Initialized Archive Manager in {AppUtils.FormatElapsedTime(sw.Elapsed)}");
+        Logger.Info($"Initialized Archive Manager in {Utils.FormatElapsedTime(sw.Elapsed)}");
         
         _mainWindowViewModel.AppInitialized = true;
         _mainWindowViewModel.IsProcessing = false;

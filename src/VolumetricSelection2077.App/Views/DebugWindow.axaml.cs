@@ -36,7 +36,7 @@ public partial class DebugWindow : Window
         mainWindow = parent as MainWindow;
         
         _dispatcherTimer = new TrackedDispatchTimer() { Interval = TimeSpan.FromSeconds(1) };
-        _dispatcherTimer.Tick += (s, e) => mainWindow.ProgressTextBlock.Text = $"{AppUtils.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
+        _dispatcherTimer.Tick += (s, e) => mainWindow.ProgressTextBlock.Text = $"{Utils.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
         
         Closing += OnClosing;
     }
@@ -63,7 +63,7 @@ public partial class DebugWindow : Window
         finally
         {
             _dispatcherTimer.Stop();
-            string formattedTime = AppUtils.FormatElapsedTime(_dispatcherTimer.Elapsed);
+            string formattedTime = Utils.FormatElapsedTime(_dispatcherTimer.Elapsed);
             Logger.Info($"Benchmarking finished after: {formattedTime}");
             _mainWindowViewModel.BenchmarkProcessing = false;
             _debugWindowViewModel.IsProcessing = false;

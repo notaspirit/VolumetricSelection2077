@@ -124,7 +124,7 @@ namespace VolumetricSelection2077.App.Services
             if (!File.Exists(gameExePath))
                 throw new ArgumentException("Could not find Game Executable.");
 
-            string? version = AppUtils.GetExeVersion(gameExePath);
+            string? version = Utils.GetExeVersion(gameExePath);
             if (version != metadata.GameVersion)
                 return false;
 

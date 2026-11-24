@@ -351,7 +351,7 @@
                         IsVisible="{Binding IsParameterSelectionVisible}"
                         ItemsSource="{Binding SaveFileModes}"
                         Margin="5"
-                        SelectedItem="{Binding SelectedSaveFileMode, Mode=TwoWay}" />
+                        SelectedItem="{Binding SelectedFilePostProcessingMode, Mode=TwoWay}" />
                     <TextBlock
                         Grid.Column="0"
                         Grid.Row="1"

@@ -1,9 +1,14 @@
 
+using System.Globalization;
 using System.Reflection;
+using Newtonsoft.Json;
 using PeNet.Header.Resource;
+using VolumetricSelection2077.Core.Models;
 using VolumetricSelection2077.Core.Models.WorldBuilder.Spawn.Collision;
 using WolvenKit.RED4.Types;
 using WolvenKit.RED4.Types.Pools;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace VolumetricSelection2077.Core.Services
 {
@@ -155,5 +160,33 @@ namespace VolumetricSelection2077.Core.Services
         
         public static Type[] WorldNodeTypes => _worldNodeTypes.Value;
         public static string[] WorldNodeNames => _worldNodeNames.Value;
+        
+        public static string Capitalize(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            return char.ToUpper(input[0], CultureInfo.InvariantCulture) + input[1..];
+        }
+        
+        public static AxlRemovalFile? TryParseAxlRemovalFile(string input)
+        {
+            try
+            {
+                return JsonConvert.DeserializeObject<AxlRemovalFile>(input);
+            }
+            catch (JsonException) { }
+            
+            try
+            {
+                var deserializer = new DeserializerBuilder()
+                    .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                    .Build();
+                return deserializer.Deserialize<AxlRemovalFile>(input);
+            }
+            catch (YamlDotNet.Core.YamlException) { }
+            
+            return null;
+        }
     }
 }

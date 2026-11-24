@@ -13,7 +13,7 @@ public class AppCacheService : CacheService, IDisposable
 
     public AppCacheService(SettingsService settingsService)
         : base(settingsService.Data.CacheDirectory,
-            AppUtils.GetExeVersion(settingsService.Data.GameExecutable),
+            Utils.GetExeVersion(settingsService.Data.GameExecutable),
             !settingsService.Data.CacheEnabled)
     {
         _settingsService = settingsService;

@@ -38,7 +38,7 @@ public partial class SettingsDTOV0 : SettingsDTO
     [ObservableProperty] private bool _filterModeOr;
     [ObservableProperty] private bool _isFiltersMWVisible;
     [ObservableProperty] private bool _isParametersMWVisible;
-    [ObservableProperty] private SaveFileMode _saveMode;
+    [ObservableProperty] private FilePostProcessingMode _postProcessingMode;
     [ObservableProperty] private DestructibleMeshTreatment _destructibleMeshTreatment;
     [ObservableProperty] private bool _autoUpdate;
     [ObservableProperty] private bool _didUpdate;
@@ -74,7 +74,7 @@ public partial class SettingsDTOV0 : SettingsDTO
         IsParametersMWVisible = false;
         SaveFileFormat = SaveFileFormat.ArchiveXLJson;
         DestructibleMeshTreatment = DestructibleMeshTreatment.DynamicMesh;
-        SaveMode = SaveFileMode.New;
+        PostProcessingMode = FilePostProcessingMode.New;
         SupportModdedResources = false;
         CacheModdedResources = true;
         AutoUpdate = true;
@@ -133,7 +133,7 @@ public partial class SettingsDTOV0 : SettingsDTO
         IsFiltersMWVisible = json.Value<bool?>(nameof(IsFiltersMWVisible)) ?? IsFiltersMWVisible;
         IsParametersMWVisible = json.Value<bool?>(nameof(IsParametersMWVisible)) ?? IsParametersMWVisible;
 
-        SaveMode = (SaveFileMode?)json.Value<long?>(nameof(SaveMode)) ?? SaveMode;
+        PostProcessingMode = (FilePostProcessingMode?)json.Value<long?>("SaveMode") ?? PostProcessingMode;
         SaveFileFormat = (SaveFileFormat?)json.Value<long?>(nameof(SaveFileFormat)) ?? SaveFileFormat;
         DestructibleMeshTreatment = (DestructibleMeshTreatment?)json.Value<long?>(nameof(DestructibleMeshTreatment)) ?? DestructibleMeshTreatment;
         

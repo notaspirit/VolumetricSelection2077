@@ -125,7 +125,7 @@ namespace VolumetricSelection2077.App.ViewModels
         public string FilterSectionButtonLabel => Labels.FilterCollapseButton +
                                                   $" [ {(Settings.Data.DebugNameFilter.Count == 0 ? 0 : 1) 
                                                         + (Settings.Data.ResourceNameFilter.Count == 0 ? 0 : 1) 
-                                                        + (Settings.Data.NodeTypeFilter.Count == AppUtils.WorldNodeNames.Length ? 0 : 1)} / 3 ]";
+                                                        + (Settings.Data.NodeTypeFilter.Count == Utils.WorldNodeNames.Length ? 0 : 1)} / 3 ]";
         public bool IsFilterSelectionVisible
         {
             get => Settings.Data.IsFiltersMWVisible;
@@ -137,15 +137,15 @@ namespace VolumetricSelection2077.App.ViewModels
             }
         }
         
-        public ObservableCollection<SaveFileMode> SaveFileModes { get; set; }
+        public ObservableCollection<FilePostProcessingMode> SaveFileModes { get; set; }
 
-        public SaveFileMode SelectedSaveFileMode
+        public FilePostProcessingMode SelectedFilePostProcessingMode
         {
-            get => Settings.Data.SaveMode;
+            get => Settings.Data.PostProcessingMode;
             set
             {
-                Settings.Data.SaveMode = value;
-                OnPropertyChanged(nameof(SelectedSaveFileMode));
+                Settings.Data.PostProcessingMode = value;
+                OnPropertyChanged(nameof(SelectedFilePostProcessingMode));
                 Settings.SaveSettings();
             }
         }
@@ -262,7 +262,7 @@ namespace VolumetricSelection2077.App.ViewModels
             _resourceNameFilter.CollectionChanged += ResourceNameFilter_CollectionChanged;
             Settings.Data.DebugNameFilter.CollectionChanged += DebugNameFilter_CollectionChanged;
             _nodeTypeFilterItems = new();
-            foreach (var nodeTypeName in AppUtils.WorldNodeNames)
+            foreach (var nodeTypeName in Utils.WorldNodeNames)
             {
                 var item = new NodeTypeFilterItem(nodeTypeName, Settings.Data.NodeTypeFilter);
                 item.PropertyChanged += OnNodeTypeFilterItemChanged;
@@ -272,7 +272,7 @@ namespace VolumetricSelection2077.App.ViewModels
             CheckedCount = NodeTypeFilterItems.Count(item => item.IsChecked);
             _searchQuery = "";
             
-            SaveFileModes = new ObservableCollection<SaveFileMode>(Enum.GetValues(typeof(SaveFileMode)).Cast<SaveFileMode>());
+            SaveFileModes = new ObservableCollection<FilePostProcessingMode>(Enum.GetValues(typeof(FilePostProcessingMode)).Cast<FilePostProcessingMode>());
             SaveFileFormats = new ObservableCollection<SaveFileFormat>(Enum.GetValues(typeof(SaveFileFormat)).Cast<SaveFileFormat>());
             SaveFileLocations = new ObservableCollection<SaveFileLocation>(Enum.GetValues(typeof(SaveFileLocation)).Cast<SaveFileLocation>());
             DestructibleMeshTreatments = new ObservableCollection<DestructibleMeshTreatment>(Enum.GetValues(typeof(DestructibleMeshTreatment)).Cast<DestructibleMeshTreatment>());

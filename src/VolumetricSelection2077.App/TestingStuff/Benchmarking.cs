@@ -128,7 +128,7 @@ public class Benchmarking
 
     private ProcessDispatcher BuildDispatcher(SettingsService settingsService, string outputFilePath)
     {
-        var postProcessingService = new PostProcessingService(settingsService, _progress, _gfs, new AxlRemovalToWorldBuilderConverter(_gfs, _archiveManager), outputFilePath, false);
+        var postProcessingService = new AppPostProcessingService(settingsService, new AxlRemovalToWorldBuilderConverter(_gfs, _archiveManager), outputFilePath, false);
         var processService = new SelectionService(_cacheService, _gfs);
         return new ProcessDispatcher(processService, _dialogService,
             _validationService, _boundingBoxBuilderService,

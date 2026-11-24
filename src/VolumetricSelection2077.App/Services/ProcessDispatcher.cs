@@ -27,7 +27,7 @@ public class ProcessDispatcher
     private readonly ISectorBBBuilderService _boundingBoxBuilderService;
     private readonly SettingsService _settings;
     private readonly ICacheService _cacheService;
-    private readonly PostProcessingService _postProcessingService;
+    private readonly AppPostProcessingService _appPostProcessingService;
     private readonly HttpClient _httpClient;
     
     public ProcessDispatcher(
@@ -37,7 +37,7 @@ public class ProcessDispatcher
         ISectorBBBuilderService boundingBoxBuilderService,
         SettingsService settings,
         ICacheService cacheService,
-        PostProcessingService postProcessingService,
+        AppPostProcessingService appPostProcessingService,
         HttpClient httpClient)
     {
         _selectionService = selectionService;
@@ -46,7 +46,7 @@ public class ProcessDispatcher
         _boundingBoxBuilderService = boundingBoxBuilderService;
         _settings = settings;
         _cacheService = cacheService;
-        _postProcessingService = postProcessingService;
+        _appPostProcessingService = appPostProcessingService;
         _httpClient = httpClient;
     }
 
@@ -174,7 +174,14 @@ public class ProcessDispatcher
             return result;
         }
         
-        _postProcessingService.Run(queryResult.Data);
+        var nodeCount = queryResult.Data.Streaming.Sectors.Select(s => s.NodeDeletions.Count).Sum();
+        var actorCount = queryResult.Data.Streaming.Sectors.SelectMany(s => s.NodeDeletions).Sum(n => n.ActorDeletions.Count);
+        Logger.Info($"Found {nodeCount} node deletions and {actorCount} actor deletions across {queryResult.Data.Streaming.Sectors.Count} sectors");
+        
+        var postProcessRes = _appPostProcessingService.Run(queryResult.Data);
+        result.Status = postProcessRes.Status;
+        if (postProcessRes.Message != string.Empty)
+            result.AddMessage(postProcessRes.Message);
         
         progressService?.AddProgress(FinalizationProgressSection, 1);
         
@@ -280,7 +287,7 @@ public class ProcessDispatcher
             invalidRegex = true;
         }
 
-        if (_settings.Data.SaveMode == Enums.SaveFileMode.Subtract)
+        if (_settings.Data.PostProcessingMode == FilePostProcessingMode.Subtract)
         {
             if (vr.SubtractionTargetExists)
             {
