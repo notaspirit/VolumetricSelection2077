@@ -43,13 +43,14 @@ public class SectorBBBuilderService : ISectorBBBuilderService
     /// </summary>
     /// <param name="mode">The sectors to build bounds for.</param>
     /// <param name="progressService">The <see cref="IProgressService"/> this operation will report to.
-    /// It is assumed that this operation is the only one reporting to this instance.</param>   
+    /// It is assumed that this operation is the only one reporting to this instance.</param>
+    /// <param name="verbose">If true logs every missing resource</param>
     /// <returns>
     /// A result with status <see cref="ResultStatus.Error"/> if the services are not initialized or an
     /// unexpected error occurs, <see cref="ResultStatus.Warning"/> if one or more sectors fail or produce
     /// warnings, and <see cref="ResultStatus.Ok"/> otherwise.
     /// </returns>
-    public async Task<Result> BuildBounds(BuildBoundsMode mode, IProgressService? progressService = null)
+    public async Task<Result> BuildBounds(BuildBoundsMode mode, IProgressService? progressService = null, bool verbose = false)
     {
         if (!_cacheService.IsInitialized)
             return new Result(ResultStatus.Error, "Cache service is not initialized!");
@@ -119,7 +120,7 @@ public class SectorBBBuilderService : ISectorBBBuilderService
                 [
                     .. sectors.Select(s => Task.Run(() =>
                     {
-                        var res = BuildSectorBounds(s.Path, s.Database);
+                        var res = BuildSectorBounds(s.Path, s.Database, verbose);
                         progressService?.AddProgress(ProcessingProgressSection, 1);
                         return res;
                     }))
@@ -177,12 +178,13 @@ public class SectorBBBuilderService : ISectorBBBuilderService
     /// </summary>
     /// <param name="sectorPath">Path to the sector within the archives.</param>
     /// <param name="database">Database to save the output to.</param>
+    /// <param name="verbose">If true logs every missing resource</param>
     /// <returns>
     /// A result with status <see cref="ResultStatus.Error"/> if the sector cannot be loaded or an unexpected
     /// error occurs, <see cref="ResultStatus.Warning"/> if part of the sector could not be resolved and only
     /// position data was used, and <see cref="ResultStatus.Ok"/> otherwise.
     /// </returns>
-    public async Task<Result> BuildSectorBounds(string sectorPath, CacheDatabase? database)
+    public async Task<Result> BuildSectorBounds(string sectorPath, CacheDatabase? database, bool verbose = false)
     {
         var result = new Result
         {
@@ -220,8 +222,12 @@ public class SectorBBBuilderService : ISectorBBBuilderService
                     var meshResult = _gameFileService.GetResource<VSMesh>(node.ResourcePath!);
                     if (meshResult.Status == ResultStatus.Error || meshResult.Data == null)
                     {
-                        result.Status = ResultStatus.Warning;
-                        result.AddMessage($"Failed to get mesh {node.ResourcePath}, using only position data: {meshResult.Message}");
+                        if (verbose)
+                        {
+                            result.Status = ResultStatus.Warning;
+                            result.AddMessage(
+                                $"Failed to get mesh {node.ResourcePath}, using only position data: {meshResult.Message}");
+                        }
                         foreach (var transform in nodeDataEntry.Transforms)
                         {
                             min = Vector3.Min(min, transform.Position);
@@ -270,8 +276,12 @@ public class SectorBBBuilderService : ISectorBBBuilderService
                                     if (node.SectorHash is not ulong sectorHash ||
                                         shape.Hash is not ulong shapeHash)
                                     {
-                                        result.Status = ResultStatus.Warning;
-                                        result.AddMessage($"Node data entry contains invalid sector hash {node.SectorHash} or shape hash {shape.Hash}, using only position data");
+                                        if (verbose)
+                                        {
+                                            result.Status = ResultStatus.Warning;
+                                            result.AddMessage(
+                                                $"Node data entry contains invalid sector hash {node.SectorHash} or shape hash {shape.Hash}, using only position data");
+                                        }
                                         AddPositionBounds(ref min, ref max, shape.Transform.Position + actor.Transform.Position);
                                         continue;
                                     }
@@ -279,8 +289,12 @@ public class SectorBBBuilderService : ISectorBBBuilderService
                                     var collisionMeshResult = await _gameFileService.GetPhysXMesh(sectorHash, shapeHash);
                                     if (collisionMeshResult.Status == ResultStatus.Error || collisionMeshResult.Data == null)
                                     {
-                                        result.Status = ResultStatus.Warning;
-                                        result.AddMessage($"Failed to get collision mesh at sector hash {sectorHash} : shape hash {shapeHash}, using only position data: {collisionMeshResult.Message}");
+                                        if (verbose)
+                                        {
+                                            result.Status = ResultStatus.Warning;
+                                            result.AddMessage(
+                                                $"Failed to get collision mesh at sector hash {sectorHash} : shape hash {shapeHash}, using only position data: {collisionMeshResult.Message}");
+                                        }
                                         AddPositionBounds(ref min, ref max, shape.Transform.Position + actor.Transform.Position);
                                         continue;
                                     }

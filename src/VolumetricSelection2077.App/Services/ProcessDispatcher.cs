@@ -346,7 +346,7 @@ public class ProcessDispatcher
                             boundsProgress.OnProgressChanged += ReportBoundsProgress;
                         }
                         
-                        var boundsRes = await _boundingBoxBuilderService.BuildBounds(BuildBoundsMode.Vanilla, boundsProgress);
+                        var boundsRes = await _boundingBoxBuilderService.BuildBounds(BuildBoundsMode.Vanilla, boundsProgress, _settings.Data.DebugMode);
                         
                         if (boundsProgress != null)
                         {
@@ -416,7 +416,7 @@ public class ProcessDispatcher
                 case 0:
                 {
                     var boundsRes = await _boundingBoxBuilderService.BuildBounds(
-                        BuildBoundsMode.MissingModded);
+                        BuildBoundsMode.MissingModded, null, true);
 
                     switch (boundsRes.Status)
                     {
@@ -438,7 +438,7 @@ public class ProcessDispatcher
                 case 1:
                 {
                     var boundsRes = await _boundingBoxBuilderService.BuildBounds(
-                        BuildBoundsMode.RebuildModded);
+                        BuildBoundsMode.RebuildModded, null, true);
 
                     switch (boundsRes.Status)
                     {

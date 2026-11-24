@@ -8,6 +8,6 @@ namespace VolumetricSelection2077.Core.Services;
 /// </summary>
 public interface ISectorBBBuilderService
 {
-    Task<Result> BuildBounds(BuildBoundsMode mode, IProgressService? progressService = null);
-    Task<Result> BuildSectorBounds(string sectorPath, CacheDatabase? database);
+    Task<Result> BuildBounds(BuildBoundsMode mode, IProgressService? progressService = null, bool verbose = false);
+    Task<Result> BuildSectorBounds(string sectorPath, CacheDatabase? database, bool verbose = false);
 }
