@@ -122,10 +122,24 @@ public partial class MainWindow : Window
             });
             
             var result = await Task.Run(() => _processService.StartProcess(null, processProgress));
-            if (result.Status == ResultStatus.Error)
+            switch (result.Status)
             {
-                Logger.Error($"Process failed: {result.Message}");
+                case ResultStatus.Error:
+                    Logger.Error($"Failed to query world data with error: {result.Message}");
+                    break;
+                case ResultStatus.Warning:
+                    Logger.Error($"Encountered warning while querying world data: {result.Message}");
+                    break;
+                case ResultStatus.Ok when result.Message != "":
+                    Logger.Info(result.Message);
+                    break;
+                case ResultStatus.Ok:
+                default:
+                    break;
+                    
             }
+
+
         }
         catch (Exception ex)
         {

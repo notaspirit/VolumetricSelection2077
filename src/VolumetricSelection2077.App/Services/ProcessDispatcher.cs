@@ -170,6 +170,7 @@ public class ProcessDispatcher
         if (queryResult.Data == null)
         {
             result.AddMessage("No world data matching filters found");
+            progressService?.AddProgress(FinalizationProgressSection, 1);
             return result;
         }
         
