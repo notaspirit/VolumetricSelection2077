@@ -15,11 +15,12 @@ namespace VolumetricSelection2077.Core.Services;
 
 public static class WorldBuilderMergingService
 {
-    public static Favorite Merge(Favorite favoriteA, Favorite favoriteB)
+    public static (Favorite, uint) Merge(Favorite favoriteA, Favorite favoriteB)
     {
         var mergedRaw = new List<WorldBuilderMergingStruct>();
         
         HashFavorite(ref mergedRaw, ReJsonSerialize(favoriteA));
+        var newElementsCount = (uint)mergedRaw.Count;
         HashFavorite(ref mergedRaw, ReJsonSerialize(favoriteB));
         
         var uniqueElements = mergedRaw.Distinct();
@@ -40,21 +41,23 @@ public static class WorldBuilderMergingService
                 });
             var parent = result.Children.OfType<PositionableGroup>().First(x => x.Name == element.ParentName);
             parent.Children.Add(element.SpawnableElement);
+            newElementsCount--;
         }
         
-        return new Favorite
+        return (new Favorite
         {
             Name = favoriteA.Name,
             Data = result
-        };
+        }, newElementsCount);
     }
 
-    public static Favorite Subtract(Favorite baseFavorite, Favorite subtractionFavorite)
+    public static (Favorite, uint) Subtract(Favorite baseFavorite, Favorite subtractionFavorite)
     {
         var baseElements = new List<WorldBuilderMergingStruct>();
         var subtractionElements = new List<WorldBuilderMergingStruct>();
         
         HashFavorite(ref baseElements, ReJsonSerialize(baseFavorite));
+        var removedElementsCount = (uint)baseElements.Count;
         HashFavorite(ref subtractionElements, ReJsonSerialize(subtractionFavorite));
         
         var uniqueElements = baseElements.Except(subtractionElements).ToList();
@@ -75,13 +78,14 @@ public static class WorldBuilderMergingService
                 });
             var parent = result.Children.OfType<PositionableGroup>().First(x => x.Name == element.ParentName);
             parent.Children.Add(element.SpawnableElement);
+            removedElementsCount--;
         }
         
-        return new Favorite
+        return (new Favorite
         {
             Name = baseFavorite.Name,
             Data = result
-        };
+        }, removedElementsCount);
     }
     
     /// <summary>

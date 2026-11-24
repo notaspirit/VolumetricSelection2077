@@ -82,7 +82,7 @@ public static class ArchiveXlRemovalTools
             case ResultStatus.Error:
                 result.Status = ResultStatus.Error;
                 result.AddMessage($"Failed to process removal with error {processRes.Message}");
-                break;
+                return result;
             case ResultStatus.Warning:
                 result.Status = ResultStatus.Warning;
                 result.AddMessage($"Processed removal with warning {processRes.Message}");

@@ -7,6 +7,8 @@ using VolumetricSelection2077.App.Enums;
 using VolumetricSelection2077.App.Models;
 using VolumetricSelection2077.Core.Enums;
 using VolumetricSelection2077.Core.Models;
+using VolumetricSelection2077.Core.Models.WorldBuilder.Editor;
+using VolumetricSelection2077.Core.Models.WorldBuilder.Favorites;
 using VolumetricSelection2077.Core.Services;
 
 namespace VolumetricSelection2077.App.Services;
@@ -45,11 +47,85 @@ public class AppPostProcessingService
                 res = SaveAsRemoval(removalFile);
                 break;
             case SaveFileFormat.WorldBuilder:
-                // SaveAsPrefab(removalFile, _outputFileNameOverride);
+                res = SaveAsPrefab(removalFile);
                 break;
         }
         
         return res;
+    }
+
+    private Result SaveAsPrefab(AxlRemovalFile file)
+    {
+        var path = _outputFileNameOverride ?? _settingsService.Data.SaveFileLocation switch
+        {
+            SaveFileLocation.GameDirectory => Path.Join(_settingsService.Data.GameDirectory, "bin", "x64", "plugins",
+                "cyber_engine_tweaks", "mods", "entSpawner", "data", "favorite", "GeneratedByVS2077.json"),
+            SaveFileLocation.OutputDirectory => Path.Join(_settingsService.Data.OutputDirectory, "GeneratedByVS2077.json"),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+        
+        var favGroupRes = _removalToWorldBuilderConverter.Convert(file, _settingsService.Data.OutputFilename, new WBConverterConfig
+        {
+            DestructibleMeshTreatment = _settingsService.Data.DestructibleMeshTreatment
+        });
+
+        var result = new Result();
+
+        switch (favGroupRes.Status)
+        {
+            case ResultStatus.Error:
+                result.Status = ResultStatus.Error;
+                result.AddMessage($"Failed to build world builder favorite group with error {favGroupRes.Message}");
+                return result;
+            case ResultStatus.Warning:
+                result.Status = ResultStatus.Warning;
+                result.AddMessage($"Build world builder favorite group with warning {favGroupRes.Message}");
+                break;
+            case ResultStatus.Ok:
+            default:
+                break;
+        }
+
+        if (favGroupRes.Data == null)
+        {
+            result.Status = ResultStatus.Error;
+            result.AddMessage("Failed to build world builder favorite");
+            return result;
+        }
+
+        if (favGroupRes.Data.EmbeddedFiles.Count > 0)
+        {
+            result.AddMessage($"World builder group depends on {favGroupRes.Data.EmbeddedFiles.Count} embedded files in the following sectors:");
+            result.AddMessage(Utils.FormatDictionaryForDisplay(favGroupRes.Data.EmbeddedFiles));
+        }
+
+        var fav = new Favorite()
+        {
+            Data = (Positionable)favGroupRes.Data.RootElement,
+            Name = _settingsService.Data.OutputFilename
+        };
+        
+        var savePrefabRes = WorldBuilderFavoriteTools.SavePrefab(fav, _settingsService.Data.PostProcessingMode, path);
+        switch (savePrefabRes.Status)
+        {
+            case ResultStatus.Error:
+                result.Status = ResultStatus.Error;
+                result.AddMessage($"Failed to save world builder favorite group with error {favGroupRes.Message}");
+                return result;
+            case ResultStatus.Warning:
+                result.Status = ResultStatus.Warning;
+                result.AddMessage($"Saved world builder favorite group {savePrefabRes.Data} at {path} with warning {favGroupRes.Message}");
+                break;
+            case ResultStatus.Ok:
+                if (savePrefabRes.Message != string.Empty)
+                    result.AddMessage(savePrefabRes.Message);
+                result.AddMessage($"Saved world builder favorite group {savePrefabRes.Data} at {path}");
+                break;
+            default:
+                break;
+        }
+        WriteBackupFile(path);
+        return result;
     }
     
     private Result SaveAsRemoval(AxlRemovalFile file)
