@@ -14,7 +14,7 @@ public class AppCacheService : CacheService, IDisposable
     public AppCacheService(SettingsService settingsService)
         : base(settingsService.Data.CacheDirectory,
             AppUtils.GetExeVersion(settingsService.Data.GameExecutable),
-            settingsService.Data.CacheEnabled)
+            !settingsService.Data.CacheEnabled)
     {
         _settingsService = settingsService;
 
@@ -44,7 +44,7 @@ public class AppCacheService : CacheService, IDisposable
         if (args.PropertyName != nameof(SettingsDTOV1.CacheEnabled))
             return;
 
-        ClearCacheOnExit = _subscribedData!.CacheEnabled;
+        ClearCacheOnExit = !_subscribedData!.CacheEnabled;
     }
 
     void IDisposable.Dispose()
