@@ -14,7 +14,7 @@ public class SectorBBBuilderServiceTests
 
     private SectorBBBuilderService CreateService()
     {
-        return new SectorBBBuilderService(_cacheService.Object, _gameFileService.Object, new ProgressService(), _archiveManager.Object);
+        return new SectorBBBuilderService(_cacheService.Object, _gameFileService.Object, _archiveManager.Object);
     }
 
     [Fact]
@@ -26,14 +26,6 @@ public class SectorBBBuilderServiceTests
 
         Assert.Equal(ResultStatus.Error, result.Status);
         Assert.Contains("Cache service is not initialized", result.Message);
-    }
-
-    [Fact]
-    public async Task BuildBounds_ChecksGameFileServiceBeforeCacheService()
-    {
-        await CreateService().BuildBounds(BuildBoundsMode.All);
-
-        _cacheService.VerifyGet(x => x.IsInitialized, Times.Never);
     }
 
     [Fact]

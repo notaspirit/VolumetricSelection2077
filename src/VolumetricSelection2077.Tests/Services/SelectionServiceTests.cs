@@ -24,7 +24,7 @@ public class SelectionServiceTests
 
     private SelectionService CreateService()
     {
-        return new SelectionService(_cacheService.Object, _gameFileService.Object, _progressService);
+        return new SelectionService(_cacheService.Object, _gameFileService.Object);
     }
 
     private static VSQuery CreateQuery(IVSNodeQueryFilter[]? filters = null)
