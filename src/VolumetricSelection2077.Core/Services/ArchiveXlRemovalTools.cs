@@ -50,9 +50,9 @@ public static class ArchiveXlRemovalTools
         }
     }
     
-    public static Result SaveRemoval(AxlRemovalFile removalFile, FilePostProcessingMode mode, AxlRemovalFormat format, string path)
+    public static Result<string> SaveRemoval(AxlRemovalFile removalFile, FilePostProcessingMode mode, AxlRemovalFormat format, string path)
     {
-        var result = new Result();
+        var result = new Result<string>();
 
         Result<AxlRemovalFile> processRes;
         if (mode is FilePostProcessingMode.Subtract or FilePostProcessingMode.Extend)
@@ -109,11 +109,8 @@ public static class ArchiveXlRemovalTools
         }
                 
         var filePath = mode == FilePostProcessingMode.New ? GetNewFilename(path) : path;
-                
-        if (serializedRes.Data != null)
-        {
-            File.WriteAllText(filePath, serializedRes.Data);
-        }
+        result.Data = filePath;
+        File.WriteAllText(filePath, serializedRes.Data);
                 
         return result;
     }

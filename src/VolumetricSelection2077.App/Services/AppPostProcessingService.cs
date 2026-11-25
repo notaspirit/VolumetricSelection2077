@@ -38,19 +38,20 @@ public class AppPostProcessingService
     /// </summary>
     public Result Run(AxlRemovalFile removalFile)
     {
-        var res = new Result();
-        
         switch (_settingsService.Data.SaveFileFormat)
         {
             case SaveFileFormat.ArchiveXLJson:
             case SaveFileFormat.ArchiveXLYaml:
-                res = SaveAsRemoval(removalFile);
-                break;
+                return SaveAsRemoval(removalFile);
             case SaveFileFormat.WorldBuilder:
-                res = SaveAsPrefab(removalFile);
-                break;
+                return SaveAsPrefab(removalFile);
         }
-        
+
+        var res =  new Result
+        {
+            Status = ResultStatus.Error
+        };
+        res.AddMessage($"Unknown SaveFileFormat: {_settingsService.Data.SaveFileFormat}");
         return res;
     }
 
@@ -146,9 +147,29 @@ public class AppPostProcessingService
             _ => throw new ArgumentOutOfRangeException()
         };
 
-        var res = ArchiveXlRemovalTools.SaveRemoval(file, _settingsService.Data.PostProcessingMode, mode, path);
+        var result = new Result();
+        
+        var saveRemovalRes = ArchiveXlRemovalTools.SaveRemoval(file, _settingsService.Data.PostProcessingMode, mode, path);
+        switch (saveRemovalRes.Status)
+        {
+            case ResultStatus.Error:
+                result.Status = ResultStatus.Error;
+                result.AddMessage($"Failed to save removal with error {saveRemovalRes.Message}");
+                return result;
+            case ResultStatus.Warning:
+                result.Status = ResultStatus.Warning;
+                result.AddMessage($"Saved removal at {saveRemovalRes.Data} with warning {saveRemovalRes.Message}");
+                break;
+            case ResultStatus.Ok:
+                if (saveRemovalRes.Message != string.Empty)
+                    result.AddMessage(saveRemovalRes.Message);
+                result.AddMessage($"Saved removal at {saveRemovalRes.Data}");
+                break;
+            default:
+                break;
+        }
         WriteBackupFile(path);
-        return res;
+        return result;
     }
 
     private void WriteBackupFile(string originalOutputFilePath)
