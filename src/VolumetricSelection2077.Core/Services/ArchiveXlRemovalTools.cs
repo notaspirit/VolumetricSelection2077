@@ -92,7 +92,7 @@ public static class ArchiveXlRemovalTools
                 break;
         }
         
-        var serializedRes = SerializeRemoval(removalFile, format);
+        var serializedRes = SerializeRemoval(processRes.Data!, format);
         switch (serializedRes.Status)
         {
             case ResultStatus.Error:

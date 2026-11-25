@@ -57,7 +57,16 @@ public static class WorldBuilderFavoriteTools
         FavoritesRoot? froot = new FavoritesRoot();
         if (File.Exists(path))
         {
-            froot = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(path), JsonSerializerPresets.WorldBuilder);
+            try
+            {
+                froot = JsonConvert.DeserializeObject<FavoritesRoot>(File.ReadAllText(path), JsonSerializerPresets.WorldBuilder);
+            }
+            catch (JsonException jex)
+            {
+                result.Status = ResultStatus.Error;
+                result.AddMessage($"Failed to parse existing favorites file with error {jex.Message}");
+                return result;
+            }
         }
         
         if (froot is null)
