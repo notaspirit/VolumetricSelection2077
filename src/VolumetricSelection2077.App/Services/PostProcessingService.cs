@@ -13,7 +13,7 @@ using VolumetricSelection2077.Core.Services;
 
 namespace VolumetricSelection2077.App.Services;
 
-public class AppPostProcessingService
+public class PostProcessingService
 {
     private readonly SettingsService _settingsService;
     private readonly IAxlRemovalToWorldBuilderConverter _removalToWorldBuilderConverter;
@@ -21,7 +21,7 @@ public class AppPostProcessingService
     private readonly string? _outputFileNameOverride;
     private readonly bool _createBackup;
     
-    public AppPostProcessingService(SettingsService settingsService,
+    public PostProcessingService(SettingsService settingsService,
         IAxlRemovalToWorldBuilderConverter removalToWorldBuilderConverter,
         string? outputFileNameOverride = null,
         bool createBackup = true)

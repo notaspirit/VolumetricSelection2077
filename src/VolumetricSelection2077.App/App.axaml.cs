@@ -65,7 +65,7 @@ public partial class App : Application
         #region Transient Services
         
         hostBuilder.Services.AddTransient<ISectorBBBuilderService, SectorBBBuilderService>();
-        hostBuilder.Services.AddTransient<AppPostProcessingService>();
+        hostBuilder.Services.AddTransient<PostProcessingService>();
         hostBuilder.Services.AddTransient<ISelectionService, SelectionService>();
         hostBuilder.Services.AddTransient<ProcessDispatcher>();
         

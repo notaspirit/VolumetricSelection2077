@@ -27,7 +27,7 @@ public class ProcessDispatcher
     private readonly ISectorBBBuilderService _boundingBoxBuilderService;
     private readonly SettingsService _settings;
     private readonly ICacheService _cacheService;
-    private readonly AppPostProcessingService _appPostProcessingService;
+    private readonly PostProcessingService _postProcessingService;
     private readonly HttpClient _httpClient;
     
     public ProcessDispatcher(
@@ -37,7 +37,7 @@ public class ProcessDispatcher
         ISectorBBBuilderService boundingBoxBuilderService,
         SettingsService settings,
         ICacheService cacheService,
-        AppPostProcessingService appPostProcessingService,
+        PostProcessingService postProcessingService,
         HttpClient httpClient)
     {
         _selectionService = selectionService;
@@ -46,7 +46,7 @@ public class ProcessDispatcher
         _boundingBoxBuilderService = boundingBoxBuilderService;
         _settings = settings;
         _cacheService = cacheService;
-        _appPostProcessingService = appPostProcessingService;
+        _postProcessingService = postProcessingService;
         _httpClient = httpClient;
     }
 
@@ -178,7 +178,7 @@ public class ProcessDispatcher
         var actorCount = queryResult.Data.Streaming.Sectors.SelectMany(s => s.NodeDeletions).Sum(n => n.ActorDeletions.Count);
         Logger.Info($"Found {nodeCount} node deletions and {actorCount} actor deletions across {queryResult.Data.Streaming.Sectors.Count} sectors");
         
-        var postProcessRes = _appPostProcessingService.Run(queryResult.Data);
+        var postProcessRes = _postProcessingService.Run(queryResult.Data);
         result.Status = postProcessRes.Status;
         if (postProcessRes.Message != string.Empty)
             result.AddMessage(postProcessRes.Message);
