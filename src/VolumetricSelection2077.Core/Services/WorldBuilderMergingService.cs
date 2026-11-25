@@ -20,9 +20,12 @@ public static class WorldBuilderMergingService
         var mergedRaw = new List<WorldBuilderMergingStruct>();
         
         HashFavorite(ref mergedRaw, ReJsonSerialize(favoriteA));
-        var newElementsCount = (uint)mergedRaw.Count;
-        HashFavorite(ref mergedRaw, ReJsonSerialize(favoriteB));
-        
+
+        var newElements = new List<WorldBuilderMergingStruct>();
+        HashFavorite(ref newElements, ReJsonSerialize(favoriteB));
+        var newElementsCount = (uint)newElements.Distinct().Except(mergedRaw).Count();
+
+        mergedRaw.AddRange(newElements);
         var uniqueElements = mergedRaw.Distinct();
         
         var result = new PositionableGroup
@@ -41,7 +44,6 @@ public static class WorldBuilderMergingService
                 });
             var parent = result.Children.OfType<PositionableGroup>().First(x => x.Name == element.ParentName);
             parent.Children.Add(element.SpawnableElement);
-            newElementsCount--;
         }
         
         return (new Favorite
@@ -57,7 +59,6 @@ public static class WorldBuilderMergingService
         var subtractionElements = new List<WorldBuilderMergingStruct>();
         
         HashFavorite(ref baseElements, ReJsonSerialize(baseFavorite));
-        var removedElementsCount = (uint)baseElements.Count;
         HashFavorite(ref subtractionElements, ReJsonSerialize(subtractionFavorite));
         
         var uniqueElements = baseElements.Except(subtractionElements).ToList();
@@ -78,14 +79,13 @@ public static class WorldBuilderMergingService
                 });
             var parent = result.Children.OfType<PositionableGroup>().First(x => x.Name == element.ParentName);
             parent.Children.Add(element.SpawnableElement);
-            removedElementsCount--;
         }
         
         return (new Favorite
         {
             Name = baseFavorite.Name,
             Data = result
-        }, removedElementsCount);
+        }, (uint)(baseElements.Count - uniqueElements.Count));
     }
     
     /// <summary>

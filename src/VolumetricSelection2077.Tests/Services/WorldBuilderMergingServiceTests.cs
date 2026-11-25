@@ -22,12 +22,13 @@ public class WorldBuilderMergingServiceTests
     [Fact]
     public void Merge_EmptyFavorites_ReturnsEmptyRootGroupNamedAfterFirstFavorite()
     {
-        var result = WorldBuilderMergingService.Merge(EmptyFavorite("First"), EmptyFavorite("Second"));
+        var (result, newElementsCount) = WorldBuilderMergingService.Merge(EmptyFavorite("First"), EmptyFavorite("Second"));
 
         Assert.Equal("First", result.Name);
         var root = Assert.IsType<PositionableGroup>(result.Data);
         Assert.Equal("First", root.Name);
         Assert.Empty(root.Children);
+        Assert.Equal(0u, newElementsCount);
     }
 
     [Fact]
@@ -36,10 +37,11 @@ public class WorldBuilderMergingServiceTests
         var first = FavoriteWith("First", Group("Group A", MeshElement("meshA")));
         var second = FavoriteWith("Second", Group("Group B", MeshElement("meshB", x: 10)));
 
-        var result = WorldBuilderMergingService.Merge(first, second);
+        var (result, newElementsCount) = WorldBuilderMergingService.Merge(first, second);
 
         Assert.Equal(["Group A", "Group B"], GroupNames(result));
         Assert.Equal(["Group A/meshA", "Group B/meshB"], ElementPaths(result));
+        Assert.Equal(1u, newElementsCount);
     }
 
     [Fact]
@@ -48,10 +50,11 @@ public class WorldBuilderMergingServiceTests
         var first = FavoriteWith("First", Group("Shared", MeshElement("meshA")));
         var second = FavoriteWith("Second", Group("Shared", MeshElement("meshB", x: 10)));
 
-        var result = WorldBuilderMergingService.Merge(first, second);
+        var (result, newElementsCount) = WorldBuilderMergingService.Merge(first, second);
 
         Assert.Equal(["Shared"], GroupNames(result));
         Assert.Equal(["Shared/meshA", "Shared/meshB"], ElementPaths(result));
+        Assert.Equal(1u, newElementsCount);
     }
 
     [Fact]
@@ -61,10 +64,11 @@ public class WorldBuilderMergingServiceTests
             Group("Same", MeshElement("meshA")),
             Group("Same", MeshElement("meshB", x: 10)));
 
-        var result = WorldBuilderMergingService.Merge(favorite, EmptyFavorite("Empty"));
+        var (result, newElementsCount) = WorldBuilderMergingService.Merge(favorite, EmptyFavorite("Empty"));
 
         Assert.Equal(["Same"], GroupNames(result));
         Assert.Equal(["Same/meshA", "Same/meshB"], ElementPaths(result));
+        Assert.Equal(0u, newElementsCount);
     }
 
     [Fact]
@@ -73,9 +77,10 @@ public class WorldBuilderMergingServiceTests
         var first = FavoriteWith("First", Group("Group", MeshElement("meshA"), MeshElement("meshB", x: 5)));
         var second = FavoriteWith("Second", Group("Group", MeshElement("meshA")));
 
-        var result = WorldBuilderMergingService.Merge(first, second);
+        var (result, newElementsCount) = WorldBuilderMergingService.Merge(first, second);
 
         Assert.Equal(["Group/meshA", "Group/meshB"], ElementPaths(result));
+        Assert.Equal(0u, newElementsCount);
     }
 
     [Fact]
@@ -83,9 +88,23 @@ public class WorldBuilderMergingServiceTests
     {
         var favorite = FavoriteWith("Favorite", Group("Group", MeshElement("meshA"), MeshElement("meshA")));
 
-        var result = WorldBuilderMergingService.Merge(favorite, EmptyFavorite("Empty"));
+        var (result, newElementsCount) = WorldBuilderMergingService.Merge(favorite, EmptyFavorite("Empty"));
 
         Assert.Equal(["Group/meshA"], ElementPaths(result));
+        Assert.Equal(0u, newElementsCount);
+    }
+
+    [Fact]
+    public void Merge_CountsOnlyDistinctNewElementsFromSecondFavorite()
+    {
+        var first = FavoriteWith("First", Group("Group", MeshElement("existing")));
+        var second = FavoriteWith("Second",
+            Group("Group", MeshElement("existing"), MeshElement("new"), MeshElement("new")));
+
+        var (result, newElementsCount) = WorldBuilderMergingService.Merge(first, second);
+
+        Assert.Equal(["Group/existing", "Group/new"], ElementPaths(result));
+        Assert.Equal(1u, newElementsCount);
     }
 
     [Fact]
@@ -93,9 +112,10 @@ public class WorldBuilderMergingServiceTests
     {
         var favorite = FavoriteWith("Favorite", Group("Group", MeshElement("meshA"), MeshElement("meshB", x: 5)));
 
-        var result = WorldBuilderMergingService.Merge(favorite, favorite);
+        var (result, newElementsCount) = WorldBuilderMergingService.Merge(favorite, favorite);
 
         Assert.Equal(["Group/meshA", "Group/meshB"], ElementPaths(result));
+        Assert.Equal(0u, newElementsCount);
     }
 
     [Fact]
@@ -105,10 +125,11 @@ public class WorldBuilderMergingServiceTests
         var first = FavoriteWith("First", Group("First Parent", MeshElement("shared")));
         var second = FavoriteWith("Second", Group("Second Parent", MeshElement("shared")));
 
-        var result = WorldBuilderMergingService.Merge(first, second);
+        var (result, newElementsCount) = WorldBuilderMergingService.Merge(first, second);
 
         Assert.Equal(["First Parent"], GroupNames(result));
         Assert.Equal(["First Parent/shared"], ElementPaths(result));
+        Assert.Equal(0u, newElementsCount);
     }
 
     [Fact]
@@ -121,10 +142,14 @@ public class WorldBuilderMergingServiceTests
             Group("Group A", MeshElement("meshB", x: 7)),
             Group("Group C", MeshElement("meshC", x: 8)));
 
-        var forward = ElementPaths(WorldBuilderMergingService.Merge(first, second));
-        var reverse = ElementPaths(WorldBuilderMergingService.Merge(second, first));
+        var (forwardResult, forwardCount) = WorldBuilderMergingService.Merge(first, second);
+        var (reverseResult, reverseCount) = WorldBuilderMergingService.Merge(second, first);
+        var forward = ElementPaths(forwardResult);
+        var reverse = ElementPaths(reverseResult);
 
         Assert.Equal(forward, reverse);
+        Assert.Equal(2u, forwardCount);
+        Assert.Equal(2u, reverseCount);
     }
 
     [Fact]
@@ -144,9 +169,10 @@ public class WorldBuilderMergingServiceTests
             }
         };
 
-        var result = WorldBuilderMergingService.Merge(favorite, EmptyFavorite("Empty"));
+        var (result, newElementsCount) = WorldBuilderMergingService.Merge(favorite, EmptyFavorite("Empty"));
 
         Assert.Empty(result.Data.Children);
+        Assert.Equal(0u, newElementsCount);
     }
 
     [Fact]
@@ -155,7 +181,7 @@ public class WorldBuilderMergingServiceTests
         var element = MeshElement("mesh", x: 1.5f, y: -2.25f, z: 3f);
         var favorite = FavoriteWith("Favorite", Group("Group", element));
 
-        var result = WorldBuilderMergingService.Merge(favorite, EmptyFavorite("Empty"));
+        var (result, newElementsCount) = WorldBuilderMergingService.Merge(favorite, EmptyFavorite("Empty"));
 
         var merged = Assert.IsType<SpawnableElement>(Assert.Single(Assert.Single(result.Data.Children).Children));
         Assert.Equal("mesh", merged.Name);
@@ -165,6 +191,7 @@ public class WorldBuilderMergingServiceTests
         Assert.Equal(1.5f, spawnable.Position.x);
         Assert.Equal(-2.25f, spawnable.Position.y);
         Assert.Equal(3f, spawnable.Position.z);
+        Assert.Equal(0u, newElementsCount);
     }
 
     [Fact]
@@ -250,9 +277,10 @@ public class WorldBuilderMergingServiceTests
         };
         var favorite = FavoriteWith("Favorite", Group("Group", elements));
 
-        var result = WorldBuilderMergingService.Merge(favorite, favorite);
+        var (result, newElementsCount) = WorldBuilderMergingService.Merge(favorite, favorite);
 
         Assert.Equal(elements.Length, ElementPaths(result).Length);
+        Assert.Equal(0u, newElementsCount);
     }
 
     [Fact]
@@ -262,11 +290,12 @@ public class WorldBuilderMergingServiceTests
         var second = MeshElement("mesh");
         ((Mesh)second.Spawnable).Position = new Vector4(-0f, 0f, 0f, 1);
 
-        var result = WorldBuilderMergingService.Merge(
+        var (result, newElementsCount) = WorldBuilderMergingService.Merge(
             FavoriteWith("First", Group("Group", first)),
             FavoriteWith("Second", Group("Group", second)));
 
         Assert.Equal(["Group/mesh"], ElementPaths(result));
+        Assert.Equal(0u, newElementsCount);
     }
 
     [Fact]
@@ -277,10 +306,11 @@ public class WorldBuilderMergingServiceTests
         var firstBefore = Serialize(first);
         var secondBefore = Serialize(second);
 
-        WorldBuilderMergingService.Merge(first, second);
+        var (_, newElementsCount) = WorldBuilderMergingService.Merge(first, second);
 
         Assert.Equal(firstBefore, Serialize(first));
         Assert.Equal(secondBefore, Serialize(second));
+        Assert.Equal(1u, newElementsCount);
     }
 
     #endregion
@@ -294,9 +324,10 @@ public class WorldBuilderMergingServiceTests
             Group("Group", MeshElement("keep"), MeshElement("remove", x: 5)));
         var subtraction = FavoriteWith("Subtraction", Group("Group", MeshElement("remove", x: 5)));
 
-        var result = WorldBuilderMergingService.Subtract(baseFavorite, subtraction);
+        var (result, removedElementsCount) = WorldBuilderMergingService.Subtract(baseFavorite, subtraction);
 
         Assert.Equal(["Group/keep"], ElementPaths(result));
+        Assert.Equal(1u, removedElementsCount);
     }
 
     [Fact]
@@ -305,10 +336,11 @@ public class WorldBuilderMergingServiceTests
         var element = MeshElement("mesh");
         var baseFavorite = FavoriteWith("Base", Group("Group", element));
 
-        var result = WorldBuilderMergingService.Subtract(baseFavorite, FavoriteWith("Sub", Group("Group", element)));
+        var (result, removedElementsCount) = WorldBuilderMergingService.Subtract(baseFavorite, FavoriteWith("Sub", Group("Group", element)));
 
         Assert.Equal("Base", result.Name);
         Assert.Empty(result.Data.Children);
+        Assert.Equal(1u, removedElementsCount);
     }
 
     [Fact]
@@ -318,11 +350,12 @@ public class WorldBuilderMergingServiceTests
             Group("Removed Group", MeshElement("meshA")),
             Group("Kept Group", MeshElement("meshB", x: 5)));
 
-        var result = WorldBuilderMergingService.Subtract(baseFavorite,
+        var (result, removedElementsCount) = WorldBuilderMergingService.Subtract(baseFavorite,
             FavoriteWith("Sub", Group("Removed Group", MeshElement("meshA"))));
 
         Assert.Equal(["Kept Group"], GroupNames(result));
         Assert.Equal(["Kept Group/meshB"], ElementPaths(result));
+        Assert.Equal(1u, removedElementsCount);
     }
 
     [Fact]
@@ -331,9 +364,10 @@ public class WorldBuilderMergingServiceTests
         var baseFavorite = FavoriteWith("Base", Group("Base Parent", MeshElement("shared")));
         var subtraction = FavoriteWith("Sub", Group("Other Parent", MeshElement("shared")));
 
-        var result = WorldBuilderMergingService.Subtract(baseFavorite, subtraction);
+        var (result, removedElementsCount) = WorldBuilderMergingService.Subtract(baseFavorite, subtraction);
 
         Assert.Empty(result.Data.Children);
+        Assert.Equal(1u, removedElementsCount);
     }
 
     [Fact]
@@ -341,10 +375,23 @@ public class WorldBuilderMergingServiceTests
     {
         var baseFavorite = FavoriteWith("Base", Group("Group", MeshElement("mesh", x: 1)));
 
-        var result = WorldBuilderMergingService.Subtract(baseFavorite,
+        var (result, removedElementsCount) = WorldBuilderMergingService.Subtract(baseFavorite,
             FavoriteWith("Sub", Group("Group", MeshElement("mesh", x: 2))));
 
         Assert.Equal(["Group/mesh"], ElementPaths(result));
+        Assert.Equal(0u, removedElementsCount);
+    }
+
+    [Fact]
+    public void Subtract_RemovedCountIgnoresSubtractionElementsNotInBase()
+    {
+        var baseFavorite = FavoriteWith("Base", Group("Group", MeshElement("mesh")));
+        var subtraction = FavoriteWith("Sub", Group("Group", MeshElement("absent", x: 5)));
+
+        var (result, removedElementsCount) = WorldBuilderMergingService.Subtract(baseFavorite, subtraction);
+
+        Assert.Equal(["Group/mesh"], ElementPaths(result));
+        Assert.Equal(0u, removedElementsCount);
     }
 
     [Fact]
@@ -352,9 +399,10 @@ public class WorldBuilderMergingServiceTests
     {
         var baseFavorite = FavoriteWith("Base", Group("Group", MeshElement("mesh"), MeshElement("mesh")));
 
-        var result = WorldBuilderMergingService.Subtract(baseFavorite, EmptyFavorite("Empty"));
+        var (result, removedElementsCount) = WorldBuilderMergingService.Subtract(baseFavorite, EmptyFavorite("Empty"));
 
         Assert.Equal(["Group/mesh"], ElementPaths(result));
+        Assert.Equal(1u, removedElementsCount);
     }
 
     [Fact]
@@ -364,20 +412,22 @@ public class WorldBuilderMergingServiceTests
             Group("Group A", MeshElement("meshA")),
             Group("Group B", MeshElement("meshB", x: 5)));
 
-        var result = WorldBuilderMergingService.Subtract(baseFavorite, EmptyFavorite("Empty"));
+        var (result, removedElementsCount) = WorldBuilderMergingService.Subtract(baseFavorite, EmptyFavorite("Empty"));
 
         Assert.Equal(["Group A/meshA", "Group B/meshB"], ElementPaths(result));
+        Assert.Equal(0u, removedElementsCount);
     }
 
     [Fact]
     public void Subtract_EmptyBaseFavoriteReturnsEmptyRootGroup()
     {
-        var result = WorldBuilderMergingService.Subtract(
+        var (result, removedElementsCount) = WorldBuilderMergingService.Subtract(
             EmptyFavorite("Base"),
             FavoriteWith("Sub", Group("Group", MeshElement("mesh"))));
 
         Assert.Equal("Base", result.Name);
         Assert.Empty(result.Data.Children);
+        Assert.Equal(0u, removedElementsCount);
     }
 
     [Fact]
@@ -385,10 +435,11 @@ public class WorldBuilderMergingServiceTests
     {
         var favorite = FavoriteWith("Favorite", Group("Group", MeshElement("meshA"), MeshElement("meshB", x: 5)));
 
-        var result = WorldBuilderMergingService.Subtract(favorite, favorite);
+        var (result, removedElementsCount) = WorldBuilderMergingService.Subtract(favorite, favorite);
 
         Assert.Equal("Favorite", result.Name);
         Assert.Empty(result.Data.Children);
+        Assert.Equal(2u, removedElementsCount);
     }
 
     [Fact]
@@ -419,9 +470,10 @@ public class WorldBuilderMergingServiceTests
             }
         };
 
-        var result = WorldBuilderMergingService.Subtract(baseFavorite, subtraction);
+        var (result, removedElementsCount) = WorldBuilderMergingService.Subtract(baseFavorite, subtraction);
 
         Assert.Empty(result.Data.Children);
+        Assert.Equal(0u, removedElementsCount);
     }
 
     [Fact]
@@ -431,11 +483,12 @@ public class WorldBuilderMergingServiceTests
         var second = MeshElement("mesh");
         ((Mesh)second.Spawnable).Position = new Vector4(-0f, 0f, 0f, 1);
 
-        var result = WorldBuilderMergingService.Subtract(
+        var (result, removedElementsCount) = WorldBuilderMergingService.Subtract(
             FavoriteWith("Base", Group("Group", first)),
             FavoriteWith("Sub", Group("Group", second)));
 
         Assert.Empty(result.Data.Children);
+        Assert.Equal(1u, removedElementsCount);
     }
 
     [Fact]
@@ -446,10 +499,11 @@ public class WorldBuilderMergingServiceTests
         var baseBefore = Serialize(baseFavorite);
         var subtractionBefore = Serialize(subtraction);
 
-        WorldBuilderMergingService.Subtract(baseFavorite, subtraction);
+        var (_, removedElementsCount) = WorldBuilderMergingService.Subtract(baseFavorite, subtraction);
 
         Assert.Equal(baseBefore, Serialize(baseFavorite));
         Assert.Equal(subtractionBefore, Serialize(subtraction));
+        Assert.Equal(0u, removedElementsCount);
     }
 
     #endregion
@@ -458,11 +512,12 @@ public class WorldBuilderMergingServiceTests
 
     private static void AssertMergeKeepsBoth(SpawnableElement first, SpawnableElement second)
     {
-        var result = WorldBuilderMergingService.Merge(
+        var (result, newElementsCount) = WorldBuilderMergingService.Merge(
             FavoriteWith("First", Group("Group", first)),
             FavoriteWith("Second", Group("Group", second)));
 
         Assert.Equal(2, ElementPaths(result).Length);
+        Assert.Equal(1u, newElementsCount);
     }
 
     private static Favorite EmptyFavorite(string name) => new()
