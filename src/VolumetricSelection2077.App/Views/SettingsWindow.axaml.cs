@@ -1,0 +1,164 @@
+using Avalonia.Controls;
+using VolumetricSelection2077.App.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Threading.Tasks;
+using Avalonia.Interactivity;
+using VolumetricSelection2077.App.Enums;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Services;
+using VolumetricSelection2077.Core.Enums;
+using VolumetricSelection2077.Core.Services;
+
+namespace VolumetricSelection2077.App.Views
+{
+    public partial class SettingsWindow : Window
+    {
+        private readonly SettingsViewModel _settingsViewModel;
+        private readonly ICacheService _cacheService;
+        
+        private bool _showedDialog;
+        private bool _moveCache = true;
+        
+        public SettingsWindow()
+        {
+            InitializeComponent();
+            var sp = App.AppHost!.Services;
+            _cacheService = sp.GetRequiredService<ICacheService>();
+            
+            DataContext = new SettingsViewModel();
+            _settingsViewModel = (DataContext as SettingsViewModel)!;
+            
+            Closing += OnSettingsWindowClosing;
+            Closed += OnSettingsWindowClosed;
+        }
+
+        private void UpdateCacheStats()
+        {
+            try
+            {
+                _settingsViewModel.CacheStats = _cacheService.GetStats().Data!;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to get stats for cache: {ex}");
+            }
+        }
+        private async void ClearVanillaCache_Click(object sender, RoutedEventArgs e)
+        {
+            if(!_cacheService.IsInitialized) return;
+            _settingsViewModel.CacheWorking = true;
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabase.Vanilla));
+            _settingsViewModel.CacheWorking = false;
+            UpdateCacheStats();
+        }
+        
+        private async void ClearModdedCache_Click(object sender, RoutedEventArgs e)
+        {
+            if(!_cacheService.IsInitialized) return;
+            _settingsViewModel.CacheWorking = true;
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabase.Modded));
+            _settingsViewModel.CacheWorking = false;
+            UpdateCacheStats();
+        }
+        
+        private async void ClearVanillaBoundsCache_Click(object sender, RoutedEventArgs e)
+        {
+            if(!_cacheService.IsInitialized) return;
+            _settingsViewModel.CacheWorking = true;
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabase.VanillaBounds));
+            _settingsViewModel.CacheWorking = false;
+            UpdateCacheStats();
+        }
+        
+        private async void ClearModdedBoundsCache_Click(object sender, RoutedEventArgs e)
+        {
+            if(!_cacheService.IsInitialized) return;
+            _settingsViewModel.CacheWorking = true;
+            await Task.Run(() => _cacheService.ClearDatabase(CacheDatabase.ModdedBounds));
+            _settingsViewModel.CacheWorking = false;
+            UpdateCacheStats();
+        }
+
+        private void OpenBackupDir_Click(object sender, RoutedEventArgs e)
+        {
+            OsUtilsService.OpenFolder(_settingsViewModel.Settings.Data.BackupDirectory);
+        }
+        
+        private void OpenCustomSelectionDir_Click(object sender, RoutedEventArgs e)
+        {
+            OsUtilsService.OpenFolder(_settingsViewModel.Settings.Data.CustomSelectionFilePath);
+        }
+        
+        private void OpenCacheDir_Click(object sender, RoutedEventArgs e)
+        {
+            OsUtilsService.OpenFolder(_settingsViewModel.Settings.Data.CacheDirectory);
+        }
+        
+        private void OpenOutputDir_Click(object sender, RoutedEventArgs e)
+        {
+            OsUtilsService.OpenFolder(_settingsViewModel.Settings.Data.OutputDirectory);
+        }
+
+        private void OpenCETDir_Click(object sender, RoutedEventArgs e)
+        {
+            OsUtilsService.OpenFolder(_settingsViewModel.Settings.Data.CETInstallLocation);
+        }
+        
+        private void OpenGameDir_Click(object sender, RoutedEventArgs e)
+        {
+            OsUtilsService.OpenFolder(_settingsViewModel.Settings.Data.GameDirectory);
+        }
+
+        private async void OnSettingsWindowClosing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (_showedDialog || !_settingsViewModel.PersistentCache.CachePathChanged)
+                return;
+            _showedDialog = true;
+            e.Cancel = true;
+            var result = await DialogService.ShowDialog("Cache Path Changed!",
+                "Move the current cache, or initialize a new cache at the new location (creating one if none exists)?",
+                new [] { new DialogButton("Move", DialogButtonStyling.Primary), new DialogButton("Initialize", DialogButtonStyling.Secondary) },
+                this);
+            _moveCache = result == 0;
+            Close();
+        }
+        
+        private void OnSettingsWindowClosed(object? sender, EventArgs e)
+        {
+            _settingsViewModel.Settings.SaveSettings();
+            if (_settingsViewModel.PersistentCache.CachePathChanged)
+            {
+                bool successMove = false;
+                try
+                {
+                    successMove = !_moveCache || _cacheService.Move(_settingsViewModel.PersistentCache.InitialCachePath,
+                        _settingsViewModel.Settings.Data.CacheDirectory).Status != ResultStatus.Error;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Exception(ex, "Failed to move cache!");
+                }
+
+                if (successMove)
+                {
+                    _settingsViewModel.PersistentCache.InitialCachePath = _settingsViewModel.Settings.Data.CacheDirectory;
+                }
+                else
+                {
+                    _settingsViewModel.Settings.Data.CacheDirectory = _settingsViewModel.PersistentCache.InitialCachePath;
+                    _settingsViewModel.Settings.SaveSettings();
+                }
+                
+                _cacheService.Dispose().Wait();
+            }
+            
+            if (_settingsViewModel.PersistentCache.RequiresRestart)
+                OsUtilsService.RestartApp();
+            _cacheService.Initialize();
+        }
+
+    };
+}

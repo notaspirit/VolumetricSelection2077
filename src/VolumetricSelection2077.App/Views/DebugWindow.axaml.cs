@@ -1,0 +1,121 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Shapes;
+using Avalonia.Interactivity;
+using Avalonia.Markup.Xaml;
+using VolumetricSelection2077.App.Extensions;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Services;
+using VolumetricSelection2077.App.TestingStuff;
+using VolumetricSelection2077.App.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
+using VolumetricSelection2077.Core.Services;
+using Path = System.IO.Path;
+
+namespace VolumetricSelection2077.App.Views;
+
+public partial class DebugWindow : Window
+{
+    private readonly MainWindowViewModel? _mainWindowViewModel;
+    private readonly DebugWindowViewModel? _debugWindowViewModel;
+    private readonly DialogService _dialogService;
+    private TrackedDispatchTimer _dispatcherTimer;
+    private MainWindow? mainWindow;
+    public DebugWindow(Window parent)
+    {
+        InitializeComponent();
+        DataContext = new DebugWindowViewModel(parent);
+        _debugWindowViewModel = DataContext as DebugWindowViewModel;
+        _mainWindowViewModel = _debugWindowViewModel?.ParentViewModel;
+        _dialogService = new DialogService();
+        _dialogService.Owner = this;
+        mainWindow = parent as MainWindow;
+        
+        _dispatcherTimer = new TrackedDispatchTimer() { Interval = TimeSpan.FromSeconds(1) };
+        _dispatcherTimer.Tick += (s, e) => mainWindow.ProgressTextBlock.Text = $"{Utils.FormatElapsedTimeMMSS(_dispatcherTimer.Elapsed)}";
+        
+        Closing += OnClosing;
+    }
+    
+    private async void Benchmark_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_mainWindowViewModel.IsProcessing) 
+            return;
+        _debugWindowViewModel.IsProcessing = true;
+        
+        try
+        {
+            Logger.Info("Starting benchmarking...");
+            _mainWindowViewModel.BenchmarkProcessing = true;
+            _dispatcherTimer.Start();
+            
+            var benchmarking = App.AppHost!.Services.GetRequiredService<Benchmarking>();
+            await benchmarking.Run();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Benchmarking failed: {ex}");
+        }
+        finally
+        {
+            _dispatcherTimer.Stop();
+            string formattedTime = Utils.FormatElapsedTime(_dispatcherTimer.Elapsed);
+            Logger.Info($"Benchmarking finished after: {formattedTime}");
+            _mainWindowViewModel.BenchmarkProcessing = false;
+            _debugWindowViewModel.IsProcessing = false;
+        }
+    }
+    
+    private void OnClosing(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        e.Cancel = _debugWindowViewModel?.IsProcessing ?? false;
+    }
+
+    private async void DialogTest_Click(object? sender, RoutedEventArgs e)
+    {
+        _debugWindowViewModel.IsProcessing = true;
+        await TestDialogService.Run(this);
+        _debugWindowViewModel.IsProcessing = false;
+    }
+    
+    private void DumpSectorBounds_Click(object? sender, RoutedEventArgs e)
+    {
+        _debugWindowViewModel.IsProcessing = true;
+        var cs = App.AppHost!.Services.GetRequiredService<ICacheService>();
+        cs.SerializeSectorBoundingBoxesToFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "debug",
+            $"{1 + 1}-{ICacheService.CurrentCacheVersion}"));
+        _debugWindowViewModel.IsProcessing = false;
+    }
+
+    private void LoadSectorBounds_Click(object? sender, RoutedEventArgs e)
+    {
+        _debugWindowViewModel.IsProcessing = true;
+        var cacheService = App.AppHost!.Services.GetRequiredService<ICacheService>();
+        var cacheMetadata = cacheService.GetMetadata();
+        cacheService.LoadSectorBBFromFile(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VolumetricSelection2077", "debug",
+            $"{cacheMetadata.Data.GameVersion}-{cacheMetadata.Data.DatabaseVersion}.bin"));
+        _debugWindowViewModel.IsProcessing = false;
+    }
+
+    private async void RunDebugService_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.DataContext is KeyValuePair<string, IDebugTool> item)
+        {
+            await Task.Run(() => item.Value.Run());
+        }
+    }
+
+    private void RunTestCommand_Click(object? sender, RoutedEventArgs e)
+    {
+        FlyoutBase.ShowAttachedFlyout(sender as Button);
+    }
+    
+    private void CompareResults_Click(object? sender, RoutedEventArgs e)
+    {
+        new BenchmarkResultComparer().ShowDialog(this);
+    }
+}

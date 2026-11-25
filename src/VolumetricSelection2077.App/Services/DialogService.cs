@@ -1,0 +1,31 @@
+using System;
+using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Threading;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Views;
+using WolvenKit.Common.PhysX;
+
+namespace VolumetricSelection2077.App.Services;
+
+public class DialogService
+{
+    public Window? Owner { get; set; }
+    
+    public Task<int> ShowDialog(string title, string message, DialogButton[] buttonContents)
+    {
+        ArgumentNullException.ThrowIfNull(Owner);
+        return ShowDialog(title, message, buttonContents, Owner);
+    }
+    
+    public static async Task<int> ShowDialog(string title, string message, DialogButton[] buttonContents, Window owner)
+    {
+        return await Dispatcher.UIThread.InvokeAsync(async () =>
+        {
+            var dialog = new Dialog(title, message, buttonContents);
+            await dialog.ShowDialog(owner);
+            return dialog.DialogResult;
+        });
+    }
+}

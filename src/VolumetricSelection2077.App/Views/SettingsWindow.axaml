@@ -1,0 +1,442 @@
+<Window
+    Background="#171c26"
+    Icon="../assets/redCube.ico"
+    SizeToContent="Height"
+    Title="VolumetricSelection2077"
+    Width="750"
+    WindowStartupLocation="CenterOwner"
+    x:Class="VolumetricSelection2077.App.Views.SettingsWindow"
+    x:DataType="local:ViewModels.SettingsViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:avalonia="clr-namespace:LoadingIndicators.Avalonia;assembly=LoadingIndicators.Avalonia"
+    xmlns:controls="clr-namespace:VolumetricSelection2077.App.Controls"
+    xmlns:fui="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
+    xmlns:local="clr-namespace:VolumetricSelection2077.App"
+    xmlns:resources="clr-namespace:VolumetricSelection2077.App.Resources"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border Margin="5">
+        <StackPanel>
+            <Image
+                Height="60"
+                HorizontalAlignment="Left"
+                Margin="5,15,5,15"
+                RenderOptions.BitmapInterpolationMode="HighQuality"
+                Source="{Binding SettingsIcon}" />
+            <TabControl>
+                <TabItem
+                    FontSize="15"
+                    Header="General"
+                    Padding="6,3">
+                    <Grid
+                        ColumnDefinitions="200,*"
+                        Margin="-10,0"
+                        RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                        <!--  First Row: Label  -->
+                        <TextBlock
+                            Grid.Column="0"
+                            Grid.Row="0"
+                            HorizontalAlignment="Left"
+                            Margin="5"
+                            Text="Game Directory"
+                            ToolTip.Tip="{x:Static resources:ToolTips.GameDirectory}"
+                            VerticalAlignment="Center" />
+                        <TextBlock
+                            Grid.Column="0"
+                            Grid.Row="1"
+                            HorizontalAlignment="Left"
+                            Margin="5"
+                            Text="Modded Resources"
+                            ToolTip.Tip="{x:Static resources:ToolTips.ModdedResources}"
+                            VerticalAlignment="Center" />
+                        <TextBlock
+                            Grid.Column="0"
+                            Grid.Row="3"
+                            HorizontalAlignment="Left"
+                            Margin="5"
+                            Text="Auto Update"
+                            ToolTip.Tip="{x:Static resources:ToolTips.AutoUpdate}"
+                            VerticalAlignment="Center" />
+                        <TextBlock
+                            Grid.Column="0"
+                            Grid.Row="4"
+                            HorizontalAlignment="Left"
+                            IsVisible="{Binding AutoUpdateEnabled}"
+                            Margin="5"
+                            Text="VS2077 CET Install Location"
+                            ToolTip.Tip="{x:Static resources:ToolTips.CETInstallLocation}"
+                            VerticalAlignment="Center" />
+                        <TextBlock
+                            Grid.Column="0"
+                            Grid.Row="5"
+                            HorizontalAlignment="Left"
+                            Margin="5"
+                            Text="Custom Output Directory"
+                            ToolTip.Tip="{x:Static resources:ToolTips.CustomOutputDirectory}"
+                            VerticalAlignment="Center" />
+                        <TextBlock
+                            Grid.Column="0"
+                            Grid.Row="6"
+                            HorizontalAlignment="Left"
+                            Margin="5"
+                            Text="Cache Uncooked Resources"
+                            ToolTip.Tip="{x:Static resources:ToolTips.CacheEnabled}"
+                            VerticalAlignment="Center" />
+                        <TextBlock
+                            Grid.Column="0"
+                            Grid.Row="7"
+                            HorizontalAlignment="Left"
+                            Margin="5"
+                            Text="Cache Directory"
+                            ToolTip.Tip="{x:Static resources:ToolTips.CacheDirectory}"
+                            VerticalAlignment="Center" />
+                        <TextBlock
+                            Grid.Column="0"
+                            Grid.Row="8"
+                            HorizontalAlignment="Left"
+                            Margin="5"
+                            Text="Clear Cache"
+                            ToolTip.Tip="{x:Static resources:ToolTips.ClearCache}"
+                            VerticalAlignment="Center" />
+                        <TextBlock
+                            Grid.Column="0"
+                            Grid.Row="10"
+                            HorizontalAlignment="Left"
+                            Margin="5"
+                            Text="{x:Static resources:Labels.CustomSelectionFilePath}"
+                            ToolTip.Tip="{x:Static resources:ToolTips.CustomSelectionFilePath}"
+                            VerticalAlignment="Center" />
+                        <TextBlock
+                            Grid.Column="0"
+                            Grid.Row="11"
+                            HorizontalAlignment="Left"
+                            Margin="5"
+                            Text="{x:Static resources:Labels.BackupDirectory}"
+                            ToolTip.Tip="{x:Static resources:ToolTips.BackupDirectory}"
+                            VerticalAlignment="Center" />
+                        <TextBlock
+                            Grid.Column="0"
+                            Grid.Row="12"
+                            HorizontalAlignment="Left"
+                            Margin="5"
+                            Text="{x:Static resources:Labels.MaxBackupFiles}"
+                            ToolTip.Tip="{x:Static resources:ToolTips.MaxBackupFiles}"
+                            VerticalAlignment="Center" />
+                        <!--  Second Row: Setting Control (e.g., ToggleSwitch)  -->
+                        <Grid
+                            ColumnDefinitions="*, Auto"
+                            Grid.Column="1"
+                            Grid.Row="0"
+                            RowDefinitions="Auto">
+                            <TextBox
+                                Grid.Column="0"
+                                Grid.Row="0"
+                                Margin="5"
+                                Text="{Binding Settings.Data.GameDirectory}"
+                                Watermark="{x:Static resources:Watermarks.GameDirectory}" />
+                            <Button
+                                Background="#6b82b2"
+                                Click="OpenGameDir_Click"
+                                Grid.Column="1"
+                                Grid.Row="0"
+                                Margin="0,5,5,5"
+                                VerticalAlignment="Stretch">
+                                <fui:SymbolIcon Symbol="OpenFolder" />
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="#455472" />
+                                    </Style>
+                                </Button.Styles>
+                            </Button>
+                        </Grid>
+                        <ToggleSwitch
+                            Grid.Column="1"
+                            Grid.Row="1"
+                            IsChecked="{Binding Settings.Data.SupportModdedResources}"
+                            Margin="5"
+                            OffContent=""
+                            OnContent="" />
+                        <ToggleSwitch
+                            Grid.Column="1"
+                            Grid.Row="3"
+                            IsChecked="{Binding AutoUpdateEnabled}"
+                            Margin="5"
+                            OffContent=""
+                            OnContent="" />
+                        <Grid
+                            ColumnDefinitions="*, Auto"
+                            Grid.Column="1"
+                            Grid.Row="4"
+                            IsVisible="{Binding AutoUpdateEnabled}"
+                            RowDefinitions="Auto">
+                            <TextBox
+                                Grid.Column="0"
+                                Grid.Row="0"
+                                Margin="5"
+                                Text="{Binding Settings.Data.CETInstallLocation}"
+                                Watermark="{x:Static resources:Watermarks.CETInstallLocation}" />
+                            <Button
+                                Background="#6b82b2"
+                                Click="OpenCETDir_Click"
+                                Grid.Column="1"
+                                Grid.Row="0"
+                                Margin="0,5,5,5"
+                                VerticalAlignment="Stretch">
+                                <fui:SymbolIcon Symbol="OpenFolder" />
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="#455472" />
+                                    </Style>
+                                </Button.Styles>
+                            </Button>
+                        </Grid>
+                        <Grid
+                            ColumnDefinitions="*, Auto"
+                            Grid.Column="1"
+                            Grid.Row="5"
+                            RowDefinitions="Auto">
+                            <TextBox
+                                Grid.Column="0"
+                                Grid.Row="0"
+                                Margin="5"
+                                Text="{Binding Settings.Data.OutputDirectory}"
+                                Watermark="{x:Static resources:Watermarks.CustomOutputDirectory}" />
+                            <Button
+                                Background="#6b82b2"
+                                Click="OpenOutputDir_Click"
+                                Grid.Column="1"
+                                Grid.Row="0"
+                                Margin="0,5,5,5"
+                                VerticalAlignment="Stretch">
+                                <fui:SymbolIcon Symbol="OpenFolder" />
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="#455472" />
+                                    </Style>
+                                </Button.Styles>
+                            </Button>
+                        </Grid>
+                        <ToggleSwitch
+                            Grid.Column="1"
+                            Grid.Row="6"
+                            IsChecked="{Binding CacheEnabled}"
+                            Margin="5"
+                            OffContent=""
+                            OnContent="" />
+                        <Grid
+                            ColumnDefinitions="*, Auto"
+                            Grid.Column="1"
+                            Grid.Row="7"
+                            RowDefinitions="Auto">
+                            <TextBox
+                                Grid.Column="0"
+                                Grid.Row="0"
+                                Margin="5"
+                                Text="{Binding Settings.Data.CacheDirectory}"
+                                Watermark="{x:Static resources:Watermarks.CacheDirectory}" />
+                            <Button
+                                Background="#6b82b2"
+                                Click="OpenCacheDir_Click"
+                                Grid.Column="1"
+                                Grid.Row="0"
+                                Margin="0,5,5,5"
+                                VerticalAlignment="Stretch">
+                                <fui:SymbolIcon Symbol="OpenFolder" />
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="#455472" />
+                                    </Style>
+                                </Button.Styles>
+                            </Button>
+                        </Grid>
+                        <Grid Grid.Column="1" Grid.Row="8">
+                            <Grid.ColumnDefinitions>*, *</Grid.ColumnDefinitions>
+                            <Button
+                                Background="#ad0002"
+                                Click="ClearVanillaCache_Click"
+                                Content="{Binding ClearVanillaCacheButtonLabel}"
+                                Grid.Column="0"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                IsEnabled="{Binding CacheButtonsAvailable}"
+                                Margin="5,0,0,0">
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="DarkRed" />
+                                    </Style>
+                                </Button.Styles>
+                            </Button>
+                            <Grid Grid.Column="0" IsVisible="{Binding CacheWorking}">
+                                <avalonia:LoadingIndicator
+                                    Foreground="White"
+                                    Height="30"
+                                    IsActive="True"
+                                    Width="30" />
+                            </Grid>
+                            <Button
+                                Background="#ad0002"
+                                Click="ClearModdedCache_Click"
+                                Content="{Binding ClearModdedCacheButtonLabel}"
+                                Grid.Column="1"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                IsEnabled="{Binding CacheButtonsAvailable}"
+                                Margin="5,0,5,0">
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="DarkRed" />
+                                    </Style>
+                                </Button.Styles>
+                            </Button>
+                            <Grid Grid.Column="1" IsVisible="{Binding CacheWorking}">
+                                <avalonia:LoadingIndicator
+                                    Foreground="White"
+                                    Height="30"
+                                    IsActive="True"
+                                    Width="30" />
+                            </Grid>
+                        </Grid>
+                        <Grid Grid.Column="1" Grid.Row="9">
+                            <Grid.ColumnDefinitions>*, *</Grid.ColumnDefinitions>
+                            <Button
+                                Background="#ad0002"
+                                Click="ClearVanillaBoundsCache_Click"
+                                Content="{Binding ClearVanillaBoundsCacheButtonLabel}"
+                                Grid.Column="0"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                IsEnabled="{Binding CacheButtonsAvailable}"
+                                Margin="5,0,0,0">
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="DarkRed" />
+                                    </Style>
+                                </Button.Styles>
+                            </Button>
+                            <Grid Grid.Column="0" IsVisible="{Binding CacheWorking}">
+                                <avalonia:LoadingIndicator
+                                    Foreground="White"
+                                    Height="30"
+                                    IsActive="True"
+                                    Width="30" />
+                            </Grid>
+                            <Button
+                                Background="#ad0002"
+                                Click="ClearModdedBoundsCache_Click"
+                                Content="{Binding ClearModdedBoundsCacheButtonLabel}"
+                                Grid.Column="1"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center"
+                                IsEnabled="{Binding CacheButtonsAvailable}"
+                                Margin="5,0,5,0">
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="DarkRed" />
+                                    </Style>
+                                </Button.Styles>
+                            </Button>
+                            <Grid Grid.Column="1" IsVisible="{Binding CacheWorking}">
+                                <avalonia:LoadingIndicator
+                                    Foreground="White"
+                                    Height="30"
+                                    IsActive="True"
+                                    Width="30" />
+                            </Grid>
+                        </Grid>
+                        <Grid
+                            ColumnDefinitions="*, Auto"
+                            Grid.Column="1"
+                            Grid.Row="10"
+                            RowDefinitions="Auto">
+                            <TextBox
+                                Grid.Column="0"
+                                Grid.Row="0"
+                                Margin="5"
+                                Text="{Binding Settings.Data.CustomSelectionFilePath}"
+                                Watermark="{x:Static resources:Labels.CustomSelectionFilePath}" />
+                            <Button
+                                Background="#6b82b2"
+                                Click="OpenCustomSelectionDir_Click"
+                                Grid.Column="1"
+                                Grid.Row="0"
+                                Margin="0,5,5,5"
+                                VerticalAlignment="Stretch">
+                                <fui:SymbolIcon Symbol="OpenFolder" />
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="#455472" />
+                                    </Style>
+                                </Button.Styles>
+                            </Button>
+                        </Grid>
+                        <Grid
+                            ColumnDefinitions="*, Auto"
+                            Grid.Column="1"
+                            Grid.Row="11"
+                            RowDefinitions="Auto">
+                            <TextBox
+                                Grid.Column="0"
+                                Grid.Row="0"
+                                Margin="5"
+                                Text="{Binding Settings.Data.BackupDirectory}"
+                                Watermark="{x:Static resources:Labels.BackupDirectory}" />
+                            <Button
+                                Background="#6b82b2"
+                                Click="OpenBackupDir_Click"
+                                Grid.Column="1"
+                                Grid.Row="0"
+                                Margin="0,5,5,5"
+                                VerticalAlignment="Stretch">
+                                <fui:SymbolIcon Symbol="OpenFolder" />
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                        <Setter Property="Background" Value="#455472" />
+                                    </Style>
+                                </Button.Styles>
+                            </Button>
+                        </Grid>
+                        <controls:Int32TextBox
+                            Grid.Column="1"
+                            Grid.Row="12"
+                            Margin="5"
+                            Text="{Binding Settings.Data.MaxBackupFiles, UpdateSourceTrigger=LostFocus}"
+                            Watermark="{x:Static resources:Labels.MaxBackupFiles}" />
+                    </Grid>
+                </TabItem>
+
+                <TabItem
+                    FontSize="15"
+                    Header="Experimental"
+                    Padding="6,3">
+                    <Grid
+                        ColumnDefinitions="200,*"
+                        Margin="-10,0"
+                        RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+
+                        <TextBlock
+                            Grid.Column="0"
+                            Grid.Row="0"
+                            HorizontalAlignment="Left"
+                            Margin="5"
+                            Text="Debug Mode"
+                            VerticalAlignment="Center" />
+                        <ToggleSwitch
+                            Grid.Column="1"
+                            Grid.Row="0"
+                            IsChecked="{Binding Settings.Data.DebugMode}"
+                            Margin="5"
+                            OffContent=""
+                            OnContent="" />
+                        <TextBlock
+                            Grid.Column="1"
+                            Grid.Row="1"
+                            HorizontalAlignment="Left"
+                            Margin="5"
+                            Text="Enables a hidden menu with some debug and testing functionality. No guarantee is provided for the functionality of debug methods."
+                            TextWrapping="Wrap"
+                            VerticalAlignment="Center" />
+                    </Grid>
+                </TabItem>
+            </TabControl>
+        </StackPanel>
+    </Border>
+</Window>

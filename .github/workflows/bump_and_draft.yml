@@ -27,21 +27,21 @@ jobs:
         run: |
           version="${{ github.event.inputs.new_version }}"
           base_version="${version%%-*}"
-          sed -i "s|<Version>.*</Version>|<Version>"$base_version"</Version>|" "src/CSharp App/VolumetricSelection2077.csproj"
-          sed -i "s|<FileVersion>.*</FileVersion>|<FileVersion>"$base_version"</FileVersion>|" "src/CSharp App/VolumetricSelection2077.csproj"
-          sed -i "s|<InformationalVersion>.*</InformationalVersion>|<InformationalVersion>"$version"</InformationalVersion>|" "src/CSharp App/VolumetricSelection2077.csproj"
+          sed -i "s|<Version>.*</Version>|<Version>"$base_version"</Version>|" "src/VolumetricSelection2077.App/VolumetricSelection2077.App.csproj"
+          sed -i "s|<FileVersion>.*</FileVersion>|<FileVersion>"$base_version"</FileVersion>|" "src/VolumetricSelection2077.App/VolumetricSelection2077.App.csproj"
+          sed -i "s|<InformationalVersion>.*</InformationalVersion>|<InformationalVersion>"$version"</InformationalVersion>|" "src/VolumetricSelection2077.App/VolumetricSelection2077.App.csproj"
 
       - name: Bump Cache Version
         run: |
           if [ ${{ github.event.inputs.bump_cache }} = true ]; then
-            sed -i "s|public string MinimumCacheVersion { get; } = \".*\";|public string MinimumCacheVersion { get; } = \"${{ github.event.inputs.new_version }}\";|" "src/CSharp App/Services/SettingsService.cs"
+            sed -i "s|public string MinimumCacheVersion { get; } = \".*\";|public string MinimumCacheVersion { get; } = \"${{ github.event.inputs.new_version }}\";|" "src/VolumetricSelection2077.App/Services/SettingsService.cs"
           fi
 
       - name: Bump CET Mod
         run: |
           version="${{ github.event.inputs.new_version }}"
           base_version="${version%%-*}"
-          sed -i "s|local versionString = \".*\"|local versionString = \"${{ github.event.inputs.new_version }}\"|" "src/CET_Mod/bin/x64/plugins/cyber_engine_tweaks/mods/VolumetricSelection2077/modules/VSGui.lua"
+          sed -i "s|local versionString = \".*\"|local versionString = \"${{ github.event.inputs.new_version }}\"|" "src/VolumetricSelection2077.CET/bin/x64/plugins/cyber_engine_tweaks/mods/VolumetricSelection2077/modules/VSGui.lua"
 
       - name: Commit and Push to Main
         run: |
@@ -117,7 +117,7 @@ jobs:
 
       - name: Create CET Mod ZIP
         run: |
-          Compress-Archive -Path "src/CET_Mod\*" -DestinationPath "${{ github.event.inputs.new_version }}/VS2077-cet-${{ github.event.inputs.new_version }}.zip"
+          Compress-Archive -Path "src/VolumetricSelection2077.CET\*" -DestinationPath "${{ github.event.inputs.new_version }}/VS2077-cet-${{ github.event.inputs.new_version }}.zip"
 
       - name: Find Installer
         id: find_installer

@@ -1,0 +1,116 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using Avalonia;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
+using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.DependencyInjection;
+using VolumetricSelection2077.App.Models;
+using VolumetricSelection2077.App.Resources;
+using VolumetricSelection2077.App.Services;
+using VolumetricSelection2077.App.Views;
+using VolumetricSelection2077.Core.Models;
+using VolumetricSelection2077.Core.Services;
+
+namespace VolumetricSelection2077.App.ViewModels
+{
+    public partial class SettingsViewModel : ObservableObject
+    {
+        private readonly ICacheService _cacheService;
+        
+        private CacheStats _cacheStats;
+        private bool _cacheWorking;
+
+        [ObservableProperty] 
+        private SettingsService _settings;
+        public SettingsViewPersistentCache PersistentCache { get; }
+        public CacheStats CacheStats
+        {
+            get => _cacheStats;
+            set
+            {
+                _cacheStats = value;
+                OnPropertyChanged(nameof(CacheStats));
+                OnPropertyChanged(nameof(ClearVanillaCacheButtonLabel));
+                OnPropertyChanged(nameof(ClearModdedCacheButtonLabel));
+                OnPropertyChanged(nameof(ClearVanillaBoundsCacheButtonLabel));
+                OnPropertyChanged(nameof(ClearModdedBoundsCacheButtonLabel));
+            }
+        }
+        
+        public string ClearVanillaCacheButtonLabel => Labels.ClearVanillaCache + $" [ {CacheStats.VanillaEntries} files | {CacheStats.EstVanillaSize.GetFormattedSize()} ]";
+        public string ClearModdedCacheButtonLabel => Labels.ClearModdedCache + $" [ {CacheStats.ModdedEntries} files | {CacheStats.EstModdedSize.GetFormattedSize()} ]";
+        public string ClearVanillaBoundsCacheButtonLabel => Labels.ClearVanillaBoundsCache + $" [ {CacheStats.VanillaBoundsEntries} files | {CacheStats.EstVanillaBoundsSize.GetFormattedSize()} ]";
+        public string ClearModdedBoundsCacheButtonLabel => Labels.ClearModdedBoundsCache + $" [ {CacheStats.ModdedBoundsEntries} files | {CacheStats.EstModdedBoundsSize.GetFormattedSize()} ]";
+        
+        public bool CacheEnabled 
+        {
+            get => Settings.Data.CacheEnabled;
+            set
+            {
+                Settings.Data.CacheEnabled = value;
+                OnPropertyChanged(nameof(CacheEnabled));
+            }
+        }
+        
+        public bool AutoUpdateEnabled 
+        {
+            get => Settings.Data.AutoUpdate;
+            set
+            {
+                Settings.Data.AutoUpdate = value;
+                OnPropertyChanged(nameof(AutoUpdateEnabled));
+            }
+        }
+        
+        public bool CacheWorking
+        {
+            get => _cacheWorking;
+            set
+            {
+                _cacheWorking = value;
+                OnPropertyChanged(nameof(CacheWorking));
+                OnPropertyChanged(nameof(CacheButtonsAvailable));
+            }
+        }
+        
+        public bool CacheButtonsAvailable => !CacheWorking;
+        public Bitmap SettingsIcon { get; set; }
+
+        
+        public SettingsViewModel() 
+        { 
+            var sp = App.AppHost!.Services;
+            Settings = sp.GetRequiredService<SettingsService>();
+            _cacheService = sp.GetRequiredService<ICacheService>();
+            PersistentCache = sp.GetRequiredService<SettingsViewPersistentCache>();
+            try
+            {
+                _cacheStats = _cacheService.IsInitialized ? _cacheService.GetStats().Data! : new CacheStats();
+            }
+            catch (Exception ex)
+            {
+                Logger.Exception(ex, $"Failed to load Cache!");
+                _cacheStats = new CacheStats();
+            }
+
+            try
+            {
+                SettingsIcon = new Bitmap(Path.Combine(AppContext.BaseDirectory, "assets", "SettingsMSStyle.png"));
+            }
+            catch(Exception ex)
+            {
+                Logger.Exception(ex, $"Failed to load Settings Icon!");
+                SettingsIcon = new WriteableBitmap(new PixelSize(1,1), new Vector(1,1), PixelFormat.Bgra8888, AlphaFormat.Premul);
+            }
+        }
+
+        public void RaiseOnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            OnPropertyChanged(propertyName);
+        }
+   }
+}
