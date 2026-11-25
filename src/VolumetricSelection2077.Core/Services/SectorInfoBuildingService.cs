@@ -13,7 +13,7 @@ namespace VolumetricSelection2077.Core.Services;
 /// <summary>
 /// Builds accurate bounding boxes for streaming sectors and writes them to the sector bounds cache.
 /// </summary>
-public class SectorBBBuilderService : ISectorBBBuilderService
+public class SectorInfoBuildingService : ISectorInfoBuildingService
 {
     private const string StartupProgressSection = "BoundingBoxBuilderStartup";
     private const string ProcessingProgressSection = "BoundingBoxBuilderProcessing";
@@ -23,12 +23,12 @@ public class SectorBBBuilderService : ISectorBBBuilderService
     private readonly IArchiveManager _archiveManager;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SectorBBBuilderService"/> class.
+    /// Initializes a new instance of the <see cref="SectorInfoBuildingService"/> class.
     /// </summary>
     /// <param name="cacheService">Cache service used to enumerate and write sector bounds.</param>
     /// <param name="gameFileService">Game file service used to load sectors, meshes, and PhysX collision meshes.</param>
     /// <param name="archiveManager">Archive manager used for indexing game files</param>
-    public SectorBBBuilderService(
+    public SectorInfoBuildingService(
         ICacheService cacheService,
         IGameFileService gameFileService,
         IArchiveManager archiveManager)
@@ -50,7 +50,7 @@ public class SectorBBBuilderService : ISectorBBBuilderService
     /// unexpected error occurs, <see cref="ResultStatus.Warning"/> if one or more sectors fail or produce
     /// warnings, and <see cref="ResultStatus.Ok"/> otherwise.
     /// </returns>
-    public async Task<Result> BuildBounds(BuildBoundsMode mode, IProgressService? progressService = null, bool verbose = false)
+    public async Task<Result> BuildAllSectorInfo(BuildBoundsMode mode, IProgressService? progressService = null, bool verbose = false)
     {
         if (!_cacheService.IsInitialized)
             return new Result(ResultStatus.Error, "Cache service is not initialized!");
@@ -120,7 +120,7 @@ public class SectorBBBuilderService : ISectorBBBuilderService
                 [
                     .. sectors.Select(s => Task.Run(() =>
                     {
-                        var res = BuildSectorBounds(s.Path, s.Database, verbose);
+                        var res = BuildSectorInfo(s.Path, s.Database, verbose);
                         progressService?.AddProgress(ProcessingProgressSection, 1);
                         return res;
                     }))
@@ -184,7 +184,7 @@ public class SectorBBBuilderService : ISectorBBBuilderService
     /// error occurs, <see cref="ResultStatus.Warning"/> if part of the sector could not be resolved and only
     /// position data was used, and <see cref="ResultStatus.Ok"/> otherwise.
     /// </returns>
-    public async Task<Result> BuildSectorBounds(string sectorPath, CacheDatabase? database, bool verbose = false)
+    public async Task<Result> BuildSectorInfo(string sectorPath, CacheDatabase? database, bool verbose = false)
     {
         var result = new Result
         {
@@ -209,6 +209,7 @@ public class SectorBBBuilderService : ISectorBBBuilderService
             }
 
             var sector = sectorResult.Data;
+            var sectorInfo = new VSSectorInfo();
             var min = new Vector3(float.MaxValue);
             var max = new Vector3(float.MinValue);
 
@@ -342,8 +343,10 @@ public class SectorBBBuilderService : ISectorBBBuilderService
                 ? new BoundingBox(min - new Vector3(1, 1, 1), max + new Vector3(1, 1, 1))
                 : new BoundingBox(min, max);
 
+            sectorInfo.BoundingBox = bb;
+
             if (database != null)
-                _cacheService.WriteEntry(new WriteCacheRequest(sectorPath, MessagePackSerializer.Serialize(bb), database.Value));
+                _cacheService.WriteEntry(new WriteCacheRequest(sectorPath, MessagePackSerializer.Serialize(sectorInfo), database.Value));
 
             return result;
         }

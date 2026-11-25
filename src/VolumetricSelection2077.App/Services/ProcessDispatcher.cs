@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using SharpDX;
 using VolumetricSelection2077.App.Enums;
 using VolumetricSelection2077.App.Models;
 using VolumetricSelection2077.App.Parsers;
@@ -10,6 +11,7 @@ using VolumetricSelection2077.Core.Components;
 using VolumetricSelection2077.Core.Enums;
 using VolumetricSelection2077.Core.Models;
 using VolumetricSelection2077.Core.Services;
+using Result = VolumetricSelection2077.Core.Models.Result;
 
 namespace VolumetricSelection2077.App.Services;
 
@@ -21,29 +23,29 @@ public class ProcessDispatcher
     
     private static string RelativeSelectionFilePath => Path.Combine("bin", "x64", "plugins", "cyber_engine_tweaks", "mods", "VolumetricSelection2077", "data", "selection.json");
     
-    private readonly ISelectionService _selectionService;
+    private readonly IWorldQueryService _worldQueryService;
     private readonly ValidationService _validationService;
     private readonly DialogService _dialogService;
-    private readonly ISectorBBBuilderService _boundingBoxBuilderService;
+    private readonly ISectorInfoBuildingService _boundingBoxBuildingService;
     private readonly SettingsService _settings;
     private readonly ICacheService _cacheService;
     private readonly PostProcessingService _postProcessingService;
     private readonly HttpClient _httpClient;
     
     public ProcessDispatcher(
-        ISelectionService selectionService,
+        IWorldQueryService worldQueryService,
         DialogService dialogService,
         ValidationService validationService,
-        ISectorBBBuilderService boundingBoxBuilderService,
+        ISectorInfoBuildingService boundingBoxBuildingService,
         SettingsService settings,
         ICacheService cacheService,
         PostProcessingService postProcessingService,
         HttpClient httpClient)
     {
-        _selectionService = selectionService;
+        _worldQueryService = worldQueryService;
         _validationService = validationService;
         _dialogService = dialogService;
-        _boundingBoxBuilderService = boundingBoxBuilderService;
+        _boundingBoxBuildingService = boundingBoxBuildingService;
         _settings = settings;
         _cacheService = cacheService;
         _postProcessingService = postProcessingService;
@@ -117,16 +119,16 @@ public class ProcessDispatcher
             return result;
         }
 
-        var query = new VSQuery();
-        ConfigureQuery(query);
-        
-        var parsingResult = SelectionParser.ParseSelection(await File.ReadAllTextAsync(selectionFilePath), query);
+        var parsingResult = SelectionParser.ParseSelection(await File.ReadAllTextAsync(selectionFilePath));
         if (parsingResult.Status == ResultStatus.Error)
         {
             result.Status = ResultStatus.Error;
             result.AddMessage($"Failed to parse selection file with error {parsingResult.Message}");
             return result;
         }
+        
+        var query = new VSQuery();
+        ConfigureQuery(query, parsingResult.Data);
         
         try
         {
@@ -147,7 +149,7 @@ public class ProcessDispatcher
             queryProgressService.OnProgressChanged += ReportQueryProgress;
         }
         
-        var queryResult = await _selectionService.QueryWorldData(query, queryProgressService);
+        var queryResult = await _worldQueryService.QueryWorldData(query, queryProgressService);
         
         if (queryProgressService is not null) 
             queryProgressService.OnProgressChanged -= ReportQueryProgress;
@@ -193,11 +195,19 @@ public class ProcessDispatcher
         }
     }
 
-    private void ConfigureQuery(VSQuery query)
+    private void ConfigureQuery(VSQuery query, OrientedBoundingBox obb)
     {
+        query.OBB = obb;
+        query.AABB = obb.GetBoundingBox();
+        
         query.DataSource = _settings.Data.SupportModdedResources ? WorldDataSource.All : WorldDataSource.VanillaOnly;
 
-        query.Filters.Add(new NodeTypeFilter
+        query.SectorInfoFilters.Add(new SectorInfoBoundsFilter
+        {
+            BoundingBox = obb.GetBoundingBox()
+        });
+        
+        query.NodeFilters.Add(new NodeTypeFilter
         {
             NodeTypes = _settings.Data.NodeTypeFilter
         });
@@ -209,7 +219,7 @@ public class ProcessDispatcher
                 DebugNameRegexPatterns = _settings.Data.DebugNameFilter.ToList(),
                 Required = !_settings.Data.FilterModeOr
             };
-            query.Filters.Add(debugNameFilter);
+            query.NodeFilters.Add(debugNameFilter);
         }
 
         if (_settings.Data.ResourceNameFilter.Count > 0)
@@ -219,7 +229,7 @@ public class ProcessDispatcher
                 ResourcePathRegexPatterns = _settings.Data.ResourceNameFilter.ToList(),
                 Required = !_settings.Data.FilterModeOr
             };
-            query.Filters.Add(resourcePathFilter);
+            query.NodeFilters.Add(resourcePathFilter);
         }
     }
 
@@ -354,7 +364,7 @@ public class ProcessDispatcher
                             boundsProgress.OnProgressChanged += ReportBoundsProgress;
                         }
                         
-                        var boundsRes = await _boundingBoxBuilderService.BuildBounds(BuildBoundsMode.Vanilla, boundsProgress, _settings.Data.DebugMode);
+                        var boundsRes = await _boundingBoxBuildingService.BuildAllSectorInfo(BuildBoundsMode.Vanilla, boundsProgress, _settings.Data.DebugMode);
                         
                         if (boundsProgress != null)
                         {
@@ -386,11 +396,11 @@ public class ProcessDispatcher
                     catch (Exception e)
                     {
                         Logger.Exception(e, $"Failed to build sector bounds with error {e.Message}");
-                        var failedToBuildSectorBoundsDialog = await _dialogService.ShowDialog("Failed to build sector bounds!", "Failed to build sector bounds, do you want to retry or fetch them from remote?", 
+                        var failedToBuildSectorInfoDialog = await _dialogService.ShowDialog("Failed to build sector bounds!", "Failed to build sector bounds, do you want to retry or fetch them from remote?", 
                         [new DialogButton("Retry", Enums.DialogButtonStyling.Primary),
                             new DialogButton("Fetch Remote", Enums.DialogButtonStyling.Secondary),
                             new DialogButton("Cancel", Enums.DialogButtonStyling.Destructive)]);
-                        switch (failedToBuildSectorBoundsDialog)
+                        switch (failedToBuildSectorInfoDialog)
                         {
                             case 0:
                                 goto BuildSectorBBs;
@@ -423,7 +433,7 @@ public class ProcessDispatcher
             {
                 case 0:
                 {
-                    var boundsRes = await _boundingBoxBuilderService.BuildBounds(
+                    var boundsRes = await _boundingBoxBuildingService.BuildAllSectorInfo(
                         BuildBoundsMode.MissingModded, null, true);
 
                     switch (boundsRes.Status)
@@ -445,7 +455,7 @@ public class ProcessDispatcher
                 }
                 case 1:
                 {
-                    var boundsRes = await _boundingBoxBuilderService.BuildBounds(
+                    var boundsRes = await _boundingBoxBuildingService.BuildAllSectorInfo(
                         BuildBoundsMode.RebuildModded, null, true);
 
                     switch (boundsRes.Status)

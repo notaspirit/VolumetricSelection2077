@@ -10,21 +10,21 @@ using WEnums = WolvenKit.RED4.Types.Enums;
 
 namespace VolumetricSelection2077.Tests.Services;
 
-public class SelectionServiceTests
+public class WorldQueryServiceTests
 {
     private readonly Mock<ICacheService> _cacheService = new();
     private readonly Mock<IGameFileService> _gameFileService = new();
     private readonly ProgressService _progressService = new();
 
-    public SelectionServiceTests()
+    public WorldQueryServiceTests()
     {
         _cacheService.Setup(x => x.StartListening()).Returns(new Result(ResultStatus.Ok));
         _cacheService.Setup(x => x.StopListening()).Returns(new Result(ResultStatus.Ok));
     }
 
-    private SelectionService CreateService()
+    private WorldQueryService CreateService()
     {
-        return new SelectionService(_cacheService.Object, _gameFileService.Object);
+        return new WorldQueryService(_cacheService.Object, _gameFileService.Object);
     }
 
     private static VSQuery CreateQuery(IVSNodeQueryFilter[]? filters = null)
@@ -35,7 +35,7 @@ public class SelectionServiceTests
             DataSource = WorldDataSource.All,
             AABB = bounds,
             OBB = new OrientedBoundingBox(new Vector3(-10), new Vector3(10)),
-            Filters = filters?.ToList() ?? []
+            NodeFilters = filters?.ToList() ?? []
         };
     }
 

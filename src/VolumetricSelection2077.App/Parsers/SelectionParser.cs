@@ -10,9 +10,9 @@ namespace VolumetricSelection2077.App.Parsers;
 
 public static class SelectionParser
 {
-    public static Result ParseSelection(string input, VSQuery query)
+    public static Result<OrientedBoundingBox> ParseSelection(string input)
     {
-        var result = new Result() { Status = ResultStatus.Ok };
+        var result = new Result<OrientedBoundingBox>();
 
         JsonObject? jsonInput = JsonSerializer.Deserialize<JsonObject>(input);
 
@@ -73,8 +73,8 @@ public static class SelectionParser
         obb.Transform(selectionBoxMatrix);
         obb.Translate(new Vector3((float)originX, (float)originY, (float)originZ));
 
-        query.AABB = obb.GetBoundingBox();
-        query.OBB = obb;
+        result.Data = obb;
+        
         return result;
     }
 

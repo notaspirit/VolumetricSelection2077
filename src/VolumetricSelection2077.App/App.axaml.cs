@@ -64,9 +64,9 @@ public partial class App : Application
         
         #region Transient Services
         
-        hostBuilder.Services.AddTransient<ISectorBBBuilderService, SectorBBBuilderService>();
+        hostBuilder.Services.AddTransient<ISectorInfoBuildingService, SectorInfoBuildingService>();
         hostBuilder.Services.AddTransient<PostProcessingService>();
-        hostBuilder.Services.AddTransient<ISelectionService, SelectionService>();
+        hostBuilder.Services.AddTransient<IWorldQueryService, WorldQueryService>();
         hostBuilder.Services.AddTransient<ProcessDispatcher>();
         
         #endregion

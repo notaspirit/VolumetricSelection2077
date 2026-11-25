@@ -15,7 +15,7 @@ namespace VolumetricSelection2077.Core.Services;
 /// Sectors and nodes are queried in parallel. Depending on the node type, intersection is determined by
 /// mesh collision checks, PhysX collision shapes, or node transform positions.
 /// </remarks>
-public class SelectionService : ISelectionService
+public class WorldQueryService : IWorldQueryService
 {
     private const string SectorBoundsFiltering = "SectorBoundsFiltering";
     private const string SectorQuerying = "SectorQuerying";
@@ -33,11 +33,11 @@ public class SelectionService : ISelectionService
     private readonly IGameFileService _gameFileService;
     
     /// <summary>
-    /// Initializes a new instance of the <see cref="SelectionService"/> class.
+    /// Initializes a new instance of the <see cref="WorldQueryService"/> class.
     /// </summary>
     /// <param name="cacheService">Cache service used to enumerate and listen for sector bounds.</param>
     /// <param name="gameFileService">Game file service used to load sectors, meshes, and PhysX collision meshes.</param>
-    public SelectionService(ICacheService cacheService,
+    public WorldQueryService(ICacheService cacheService,
         IGameFileService gameFileService)
     {
         _cacheService = cacheService;
@@ -83,7 +83,7 @@ public class SelectionService : ISelectionService
 
         var localSectors = cachedEntriesResult.Data
             .Where(s =>
-                query.AABB.Contains(MessagePackSerializer.Deserialize<BoundingBox>(s.Value)) != ContainmentType.Disjoint)
+                SectorInfoMatchesFilters(MessagePackSerializer.Deserialize<VSSectorInfo>(s.Value), s.Key, query))
             .Select(s => s.Key).ToArray();
         
         progressService?.AddTarget(SectorQuerying, (uint)localSectors.Length);
@@ -228,7 +228,7 @@ public class SelectionService : ISelectionService
         int nodeDataIndex,
         VSQuery query)
     {
-        if (!ShouldProcessNode(nodeData, node, nodeDataIndex, query))
+        if (!NodeMatchesFilters(nodeData, node, nodeDataIndex, query))
             return new Result<AxlRemovalNodeDeletion> { Status = ResultStatus.Ok };
 
         if (IsMeshNode(node))
@@ -495,16 +495,42 @@ public class SelectionService : ISelectionService
     /// non-required filters, or when all required filters pass and at least one non-required filter
     /// matches; otherwise <c>false</c>.
     /// </returns>
-    private static bool ShouldProcessNode(VSNodeData nodeData, VSNode node, int nodeDataIndex, VSQuery query)
+    private static bool NodeMatchesFilters(VSNodeData nodeData, VSNode node, int nodeDataIndex, VSQuery query)
     {
-        if (query.Filters.Count == 0)
+        if (query.NodeFilters.Count == 0)
             return true;
         
-        if (query.Filters.Where(f => f.Required).Any(f => !f.Filter(nodeData, node, nodeDataIndex)))
+        if (query.NodeFilters.Where(f => f.Required).Any(f => !f.Filter(nodeData, node, nodeDataIndex)))
             return false;
 
-        var optionalFilters = query.Filters.Where(f => !f.Required).ToArray();
+        var optionalFilters = query.NodeFilters.Where(f => !f.Required).ToArray();
         return optionalFilters.Length == 0 ||
                optionalFilters.Any(f => f.Filter(nodeData, node, nodeDataIndex));
     }
+    
+    /// <summary>
+    /// Determines whether a sector info passes the query's sector info filters.
+    /// </summary>
+    /// <param name="sectorInfo">Cached SectorInfo</param>
+    /// <param name="name">Path of the sector</param>
+    /// <param name="query">The selection query containing the filters.</param>
+    /// <returns>
+    /// <c>true</c> when no filters are configured, when all required filters pass and there are no
+    /// non-required filters, or when all required filters pass and at least one non-required filter
+    /// matches; otherwise <c>false</c>.
+    /// </returns>
+    private static bool SectorInfoMatchesFilters(VSSectorInfo sectorInfo, string name, VSQuery query)
+    {
+        if (query.SectorInfoFilters.Count == 0)
+            return true;
+        
+        if (query.SectorInfoFilters.Where(f => f.Required).Any(f => !f.Filter(sectorInfo, name)))
+            return false;
+
+        var optionalFilters = query.SectorInfoFilters.Where(f => !f.Required).ToArray();
+        return optionalFilters.Length == 0 ||
+               optionalFilters.Any(f => f.Filter(sectorInfo, name));
+    }
+    
+    
 }

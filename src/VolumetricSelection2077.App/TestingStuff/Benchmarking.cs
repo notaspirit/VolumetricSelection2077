@@ -22,7 +22,7 @@ public class Benchmarking
 {
     private readonly ValidationService _validationService;
     private readonly DialogService _dialogService;
-    private readonly SectorBBBuilderService _boundingBoxBuilderService;
+    private readonly SectorInfoBuildingService _boundingBoxBuildingService;
     private readonly SettingsService _settings;
     private readonly CacheService _cacheService;
     private readonly ProgressService _progress;
@@ -33,7 +33,7 @@ public class Benchmarking
     
     public Benchmarking(DialogService dialogService,
         ValidationService validationService,
-        SectorBBBuilderService boundingBoxBuilderService,
+        SectorInfoBuildingService boundingBoxBuildingService,
         SettingsService settings, CacheService cacheService,
         ProgressService progress,
         GameFileService gameFileService,
@@ -41,7 +41,7 @@ public class Benchmarking
     {
         _validationService = validationService;
         _dialogService = dialogService;
-        _boundingBoxBuilderService = boundingBoxBuilderService;
+        _boundingBoxBuildingService = boundingBoxBuildingService;
         _settings = settings;
         _cacheService = cacheService;
         _progress = progress;
@@ -129,9 +129,9 @@ public class Benchmarking
     private ProcessDispatcher BuildDispatcher(SettingsService settingsService, string outputFilePath)
     {
         var postProcessingService = new PostProcessingService(settingsService, new AxlRemovalToWorldBuilderConverter(_gfs, _archiveManager), outputFilePath, false);
-        var processService = new SelectionService(_cacheService, _gfs);
+        var processService = new WorldQueryService(_cacheService, _gfs);
         return new ProcessDispatcher(processService, _dialogService,
-            _validationService, _boundingBoxBuilderService,
+            _validationService, _boundingBoxBuildingService,
             settingsService, _cacheService, postProcessingService,
             new HttpClient());
     }
