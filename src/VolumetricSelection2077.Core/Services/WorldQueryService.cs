@@ -231,6 +231,17 @@ public class WorldQueryService : IWorldQueryService
         if (!NodeMatchesFilters(nodeData, node, nodeDataIndex, query))
             return new Result<AxlRemovalNodeDeletion> { Status = ResultStatus.Ok };
 
+        if (!query.ApplySpatialFiltering)
+            return new Result<AxlRemovalNodeDeletion>
+            {
+                Status = ResultStatus.Ok,
+                Data = new AxlRemovalNodeDeletion
+                {
+                    Index = nodeDataIndex,
+                    Type = node.Type
+                }
+            };
+        
         if (IsMeshNode(node))
             return QueryMeshNode(nodeData, node, nodeDataIndex, query);
 

@@ -9,6 +9,7 @@ public class VSQuery
     public WorldDataSource DataSource { get; set; }
     public BoundingBox AABB { get; set; }
     public OrientedBoundingBox OBB { get; set; }
+    public bool ApplySpatialFiltering { get; set; } = true;
     public List<IVSNodeQueryFilter> NodeFilters { get; set; } = [];
     public List<IVSSectorInfoQueryFilter> SectorInfoFilters { get; set; } = [];
 }
