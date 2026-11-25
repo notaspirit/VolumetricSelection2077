@@ -119,12 +119,12 @@ public class WorldQueryServiceTests
     [Fact]
     public async Task QueryWorldData_ReportsWarningWhenSectorQueryFails()
     {
-        var boundingBox = new BoundingBox(new Vector3(-1), new Vector3(1));
+        var sectorInfo = new VSSectorInfo { BoundingBox = new BoundingBox(new Vector3(-1), new Vector3(1)) };
         _cacheService.Setup(x => x.GetAllEntries(It.IsAny<CacheDatabase>()))
             .Returns(new Result<KeyValuePair<string, byte[]>[]>
             {
                 Status = ResultStatus.Ok,
-                Data = [new KeyValuePair<string, byte[]>("sector", MessagePackSerializer.Serialize(boundingBox))]
+                Data = [new KeyValuePair<string, byte[]>("sector", MessagePackSerializer.Serialize(sectorInfo))]
             });
         _gameFileService.Setup(x => x.GetResource<VSSector>("sector"))
             .Returns(Error<VSSector>("sector missing"));
